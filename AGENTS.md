@@ -1,22 +1,41 @@
-这是一个前后端分离项目 前端文件夹是front 后端文件夹是backend
+# knowra 项目章程
 
-后端的技术选型：
+## 1. 项目定位与目标
+**knowra** 是一个前后端分离的个人知识库 AI 助手基础工程骨架。
+**当前阶段目标**：打通前后端联调、环境配置、数据库连接与基础健康检查，建立稳定、可维护的技术基线。项目不追求完整业务功能，仅验证架构可行性。
 
-- python 3.14.5
-- FastAPI
-- uvicorn（开发） + gunicorn（生产）
-- postgresql+pgvector
-- SQLModel
-- 
-前端技术选型：
-- vue3
-- typescript
-- nodejs 24.15.0 LTS
-- Tailind CSS
-- vite 8.0.12
-- pinia
-- vue route
+## 2. 范围界定
+### 2.1 包含内容
+- **后端**：FastAPI 骨架、PostgreSQL + pgvector 扩展迁移、`/api/health` 接口、SQLModel ORM 基础配置。
+- **前端**：Vite + Vue 3 骨架、Pinia/Router 基础配置、Vite Proxy 代理、健康检查展示页。
+- **工程化**：环境变量模板 (`.env.example`)、基础测试流、代码风格规范。
 
-AI开发工具：
-- openspec
-- superpowers
+### 2.2 不包含内容
+- AI 相关：文档解析、向量检索、RAG 问答、LLM 调用。
+- 业务相关：用户认证、权限系统、文件存储。
+- 运维相关：生产级 CI/CD 流水线、Docker 镜像构建（仅关注本地开发环境）。
+
+## 3. 关键成功指标
+1. **后端**：服务启动成功，访问 `/api/health` 返回 200，数据库连接正常。
+2. **前端**：页面加载成功，通过代理成功调用后端健康检查接口并展示数据。
+3. **质量**：本地测试通过，代码风格检查通过。
+
+## 4. 技术架构标准
+### 4.1 核心技术栈
+- **后端**：Python 3.14 + FastAPI + SQLModel + PostgreSQL (pgvector)
+- **前端**：Node.js 24 + Vue 3 + TypeScript + Vite + Tailwind CSS
+- **工具链**：`pytest`/`vitest` (测试), `ruff`/`eslint` (规范)
+
+### 4.2 交互与通信规范
+- **统一前缀**：所有 API 必须以 `/api` 开头。
+- **代理机制**：本地开发前端通过 Vite Proxy 转发请求至后端 `localhost:8000`，避免跨域。
+- **配置管理**：敏感信息禁止硬编码，统一使用 `.env` 文件管理。
+
+## 5. 治理与交付
+- **决策原则**：遵循“简单可验证、先可用再优化”，拒绝过度设计。
+- **变更控制**：接口变更需同步更新文档，核心架构调整需经过评议。
+- **交付物**：包含源码、README 运行指南、环境配置模板。
+
+---
+
+**变更说明**：本文章程为项目最高指导原则，具体的启动命令、API 字段细节请参考项目根目录下的 `README.md` 及各子目录文档。
