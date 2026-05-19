@@ -1,20 +1,142 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: knowra（知寻）
+  Product definition: knowra is an AI knowledge assistant built around users'
+  private materials. It helps personal and team users turn course handouts,
+  papers, notes, project documents, and similar files into searchable,
+  traceable, question-answerable knowledge bases.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Core value: knowra is not a generic chatbot or a file manager. Answers should
+  be grounded in real user documents whenever possible and provide traceable
+  sources for important claims.
+
+  Product goals:
+  - Private knowledge accumulation from uploaded or connected materials.
+  - Semantic retrieval that understands user intent beyond keyword matching.
+  - Knowledge-base-grounded Q&A with reduced unsupported generalization.
+  - Citations and source traceability back to documents, paragraphs, or chunks.
+  - Clear extension space for Query Rewrite, HyDE, RAG, knowledge graphs, and
+    retrieval evaluation.
+
+  Core workflow:
+  接入资料 -> 解析内容 -> 分块与索引 -> 用户提问 -> 检索相关片段 -> 生成带引用的回答
+
+  Architecture boundaries:
+  - Frontend owns visible product experience: data onboarding, knowledge-base
+    browsing, question interaction, answer display, source display, status
+    feedback, and error messages.
+  - Backend owns API services, configuration, database access, document
+    processing, indexing and retrieval orchestration, model adapters, RAG,
+    knowledge graph boundaries, and evaluation boundaries.
+  - Cross-end behavior is coordinated through stable API contracts. API paths,
+    request/response structures, error semantics, and cross-end behavior changes
+    should be described in OpenSpec before implementation.
+
+  Frontend baseline:
+  - Vue 3.5.0, TypeScript 5.9.0, Vite 8.0.12, Vue Router 4.5.0, Pinia 3.0.0,
+    Tailwind CSS 4.0.0.
+  - Vitest 4.0.0 + @vue/test-utils 2.4.0, ESLint 9.0.0, Prettier 3.0.0.
+  - Node.js 24.15.0 and npm 11+.
+  - All backend requests use the /api prefix. Business code must not hard-code
+    localhost:8000. VITE_API_BASE_URL defaults to /api.
+  - UI should be quiet, clear, scannable, and optimized for knowledge-base and
+    Q&A workflows. Citations, snippets, and retrieval evidence should be easy to
+    inspect, not hidden behind model answer text.
+
+  Backend baseline:
+  - Python 3.14.5, FastAPI, Uvicorn, SQLModel, PostgreSQL + pgvector, Alembic,
+    Pydantic Settings, pytest, ruff, and uv.
+  - All business APIs must be mounted under /api.
+  - Sensitive configuration must never be hard-coded; use .env, .env.example,
+    and configuration modules.
+  - Database schema changes require Alembic migrations.
+  - Document parsing, chunking, embedding, retrieval, reranking, query rewriting,
+    HyDE, RAG, citations, knowledge graphs, and evaluation should remain
+    modular, replaceable, and testable.
+
+  Development governance:
+  - New features, behavior changes, API changes, and architecture changes should
+    be described through OpenSpec before implementation.
+  - AGENTS.md files define stable project and engineering rules. OpenSpec
+    artifacts define concrete change scope, design, tasks, and acceptance.
+  - If implementation reveals a design mismatch, update the relevant OpenSpec
+    artifact before continuing.
+  - Follow Superpowers and TDD for implementation work: write failing tests
+    first, confirm RED, implement the minimum GREEN, then refactor while keeping
+    tests passing. Exceptions are limited to exploratory prototypes, generated
+    code, or pure configuration changes and should be stated up front.
+  - Before claiming implementation work is complete, run the appropriate
+    verification commands and report actual results.
+
+  Quality gates:
+  - Frontend changes commonly require: npm run lint, npm run test, npm run build.
+  - Backend changes commonly require: uv run ruff check ., uv run ruff format
+    --check ., uv run pytest.
+  - API changes should cover status codes, response structures, and key error
+    branches.
+  - UI workflow changes should include local browser verification.
+  - Documentation should be updated when startup flow, environment variables,
+    ports, API contracts, directory structure, or core workflows change.
+
+rules:
+  proposal:
+    - State the user problem and product intent in terms of private knowledge,
+      grounded Q&A, retrieval, and source traceability where relevant.
+    - Explicitly define in-scope and out-of-scope behavior, especially whether a
+      change affects frontend UX, backend API/service boundaries, data models,
+      retrieval/RAG behavior, or cross-end contracts.
+    - Identify affected users and workflows using the core flow from material
+      onboarding through cited answer generation.
+    - Call out API contract changes, schema or migration impact, configuration
+      changes, model-service dependencies, and documentation updates.
+    - Include measurable acceptance signals and rollback or migration notes when
+      the change affects stored data, external services, or user-visible
+      workflows.
+    - Prefer concise Chinese prose for project-facing artifacts unless an
+      existing artifact or stakeholder request establishes another language.
+
+  specs:
+    - Express behavior as requirements with concrete scenarios and observable
+      outcomes. Prefer Given/When/Then style for user-visible or API behavior.
+    - Specify citation and traceability expectations whenever answers,
+      retrieval results, document chunks, or generated conclusions are involved.
+    - Define request/response shapes, status codes, error semantics, and
+      compatibility expectations for cross-end API changes.
+    - Cover important empty, loading, error, unauthorized, unavailable external
+      service, and no-relevant-document cases where applicable.
+    - Keep requirements implementation-agnostic, but precise enough that tests
+      can be derived from them.
+
+  design:
+    - Describe module boundaries and data flow before implementation details.
+      Keep frontend UI state, API contracts, backend services, database models,
+      and model adapters clearly separated.
+    - For retrieval, indexing, RAG, or citation features, include the flow from
+      input material or user question through parsing, chunking, storage,
+      retrieval, generation, and source display.
+    - Document configuration keys, environment variables, third-party model
+      adapters, retry/timeout behavior, and failure handling when external
+      services are involved.
+    - Include database tables, indexes, pgvector usage, and Alembic migration
+      strategy when persistence changes.
+    - Explain testing strategy, observability, and verification commands for the
+      affected frontend, backend, or cross-end surfaces.
+    - Use diagrams or concise HTML artifacts for complex workflows when a visual
+      explanation would be clearer than prose.
+
+  tasks:
+    - Break implementation into small, independently verifiable tasks that can
+      follow Red-Green-Refactor where production behavior changes.
+    - Put contract and test tasks before implementation tasks. Include RED
+      confirmation for new behavior unless the change is explicitly a pure
+      configuration or documentation update.
+    - Separate frontend, backend, database migration, model adapter, documentation,
+      and verification work so ownership and validation are clear.
+    - Include exact verification commands relevant to the changed surface, such
+      as frontend lint/test/build, backend ruff/pytest, migration checks, or
+      browser/API smoke checks.
+    - Require documentation updates for API, startup, environment, directory, or
+      workflow changes.
+    - Keep task checkboxes concrete enough to be checked off from actual command
+      output or file changes, not intent alone.
