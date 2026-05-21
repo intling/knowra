@@ -1,142 +1,85 @@
 schema: spec-driven
 
 context: |
-  Project: knowra（知寻）
-  Product definition: knowra is an AI knowledge assistant built around users'
-  private materials. It helps personal and team users turn course handouts,
-  papers, notes, project documents, and similar files into searchable,
-  traceable, question-answerable knowledge bases.
+  项目：knowra（知寻）
+  产品定义：knowra 是一个围绕用户私有资料构建的 AI 知识助手。它帮助个人用户和团队用户将课程讲义、论文、笔记、项目文档等资料转化为可检索、可追溯、可问答的知识库。
 
-  Core value: knowra is not a generic chatbot or a file manager. Answers should
-  be grounded in real user documents whenever possible and provide traceable
-  sources for important claims.
+  核心价值：knowra 不是通用聊天机器人，也不是普通文件管理器。回答应尽可能基于真实用户文档生成，并为重要结论提供可追溯来源。
 
-  Product goals:
-  - Private knowledge accumulation from uploaded or connected materials.
-  - Semantic retrieval that understands user intent beyond keyword matching.
-  - Knowledge-base-grounded Q&A with reduced unsupported generalization.
-  - Citations and source traceability back to documents, paragraphs, or chunks.
-  - Clear extension space for Query Rewrite, HyDE, RAG, knowledge graphs, and
-    retrieval evaluation.
+  产品目标：
+  - 沉淀来自上传或接入资料的私有知识。
+  - 通过语义检索理解用户意图，而不只依赖关键词匹配。
+  - 基于知识库进行 Q&A，减少缺少资料依据的泛化回答。
+  - 将引用和来源追溯到文档、段落或 chunk。
+  - 为 Query Rewrite、HyDE、RAG、知识图谱和检索评测保留清晰扩展空间。
 
-  Core workflow:
+  核心工作流：
   接入资料 -> 解析内容 -> 分块与索引 -> 用户提问 -> 检索相关片段 -> 生成带引用的回答
 
-  Architecture boundaries:
-  - Frontend owns visible product experience: data onboarding, knowledge-base
-    browsing, question interaction, answer display, source display, status
-    feedback, and error messages.
-  - Backend owns API services, configuration, database access, document
-    processing, indexing and retrieval orchestration, model adapters, RAG,
-    knowledge graph boundaries, and evaluation boundaries.
-  - Cross-end behavior is coordinated through stable API contracts. API paths,
-    request/response structures, error semantics, and cross-end behavior changes
-    should be described in OpenSpec before implementation.
+  架构边界：
+  - 前端负责用户可见的产品体验，包括资料接入、知识库浏览、提问交互、回答展示、来源展示、状态反馈和错误提示。
+  - 后端负责 API 服务、配置、数据库访问、文档处理、索引与检索编排、模型适配器、RAG、知识图谱边界和评测边界。
+  - 跨端行为通过稳定的 API 契约协作。API 路径、请求/响应结构、错误语义和跨端行为变更，应在实现前通过 OpenSpec 描述。
 
-  Frontend baseline:
+  前端基线：
   - Vue 3.5.0, TypeScript 5.9.0, Vite 8.0.12, Vue Router 4.5.0, Pinia 3.0.0,
     Tailwind CSS 4.0.0.
   - Vitest 4.0.0 + @vue/test-utils 2.4.0, ESLint 9.0.0, Prettier 3.0.0.
   - Node.js 24.15.0 and npm 11+.
-  - All backend requests use the /api prefix. Business code must not hard-code
-    localhost:8000. VITE_API_BASE_URL defaults to /api.
-  - UI should be quiet, clear, scannable, and optimized for knowledge-base and
-    Q&A workflows. Citations, snippets, and retrieval evidence should be easy to
-    inspect, not hidden behind model answer text.
+  - 所有后端请求使用 /api 前缀。业务代码不得硬编码 localhost:8000。VITE_API_BASE_URL 默认值为 /api。
+  - UI 应保持安静、清晰、易扫描，并围绕知识库和 Q&A 工作流优化。引用、片段和检索证据应便于检查，不应隐藏在模型回答文本之后。
 
-  Backend baseline:
+  后端基线：
   - Python 3.14.5, FastAPI, Uvicorn, SQLModel, PostgreSQL + pgvector, Alembic,
-    Pydantic Settings, pytest, ruff, and uv.
-  - All business APIs must be mounted under /api.
-  - Sensitive configuration must never be hard-coded; use .env, .env.example,
-    and configuration modules.
-  - Database schema changes require Alembic migrations.
-  - Document parsing, chunking, embedding, retrieval, reranking, query rewriting,
-    HyDE, RAG, citations, knowledge graphs, and evaluation should remain
-    modular, replaceable, and testable.
+    Pydantic Settings, pytest, ruff 和 uv.
+  - 所有业务 API 必须挂载在 /api 下。
+  - 敏感配置不得硬编码；应使用 .env、.env.example 和配置模块管理。
+  - 数据库 schema 变更需要 Alembic migration。
+  - 文档解析、chunking、embedding、检索、reranking、query rewriting、HyDE、RAG、引用、知识图谱和评测应保持模块化、可替换、可测试。
 
-  Development governance:
-  - New features, behavior changes, API changes, and architecture changes should
-    be described through OpenSpec before implementation.
-  - AGENTS.md files define stable project and engineering rules. OpenSpec
-    artifacts define concrete change scope, design, tasks, and acceptance.
-  - If implementation reveals a design mismatch, update the relevant OpenSpec
-    artifact before continuing.
-  - Follow Superpowers and TDD for implementation work: write failing tests
-    first, confirm RED, implement the minimum GREEN, then refactor while keeping
-    tests passing. Exceptions are limited to exploratory prototypes, generated
-    code, or pure configuration changes and should be stated up front.
-  - Before claiming implementation work is complete, run the appropriate
-    verification commands and report actual results.
+  开发治理：
+  - 新功能、行为变更、API 变更和架构变更应在实现前通过 OpenSpec 描述。
+  - 所有项目文档和 OpenSpec 工件应使用中文撰写，除非是在引用外部原文、保留 API 名称或使用既有技术标识符。
+  - AGENTS.md 文件定义稳定的项目规则和工程规则。OpenSpec 工件定义具体变更范围、设计、任务和验收方式。
+  - 如果实现过程中发现设计不匹配，应先更新相关 OpenSpec 工件，再继续实现。
+  - 实现类工作应遵循 Superpowers 和 TDD：先写失败测试，确认 RED，编写最小 GREEN 实现，然后在保持测试通过的前提下重构。例外仅限探索性原型、生成代码或纯配置变更，并应提前说明。
+  - 在声明实现工作完成前，应运行相应验证命令并报告实际结果。
 
-  Quality gates:
-  - Frontend changes commonly require: npm run lint, npm run test, npm run build.
-  - Backend changes commonly require: uv run ruff check ., uv run ruff format
-    --check ., uv run pytest.
-  - API changes should cover status codes, response structures, and key error
-    branches.
-  - UI workflow changes should include local browser verification.
-  - Documentation should be updated when startup flow, environment variables,
-    ports, API contracts, directory structure, or core workflows change.
+  质量门禁：
+  - 前端变更通常需要运行：npm run lint、npm run test、npm run build。
+  - 后端变更通常需要运行：uv run ruff check .、uv run ruff format --check .、uv run pytest。
+  - API 变更应覆盖状态码、响应结构和关键错误分支。
+  - UI 工作流变更应包含本地浏览器验证。
+  - 启动流程、环境变量、端口、API 契约、目录结构或核心工作流发生变化时，应同步更新文档。
 
 rules:
   proposal:
-    - State the user problem and product intent in terms of private knowledge,
-      grounded Q&A, retrieval, and source traceability where relevant.
-    - Explicitly define in-scope and out-of-scope behavior, especially whether a
-      change affects frontend UX, backend API/service boundaries, data models,
-      retrieval/RAG behavior, or cross-end contracts.
-    - Identify affected users and workflows using the core flow from material
-      onboarding through cited answer generation.
-    - Call out API contract changes, schema or migration impact, configuration
-      changes, model-service dependencies, and documentation updates.
-    - Include measurable acceptance signals and rollback or migration notes when
-      the change affects stored data, external services, or user-visible
-      workflows.
-    - Prefer concise Chinese prose for project-facing artifacts unless an
-      existing artifact or stakeholder request establishes another language.
+    - 在相关场景中，从私有知识、基于资料的 Q&A、检索和来源可追溯性的角度说明用户问题与产品意图。
+    - 明确定义范围内和范围外的行为，尤其说明变更是否影响前端 UX、后端 API/服务边界、数据模型、检索/RAG 行为或跨端契约。
+    - 基于“资料接入到带引用回答生成”的核心流程，识别受影响用户和工作流。
+    - 明确指出 API 契约变更、schema 或 migration 影响、配置变更、模型服务依赖和文档更新。
+    - 当变更影响存储数据、外部服务或用户可见工作流时，应包含可度量的验收信号以及回滚或迁移说明。
+    - 项目面向工件应使用简洁中文撰写，除非是在引用外部原文、保留 API 名称或使用既有技术标识符。
 
   specs:
-    - Express behavior as requirements with concrete scenarios and observable
-      outcomes. Prefer Given/When/Then style for user-visible or API behavior.
-    - Specify citation and traceability expectations whenever answers,
-      retrieval results, document chunks, or generated conclusions are involved.
-    - Define request/response shapes, status codes, error semantics, and
-      compatibility expectations for cross-end API changes.
-    - Cover important empty, loading, error, unauthorized, unavailable external
-      service, and no-relevant-document cases where applicable.
-    - Keep requirements implementation-agnostic, but precise enough that tests
-      can be derived from them.
+    - 将行为表达为带具体场景和可观察结果的需求。用户可见行为或 API 行为优先使用 Given/When/Then 风格。
+    - 只要涉及回答、检索结果、文档 chunk 或生成结论，就应明确引用和可追溯性预期。
+    - 对跨端 API 变更，应定义请求/响应形态、状态码、错误语义和兼容性预期。
+    - 在适用场景中覆盖关键的空状态、加载状态、错误状态、未授权、外部服务不可用和无相关文档情况。
+    - 需求应保持实现无关，但要足够精确，能够从中推导测试。
 
   design:
-    - Describe module boundaries and data flow before implementation details.
-      Keep frontend UI state, API contracts, backend services, database models,
-      and model adapters clearly separated.
-    - For retrieval, indexing, RAG, or citation features, include the flow from
-      input material or user question through parsing, chunking, storage,
-      retrieval, generation, and source display.
-    - Document configuration keys, environment variables, third-party model
-      adapters, retry/timeout behavior, and failure handling when external
-      services are involved.
-    - Include database tables, indexes, pgvector usage, and Alembic migration
-      strategy when persistence changes.
-    - Explain testing strategy, observability, and verification commands for the
-      affected frontend, backend, or cross-end surfaces.
-    - Use diagrams or concise HTML artifacts for complex workflows when a visual
-      explanation would be clearer than prose.
+    - 先描述模块边界和数据流，再描述实现细节。保持前端 UI 状态、API 契约、后端服务、数据库模型和模型适配器之间的边界清晰。
+    - 对检索、索引、RAG 或引用功能，应包含从输入资料或用户问题，到解析、chunking、存储、检索、生成和来源展示的完整流程。
+    - 涉及外部服务时，应记录配置键、环境变量、第三方模型适配器、重试/超时行为和失败处理。
+    - 持久化发生变化时，应包含数据库表、索引、pgvector 用法和 Alembic migration 策略。
+    - 说明受影响的前端、后端或跨端表面的测试策略、可观测性和验证命令。
+    - 当视觉化说明比纯文本更清晰时，复杂工作流应使用图表或简洁 HTML 工件。
 
   tasks:
-    - Break implementation into small, independently verifiable tasks that can
-      follow Red-Green-Refactor where production behavior changes.
-    - Put contract and test tasks before implementation tasks. Include RED
-      confirmation for new behavior unless the change is explicitly a pure
-      configuration or documentation update.
-    - Separate frontend, backend, database migration, model adapter, documentation,
-      and verification work so ownership and validation are clear.
-    - Include exact verification commands relevant to the changed surface, such
-      as frontend lint/test/build, backend ruff/pytest, migration checks, or
-      browser/API smoke checks.
-    - Require documentation updates for API, startup, environment, directory, or
-      workflow changes.
-    - Keep task checkboxes concrete enough to be checked off from actual command
-      output or file changes, not intent alone.
+    - 将实现拆分为小而可独立验证的任务；涉及生产行为变更时，任务应能遵循 Red-Green-Refactor。
+    - 将契约和测试任务放在实现任务之前。除非变更明确属于纯配置或文档更新，否则新行为应包含 RED 确认。
+    - 分离前端、后端、数据库 migration、模型适配器、文档和验证工作，使所有权和验证方式清晰。
+    - 包含与变更表面相关的准确验证命令，例如前端 lint/test/build、后端 ruff/pytest、migration 检查或浏览器/API smoke check。
+    - API、启动、环境、目录或工作流发生变化时，必须要求更新文档。
+    - 任务复选框应具体到能够通过实际命令输出或文件变更勾选，而不是只表达意图。
