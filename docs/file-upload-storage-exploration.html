@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 文件上传存储方案探索</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5f6b7c;
+      --border: #dce3ec;
+      --accent: #1f6f8b;
+      --accent-soft: #e6f3f6;
+      --ok: #19764b;
+      --ok-soft: #e8f6ef;
+      --warn: #a86200;
+      --warn-soft: #fff4df;
+      --danger: #b42318;
+      --danger-soft: #fff0ed;
+      --code-bg: #101828;
+      --code-text: #eef4ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #101828;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      margin: 14px 0 20px;
+      border-collapse: collapse;
+      background: var(--panel);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+    }
+
+    .decision {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: #123d27;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+      color: #583800;
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+      color: #681f18;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini h3 {
+      margin-top: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .step {
+      min-height: 92px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    @media (max-width: 860px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 28px;
+      }
+
+      .grid,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 文件上传存储方案探索</h1>
+      <p>
+        本文沉淀“基于现有用户体系新增文件上传能力”的最终探索结论。范围限定为应用内原始文件存储与上传元数据管理，不包含文档解析、分块、向量索引、检索或 RAG 问答生成。
+      </p>
+      <div class="meta">
+        <span class="tag">阶段：方案探索</span>
+        <span class="tag">推荐路径：先存储，后处理</span>
+        <span class="tag">用户归属：后端解析当前用户</span>
+        <span class="tag">不实现认证入口</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>1. 探索结论</h2>
+      <div class="note decision">
+        推荐先实现“上传原始文件并在应用内保存”的最小能力：前端选择文件后通过 <code>multipart/form-data</code> 调用后端上传接口；后端使用现有 <code>get_current_user(session)</code> 解析当前用户，写入 <code>uploaded_files</code> 元数据，并把原始文件保存到后端可配置的本地存储目录。
+      </div>
+      <p>
+        这个边界与当前基础用户体系天然衔接：用户归属由后端决定，前端不提交 <code>owner_user_id</code>。后续接入登录、团队、文档解析或索引时，只需要复用同一份上传记录和文件存储键，不需要重写上传入口。
+      </p>
+      <p>
+        本阶段成功标准不是“上传后可问答”，而是“文件已经进入 knowra 的受控存储，并能明确追溯到当前用户、原始文件名、大小、类型、状态和存储位置”。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>2. 为什么先只做存储</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>方案</th>
+            <th>内容</th>
+            <th>收益</th>
+            <th>代价</th>
+            <th>结论</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>推荐：上传并保存原始文件</td>
+            <td>保存文件二进制与元数据，状态为 <code>stored</code>。</td>
+            <td>范围清晰、容易测试、可直接支撑后续解析链路。</td>
+            <td>上传后暂不能基于文件问答。</td>
+            <td>当前最合适。</td>
+          </tr>
+          <tr>
+            <td>上传后同步解析</td>
+            <td>接口内完成存储、解析、分块和索引。</td>
+            <td>用户看起来更接近完整知识库闭环。</td>
+            <td>接口耗时长，错误分支复杂，会提前耦合解析器和索引设计。</td>
+            <td>暂不采用。</td>
+          </tr>
+          <tr>
+            <td>直接接对象存储</td>
+            <td>上传到 S3、OSS、MinIO 等外部存储。</td>
+            <td>更接近生产扩展形态。</td>
+            <td>当前会引入部署和凭据复杂度，影响本地开发闭环。</td>
+            <td>保留接口抽象，后续替换。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. 推荐数据流</h2>
+      <div class="flow">
+        <div class="step">
+          <strong>1. 选择文件</strong>
+          前端复用现有附件入口，生成 <code>File</code> 对象。
+        </div>
+        <div class="step">
+          <strong>2. 上传请求</strong>
+          调用 <code>POST /api/uploads</code>，请求体为 <code>multipart/form-data</code>。
+        </div>
+        <div class="step">
+          <strong>3. 用户解析</strong>
+          后端通过 <code>get_current_user()</code> 获取资源归属。
+        </div>
+        <div class="step">
+          <strong>4. 文件落盘</strong>
+          使用系统生成的存储键写入本地目录。
+        </div>
+        <div class="step">
+          <strong>5. 元数据入库</strong>
+          写入 <code>uploaded_files</code> 并返回上传记录。
+        </div>
+      </div>
+      <pre>┌────────────┐
+│ Frontend   │
+│ File input │
+└─────┬──────┘
+      │ multipart/form-data
+      ▼
+┌──────────────────────────┐
+│ POST /api/uploads         │
+│ route: validate request   │
+└─────┬────────────────────┘
+      │ get_current_user(session)
+      ▼
+┌──────────────────────────┐
+│ Upload service            │
+│ - generate upload id      │
+│ - generate storage key    │
+│ - stream file to storage  │
+│ - persist metadata        │
+└─────┬──────────────┬─────┘
+      │              │
+      ▼              ▼
+┌──────────────┐  ┌────────────────┐
+│ Local storage │  │ uploaded_files │
+│ original blob │  │ metadata       │
+└──────────────┘  └────────────────┘</pre>
+    </section>
+
+    <section class="section">
+      <h2>4. 后端边界草案</h2>
+      <h3>接口</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>接口</th>
+            <th>用途</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>POST /api/uploads</code></td>
+            <td>上传单个文件</td>
+            <td>接收字段 <code>file</code>；可选接收 <code>source</code> 或 <code>display_name</code>，但不接收 <code>owner_user_id</code>。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/uploads</code></td>
+            <td>列出当前用户上传记录</td>
+            <td>只返回当前用户未删除记录，支持后续资料列表或调试。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/uploads/{id}</code></td>
+            <td>读取单条上传记录</td>
+            <td>校验记录属于当前用户；本阶段返回元数据，不直接开放文件下载也可以。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        最小首批实现可以只包含 <code>POST /api/uploads</code>。如果前端需要展示“已上传资料”，再加入列表接口会更自然。
+      </div>
+
+      <h3>响应草案</h3>
+      <pre>{
+  "id": "b3f50b2a-3b88-4a8b-a8d8-3e5d9fb1884a",
+  "owner_user_id": "00000000-0000-0000-0000-000000000001",
+  "original_filename": "course-notes.pdf",
+  "content_type": "application/pdf",
+  "byte_size": 482193,
+  "storage_key": "uploads/00000000-0000-0000-0000-000000000001/b3f50b2a-3b88-4a8b-a8d8-3e5d9fb1884a/original.pdf",
+  "status": "stored",
+  "created_at": "2026-05-24T10:30:00Z",
+  "updated_at": "2026-05-24T10:30:00Z"
+}</pre>
+      <p>
+        响应中可以包含 <code>owner_user_id</code> 作为服务端事实，但请求中不能由前端提交它。后续真实认证接入后，这个原则仍然成立。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>5. 数据模型草案</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型倾向</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID</td>
+            <td>上传记录主键。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>UUID FK</td>
+            <td>关联 <code>users.id</code>，由后端当前用户解析结果写入。</td>
+          </tr>
+          <tr>
+            <td><code>original_filename</code></td>
+            <td>String</td>
+            <td>用户上传时的文件名，仅用于展示，不用于真实存储路径。</td>
+          </tr>
+          <tr>
+            <td><code>content_type</code></td>
+            <td>String nullable</td>
+            <td>客户端上报的 MIME 类型，可为空，后续可增加服务端嗅探。</td>
+          </tr>
+          <tr>
+            <td><code>byte_size</code></td>
+            <td>BigInteger</td>
+            <td>文件大小，用于限制、展示和审计。</td>
+          </tr>
+          <tr>
+            <td><code>storage_key</code></td>
+            <td>String unique</td>
+            <td>应用内稳定存储键，不暴露真实绝对路径。</td>
+          </tr>
+          <tr>
+            <td><code>checksum_sha256</code></td>
+            <td>String nullable</td>
+            <td>建议纳入，便于完整性校验和后续去重分析。</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>String</td>
+            <td>初始支持 <code>stored</code>、<code>failed</code>、<code>deleted</code>；后续解析链路可扩展 <code>processing</code>、<code>indexed</code>。</td>
+          </tr>
+          <tr>
+            <td><code>error_message</code></td>
+            <td>String nullable</td>
+            <td>上传存储失败时保存可诊断信息，避免只在日志中可见。</td>
+          </tr>
+          <tr>
+            <td><code>deleted_at</code></td>
+            <td>DateTime nullable</td>
+            <td>保留软删除能力，与用户体系保持一致。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code> / <code>updated_at</code></td>
+            <td>DateTime</td>
+            <td>审计与排序字段。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>6. 存储策略</h2>
+      <div class="grid">
+        <div class="mini">
+          <h3>本阶段</h3>
+          <p>
+            使用后端本地目录作为应用内存储，例如配置项 <code>upload_storage_dir</code> 指向 <code>backend/storage/uploads</code> 或部署时挂载的数据卷。
+          </p>
+          <p>
+            文件路径由服务端生成，建议包含用户 ID 和上传 ID，避免直接使用原始文件名。
+          </p>
+        </div>
+        <div class="mini">
+          <h3>后续演进</h3>
+          <p>
+            抽象 <code>FileStorage</code> 服务接口，当前实现为 local storage；未来可替换为 MinIO、S3 或 OSS。
+          </p>
+          <p>
+            数据库只保存 <code>storage_key</code>，不保存绝对路径，从而降低存储后端切换成本。
+          </p>
+        </div>
+      </div>
+      <pre>upload_storage_dir/
+└── uploads/
+    └── {owner_user_id}/
+        └── {upload_id}/
+            └── original{safe_extension}</pre>
+      <div class="note danger">
+        原始文件名不能直接拼入真实路径。它可能包含路径分隔符、不可见字符或超长内容，应只作为展示字段保存。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. 前端边界草案</h2>
+      <p>
+        前端目前已经有文件选择入口和选中文件提示。推荐在此基础上新增上传提交状态，而不是先做复杂资料管理页。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>区域</th>
+            <th>行为</th>
+            <th>用户反馈</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>附件按钮</td>
+            <td>选择单个文件。</td>
+            <td>显示文件名、大小，可移除。</td>
+          </tr>
+          <tr>
+            <td>发送/上传动作</td>
+            <td>如果有文件，先调用上传接口。</td>
+            <td>显示上传中、成功、失败。</td>
+          </tr>
+          <tr>
+            <td>用户不可用</td>
+            <td><code>/api/users/me</code> 失败时禁用上传。</td>
+            <td>提示当前用户不可用，避免创建无归属文件。</td>
+          </tr>
+          <tr>
+            <td>API client</td>
+            <td>新增 multipart 上传封装。</td>
+            <td>保留 HTTP 状态和错误 detail，页面层转成中文反馈。</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        本阶段不要求把文件和问题一起组成 RAG 请求。用户选择文件后的动作可以先表达为“上传资料”，成功后再让后续变更接入解析与提问链路。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>8. 错误与限制</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>场景</th>
+            <th>推荐响应</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>当前用户不可用</td>
+            <td><code>503</code></td>
+            <td>与现有 <code>/api/users/me</code> 语义一致，不创建无归属资源。</td>
+          </tr>
+          <tr>
+            <td>没有文件字段</td>
+            <td><code>422</code></td>
+            <td>由 FastAPI 请求校验或路由层明确返回。</td>
+          </tr>
+          <tr>
+            <td>文件为空</td>
+            <td><code>400</code></td>
+            <td>避免保存无意义记录。</td>
+          </tr>
+          <tr>
+            <td>超过大小限制</td>
+            <td><code>413</code></td>
+            <td>大小限制通过配置控制，例如 <code>max_upload_bytes</code>。</td>
+          </tr>
+          <tr>
+            <td>不支持的类型</td>
+            <td><code>415</code></td>
+            <td>首批可以允许常见文档类型，或暂只限制大小。</td>
+          </tr>
+          <tr>
+            <td>落盘失败</td>
+            <td><code>500</code></td>
+            <td>不应留下指向不存在文件的成功记录；必要时记录 <code>failed</code> 状态供诊断。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note risk">
+        大文件上传的流式处理是主要工程风险。实现时应避免一次性读取全部内容进入内存，并围绕大小限制、部分写入失败、事务一致性写测试。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>9. OpenSpec 建议</h2>
+      <p>
+        这个探索已经足够进入一个独立 OpenSpec 变更，建议变更名使用 <code>add-file-upload-storage</code>。变更应聚焦在“上传原始文件并保存元数据”，不要同时承诺解析和索引。
+      </p>
+      <h3>建议能力规格</h3>
+      <ul>
+        <li><code>file-upload-storage</code>：定义上传接口、文件元数据、应用内存储、当前用户归属、错误处理和前端反馈。</li>
+      </ul>
+      <h3>建议验收场景</h3>
+      <ul>
+        <li>当前用户可用时，上传有效文件返回上传记录并写入元数据。</li>
+        <li>上传记录的 <code>owner_user_id</code> 来自后端当前用户解析，而不是客户端请求字段。</li>
+        <li>原始文件保存到应用内存储目录，数据库保存稳定 <code>storage_key</code>。</li>
+        <li>当前用户不可用时，上传失败且不保存文件。</li>
+        <li>超出大小限制或空文件上传时，返回明确错误。</li>
+        <li>前端上传过程中展示加载、成功和失败反馈。</li>
+      </ul>
+      <h3>建议非目标</h3>
+      <ul>
+        <li>不实现登录、注册、团队权限或用户切换。</li>
+        <li>不实现文档解析、分块、embedding、向量索引或 RAG。</li>
+        <li>不实现对象存储接入，但保留通过存储服务接口替换的设计空间。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>10. 推荐下一步</h2>
+      <ol>
+        <li>创建 OpenSpec 变更 <code>add-file-upload-storage</code>，把本文结论转成 <code>proposal.md</code>、<code>design.md</code>、<code>tasks.md</code> 和规格增量。</li>
+        <li>实现时按 TDD 推进：先写后端上传 API、模型、服务和前端上传状态的失败测试，再写最小实现。</li>
+        <li>上传存储完成并归档后，再单独开启“文档解析与索引”变更，让解析链路消费 <code>uploaded_files</code>。</li>
+      </ol>
+      <div class="note decision">
+        最终推荐：先把文件可靠地纳入 knowra 的用户归属和应用存储边界，再让后续知识处理链路基于这份稳定记录展开。
+      </div>
+    </section>
+  </main>
+</body>
+</html>
