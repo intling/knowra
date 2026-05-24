@@ -6,6 +6,7 @@ Create Date: 2026-05-23
 """
 
 from collections.abc import Sequence
+from uuid import UUID
 
 import sqlalchemy as sa
 
@@ -16,7 +17,7 @@ down_revision: str | Sequence[str] | None = "20260514_0001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
+DEFAULT_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 
 def upgrade() -> None:
@@ -40,7 +41,7 @@ def upgrade() -> None:
             INSERT INTO users (id, display_name, status, created_at, updated_at)
             VALUES (:id, 'Default User', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """
-        ).bindparams(id=DEFAULT_USER_ID)
+        ).bindparams(sa.bindparam("id", value=DEFAULT_USER_ID, type_=sa.Uuid()))
     )
 
 

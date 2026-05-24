@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 本地启动指南</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5e6a7d;
+      --border: #dce2ea;
+      --accent: #2364aa;
+      --accent-soft: #e8f1fb;
+      --ok: #177245;
+      --warn: #a65f00;
+      --code: #101828;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 28px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ol,
+    ul {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: var(--code);
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 12px 0 18px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #101828;
+      color: #eef4ff;
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 20px;
+      background: var(--panel);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+    }
+
+    .success {
+      border-left-color: var(--ok);
+      background: #e9f6ef;
+      color: #123d27;
+    }
+
+    .warning {
+      border-left-color: var(--warn);
+      background: #fff4df;
+      color: #583800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 24px, 1080px);
+        padding-top: 26px;
+      }
+
+      .section {
+        padding: 18px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 本地启动指南</h1>
+      <p>
+        本页基于根目录 <code>README.md</code>、<code>backend/README.md</code>、<code>front/README.md</code>、
+        <code>docker-compose.yml</code> 和项目脚本整理，用于快速启动 knowra 的数据库、后端和前端。
+      </p>
+      <div class="meta">
+        <span class="tag">后端：FastAPI + uv</span>
+        <span class="tag">前端：Vue 3 + Vite</span>
+        <span class="tag">数据库：PostgreSQL + pgvector</span>
+        <span class="tag">默认前端端口：5173</span>
+        <span class="tag">默认后端端口：8000</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>启动顺序</h2>
+      <ol>
+        <li>先启动 PostgreSQL，因为后端迁移和服务依赖数据库。</li>
+        <li>再初始化并启动后端，后端默认服务地址是 <code>http://localhost:8000</code>。</li>
+        <li>最后初始化并启动前端，前端默认服务地址是 <code>http://localhost:5173</code>。</li>
+      </ol>
+      <div class="note">
+        前端开发环境通过 Vite proxy 把 <code>/api</code> 转发到后端，所以前端业务代码不需要写死
+        <code>localhost:8000</code>。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>环境要求</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>要求</th>
+            <th>来源</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>后端</td>
+            <td>Python 3.14.5、uv</td>
+            <td><code>README.md</code>、<code>backend/pyproject.toml</code></td>
+          </tr>
+          <tr>
+            <td>前端</td>
+            <td>Node.js 24.15.0、npm 11+</td>
+            <td><code>front/package.json</code>、<code>front/README.md</code></td>
+          </tr>
+          <tr>
+            <td>数据库</td>
+            <td>Docker Compose v2 或兼容工具</td>
+            <td><code>README.md</code>、<code>docker-compose.yml</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>1. 启动数据库</h2>
+      <p>在项目根目录执行：</p>
+      <pre><code>docker compose up -d postgres</code></pre>
+      <p>默认数据库连接串：</p>
+      <pre><code>postgresql+psycopg://knowra:knowra@localhost:5432/knowra</code></pre>
+      <div class="note warning">
+        如果本机没有 <code>docker compose</code> 子命令，需要先安装 Docker Compose v2，或使用兼容工具启动
+        <code>docker-compose.yml</code> 中的 <code>postgres</code> 服务。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 启动后端</h2>
+      <p>打开一个终端，在项目根目录执行：</p>
+      <pre><code>cd backend
+uv sync
+cp .env.example .env
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload</code></pre>
+      <div class="grid">
+        <div class="mini">
+          <strong>服务地址</strong>
+          <code>http://localhost:8000</code>
+        </div>
+        <div class="mini">
+          <strong>API 前缀</strong>
+          <code>/api</code>
+        </div>
+      </div>
+      <h3>后端环境文件</h3>
+      <p><code>backend/.env.example</code> 中的默认关键配置如下：</p>
+      <pre><code>API_PREFIX=/api
+BACKEND_CORS_ORIGINS=http://localhost:5173
+DATABASE_URL=postgresql+psycopg://knowra:knowra@localhost:5432/knowra</code></pre>
+    </section>
+
+    <section class="section">
+      <h2>3. 启动前端</h2>
+      <p>再打开一个终端，在项目根目录执行：</p>
+      <pre><code>cd front
+npm install
+cp .env.example .env
+npm run dev</code></pre>
+      <div class="grid">
+        <div class="mini">
+          <strong>访问地址</strong>
+          <code>http://localhost:5173</code>
+        </div>
+        <div class="mini">
+          <strong>API 基础路径</strong>
+          <code>VITE_API_BASE_URL=/api</code>
+        </div>
+      </div>
+      <div class="note success">
+        当前前端会通过 <code>GET /api/users/me</code> 读取当前用户上下文；该阶段不包含登录、注册、登出和用户切换。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>常用验证命令</h2>
+      <div class="grid">
+        <div class="mini">
+          <strong>后端验证</strong>
+          <pre><code>cd backend
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest</code></pre>
+        </div>
+        <div class="mini">
+          <strong>前端验证</strong>
+          <pre><code>cd front
+npm run lint
+npm run test
+npm run build</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>快速排查</h2>
+      <ul>
+        <li>后端启动或迁移失败时，先确认 <code>postgres</code> 容器已启动，并且本地 <code>5432</code> 端口没有被其他服务占用。</li>
+        <li>前端页面请求失败时，确认后端运行在 <code>localhost:8000</code>，并且前端环境变量仍为 <code>VITE_API_BASE_URL=/api</code>。</li>
+        <li>依赖安装失败时，先确认 Python、Node.js、npm 版本符合项目要求。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
