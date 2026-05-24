@@ -23,6 +23,12 @@ npm run dev
 
 The app starts at `http://localhost:5173`. API requests under `/api` are proxied to `http://localhost:8000`.
 
+## Current user
+
+The frontend loads `GET /api/users/me` on the home view to display the current
+user context. Login, registration, logout, and user switching are not part of
+this phase.
+
 ## Quality gates
 
 ```bash

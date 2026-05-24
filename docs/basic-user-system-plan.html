@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 基础用户体系方案</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5e6a7d;
+      --border: #dce2ea;
+      --accent: #2364aa;
+      --accent-soft: #e8f1fb;
+      --ok: #177245;
+      --warn: #a65f00;
+      --code: #101828;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 28px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.35rem;
+      margin: 0 0 14px;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: var(--code);
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #101828;
+      color: #eef4ff;
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 20px;
+      background: var(--panel);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      margin-bottom: 18px;
+    }
+
+    .note {
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+      margin: 14px 0;
+    }
+
+    .decision {
+      border-left-color: var(--ok);
+      background: #e9f6ef;
+      color: #123d27;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: #fff4df;
+      color: #583800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 26px;
+      }
+
+      .section {
+        padding: 18px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 基础用户体系方案</h1>
+      <p>
+        本方案用于探索 knowra 在暂不实现登录、注册、鉴权的前提下，如何先建立可关联业务数据的用户基础模型，
+        为后续文件上传、知识库归属、团队协作、登录注册与权限扩展保留稳定边界。
+      </p>
+      <div class="meta">
+        <span class="tag">日期：2026-05-23</span>
+        <span class="tag">阶段：探索方案</span>
+        <span class="tag">范围：基础用户数据支撑</span>
+        <span class="tag">不含：登录、注册、会话、鉴权</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>1. 目标与边界</h2>
+      <div class="grid">
+        <div class="mini">
+          <strong>本阶段要解决</strong>
+          <ul>
+            <li>系统中存在稳定的 <code>User</code> 数据实体。</li>
+            <li>上传文件、文档、知识库等业务表可以通过 <code>user_id</code> 关联用户。</li>
+            <li>提供开发阶段可用的默认用户或内部用户解析方式。</li>
+            <li>后续接入登录注册时，不需要大规模重写业务表外键。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <strong>本阶段不解决</strong>
+          <ul>
+            <li>不提供用户注册接口。</li>
+            <li>不提供密码登录、OAuth、短信、邮箱验证码等认证能力。</li>
+            <li>不引入访问令牌、Cookie Session 或权限中间件。</li>
+            <li>不实现多租户团队权限模型。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note decision">
+        核心判断：现在需要的是“用户归属数据契约”，不是“认证系统”。先把业务数据和用户标识的关系固定下来，后续认证只负责把请求映射到已有用户。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 当前工程落点</h2>
+      <p>根据当前后端骨架，用户体系主要落在以下位置：</p>
+      <table>
+        <thead>
+          <tr>
+            <th>位置</th>
+            <th>职责</th>
+            <th>建议变化</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>backend/app/models/</code></td>
+            <td>SQLModel 数据模型</td>
+            <td>新增 <code>user.py</code>，定义 <code>User</code> 表模型。</td>
+          </tr>
+          <tr>
+            <td><code>backend/app/schemas/</code></td>
+            <td>API 请求/响应契约</td>
+            <td>新增用户读取、创建、更新等 schema，但本阶段创建能力可只用于内部初始化或测试。</td>
+          </tr>
+          <tr>
+            <td><code>backend/app/services/</code></td>
+            <td>业务服务</td>
+            <td>新增用户查询、默认用户获取、开发用户解析等服务函数。</td>
+          </tr>
+          <tr>
+            <td><code>backend/app/api/routes/</code></td>
+            <td>HTTP 路由</td>
+            <td>可选暴露 <code>GET /api/users/me</code>，用于前后端联调当前默认用户。</td>
+          </tr>
+          <tr>
+            <td><code>backend/alembic/versions/</code></td>
+            <td>数据库迁移</td>
+            <td>新增迁移创建 <code>users</code> 表、唯一索引和必要时间字段。</td>
+          </tr>
+          <tr>
+            <td><code>front/src/api/</code></td>
+            <td>前端接口封装</td>
+            <td>新增 <code>users.ts</code>，封装 <code>GET /api/users/me</code> 和 <code>User</code> 响应类型。</td>
+          </tr>
+          <tr>
+            <td><code>front/src/stores/</code></td>
+            <td>前端用户状态</td>
+            <td>新增轻量 <code>user</code> store，保存当前用户、加载状态和错误状态。</td>
+          </tr>
+          <tr>
+            <td><code>front/src/views/</code> / <code>front/src/App.vue</code></td>
+            <td>用户可见反馈</td>
+            <td>在现有页面或应用壳层展示当前用户状态，不新增登录、注册页面。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. 推荐领域模型</h2>
+      <p>本阶段建议只建一个 <code>users</code> 表，字段保持小而稳定，避免提前设计复杂认证表。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型建议</th>
+            <th>是否必需</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td><code>UUID</code></td>
+            <td>是</td>
+            <td>用户主键。推荐 UUID，避免后续多环境合并或外部身份映射时依赖自增序列。</td>
+          </tr>
+          <tr>
+            <td><code>display_name</code></td>
+            <td><code>varchar(100)</code></td>
+            <td>是</td>
+            <td>展示名称。本阶段可默认 <code>Default User</code>。</td>
+          </tr>
+          <tr>
+            <td><code>email</code></td>
+            <td><code>varchar(255)</code></td>
+            <td>否</td>
+            <td>为后续邮箱登录预留。允许为空，非空时唯一。</td>
+          </tr>
+          <tr>
+            <td><code>avatar_url</code></td>
+            <td><code>varchar(1024)</code></td>
+            <td>否</td>
+            <td>为后续用户资料展示预留。</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td><code>varchar(32)</code></td>
+            <td>是</td>
+            <td>建议初始支持 <code>active</code>、<code>disabled</code>，默认 <code>active</code>。</td>
+          </tr>
+          <tr>
+            <td><code>deleted_at</code></td>
+            <td><code>timestamptz</code></td>
+            <td>否</td>
+            <td>软删除时间。为空表示用户未删除；非空表示用户信息已删除，业务查询默认排除。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code></td>
+            <td><code>timestamptz</code></td>
+            <td>是</td>
+            <td>创建时间。</td>
+          </tr>
+          <tr>
+            <td><code>updated_at</code></td>
+            <td><code>timestamptz</code></td>
+            <td>是</td>
+            <td>更新时间。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        不建议现在加入 <code>password_hash</code>、<code>last_login_at</code>、<code>email_verified_at</code>、<code>oauth_provider</code> 等认证字段。这些字段属于认证能力，不属于基础用户归属模型。
+      </div>
+      <h3>软删除语义</h3>
+      <ul>
+        <li>用户删除时只写入 <code>deleted_at</code>，不物理删除 <code>users</code> 记录。</li>
+        <li>常规用户查询、当前用户解析和资源归属检查默认只返回 <code>deleted_at IS NULL</code> 的用户。</li>
+        <li>已删除用户关联过的文件、文档、知识库等历史资源仍能保留可追溯的 <code>owner_user_id</code>。</li>
+        <li><code>status</code> 用于表达禁用、停用等可恢复状态；<code>deleted_at</code> 用于表达用户信息已被删除，两者不要混用。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>4. 关系建模</h2>
+      <p>基础用户体系的关键价值，是让后续业务表从第一天就拥有明确归属。</p>
+      <pre>┌──────────────┐
+│    users     │
+│──────────────│
+│ id           │◀────────────────────┐
+│ display_name │                     │
+│ email        │                     │
+│ status       │                     │
+└──────────────┘                     │
+                                     │
+               ┌─────────────────────┼─────────────────────┐
+               │                     │                     │
+               ▼                     ▼                     ▼
+      ┌────────────────┐    ┌────────────────┐    ┌────────────────┐
+      │ uploaded_files │    │   documents    │    │ knowledge_bases│
+      │────────────────│    │────────────────│    │────────────────│
+      │ id             │    │ id             │    │ id             │
+      │ owner_user_id  │    │ owner_user_id  │    │ owner_user_id  │
+      │ storage_key    │    │ title          │    │ name           │
+      └────────────────┘    └────────────────┘    └────────────────┘</pre>
+      <h3>外键命名建议</h3>
+      <p>
+        对资源归属类字段，优先使用 <code>owner_user_id</code>，语义比 <code>user_id</code> 更清楚。
+        如果某个表记录的是操作者行为，例如审计日志、任务触发记录，可以使用 <code>created_by_user_id</code> 或 <code>actor_user_id</code>。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>字段名</th>
+            <th>适用场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>文件、文档、知识库、集合等资源归属。</td>
+          </tr>
+          <tr>
+            <td><code>created_by_user_id</code></td>
+            <td>记录谁创建了某条业务记录。</td>
+          </tr>
+          <tr>
+            <td><code>updated_by_user_id</code></td>
+            <td>需要记录最后修改者时使用。</td>
+          </tr>
+          <tr>
+            <td><code>actor_user_id</code></td>
+            <td>事件、任务、审计日志中的行为主体。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>5. 当前用户解析策略</h2>
+      <p>因为本阶段没有登录态，仍然需要一个稳定方式让业务代码拿到“当前用户”。推荐分两层处理。</p>
+      <h3>开发期默认用户</h3>
+      <ul>
+        <li>在数据库中维护一个默认用户，例如 <code>Default User</code>。</li>
+        <li>后端提供 <code>get_current_user()</code> 依赖或服务函数，当前总是返回这个默认用户。</li>
+        <li>文件上传、文档创建等业务统一通过该函数获取用户，而不是在各处硬编码默认 UUID。</li>
+      </ul>
+      <h3>可选请求头覆盖</h3>
+      <ul>
+        <li>开发阶段可支持内部请求头 <code>X-Knowra-User-Id</code>，便于测试不同用户的数据隔离。</li>
+        <li>该能力必须明确标注为开发/内部用途，生产前需要被真实认证机制替代或关闭。</li>
+        <li>如果请求头用户不存在，应返回清晰错误，而不是自动创建未知用户。</li>
+      </ul>
+      <div class="note decision">
+        推荐路径：先实现默认用户解析；等文件上传或知识库功能需要多用户测试时，再加 <code>X-Knowra-User-Id</code> 开发覆盖能力。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. API 边界建议</h2>
+      <p>本阶段 API 不应变成用户管理后台。建议保持非常薄。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>接口</th>
+            <th>阶段</th>
+            <th>用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>GET /api/users/me</code></td>
+            <td>建议纳入</td>
+            <td>返回当前解析出的用户，用于前端、上传流程、调试和联调。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/users/{user_id}</code></td>
+            <td>可暂缓</td>
+            <td>如果没有管理场景，先不暴露单用户查询。</td>
+          </tr>
+          <tr>
+            <td><code>POST /api/users</code></td>
+            <td>不建议本阶段开放</td>
+            <td>容易与注册语义混淆。内部初始化用服务函数、迁移或种子脚本处理。</td>
+          </tr>
+          <tr>
+            <td><code>PATCH /api/users/me</code></td>
+            <td>后续按需</td>
+            <td>用户资料编辑需要前端场景后再加。</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3><code>GET /api/users/me</code> 响应示例</h3>
+      <pre>{
+  "id": "018f4d5a-6a4f-7b62-8f71-8c2e32901a9c",
+  "display_name": "Default User",
+  "email": null,
+  "avatar_url": null,
+  "status": "active",
+  "deleted_at": null,
+  "created_at": "2026-05-23T00:00:00Z",
+  "updated_at": "2026-05-23T00:00:00Z"
+}</pre>
+    </section>
+
+    <section class="section">
+      <h2>7. 前端接入范围</h2>
+      <p>
+        前端本阶段只消费“当前用户”数据，不承担注册、登录、鉴权或资源归属判定。资源归属应由后端根据当前用户解析结果写入，
+        前端不应在上传文件等普通用户流程中手动传入 <code>owner_user_id</code>。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>位置</th>
+            <th>建议内容</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>front/src/api/users.ts</code></td>
+            <td>定义 <code>User</code> 类型与 <code>getCurrentUser()</code>。</td>
+            <td>调用 <code>GET /api/users/me</code>，复用现有 <code>apiGet</code>，不要在业务代码中拼接后端地址。</td>
+          </tr>
+          <tr>
+            <td><code>front/src/stores/user.ts</code></td>
+            <td>维护 <code>currentUser</code>、<code>isLoading</code>、<code>error</code> 和 <code>loadCurrentUser()</code>。</td>
+            <td>用户是跨文件上传、知识库、问答等功能都会依赖的基础状态，建议独立于 <code>app</code> store。</td>
+          </tr>
+          <tr>
+            <td><code>front/src/App.vue</code> 或后续 layout</td>
+            <td>应用启动时触发当前用户加载，并在顶部或侧边栏展示用户名称。</td>
+            <td>只展示身份上下文，例如 <code>Default User</code>；不展示登录、退出、注册入口。</td>
+          </tr>
+          <tr>
+            <td><code>front/src/views/HomeView.vue</code></td>
+            <td>可在开发期展示当前用户加载结果和错误状态。</td>
+            <td>用于联调用户基础能力；后续有正式布局后可迁移到应用壳层。</td>
+          </tr>
+          <tr>
+            <td><code>front/src/api/client.ts</code></td>
+            <td>可预留开发期请求头注入点。</td>
+            <td>如后端启用 <code>X-Knowra-User-Id</code> 测试多用户隔离，前端应只通过开发配置或测试工具使用，不做成普通用户 UI。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>前端用户类型建议</h3>
+      <pre>export interface User {
+  id: string
+  displayName: string
+  email: string | null
+  avatarUrl: string | null
+  status: "active" | "disabled"
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+}</pre>
+      <p>
+        如果后端响应使用 snake_case，前端可以先保持接口类型与响应一致，例如 <code>display_name</code>、<code>deleted_at</code>。
+        是否在 API 层转换成 camelCase，应在 OpenSpec 中统一约定，避免不同接口风格混用。
+      </p>
+
+      <h3>前端交互边界</h3>
+      <ul>
+        <li>不新增登录、注册、退出、找回密码等页面或按钮。</li>
+        <li>不提供用户选择器给普通用户切换身份。</li>
+        <li>上传文件、创建知识库等操作不让用户填写 <code>owner_user_id</code>。</li>
+        <li>如果 <code>GET /api/users/me</code> 失败，页面应显示当前用户不可用的错误状态，并阻止依赖用户归属的操作。</li>
+        <li>如果后端因默认用户被软删除而返回错误，前端应展示可诊断反馈，而不是静默降级为匿名用户。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>8. 后续认证扩展路径</h2>
+      <p>后续登录注册可以在不破坏 <code>users.id</code> 和业务外键的前提下扩展。</p>
+      <pre>当前阶段
+┌──────────────┐
+│    users     │
+└──────┬───────┘
+       │
+       ▼
+业务资源通过 owner_user_id 关联用户
+
+后续认证阶段
+┌──────────────┐       ┌─────────────────┐
+│    users     │◀──────│ user_identities │
+└──────┬───────┘       │ provider        │
+       │               │ provider_uid    │
+       ▼               │ password_hash   │
+业务资源不需要变更       └─────────────────┘</pre>
+      <table>
+        <thead>
+          <tr>
+            <th>未来能力</th>
+            <th>建议扩展方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>邮箱密码登录</td>
+            <td>新增 <code>user_credentials</code> 或 <code>user_identities</code> 表保存密码哈希，不把密码字段混入基础 <code>users</code> 表。</td>
+          </tr>
+          <tr>
+            <td>OAuth 登录</td>
+            <td>通过 <code>provider</code>、<code>provider_user_id</code> 映射到 <code>users.id</code>。</td>
+          </tr>
+          <tr>
+            <td>邮箱验证</td>
+            <td>新增验证令牌或验证状态字段，避免现在提前污染模型。</td>
+          </tr>
+          <tr>
+            <td>团队/组织</td>
+            <td>新增 <code>organizations</code>、<code>organization_members</code>，资源归属再按场景扩展为用户归属或组织归属。</td>
+          </tr>
+          <tr>
+            <td>权限控制</td>
+            <td>在认证之后引入角色、权限或资源授权表，当前阶段只保证数据可追溯到用户。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>9. OpenSpec 变更建议</h2>
+      <p>如果进入实施，建议创建一个独立 OpenSpec 变更，例如 <code>add-basic-user-foundation</code>。</p>
+      <h3>建议范围</h3>
+      <ul>
+        <li>新增 <code>users</code> 数据模型与迁移。</li>
+        <li>新增当前用户解析服务，默认返回系统默认用户。</li>
+        <li>新增 <code>GET /api/users/me</code>。</li>
+        <li>用户表支持 <code>deleted_at</code> 软删除字段，默认查询排除已删除用户。</li>
+        <li>前端新增当前用户 API 封装和轻量 user store。</li>
+        <li>前端展示当前用户上下文和用户加载失败状态，但不新增登录注册 UI。</li>
+        <li>为未来上传文件等功能规定资源表应通过 <code>owner_user_id</code> 关联用户。</li>
+      </ul>
+      <h3>验收标准</h3>
+      <ul>
+        <li>迁移执行后数据库存在 <code>users</code> 表。</li>
+        <li>系统可获得一个默认 active 用户。</li>
+        <li><code>GET /api/users/me</code> 返回 200 和稳定用户结构。</li>
+        <li>软删除用户不会被当前用户解析服务返回。</li>
+        <li>前端可以通过 <code>getCurrentUser()</code> 获取当前用户。</li>
+        <li>前端 user store 能表达加载中、加载成功和加载失败三种状态。</li>
+        <li>前端没有登录、注册或用户切换入口。</li>
+        <li>服务层不在业务代码中硬编码默认用户 ID。</li>
+        <li>后续业务表可通过外键引用 <code>users.id</code>。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>10. TDD 实施顺序</h2>
+      <p>项目章程要求实现类任务遵循 Red-Green-Refactor。后续真正编码时建议按以下小循环推进。</p>
+      <ol>
+        <li>先写 <code>GET /api/users/me</code> API 测试，确认当前失败，失败原因是路由不存在。</li>
+        <li>写最小路由和 schema，让接口结构通过，但用户查询可先由服务返回固定测试对象。</li>
+        <li>写用户服务测试，要求能够获取默认用户，确认失败。</li>
+        <li>实现 <code>User</code> 模型、服务查询逻辑和测试数据库准备。</li>
+        <li>写软删除查询测试，要求 <code>deleted_at</code> 非空的用户不会被当前用户解析服务返回。</li>
+        <li>写迁移验证或模型元数据测试，确保 <code>users</code> 表字段、唯一约束和 <code>deleted_at</code> 字段符合方案。</li>
+        <li>重构路由、服务和 schema 边界，保持测试通过。</li>
+        <li>运行 <code>uv run ruff check .</code>、<code>uv run ruff format --check .</code>、<code>uv run pytest</code>。</li>
+        <li>写前端 <code>getCurrentUser()</code> API 测试，确认当前失败，失败原因是封装不存在。</li>
+        <li>实现最小 <code>front/src/api/users.ts</code>，让 API 测试通过。</li>
+        <li>写 user store 测试，覆盖加载中、成功写入当前用户、失败写入错误状态。</li>
+        <li>实现最小 user store，并在页面或应用壳层消费该状态。</li>
+        <li>运行 <code>npm run lint</code>、<code>npm run test</code>、<code>npm run build</code>。</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>11. 风险与取舍</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>风险</th>
+            <th>影响</th>
+            <th>处理方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>默认用户被业务代码硬编码</td>
+            <td>后续接入真实登录时改动面扩大</td>
+            <td>所有业务通过 <code>get_current_user()</code> 或用户服务获取用户。</td>
+          </tr>
+          <tr>
+            <td>过早加入认证字段</td>
+            <td>模型职责混乱，后续 OAuth/密码登录难以统一</td>
+            <td>认证信息后续独立成表，<code>users</code> 只保存用户资料与状态。</td>
+          </tr>
+          <tr>
+            <td>API 暴露创建用户</td>
+            <td>容易形成事实上的注册接口</td>
+            <td>本阶段不开放 <code>POST /api/users</code>，默认用户通过内部初始化保证。</td>
+          </tr>
+          <tr>
+            <td>资源表外键命名不统一</td>
+            <td>上传、文档、知识库等模型难以形成一致约定</td>
+            <td>资源归属统一使用 <code>owner_user_id</code>。</td>
+          </tr>
+          <tr>
+            <td>前端直接提交 <code>owner_user_id</code></td>
+            <td>资源归属可能被客户端伪造，后续接入认证时需要重写流程</td>
+            <td>普通业务操作由后端根据当前用户解析结果写入归属，前端只消费当前用户上下文。</td>
+          </tr>
+          <tr>
+            <td>前端提前设计登录注册 UI</td>
+            <td>用户预期被提前锁定，后续认证方案调整成本上升</td>
+            <td>本阶段只展示当前用户状态，不提供认证入口。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note risk">
+        需要在 OpenSpec 中明确“无登录注册”的阶段边界，否则实现时很容易把用户基础模型扩展成半套认证系统。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>12. 推荐结论</h2>
+      <p>
+        先实现一个极简但稳定的 <code>users</code> 表、当前用户解析服务和 <code>GET /api/users/me</code>。
+        前端只增加当前用户 API 封装、轻量 user store 和必要状态展示。所有后续资源类能力从一开始通过后端解析的当前用户写入 <code>owner_user_id</code>。
+        认证、注册、登录、权限和组织协作都作为后续独立 OpenSpec 变更扩展。
+      </p>
+      <p>
+        这个方案可以满足当前“上传文件可关联用户”的基础需求，同时避免把尚未确定的认证形态提前写死在核心数据模型里。
+      </p>
+    </section>
+  </main>
+</body>
+</html>

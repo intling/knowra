@@ -24,6 +24,12 @@ uv run uvicorn app.main:app --reload
 
 The API is served at `http://localhost:8000`, with routes mounted under `/api`.
 
+## Current user
+
+The backend exposes `GET /api/users/me` as the current user contract. This
+initial user foundation does not implement login or registration; it returns the
+default active user created by the user migration.
+
 ## Quality gates
 
 ```bash
