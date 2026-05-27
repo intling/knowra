@@ -56,6 +56,7 @@ describe("HomeView", () => {
     mocks.userStoreState.userError = null
   })
 
+  // 测试：首页会展示当前用户上下文，并且不显示登录、注册、退出或切换用户等认证操作。
   it("shows current user context without authentication actions", () => {
     const wrapper = mount(HomeView)
     const text = wrapper.text()
@@ -68,6 +69,7 @@ describe("HomeView", () => {
     expect(mocks.loadCurrentUserMock).toHaveBeenCalledOnce()
   })
 
+  // 测试：底部聊天输入区固定在底部，输入内容后发送按钮状态和文本框高度会正确更新。
   it("renders a responsive bottom chat composer with textarea and send state", async () => {
     const wrapper = mount(HomeView)
     const textarea = wrapper.get('[data-testid="chat-input"]')
@@ -93,6 +95,7 @@ describe("HomeView", () => {
     expect(element.style.height).toBe("96px")
   })
 
+  // 测试：附件按钮会打开文件选择器，选择文件后展示文件标签，并支持移除已选文件。
   it("opens the file picker from the attachment button and lets users remove the selected file", async () => {
     const wrapper = mount(HomeView)
     const attachmentButton = wrapper.get('[data-testid="attachment-button"]')
@@ -124,6 +127,7 @@ describe("HomeView", () => {
     expect(inputElement.value).toBe("")
   })
 
+  // 测试：按 Enter 会发送并清空输入，按 Shift+Enter 会保留内容用于换行输入。
   it("sends with Enter and keeps content for Shift+Enter", async () => {
     const wrapper = mount(HomeView)
     const textarea = wrapper.get('[data-testid="chat-input"]')
@@ -139,6 +143,7 @@ describe("HomeView", () => {
     expect((textarea.element as HTMLTextAreaElement).value).toBe("First line")
   })
 
+  // 测试：文件上传成功后会调用上传接口、清空已选文件，并展示成功反馈。
   it("uploads the selected file, clears it after success, and shows success feedback", async () => {
     mocks.uploadFileMock.mockResolvedValue({
       original_filename: "course-notes.pdf",
@@ -165,6 +170,7 @@ describe("HomeView", () => {
     )
   })
 
+  // 测试：上传进行中会禁用提交，避免重复触发上传请求，并展示上传中状态。
   it("disables duplicate submit while upload is in progress", async () => {
     let resolveUpload: (value: unknown) => void = () => {}
     mocks.uploadFileMock.mockReturnValue(
@@ -197,6 +203,7 @@ describe("HomeView", () => {
     await Promise.resolve()
   })
 
+  // 测试：上传失败时会保留已选文件，并在界面上展示错误信息。
   it("keeps the selected file and shows an error when upload fails", async () => {
     mocks.uploadFileMock.mockRejectedValue(new Error("File size exceeds max_upload_bytes"))
     const wrapper = mount(HomeView)
@@ -222,6 +229,7 @@ describe("HomeView", () => {
     )
   })
 
+  // 测试：当前用户不可用时，即使选择了文件也不会提交上传，并会禁用发送按钮。
   it("disables upload submit when the current user is unavailable", async () => {
     mocks.userStoreState.currentUser = null
     mocks.userStoreState.isUserLoading = false
@@ -250,6 +258,7 @@ describe("HomeView", () => {
     )
   })
 
+  // 测试：当前用户不可用时，即使同时存在文本输入和已选文件，也不会发起上传请求。
   it("does not upload a selected file when user is unavailable even with text input", async () => {
     mocks.userStoreState.currentUser = null
     mocks.userStoreState.isUserLoading = false

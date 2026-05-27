@@ -23,6 +23,7 @@ describe("uploadFile", () => {
     vi.unstubAllGlobals()
   })
 
+  // 测试：上传文件时会通过 /api/uploads 提交 multipart 表单，并且不会把 owner_user_id 放入请求体。
   it("uploads multipart form data without submitting owner_user_id", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -46,6 +47,7 @@ describe("uploadFile", () => {
     expect(init.body.has("owner_user_id")).toBe(false)
   })
 
+  // 测试：后端返回错误响应时，uploadFile 会抛出包含后端 detail 的可诊断错误。
   it("throws a diagnostic error from backend error responses", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,

@@ -16,6 +16,7 @@ describe("useAppStore", () => {
     fetchHealthMock.mockReset()
   })
 
+  // 测试：刷新健康状态成功后，store 会保存后端状态、结束加载并记录检查时间。
   it("loads and stores backend health status", async () => {
     fetchHealthMock.mockResolvedValue({
       status: "ok",
@@ -36,6 +37,7 @@ describe("useAppStore", () => {
     expect(store.lastHealthCheckedAt).toBeInstanceOf(Date)
   })
 
+  // 测试：健康状态请求失败时，store 会清空状态并保存可读错误信息。
   it("stores a readable health error when the request fails", async () => {
     fetchHealthMock.mockRejectedValue(new Error("Backend unavailable"))
 

@@ -16,6 +16,7 @@ describe("useUserStore", () => {
     getCurrentUserMock.mockReset()
   })
 
+  // 测试：当前用户加载成功后，store 会保存用户信息并清除加载和错误状态。
   it("loads and stores the current user", async () => {
     getCurrentUserMock.mockResolvedValue({
       id: "00000000-0000-0000-0000-000000000001",
@@ -36,6 +37,7 @@ describe("useUserStore", () => {
     expect(store.userError).toBeNull()
   })
 
+  // 测试：当前用户请求失败时，store 会清空用户并保存可读错误信息。
   it("stores a readable error when the current user request fails", async () => {
     getCurrentUserMock.mockRejectedValue(new Error("Current user is unavailable"))
 
