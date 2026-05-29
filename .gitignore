@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+*.log
 
 # Python
 .python-version.local
@@ -15,6 +16,7 @@ htmlcov/
 
 # Node
 node_modules/
+.edge-profile-headless/
 dist/
 coverage/
 *.tsbuildinfo

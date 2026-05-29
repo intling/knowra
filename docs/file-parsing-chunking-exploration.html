@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 文件解析与分块功能探索</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5f6b7a;
+      --border: #dbe2ea;
+      --accent: #1f6f5f;
+      --accent-soft: #e7f4f0;
+      --blue: #255f9a;
+      --blue-soft: #eaf2fb;
+      --warn: #955900;
+      --warn-soft: #fff2d8;
+      --danger: #a3352a;
+      --danger-soft: #fff0ed;
+      --code-bg: #111827;
+      --code-text: #edf4ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.68;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #101828;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      margin: 14px 0 20px;
+      border-collapse: collapse;
+      background: var(--panel);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #153b34;
+    }
+
+    .info {
+      border-left-color: var(--blue);
+      background: var(--blue-soft);
+      color: #183858;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+      color: #553500;
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+      color: #651f18;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini h3 {
+      margin-top: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .step {
+      min-height: 124px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    @media (max-width: 860px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 28px;
+      }
+
+      .grid,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 文件解析与分块功能探索</h1>
+      <p>
+        本文沉淀“消费已上传原始文件，生成文档记录和可追溯 chunk”的探索结论。它不是业务代码实现，而是进入 OpenSpec proposal 前的方案草图，用来明确能力边界、数据契约、一致性要求和 TDD 起点。
+      </p>
+      <div class="meta">
+        <span class="tag">模式：openspec-explore</span>
+        <span class="tag">日期：2026-05-28</span>
+        <span class="tag">当前 OpenSpec：无活跃变更</span>
+        <span class="tag">输入：uploaded_files.status = stored</span>
+        <span class="tag">输出：documents + document_chunks</span>
+        <span class="tag">首批格式：TXT / Markdown / PDF / DOCX / PPT/PPTX</span>
+        <span class="tag">分块大小：BPE tokenizer</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>1. 探索结论</h2>
+      <div class="note">
+        建议把“文件解析与分块”设计为上传之后、embedding 与检索之前的独立后端能力。它从 <code>uploaded_files.storage_key</code> 读取原始文件，创建 <code>documents</code> 记录，再生成稳定、有序、可追溯的 <code>document_chunks</code>。后续 embedding、检索和 RAG 都只消费这些稳定 chunk，而不是直接消费原始上传文件。
+      </div>
+      <p>
+        这个阶段的核心价值是建立“资料可被系统理解”的中间层。<code>uploaded_files</code> 只说明文件已经被用户上传并保存；<code>documents</code> 说明系统已经成功解析出可处理文本；<code>document_chunks</code> 则是后续向量化、召回、引用展示和评测的最小稳定单元。
+      </p>
+      <p>
+        首批确认支持 <code>text/plain</code>、<code>text/markdown</code>、PDF、DOCX 和 PPT/PPTX。由于当前后端依赖尚未包含 PDF、Office 文档解析库和 BPE tokenizer，正式 OpenSpec 变更需要把依赖选择、锁文件更新、失败样例和解析质量边界列为显式任务。OCR 和多模态理解仍建议后置。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>2. 当前上下文</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>项目事实</th>
+            <th>对本能力的影响</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>已有 <code>uploaded_files</code> 表，字段包括 <code>owner_user_id</code>、<code>original_filename</code>、<code>content_type</code>、<code>byte_size</code>、<code>storage_key</code>、<code>checksum_sha256</code>、<code>status</code>。</td>
+            <td>解析入口不应重新上传文件；应通过已持久化的上传记录读取原始文件，并复用用户归属与存储键。</td>
+          </tr>
+          <tr>
+            <td><code>UploadService</code> 使用 <code>LocalFileStorage</code> 将原始文件写入 <code>UPLOAD_STORAGE_DIR</code> 下的 server-generated <code>storage_key</code>。</td>
+            <td>文档处理服务需要复用或扩展文件读取抽象，避免直接拼接用户输入路径。</td>
+          </tr>
+          <tr>
+            <td>上传 API 为 <code>POST /api/uploads</code>，成功后返回 <code>201</code> 和上传元数据。</td>
+            <td>解析 API 应以 <code>uploaded_file_id</code> 为入口，并由后端校验当前用户归属，不接受客户端提交的 <code>owner_user_id</code>。</td>
+          </tr>
+          <tr>
+            <td>后端当前依赖未包含 DOCX/PPT/PDF/OCR 解析库，也未包含 BPE tokenizer。</td>
+            <td>首批已确认纳入 PDF、DOCX/PPT 和 BPE tokenizer，因此 OpenSpec 需要显式说明新增依赖、可替换接口和验证方式。</td>
+          </tr>
+          <tr>
+            <td>项目章程要求 OpenSpec 先行，并且实现类任务必须严格 TDD。</td>
+            <td>本探索完成后，应创建正式 OpenSpec change，再按 Red-Green-Refactor 实施。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. 系统位置</h2>
+      <pre>接入资料
+  └─ uploaded_files              已有：原始文件与上传元数据
+      └─ documents               本能力：解析后的文档级记录
+          └─ document_chunks      本能力：可检索、可引用的文本片段
+              └─ chunk_embeddings 后续：向量表示
+                  └─ retrieval    后续：召回与排序
+                      └─ RAG       后续：基于引用生成回答</pre>
+      <p>
+        这个边界可以避免后续模块直接依赖上传文件格式。检索只需要知道 chunk id、内容、归属和来源定位；引用展示再沿着 <code>document_chunks -> documents -> uploaded_files</code> 找回原始文件名、文档标题和位置线索。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>4. 推荐数据流</h2>
+      <div class="flow">
+        <div class="step">
+          <strong>1. 选择输入</strong>
+          接收 <code>uploaded_file_id</code>，查询当前用户名下且 <code>status = stored</code> 的上传记录。
+        </div>
+        <div class="step">
+          <strong>2. 读取原文</strong>
+          通过 <code>storage_key</code> 从应用内存储读取 bytes 或 stream，不接受客户端路径。
+        </div>
+        <div class="step">
+          <strong>3. 解析文本</strong>
+          根据 MIME 与扩展名选择 parser，输出 normalized text 与 source map。
+        </div>
+        <div class="step">
+          <strong>4. 生成分块</strong>
+          使用确定性 chunker 生成有序 chunk，记录范围、hash、版本和来源定位。
+        </div>
+        <div class="step">
+          <strong>5. 原子入库</strong>
+          在事务中写入 document 与 chunks，失败时不留下可检索半成品。
+        </div>
+      </div>
+      <pre>uploaded_file(id, owner_user_id, storage_key, content_type, checksum_sha256)
+        │
+        ▼
+FileStorage.open(storage_key)
+        │
+        ▼
+ParserRegistry.resolve(content_type, filename)
+        │
+        ▼
+ParsedDocument(text, metadata, source_map)
+        │
+        ▼
+Chunker.split(text, source_map)
+        │
+        ▼
+documents + document_chunks</pre>
+    </section>
+
+    <section class="section">
+      <h2>5. 能力边界</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>范围</th>
+            <th>首批做</th>
+            <th>首批不做</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>输入</td>
+            <td>消费当前用户已上传且成功存储的单个原始文件。</td>
+            <td>不重新实现上传，不接受任意文件路径，不处理跨用户文件。</td>
+          </tr>
+          <tr>
+            <td>解析</td>
+            <td>抽象 parser 接口，首批支持 TXT、Markdown、PDF、DOCX、PPT/PPTX，输出规范化文本和来源映射。</td>
+            <td>不做 OCR、图片理解、复杂表格结构恢复、PDF 复杂版面重建、幻灯片视觉版面重建。</td>
+          </tr>
+          <tr>
+            <td>分块</td>
+            <td>使用 BPE tokenizer 计算 chunk 大小和重叠窗口，保存顺序、字符范围、token 数、hash、source locator。</td>
+            <td>不把 BPE tokenizer 与某个 embedding 模型强绑定；tokenizer 名称、版本和参数必须可记录、可替换。</td>
+          </tr>
+          <tr>
+            <td>持久化</td>
+            <td>新增 <code>documents</code> 和 <code>document_chunks</code> 数据模型与迁移。</td>
+            <td>不把 chunk 只存在内存或临时文件里。</td>
+          </tr>
+          <tr>
+            <td>后续衔接</td>
+            <td>为 embedding、检索和引用展示保留稳定主键、版本和来源定位。</td>
+            <td>不实现向量索引、召回 API、重排、RAG 回答。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>6. 数据模型草案</h2>
+      <h3><code>documents</code></h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型倾向</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID</td>
+            <td>文档记录主键。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>UUID FK</td>
+            <td>冗余保存用户归属，来自上传记录，不由客户端提交。</td>
+          </tr>
+          <tr>
+            <td><code>uploaded_file_id</code></td>
+            <td>UUID FK unique</td>
+            <td>关联 <code>uploaded_files.id</code>。首批建议一个上传文件只对应一个当前文档。</td>
+          </tr>
+          <tr>
+            <td><code>title</code></td>
+            <td>String</td>
+            <td>默认使用原始文件名去扩展名，后续可由 parser 或用户修正。</td>
+          </tr>
+          <tr>
+            <td><code>source_content_type</code></td>
+            <td>String nullable</td>
+            <td>记录解析时使用的内容类型，便于排查 parser 选择。</td>
+          </tr>
+          <tr>
+            <td><code>parser_name</code> / <code>parser_version</code></td>
+            <td>String</td>
+            <td>记录解析器身份，支持后续判断是否需要重跑。</td>
+          </tr>
+          <tr>
+            <td><code>chunker_name</code> / <code>chunker_version</code></td>
+            <td>String</td>
+            <td>记录分块策略身份，避免策略变更后旧 chunk 语义不明。</td>
+          </tr>
+          <tr>
+            <td><code>tokenizer_name</code> / <code>tokenizer_version</code></td>
+            <td>String</td>
+            <td>记录 BPE tokenizer 身份和版本，保证 chunk 大小、重叠窗口和 token 统计可复现。</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>String</td>
+            <td>首批建议 <code>parsed</code>、<code>failed</code>、<code>deleted</code>。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_count</code></td>
+            <td>Integer</td>
+            <td>成功分块数量，用于列表展示和一致性校验。</td>
+          </tr>
+          <tr>
+            <td><code>total_chars</code></td>
+            <td>Integer</td>
+            <td>规范化文本字符数，用于诊断空解析和异常膨胀。</td>
+          </tr>
+          <tr>
+            <td><code>content_sha256</code></td>
+            <td>String</td>
+            <td>规范化文本 hash，不等同于原始文件 checksum。</td>
+          </tr>
+          <tr>
+            <td><code>metadata_json</code></td>
+            <td>JSON</td>
+            <td>页数、语言、标题层级摘要等非契约核心信息。</td>
+          </tr>
+          <tr>
+            <td><code>error_message</code></td>
+            <td>String nullable</td>
+            <td>解析失败时保存可诊断信息。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code> / <code>updated_at</code></td>
+            <td>DateTime</td>
+            <td>审计字段。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><code>document_chunks</code></h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型倾向</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID</td>
+            <td>chunk 主键，后续 embedding、检索结果和引用都引用它。</td>
+          </tr>
+          <tr>
+            <td><code>document_id</code></td>
+            <td>UUID FK</td>
+            <td>关联 <code>documents.id</code>。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>UUID FK</td>
+            <td>冗余用户归属，支持后续按用户过滤检索。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_index</code></td>
+            <td>Integer</td>
+            <td>文档内从 0 开始的稳定顺序，建议与 <code>document_id</code> 做唯一约束。</td>
+          </tr>
+          <tr>
+            <td><code>content</code></td>
+            <td>Text</td>
+            <td>用于 embedding 和检索展示的规范化片段文本。</td>
+          </tr>
+          <tr>
+            <td><code>content_sha256</code></td>
+            <td>String</td>
+            <td>chunk 内容 hash，用于去重、调试和重跑比对。</td>
+          </tr>
+          <tr>
+            <td><code>char_start</code> / <code>char_end</code></td>
+            <td>Integer</td>
+            <td>chunk 在文档规范化文本中的半开区间 <code>[start, end)</code>。</td>
+          </tr>
+          <tr>
+            <td><code>token_count</code></td>
+            <td>Integer</td>
+            <td>由选定 BPE tokenizer 计算得到，作为 chunk 大小控制和后续模型上下文预算的基础字段。</td>
+          </tr>
+          <tr>
+            <td><code>source_locator_json</code></td>
+            <td>JSON</td>
+            <td>页码、段落序号、标题路径、原始块 id 等来源定位信息。</td>
+          </tr>
+          <tr>
+            <td><code>metadata_json</code></td>
+            <td>JSON</td>
+            <td>块类型、标题、语言、表格标记等可扩展信息。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code> / <code>updated_at</code></td>
+            <td>DateTime</td>
+            <td>审计字段。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note info">
+        首批不建议把 embedding 状态放进 <code>document_chunks</code> 主表。后续可新增 <code>chunk_embeddings</code>，用 <code>chunk_id + embedding_model + embedding_version</code> 管理不同向量模型的结果。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. 解析器策略</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>类型</th>
+            <th>优先级</th>
+            <th>建议方式</th>
+            <th>注意点</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>text/plain</code></td>
+            <td>必须</td>
+            <td>读取文本，UTF-8 优先；解码失败要显式失败。</td>
+            <td>不要静默吞掉乱码；失败原因应进入 <code>error_message</code>。</td>
+          </tr>
+          <tr>
+            <td><code>text/markdown</code></td>
+            <td>必须</td>
+            <td>保留 Markdown 文本，并提取标题路径作为 chunk 元数据。</td>
+            <td>首批不需要渲染 HTML，避免不必要的结构转换。</td>
+          </tr>
+          <tr>
+            <td><code>application/pdf</code></td>
+            <td>必须</td>
+            <td>引入解析库后逐页抽取文本，source locator 至少记录页码。</td>
+            <td>首批支持具备文本层的 PDF；扫描版 PDF 可能无法抽出文本，应生成 failed 文档并给出原因，首批不做 OCR。</td>
+          </tr>
+          <tr>
+            <td><code>application/vnd.openxmlformats-officedocument.wordprocessingml.document</code></td>
+            <td>必须</td>
+            <td>通过 DOCX 解析库按标题、段落和表格文本抽取内容，source locator 至少记录段落序号或结构路径。</td>
+            <td>批注、修订痕迹和精确页码可以后置，但不能静默丢弃主要正文。</td>
+          </tr>
+          <tr>
+            <td><code>application/vnd.openxmlformats-officedocument.presentationml.presentation</code> / <code>application/vnd.ms-powerpoint</code></td>
+            <td>必须</td>
+            <td>通过 PPT/PPTX 解析库按幻灯片顺序抽取文本框、标题和备注文本，source locator 至少记录 slide index。</td>
+            <td>首批只要求文本抽取，不恢复视觉布局、图像内容、动画和复杂图表语义。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note risk">
+        parser registry 应返回“明确不支持”的错误，而不是落到默认二进制文本解析。对知识库来说，乱码 chunk 比失败更危险，因为它会污染后续索引和问答引用。PDF、DOCX 与 PPT/PPTX 的首批支持也应建立在专用解析器上，而不是把二进制文件当作普通文本兜底处理。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>8. 分块策略</h2>
+      <div class="grid">
+        <div class="mini">
+          <h3>首批推荐</h3>
+          <p>
+            使用确定性的递归文本分块：优先按 Markdown 标题、PDF 页码与段落、Office 文档结构、幻灯片边界、空行、段落、句子边界切分；超过阈值时再按 BPE token 窗口切分。默认目标大小可先采用 800-1200 BPE tokens，重叠 100-200 BPE tokens。
+          </p>
+        </div>
+        <div class="mini">
+          <h3>BPE 约束</h3>
+          <p>
+            chunk 稳定性来自同一份规范化文本、同一个 chunker 版本、同一个 BPE tokenizer 版本、同一组参数和确定性边界规则。任一条件变化，都应视作新一轮处理结果，而不是悄悄覆盖旧语义。
+          </p>
+        </div>
+      </div>
+      <pre>normalized_text:
+0         420       860       1290
+|----------|----------|----------|
+
+chunks:
+chunk 0: [0, 520)      source: page 1, heading "导论"
+chunk 1: [420, 940)    source: page 1-2, heading "背景"
+chunk 2: [840, 1290)   source: page 2, heading "方法"
+
+overlap:
+chunk 0 / 1 overlap = [420, 520)
+chunk 1 / 2 overlap = [840, 940)</pre>
+      <p>
+        对 RAG 来说，chunk 不是随便切开的字符串，而是引用能力的基础。每个 chunk 至少要能回答三个问题：它属于谁、来自哪份文档、在原文或规范化文本中的位置在哪里。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>9. API 草案</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>接口</th>
+            <th>用途</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>POST /api/documents</code></td>
+            <td>从已上传文件创建文档和 chunks。</td>
+            <td>请求体包含 <code>uploaded_file_id</code>；后端校验归属和 <code>stored</code> 状态。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/documents/{id}</code></td>
+            <td>读取文档记录。</td>
+            <td>返回解析状态、chunk 数量、标题、来源上传文件信息。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/documents</code></td>
+            <td>读取资料列表。</td>
+            <td>返回当前用户的 <code>parsed</code> 与 <code>failed</code> 文档；failed 文档必须包含可展示的失败原因。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/documents/{id}/chunks</code></td>
+            <td>读取文档 chunks。</td>
+            <td>用于调试、资料详情页和检索前验证。</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>创建请求草案</h3>
+      <pre>{
+  "uploaded_file_id": "b3f50b2a-3b88-4a8b-a8d8-3e5d9fb1884a"
+}</pre>
+      <h3>响应草案</h3>
+      <pre>{
+  "id": "7adf4bdf-6b0d-4a78-8f2d-f5e4b3f8ab62",
+  "owner_user_id": "00000000-0000-0000-0000-000000000001",
+  "uploaded_file_id": "b3f50b2a-3b88-4a8b-a8d8-3e5d9fb1884a",
+  "title": "course-notes",
+  "status": "parsed",
+  "parser_name": "plain_text",
+  "parser_version": "1",
+  "chunker_name": "recursive_text",
+  "chunker_version": "1",
+  "tokenizer_name": "bpe",
+  "tokenizer_version": "1",
+  "chunk_count": 8,
+  "total_chars": 18420,
+  "created_at": "2026-05-28T10:30:00Z",
+  "updated_at": "2026-05-28T10:30:00Z"
+}</pre>
+      <div class="note info">
+        如果同一 <code>uploaded_file_id</code> 已经存在文档记录，首批固定返回 <code>409 Conflict</code>，并在响应体中携带已有文档的元数据信息。这样既避免重复 chunks 污染后续索引，也让前端可以跳转或展示已有处理结果。
+      </div>
+      <h3>重复处理响应草案</h3>
+      <pre>{
+  "detail": "Document already exists for uploaded_file_id",
+  "existing_document": {
+    "id": "7adf4bdf-6b0d-4a78-8f2d-f5e4b3f8ab62",
+    "uploaded_file_id": "b3f50b2a-3b88-4a8b-a8d8-3e5d9fb1884a",
+    "title": "course-notes",
+    "status": "parsed",
+    "chunk_count": 8,
+    "parser_name": "plain_text",
+    "parser_version": "1",
+    "chunker_name": "recursive_text",
+    "chunker_version": "1",
+    "tokenizer_name": "bpe",
+    "tokenizer_version": "1",
+    "created_at": "2026-05-28T10:30:00Z",
+    "updated_at": "2026-05-28T10:30:00Z"
+  }
+}</pre>
+    </section>
+
+    <section class="section">
+      <h2>10. 状态与失败语义</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>场景</th>
+            <th>推荐行为</th>
+            <th>原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>上传文件不存在或不属于当前用户</td>
+            <td>返回 <code>404</code></td>
+            <td>避免泄露其他用户资源是否存在。</td>
+          </tr>
+          <tr>
+            <td>上传文件未成功存储</td>
+            <td>返回 <code>409</code></td>
+            <td>只有 <code>stored</code> 原始文件能进入解析。</td>
+          </tr>
+          <tr>
+            <td>内容类型不支持</td>
+            <td>返回 <code>415</code>，并创建或返回 <code>failed</code> 文档元数据</td>
+            <td>failed 文档需要展示在前端资料列表中，用户必须能看到失败原因并理解下一步。</td>
+          </tr>
+          <tr>
+            <td>原始文件缺失</td>
+            <td>返回 <code>500</code>，并记录 <code>failed</code> 文档</td>
+            <td>数据库记录与文件存储不一致，需要在资料列表和服务日志中都可诊断。</td>
+          </tr>
+          <tr>
+            <td>解析结果为空</td>
+            <td>创建 <code>failed</code> 文档并记录原因</td>
+            <td>扫描版 PDF 或二进制误传时，用户需要明确反馈。</td>
+          </tr>
+          <tr>
+            <td>chunk 写入中途失败</td>
+            <td>事务回滚，不暴露半套 chunks</td>
+            <td>后续检索不能消费不完整文档。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note danger">
+        最重要的一致性要求是：不能出现 <code>documents.status = parsed</code> 但 chunk 缺失或不完整的状态。成功文档必须拥有与 <code>chunk_count</code> 一致的 chunk 记录。
+      </div>
+      <div class="note info">
+        资料列表必须包含 <code>failed</code> 文档。列表项至少展示标题、来源文件名、状态、失败原因、创建时间和可重试入口；但 failed 文档不能被 embedding、检索或 RAG 流程消费。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>11. TDD 起点</h2>
+      <p>
+        真正进入实现前，应先创建 OpenSpec 变更，再严格按失败测试驱动最小实现。推荐测试顺序如下：
+      </p>
+      <ol>
+        <li>迁移测试：迁移后存在 <code>documents</code> 和 <code>document_chunks</code> 表、索引和外键。</li>
+        <li>服务成功测试：给定当前用户的 TXT/Markdown/PDF/DOCX/PPT 上传记录，生成 <code>document</code> 和有序 chunks。</li>
+        <li>来源测试：每个 chunk 包含 <code>document_id</code>、<code>owner_user_id</code>、<code>chunk_index</code>、字符范围和 source locator。</li>
+        <li>BPE 测试：chunk 大小和重叠窗口由 BPE tokenizer 控制，并写入 <code>token_count</code>、<code>tokenizer_name</code>、<code>tokenizer_version</code>。</li>
+        <li>权限测试：不能处理不属于当前用户的 <code>uploaded_file_id</code>。</li>
+        <li>失败测试：不支持类型、缺失原始文件、空解析结果不会产生可检索的成功 chunks。</li>
+        <li>重复处理测试：同一 <code>uploaded_file_id</code> 再次处理返回 <code>409 Conflict</code>，响应体包含已有文档元数据。</li>
+        <li>列表测试：<code>GET /api/documents</code> 同时返回 <code>parsed</code> 和 <code>failed</code> 文档，failed 项展示失败原因且不会进入检索消费。</li>
+        <li>API 测试：<code>POST /api/documents</code> 返回约定响应，并覆盖 <code>404</code>、<code>409</code>、<code>415</code>、<code>500</code> 等分支。</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>12. OpenSpec 建议</h2>
+      <p>
+        这个探索已经足够进入独立变更。建议 change id 使用 <code>add-document-parsing-chunking</code>，能力名使用 <code>document-processing</code> 或 <code>document-parsing-chunking</code>，与已归档的 <code>file-upload-storage</code> 形成连续链路。
+      </p>
+      <h3>建议目标</h3>
+      <ul>
+        <li>消费已上传原始文件，创建文档记录。</li>
+        <li>首批支持 TXT、Markdown、PDF、DOCX、PPT/PPTX 的文本解析。</li>
+        <li>基于 BPE tokenizer 将解析后的文本切分为稳定、可追溯 chunks。</li>
+        <li>确保 chunk 可追溯到当前用户、上传文件、文档和源位置。</li>
+        <li>重复处理同一 <code>uploaded_file_id</code> 时返回 <code>409 Conflict</code>，并携带已有文档元数据。</li>
+        <li>前端资料列表展示 <code>parsed</code> 与 <code>failed</code> 文档，failed 文档展示失败原因。</li>
+        <li>为后续 embedding、检索和 RAG 引用保留稳定主键与版本信息。</li>
+      </ul>
+      <h3>建议非目标</h3>
+      <ul>
+        <li>不实现 embedding、pgvector 写入、检索、重排或 RAG。</li>
+        <li>不实现 OCR、图片解析、PDF 复杂版面重建、复杂表格恢复、幻灯片视觉布局恢复或多模态理解。</li>
+        <li>不实现后台任务队列；如需异步化，应单独设计任务状态和重试机制。</li>
+      </ul>
+      <h3>建议任务拆分</h3>
+      <ol>
+        <li>补充 OpenSpec proposal、design、tasks 和规格增量。</li>
+        <li>新增数据模型与 Alembic migration。</li>
+        <li>选择并接入 PDF、DOCX、PPT/PPTX 解析依赖，以及 BPE tokenizer 依赖。</li>
+        <li>实现 parser 接口和 TXT/Markdown/PDF/DOCX/PPT 解析器。</li>
+        <li>实现基于 BPE tokenizer 的确定性 chunker 与 source locator 结构。</li>
+        <li>实现文档处理服务和 <code>POST /api/documents</code> API。</li>
+        <li>实现 <code>409 Conflict</code> 重复处理响应，并返回已有文档元数据。</li>
+        <li>实现资料列表中的 <code>failed</code> 文档展示契约。</li>
+        <li>同步 README / backend README 中的处理流程和验证命令。</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>13. 已确认的产品约束</h2>
+      <ul>
+        <li>重复处理同一 <code>uploaded_file_id</code> 时，返回 <code>409 Conflict</code>，响应体携带已有文档元数据。</li>
+        <li>首批支持 TXT、Markdown、PDF、DOCX、PPT/PPTX；OCR 和多模态理解后置。</li>
+        <li><code>failed</code> 文档需要展示在前端资料列表中，并展示可理解的失败原因。</li>
+        <li>chunk 大小和重叠窗口引入 BPE tokenizer 依赖，不再使用字符近似作为首批正式契约。</li>
+      </ul>
+      <div class="note">
+        推荐下一步是创建 OpenSpec 变更 <code>add-document-parsing-chunking</code>，把本文中的模型、API、状态、一致性、PDF/Office 解析、BPE tokenizer 和 TDD 场景转成正式 artifacts。确认后再退出探索模式进入实现，并按项目章程执行 Red-Green-Refactor。
+      </div>
+    </section>
+  </main>
+</body>
+</html>

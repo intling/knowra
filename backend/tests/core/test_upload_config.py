@@ -1,9 +1,13 @@
 from app.core.config import Settings
 
+# 本文件验证上传相关配置的默认值、环境变量覆盖和兼容性边界。
+
 DEFAULT_ALLOWED_CONTENT_TYPES = {
     "application/pdf",
     "text/markdown",
     "text/plain",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
 

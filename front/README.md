@@ -26,8 +26,13 @@ The app starts at `http://localhost:5173`. API requests under `/api` are proxied
 ## Current user
 
 The frontend loads `GET /api/users/me` on the home view to display the current
-user context. Login, registration, logout, and user switching are not part of
-this phase.
+user context. The home view uses a ChatGPT-like full-screen shell with a left
+sidebar; the user avatar sits at the bottom of that sidebar and opens an account
+drawer above the avatar with settings, personal knowledge library, and a local
+logout action. Settings opens a floating modal with the current user's profile
+fields. The logout action clears frontend-only recent conversations, selected
+documents, and the displayed personal knowledge library state; it does not call
+an authentication API in this phase.
 
 ## File uploads
 
@@ -41,6 +46,20 @@ Upload states are shown in the composer:
 - success clears the selected file
 - failure keeps the selected file for retry
 - current-user errors disable upload submission
+
+After upload succeeds, the home view calls `POST /api/documents` with the
+returned upload id. Successful processing refreshes the material list. A
+`409 Conflict` response with `existing_document` is shown as existing document
+feedback instead of a generic error.
+
+## Material list
+
+The home view loads `GET /api/documents` and exposes the result from the account
+drawer's personal knowledge library entry. The library uses a cloud-drive style
+long list: each file row shows a file type badge, bold document name, upload
+time, file size, chunk count, status, and right-side rename/delete/more icon
+actions. Failed documents show their backend failure reason and a retry action.
+Rows have hover styling and can be selected with the left checkbox.
 
 Development requests use `VITE_API_BASE_URL`, defaulting to `/api`. In local
 development the Vite proxy forwards `/api` to `http://localhost:8000`, so the

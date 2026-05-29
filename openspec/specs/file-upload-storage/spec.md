@@ -79,7 +79,7 @@ TBD - created by archiving change add-file-upload-storage. Update Purpose after 
 - **AND** 系统 MUST NOT 创建指向不存在原始文件的成功上传记录
 
 ### Requirement: 上传配置
-系统 SHALL 通过配置管理上传存储目录、单文件大小限制和允许内容类型，避免在业务代码中硬编码环境差异。
+系统 SHALL 通过配置管理上传存储目录、单文件大小限制和允许内容类型，避免在业务代码中硬编码环境差异，并确保文档处理首批支持的文件类型可以进入上传存储流程。
 
 #### Scenario: 配置上传存储目录
 - **WHEN** 后端应用启动
@@ -95,6 +95,7 @@ TBD - created by archiving change add-file-upload-storage. Update Purpose after 
 - **WHEN** 后端应用启动
 - **THEN** 系统 MUST 从配置中读取允许上传的内容类型
 - **AND** 上传服务 MUST 使用该配置决定是否接受受限类型文件
+- **AND** 默认或示例配置 MUST 覆盖 TXT、Markdown、PDF、DOCX、PPT/PPTX 对应的内容类型
 
 ### Requirement: 前端上传体验
 前端 SHALL 基于当前附件选择入口提交上传请求，并向用户展示上传状态和错误反馈。
@@ -129,4 +130,3 @@ TBD - created by archiving change add-file-upload-storage. Update Purpose after 
 - **WHEN** 前端当前用户加载失败
 - **THEN** 依赖用户归属的上传操作 MUST 不可提交
 - **AND** 前端 MUST 展示当前用户不可用反馈
-

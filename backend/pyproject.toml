@@ -11,9 +11,13 @@ dependencies = [
     "pgvector>=0.4.0",
     "psycopg[binary]>=3.2.0",
     "pydantic-settings>=2.12.0",
+    "pypdf>=6.12.2",
+    "python-docx>=1.2.0",
     "python-dotenv>=1.2.0",
     "python-multipart>=0.0.29",
+    "python-pptx>=1.0.2",
     "sqlmodel>=0.0.27",
+    "tiktoken>=0.13.0",
     "uvicorn[standard]>=0.38.0",
 ]
 

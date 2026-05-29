@@ -27,6 +27,16 @@
 上传文档 -> 解析文本 -> 建立索引 -> 用户提问 -> 检索相关内容 -> 生成带引用的回答
 ```
 
+当前后端已经把“上传文档 -> 解析文本 -> 分块”落到 API 和数据库：
+
+- `POST /api/uploads` 保存原始文件；
+- `POST /api/documents` 使用 `uploaded_file_id` 创建文档记录和 chunks；
+- `GET /api/documents` 返回当前用户的 `parsed` / `failed` 文档列表；
+- `GET /api/documents/{id}` 返回文档元数据；
+- `GET /api/documents/{id}/chunks` 返回已解析文档的 chunks，failed 文档返回空列表。
+
+首批解析支持 TXT、Markdown、PDF、DOCX、PPT/PPTX。PDF 仅支持可抽取文本层，不做 OCR。当前阶段仍不包含 embedding、语义检索、RAG 或后台异步任务队列。
+
 后续会逐步扩展语义检索、RAG 对话、知识图谱和效果评测等能力，但当前阶段的重点是先完成一个可用的最小闭环：**上传资料，然后基于资料提问并得到可信回答**。
 
 ## 工程结构

@@ -71,6 +71,14 @@ class LocalFileStorage:
 
         return StoredFile(byte_size=byte_size, checksum_sha256=digest.hexdigest())
 
+    def open(self, storage_key: str) -> BinaryIO:
+        try:
+            return self.path_for(storage_key).open("rb")
+        except FileNotFoundError as exc:
+            raise UploadStorageError("Original uploaded file is missing") from exc
+        except OSError as exc:
+            raise UploadStorageError("Failed to read uploaded file") from exc
+
     def delete(self, storage_key: str) -> None:
         with suppress(OSError):
             self.path_for(storage_key).unlink(missing_ok=True)

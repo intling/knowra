@@ -8,6 +8,8 @@ DEFAULT_ALLOWED_UPLOAD_CONTENT_TYPES = (
     "application/pdf",
     "text/markdown",
     "text/plain",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 )
 

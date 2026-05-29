@@ -59,11 +59,44 @@ Upload settings are configured through environment variables:
 - `MAX_UPLOAD_BYTES`: maximum bytes per file, default `20971520`
 - `ALLOWED_UPLOAD_CONTENT_TYPES`: comma-separated MIME allow-list
 
+The default allow-list covers TXT, Markdown, PDF, DOCX, PPTX, and legacy
+PowerPoint MIME types so uploaded files can enter the document-processing flow.
+
 The stored path is derived from `UPLOAD_STORAGE_DIR` plus the server-generated
 `storage_key`. Original filenames are stored for display only and are not used
 as filesystem paths. Alembic downgrade removes upload metadata; files already
 written under `UPLOAD_STORAGE_DIR` must be cleaned separately when rolling back
 or resetting local development data.
+
+## Document processing
+
+Document processing consumes existing `uploaded_files` records. The create API
+accepts only `uploaded_file_id`; ownership, storage path, parser, chunker, and
+tokenizer are all selected server-side.
+
+Supported first-batch parsers:
+
+- TXT and Markdown via UTF-8 text decoding
+- PDF via `pypdf` text-layer extraction only
+- DOCX via `python-docx`
+- PPT/PPTX via `python-pptx`
+- BPE chunk sizing via `tiktoken`
+
+APIs:
+
+- `POST /api/documents` returns `201 Created` with a `parsed` or `failed`
+  document. Reprocessing the same `uploaded_file_id` returns `409 Conflict`
+  with `existing_document`.
+- `GET /api/documents` lists the current user's parsed and failed documents.
+- `GET /api/documents/{id}` returns current-user-visible document metadata.
+- `GET /api/documents/{id}/chunks` returns parsed chunks ordered by
+  `chunk_index`; failed documents return an empty list.
+
+Run migrations before using these endpoints:
+
+```bash
+uv run alembic upgrade head
+```
 
 ## Quality gates
 
