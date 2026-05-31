@@ -7,6 +7,7 @@ describe("getCurrentUser", () => {
     vi.unstubAllGlobals()
   })
 
+  // 测试：获取当前用户时会使用配置的 API 基础路径，并带上 JSON 接收头。
   it("requests the current user through the configured API base path", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

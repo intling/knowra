@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from "vue"
 
+import { uploadFile } from "../api/uploads"
 import { useAppStore } from "../stores/app"
 import { useUserStore } from "../stores/user"
 
@@ -10,13 +11,29 @@ const message = ref("")
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
+const isUploading = ref(false)
+const uploadFeedback = ref<string | null>(null)
 
 const canSend = computed(
-  () => message.value.trim().length > 0 || selectedFile.value !== null,
+  () =>
+    !isUploading.value &&
+    (message.value.trim().length > 0 ||
+      (selectedFile.value !== null && userStore.currentUser !== null)),
 )
 const userLabel = computed(
   () => userStore.currentUser?.display_name ?? "当前用户未连接",
 )
+const uploadStatus = computed(() => {
+  if (isUploading.value) {
+    return "上传中..."
+  }
+
+  if (userStore.userError) {
+    return "当前用户不可用，无法上传附件"
+  }
+
+  return uploadFeedback.value
+})
 
 const resizeInput = async () => {
   await nextTick()
@@ -40,9 +57,19 @@ const openFilePicker = () => {
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
+  uploadFeedback.value = null
 }
 
 const removeSelectedFile = () => {
+  selectedFile.value = null
+  uploadFeedback.value = null
+
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ""
+  }
+}
+
+const clearFileInput = () => {
   selectedFile.value = null
 
   if (fileInputRef.value) {
@@ -50,13 +77,34 @@ const removeSelectedFile = () => {
   }
 }
 
-const handleSend = () => {
-  if (!canSend.value) {
+const handleSend = async () => {
+  if (!canSend.value || isUploading.value) {
     return
   }
 
+  if (selectedFile.value) {
+    if (!userStore.currentUser) {
+      uploadFeedback.value = "当前用户不可用，无法上传附件"
+      return
+    }
+
+    isUploading.value = true
+    uploadFeedback.value = null
+
+    try {
+      const uploaded = await uploadFile(selectedFile.value)
+      uploadFeedback.value = `${uploaded.original_filename} 上传成功`
+      clearFileInput()
+    } catch (error) {
+      uploadFeedback.value =
+        error instanceof Error ? error.message : "上传失败，请重试"
+      return
+    } finally {
+      isUploading.value = false
+    }
+  }
+
   message.value = ""
-  removeSelectedFile()
   void resizeInput()
 }
 
@@ -127,12 +175,20 @@ onMounted(() => {
             data-testid="remove-attachment-button"
             class="flex size-5 items-center justify-center rounded-full text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-900"
             type="button"
-            aria-label="绉婚櫎闄勪欢"
+            aria-label="移除附件"
+            :disabled="isUploading"
             @click="removeSelectedFile"
           >
             x
           </button>
         </div>
+        <p
+          v-if="uploadStatus"
+          data-testid="upload-status"
+          class="px-1 text-sm text-zinc-500"
+        >
+          {{ uploadStatus }}
+        </p>
         <div class="flex items-end gap-2 sm:gap-3">
           <input
             ref="fileInputRef"
@@ -145,7 +201,8 @@ onMounted(() => {
             data-testid="attachment-button"
             class="flex size-12 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-950 sm:size-14"
             type="button"
-            aria-label="娣诲姞闄勪欢"
+            aria-label="添加附件"
+            :disabled="isUploading"
             @click="openFilePicker"
           >
             <svg
@@ -185,7 +242,7 @@ onMounted(() => {
             :disabled="!canSend"
             aria-label="发送"
           >
-            发送
+            {{ isUploading ? "上传" : "发送" }}
           </button>
         </div>
       </form>
