@@ -19,6 +19,7 @@ dist/
 coverage/
 *.tsbuildinfo
 *.local
+.edge-profile-headless/
 
 # Tooling
 .worktrees/

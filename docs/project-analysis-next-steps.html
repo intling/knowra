@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>knowra 下一步分析报告</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --accent-teal: #14b8a6;
+      --code-bg: #f3f4f6;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.7;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+      color: white;
+      padding: 3rem 0;
+      margin-bottom: 2rem;
+    }
+    .hero .container { display: flex; align-items: center; gap: 2rem; }
+    .hero-text h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .hero-text p { opacity: 0.85; font-size: 1.05rem; }
+    .hero-badge {
+      display: inline-block; background: rgba(255,255,255,0.15);
+      padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.85rem;
+      margin-bottom: 0.75rem; backdrop-filter: blur(4px);
+    }
+    .hero-flow {
+      background: rgba(255,255,255,0.08); border-radius: 12px;
+      padding: 1rem 1.25rem; font-size: 0.85rem; line-height: 1.8;
+      margin-top: 1rem; border: 1px solid rgba(255,255,255,0.12);
+    }
+    .flow-step { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; margin: 0.15rem; }
+    .flow-step.done { background: rgba(16,185,129,0.25); color: #6ee7b7; }
+    .flow-step.next { background: rgba(99,102,241,0.30); color: #c7d2fe; }
+    .flow-step.future { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+    .flow-arrow { color: rgba(255,255,255,0.35); margin: 0 0.1rem; }
+
+    /* Cards */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .card h2 {
+      font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .card h3 { font-size: 1.05rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: var(--text-primary); }
+
+    /* Priority badges */
+    .priority { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .p-critical { background: #fef2f2; color: #dc2626; }
+    .p-high { background: #fff7ed; color: #c2410c; }
+    .p-medium { background: #eff6ff; color: #2563eb; }
+    .p-low { background: #f0fdf4; color: #16a34a; }
+
+    /* Phase card */
+    .phase-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin-bottom: 1.75rem;
+      box-shadow: var(--shadow-md); transition: box-shadow 0.2s;
+    }
+    .phase-card:hover { box-shadow: var(--shadow-lg); }
+    .phase-header {
+      padding: 1.25rem 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; cursor: pointer;
+    }
+    .phase-header h2 { font-size: 1.15rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.6rem; }
+    .phase-number {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2rem; height: 2rem; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+    }
+    .phase-body { padding: 0 1.5rem 1.5rem; }
+    .phase-body h3 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; color: var(--accent-indigo); }
+    .phase-body ul { padding-left: 1.25rem; margin: 0.4rem 0; }
+    .phase-body li { margin: 0.3rem 0; }
+
+    /* Phase colors */
+    .phase-parse { border-left: 4px solid var(--accent-blue); }
+    .phase-parse .phase-number { background: #dbeafe; color: #1d4ed8; }
+    .phase-chunk { border-left: 4px solid var(--accent-indigo); }
+    .phase-chunk .phase-number { background: #e0e7ff; color: #4338ca; }
+    .phase-embed { border-left: 4px solid var(--accent-purple); }
+    .phase-embed .phase-number { background: #ede9fe; color: #6d28d9; }
+    .phase-retrieve { border-left: 4px solid var(--accent-teal); }
+    .phase-retrieve .phase-number { background: #ccfbf1; color: #0f766e; }
+    .phase-rag { border-left: 4px solid var(--accent-green); }
+    .phase-rag .phase-number { background: #dcfce7; color: #15803d; }
+    .phase-infra { border-left: 4px solid var(--accent-amber); }
+    .phase-infra .phase-number { background: #fef3c7; color: #b45309; }
+
+    /* Status grid */
+    .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .status-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.15rem; box-shadow: var(--shadow-sm);
+    }
+    .status-item .label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.15rem; }
+    .status-item .value { font-size: 1.35rem; font-weight: 700; }
+    .status-done { color: var(--accent-green); }
+    .status-pending { color: var(--accent-amber); }
+    .status-alert { color: var(--accent-red); }
+
+    /* Tech stack */
+    .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; }
+    .tech-tag {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: var(--code-bg); padding: 0.45rem 0.75rem; border-radius: 8px;
+      font-size: 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .tech-tag .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-front { background: var(--accent-green); }
+    .dot-back { background: var(--accent-blue); }
+    .dot-infra { background: var(--accent-amber); }
+
+    /* Recommendation block */
+    .recommendation {
+      background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%);
+      border: 1px solid #c7d2fe; border-radius: 12px;
+      padding: 1.5rem; margin: 1.5rem 0;
+    }
+    .recommendation h2 { color: var(--accent-indigo); margin-bottom: 0.75rem; font-size: 1.2rem; }
+    .recommendation p { margin: 0.4rem 0; }
+    .recommendation strong { color: #3730a3; }
+
+    /* Risk items */
+    .risk-item {
+      display: flex; gap: 0.75rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border);
+    }
+    .risk-item:last-child { border-bottom: none; }
+    .risk-icon { flex-shrink: 0; font-size: 1.3rem; margin-top: 0.1rem; }
+    .risk-content h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .risk-content p { font-size: 0.88rem; color: var(--text-secondary); }
+
+    /* Dependency arrows */
+    .dep-chain {
+      background: var(--code-bg); border-radius: 10px; padding: 1rem 1.25rem;
+      margin: 1rem 0; font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem; line-height: 2; overflow-x: auto;
+    }
+    .dep-done { color: #15803d; font-weight: 600; }
+    .dep-next { color: #2563eb; font-weight: 600; }
+    .dep-future { color: #9ca3af; }
+
+    /* Test table */
+    .test-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+    .test-table th { text-align: left; padding: 0.6rem 0.8rem; background: var(--code-bg); border-bottom: 2px solid var(--border); font-weight: 600; }
+    .test-table td { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); }
+    .test-table tr:hover td { background: #fafbff; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hero .container { flex-direction: column; }
+      .hero-text h1 { font-size: 1.5rem; }
+      .status-grid { grid-template-columns: 1fr 1fr; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-text">
+      <div class="hero-badge">基于 main 分支 · 2026-06-01</div>
+      <h1>knowra（知寻）项目分析</h1>
+      <p>围绕私有资料的 AI 知识助手 — 下一步路线分析报告</p>
+      <div class="hero-flow">
+        <span class="flow-step done">上传文档 ✓</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step next">解析内容</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step future">分块索引</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step future">用户提问</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step future">语义检索</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step future">带引用回答</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Status overview -->
+  <div class="status-grid">
+    <div class="status-item">
+      <div class="label">后端测试</div>
+      <div class="value status-done">27 ✓</div>
+    </div>
+    <div class="status-item">
+      <div class="label">前端测试</div>
+      <div class="value status-done">17 ✓</div>
+    </div>
+    <div class="status-item">
+      <div class="label">核心流程进度</div>
+      <div class="value status-pending">1 / 6</div>
+    </div>
+    <div class="status-item">
+      <div class="label">安全风险</div>
+      <div class="value status-alert">1 项</div>
+    </div>
+  </div>
+
+  <!-- Tech stack -->
+  <div class="card">
+    <h2>🛠 当前技术栈</h2>
+    <div class="tech-grid">
+      <div class="tech-tag"><span class="dot dot-back"></span>Python 3.14.5</div>
+      <div class="tech-tag"><span class="dot dot-back"></span>FastAPI + Uvicorn</div>
+      <div class="tech-tag"><span class="dot dot-back"></span>SQLModel + Alembic</div>
+      <div class="tech-tag"><span class="dot dot-infra"></span>PostgreSQL 17 + pgvector</div>
+      <div class="tech-tag"><span class="dot dot-front"></span>Vue 3.5 + TypeScript 5.9</div>
+      <div class="tech-tag"><span class="dot dot-front"></span>Vite 8 + Pinia 3</div>
+      <div class="tech-tag"><span class="dot dot-front"></span>Tailwind CSS 4</div>
+      <div class="tech-tag"><span class="dot dot-front"></span>Vitest 4 + test-utils 2</div>
+      <div class="tech-tag"><span class="dot dot-back"></span>pytest + ruff + uv</div>
+    </div>
+  </div>
+
+  <!-- Security & risks -->
+  <div class="card">
+    <h2>⚠️ 风险与改进项</h2>
+    <div class="risk-item">
+      <div class="risk-icon">🔴</div>
+      <div class="risk-content">
+        <h4><code>backend/.env</code> 已提交到 Git 仓库，包含生产数据库凭据</h4>
+        <p><code>.env</code> 文件虽已在 <code>.gitignore</code> 中，但之前已被跟踪提交，明文包含远程数据库地址 <code>111.231.3.200:55432</code>。需立即从 Git 历史中清除敏感信息，并改用 <code>.env.example</code> + 本地 <code>.env</code> 的方式管理。</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">🟡</div>
+      <div class="risk-content">
+        <h4>无 CI/CD 流水线</h4>
+        <p>质量门禁（lint / format / test / build）已定义但未自动化。本地验证容易遗漏。建议添加 GitHub Actions 或类似 CI 配置。</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">🟡</div>
+      <div class="risk-content">
+        <h4>硬编码的"默认用户"认证</h4>
+        <p>当前 <code>GET /api/users/me</code> 始终返回默认用户，无真正登录/注册/会话机制。这是已知的占位方案，优先级低于核心 RAG 流程，但最终需替换。</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">🔵</div>
+      <div class="risk-content">
+        <h4>pgvector 已启用但未使用</h4>
+        <p>扩展已通过 Alembic 迁移安装，但尚无表使用 <code>vector</code> 列。这是后续嵌入检索功能的基础设施铺垫。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core recommendation -->
+  <div class="recommendation">
+    <h2>🎯 下一步优先级：文档解析服务</h2>
+    <p>knowra 的核心价值链是 <strong>接入资料 → 解析内容 → 分块索引 → 语义检索 → 带引用回答</strong>。</p>
+    <p>当前只有"接入资料"（文件上传）完成。<strong>文档解析是打通后续所有环节的关键节点：</strong>没有文本提取，就无法分块、无法嵌入、无法检索、无法回答。</p>
+    <p>建议按以下依赖链逐步推进，每个阶段遵循 OpenSpec + TDD 流程：</p>
+    <div class="dep-chain">
+      <span class="dep-done">✓ 文件上传</span>
+      <span class="dep-next"> → <strong>文档解析</strong></span>
+      <span class="dep-future"> → 分块与索引</span>
+      <span class="dep-future"> → 向量嵌入</span>
+      <span class="dep-future"> → 语义检索</span>
+      <span class="dep-future"> → RAG 问答 & 引用展示</span>
+    </div>
+  </div>
+
+  <!-- 中间态数据存储方案 -->
+  <div class="card" style="border-left: 4px solid var(--accent-purple); background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);">
+    <h2>🗄️ 中间态数据存储方案：解析后、分块前</h2>
+    <p style="margin-bottom: 0.75rem;">在 RAG 管道中，解析后的原文是<strong>体量大、需持久、需溯源</strong>的中间产物。存错了地方，后续分块和重处理都会踩坑。</p>
+
+    <h3 style="margin-top: 1.25rem;">核心矛盾</h3>
+    <p style="margin-bottom: 0.5rem;">knowra 当前已有清晰的存储模式：<strong>文件存磁盘 + 元数据存数据库</strong>：</p>
+    <div class="dep-chain" style="margin: 0.5rem 0 1rem;">
+      <span style="color: var(--accent-green);">LocalFileStorage (磁盘)</span>
+      <span style="color: var(--text-secondary);"> uploads/{uid}/{fid}/original.pdf</span>
+      <span style="color: var(--text-secondary);">  ←  →  </span>
+      <span style="color: var(--accent-blue);">PostgreSQL</span>
+      <span style="color: var(--text-secondary);"> uploaded_files 表 (元数据)</span>
+    </div>
+    <p>解析后会产生两种性质不同的数据：</p>
+    <table class="test-table" style="margin-bottom: 1rem;">
+      <thead>
+        <tr><th>数据类型</th><th>典型体量</th><th>访问模式</th><th>举例</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>原始提取文本</strong></td>
+          <td>大（50KB - 5MB）</td>
+          <td>顺序读、少量写、极少更新</td>
+          <td>PDF 全文、Markdown 原文</td>
+        </tr>
+        <tr>
+          <td><strong>解析元数据</strong></td>
+          <td>小（几十 - 几百字节）</td>
+          <td>随机查询、过滤、状态追踪</td>
+          <td>标题、语言、页数、解析器版本</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="color: var(--text-secondary); font-size: 0.9rem;">把大文本塞进 PostgreSQL 会拖慢查询和备份；只存磁盘不留元数据则丢了溯源和状态管理。</p>
+
+    <h3 style="margin-top: 1.25rem;">推荐方案：续用已有模式</h3>
+    <p style="margin-bottom: 0.5rem;">解析的中间态数据应<strong>沿袭 <code>LocalFileStorage</code> + PostgreSQL 元数据</strong>的同一模式：</p>
+    <div class="dep-chain" style="margin: 0.75rem 0; line-height: 2;">
+      <strong>磁盘文件结构：</strong><br>
+      <code style="color: var(--text-secondary);">storage/uploads/{owner_user_id}/{upload_id}/</code><br>
+      <code style="color: var(--text-secondary);">  ├── original.pdf</code>&nbsp;&nbsp;<span style="font-size:0.8em; color:#9ca3af;">← 已有：上传的原始文件</span><br>
+      <code style="color: var(--accent-purple); font-weight:600;">  └── parsed/</code><br>
+      <code style="color: var(--accent-purple); font-weight:600;">      ├── plain_text.txt</code>&nbsp;&nbsp;<span style="font-size:0.8em; color:#9ca3af;">← 新增：提取的纯文本</span><br>
+      <code style="color: var(--accent-purple); font-weight:600;">      └── metadata.json</code>&nbsp;&nbsp;<span style="font-size:0.8em; color:#9ca3af;">← 新增：结构化元信息（标题层级等）</span>
+    </div>
+
+    <h3 style="margin-top: 1.25rem;">数据库：新增 <code>parsed_documents</code> 表</h3>
+    <div class="dep-chain" style="margin: 0.75rem 0; line-height: 2.2; overflow-x: auto;">
+      <span style="color: var(--accent-indigo);">parsed_documents</span><br>
+      <code>id</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">UUID — 主键</span><br>
+      <code>uploaded_file_id</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">UUID — FK → uploaded_files.id</span><br>
+      <code>content_key</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">str — 磁盘路径指针</span><br>
+      <code>title</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">str | None — 文档标题</span><br>
+      <code>language</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">str | None — 检测语言 (zh/en)</span><br>
+      <code>char_count</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">int — 提取文本字符数</span><br>
+      <code>line_count</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">int | None — 行数</span><br>
+      <code>page_count</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">int | None — 页数（PDF 专属）</span><br>
+      <code>plain_text_checksum_sha256</code> <span style="color:#9ca3af;">str — 提取文本哈希（重处理判断）</span><br>
+      <code>parser_name</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">str — 解析器标识 (pypdf/markdown/python-docx/python-pptx/plaintext)</span><br>
+      <code>parser_version</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">str — 解析器版本</span><br>
+      <code>status</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">str — pending / parsed / failed</span><br>
+      <code>error_message</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">str | None — 失败原因</span><br>
+      <code>parsed_at</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9ca3af;">datetime | None — 解析完成时间</span><br>
+      <code>created_at / updated_at</code> <span style="color:#9ca3af;">datetime — 时间戳</span>
+    </div>
+
+    <h3 style="margin-top: 1.25rem;">为什么原文放磁盘、元数据放数据库？</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0;">
+      <div style="background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-blue);">📄 纯文本 → 磁盘</h4>
+        <ul style="font-size: 0.88rem; padding-left: 1.1rem; margin: 0;">
+          <li>200 页 PDF 可能提取 2-5MB 文本，PostgreSQL TOAST 膨胀 5-10×</li>
+          <li>纯文本不需要 <code>WHERE</code> 或 <code>JOIN</code>，只被分块服务顺序读入</li>
+          <li>重分块时直接读磁盘文件，无需重解析原始 PDF</li>
+        </ul>
+      </div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-indigo);">🏷️ 元数据 → PostgreSQL</h4>
+        <ul style="font-size: 0.88rem; padding-left: 1.1rem; margin: 0;">
+          <li><code>status</code> 驱动 UI 展示和 API 过滤</li>
+          <li>支持快速查询：<code>WHERE status='parsed'</code>、<code>WHERE language='zh'</code></li>
+          <li>外键 + 解析器版本形成完整溯源链</li>
+          <li>校验和判断是否需要重解析</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 1.25rem;">完整数据流</h3>
+    <div class="dep-chain" style="line-height: 2.2; margin: 0.75rem 0;">
+      <span style="color: var(--accent-green);">上传文件</span><br>
+      <span style="color: var(--text-secondary);">  ↓</span><br>
+      <span style="color: var(--accent-blue);">uploaded_files</span> 表 &nbsp;<code style="font-size:0.85em;">status: "stored"</code><br>
+      <span style="color: var(--text-secondary);">磁盘:&nbsp;</span><code>uploads/{uid}/{fid}/original.pdf</code><br>
+      <span style="color: var(--text-secondary);">  ↓ 触发解析</span><br>
+      <span style="color: var(--accent-purple);">解析服务</span> &nbsp;<code style="font-size:0.85em;">parser_name 按 MIME 类型选择</code><br>
+      <span style="color: var(--text-secondary);">&nbsp;&nbsp;├─ application/pdf &nbsp;&nbsp;→ pypdf</span><br>
+      <span style="color: var(--text-secondary);">&nbsp;&nbsp;├─ text/markdown &nbsp;&nbsp;&nbsp;&nbsp;→ markdown</span><br>
+      <span style="color: var(--text-secondary);">&nbsp;&nbsp;├─ application/vnd.openxmlformats-officedocument.wordprocessingml.document &nbsp;&nbsp;→ python-docx</span><br>
+      <span style="color: var(--text-secondary);">&nbsp;&nbsp;├─ application/vnd.openxmlformats-officedocument.presentationml.presentation → python-pptx</span><br>
+      <span style="color: var(--text-secondary);">&nbsp;&nbsp;└─ text/plain &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 直接读取</span><br>
+      <span style="color: var(--text-secondary);">  ↓ 产出</span><br>
+      <span style="color: var(--accent-purple);">磁盘:&nbsp;</span><code>uploads/{uid}/{fid}/parsed/plain_text.txt</code><br>
+      <span style="color: var(--accent-indigo);">数据库:</span>&nbsp;<code>parsed_documents</code> 表 &nbsp;<code style="font-size:0.85em;">status: "parsed", content_key → 磁盘文件</code><br>
+      <span style="color: var(--text-secondary);">  ↓ 触发分块</span><br>
+      <span style="color: var(--accent-indigo);">分块服务</span> 读取 <code>plain_text.txt</code> → 切割为 chunks<br>
+      <span style="color: var(--text-secondary);">  ↓ 产出</span><br>
+      <span style="color: var(--accent-teal);">document_chunks</span> 表 &nbsp;<code style="font-size:0.85em;">每条 1-2KB，可放 TEXT 列</code><br>
+      <span style="color: var(--text-secondary);">  ↓ 触发嵌入</span><br>
+      <span style="color: var(--accent-green);">pgvector</span> &nbsp;<code style="font-size:0.85em;">document_chunks.embedding</code>
+    </div>
+
+    <h3 style="margin-top: 1.25rem;">为什么 chunk 文本可以放数据库？</h3>
+    <p style="font-size: 0.9rem;">一个 chunk 通常 500-1000 字符（~1-2KB），即使一个文档产生 200 个 chunk，总共也就 200-400KB。这个量级在 PostgreSQL 完全没有问题 — 它们需要被 <code>document_id</code> 过滤、按 <code>position</code> 排序、按 <code>embedding</code> 做向量搜索，数据库是最佳归宿。唯有原始提取全文（可能数 MB）只需被分块服务顺序读取一次。</p>
+
+    <h3 style="margin-top: 1.25rem;">重处理：校验和驱动</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0;">
+      <div style="background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-green);">✅ 改分块参数（chunk_size）</h4>
+        <p style="font-size: 0.88rem; margin: 0; color: var(--text-secondary);">校验和一致 → 跳过解析，直接从磁盘读 plain_text.txt 重新分块</p>
+      </div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-amber);">🔄 源文件更新</h4>
+        <p style="font-size: 0.88rem; margin: 0; color: var(--text-secondary);">校验和不匹配 → 重新解析，生成新的 plain_text.txt 和元数据</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 1.25rem;">与主流框架对比</h3>
+    <table class="test-table" style="margin: 0.75rem 0;">
+      <thead>
+        <tr><th>框架</th><th>原文存储</th><th>元数据存储</th><th>knowra 对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>LlamaIndex Document Store</td><td>文件系统 / S3</td><td>Redis / MongoDB</td><td style="color: var(--accent-indigo);"><code>LocalFileStorage</code></td></tr>
+        <tr><td>LlamaIndex Index Store</td><td>—</td><td>键值数据库</td><td style="color: var(--accent-indigo);"><code>parsed_documents</code> 表</td></tr>
+        <tr><td>LangChain Document</td><td>JSON / pickle 缓存</td><td>metadata dict</td><td style="color: var(--accent-indigo);">同上</td></tr>
+        <tr><td>Unstructured Elements</td><td>S3 / 本地</td><td>PostgreSQL index</td><td style="color: var(--accent-indigo);">同上</td></tr>
+        <tr><td>Haystack DocumentStore</td><td>混合</td><td>全在 store</td><td style="color: var(--accent-indigo);">同上</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 0.88rem; color: var(--text-secondary);">knowra 的方案与主流框架推荐模式一致：<strong>大文本走磁盘，元数据走关系数据库</strong>。</p>
+
+    <h3 style="margin-top: 1.25rem;">何时升级为对象存储？</h3>
+    <p style="font-size: 0.9rem;">当前本地磁盘 + PostgreSQL 方案在以下场景足够：个人或小团队使用（数十 GB）、单机部署、不需要跨实例共享。当出现多实例部署、存储量超单机容量、或需要跨区域访问时，<code>LocalFileStorage</code> 可升级为 <code>S3FileStorage</code>（保持相同接口），无需改动业务逻辑。</p>
+    </div>
+
+  <!-- Phase 1: Document Parsing -->
+  <div class="phase-card phase-parse">
+    <div class="phase-header">
+      <h2><span class="phase-number">1</span> 文档解析服务 <span class="priority p-high">高优先级</span></h2>
+    </div>
+    <div class="phase-body">
+      <h3>为什么是第一步</h3>
+      <p>文件上传只存储了原始二进制文件（<code>LocalFileStorage</code>），没有提取文本内容。解析是从"文件存储"到"知识可用"的分水岭。所有后续的 chunking、embedding、检索和 RAG 都依赖于此。</p>
+
+      <h3>功能目标</h3>
+      <ul>
+        <li>从 <code>uploaded_files</code> 读取已上传的原始文件</li>
+        <li>根据 MIME 类型选择解析器，支持初始格式：<strong>纯文本 (.txt)</strong>、<strong>Markdown (.md)</strong>、<strong>PDF (.pdf)</strong>、<strong>DOCX (.docx)</strong>、<strong>PPTX (.pptx)</strong></li>
+        <li>提取纯文本内容，保留基本结构信息（标题层级、段落分隔）</li>
+        <li>将解析结果持久化到数据库，关联原始文件记录</li>
+        <li>解析失败时记录错误信息，标记文件状态为 <code>parse_failed</code></li>
+      </ul>
+
+      <h3>建议的数据模型</h3>
+      <ul>
+        <li>新增 <code>parsed_documents</code> 表：关联 <code>uploaded_file_id</code>，存储提取的纯文本、解析状态、字符数、行数等元数据</li>
+        <li>可选择在同一个表中存储简单元信息（标题、语言检测等）</li>
+      </ul>
+
+      <h3>技术选型建议</h3>
+      <ul>
+        <li><strong>PDF 解析</strong>：<code>pypdf</code> — 纯 Python 实现、轻量无依赖、社区活跃、支持文本提取</li>
+        <li><strong>Markdown 解析</strong>：<code>markdown</code>（pip install markdown）— 成熟的 Python Markdown 库</li>
+        <li><strong>DOCX 解析</strong>：<code>python-docx</code> — 提取 DOCX 文件段落文本和表格内容</li>
+        <li><strong>PPTX 解析</strong>：<code>python-pptx</code> — 提取 PPTX 幻灯片文本和备注</li>
+        <li><strong>纯文本</strong>：直接读取，UTF-8 解码</li>
+        <li>设计为<strong>可插拔解析器适配器模式</strong>，便于后续扩展 EPUB 等更多格式</li>
+      </ul>
+
+      <h3>API 设计建议</h3>
+      <ul>
+        <li><code>POST /api/uploads/{upload_id}/parse</code> — 触发解析</li>
+        <li><code>GET /api/uploads/{upload_id}/parsed-content</code> — 获取解析结果</li>
+        <li>或选择上传后自动触发解析（取决于产品决策）</li>
+      </ul>
+
+      <h3>验收标准</h3>
+      <ul>
+        <li>TDD: 先写 RED 测试覆盖各格式解析成功与失败场景</li>
+        <li>上传 txt/md/pdf 后可提取纯文本并持久化</li>
+        <li>解析失败时有明确错误信息和状态回退</li>
+        <li>Alembic 迁移可正向和反向执行</li>
+        <li>后端质量门禁全过（ruff + pytest）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 2: Chunking & Indexing -->
+  <div class="phase-card phase-chunk">
+    <div class="phase-header">
+      <h2><span class="phase-number">2</span> 文本分块与元数据索引 <span class="priority p-high">高优先级</span></h2>
+    </div>
+    <div class="phase-body">
+      <h3>为什么紧随解析之后</h3>
+      <p>完整的文档文本太长，无法直接用于语义检索和 LLM 上下文窗口。分块是连接"文档"到"可检索单元"的桥梁。</p>
+
+      <h3>功能目标</h3>
+      <ul>
+        <li>将解析后的文档文本按语义边界切分为固定大小的 <strong>chunk</strong>（建议初始窗口 500-1000 字符，重叠 100-200 字符）</li>
+        <li>每个 chunk 保留与原始文档的关联（文档 ID、在原文中的位置偏移）</li>
+        <li>新增 <code>document_chunks</code> 表或类似模型存储分块结果</li>
+        <li>存储 chunk 元数据：所属文档、位置索引、字符范围等</li>
+      </ul>
+
+      <h3>技术选型建议</h3>
+      <ul>
+        <li>初始方案：简单的滑动窗口分块（按字符数 + 重叠）</li>
+        <li>Markdown 文件可按标题层级做语义分块（先按 <code>#</code> 标题分割，超长段落再用滑动窗口）</li>
+        <li>设计为<strong>可替换的分块策略接口</strong>，为后续智能分块（语义边界检测、句子级分块）留出空间</li>
+      </ul>
+
+      <h3>验收标准</h3>
+      <ul>
+        <li>解析完成后的文档可自动触发分块</li>
+        <li>chunk 长度和重叠参数可配置</li>
+        <li>分块后可通过 API 查询文档的 chunk 列表</li>
+        <li>Alembic 迁移 + 全质量门禁通过</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 3: Vector Embedding -->
+  <div class="phase-card phase-embed">
+    <div class="phase-header">
+      <h2><span class="phase-number">3</span> 向量嵌入服务 <span class="priority p-medium">中优先级</span></h2>
+    </div>
+    <div class="phase-body">
+      <h3>功能目标</h3>
+      <ul>
+        <li>为每个 chunk 生成向量嵌入（embedding）</li>
+        <li>将嵌入存储到 PostgreSQL 的 <code>pgvector</code> 列中（已通过迁移启用的 <code>vector</code> 扩展）</li>
+        <li>增量为新建的 chunk 生成嵌入，避免全量重算</li>
+        <li>嵌入模型可配置（通过环境变量指定模型 API endpoint 和模型名称）</li>
+      </ul>
+
+      <h3>技术选型建议</h3>
+      <ul>
+        <li><strong>嵌入模型</strong>：初期可使用 OpenAI <code>text-embedding-3-small</code> 或 <code>text-embedding-3-large</code>，通过配置可切换为本地部署模型（如 BGE、M3E）</li>
+        <li><strong>存储</strong>：在 <code>document_chunks</code> 表新增 <code>embedding vector(1536)</code> 列（维度取决于模型）</li>
+        <li>为嵌入列创建 HNSW 索引以加速近似最近邻搜索</li>
+        <li>设计<strong>模型适配器接口</strong>：统一 <code>embed(texts) → vectors</code> 协议，隔离具体模型调用</li>
+      </ul>
+
+      <h3>验收标准</h3>
+      <ul>
+        <li>分块完成后可触发嵌入生成</li>
+        <li>嵌入结果持久化到数据库并可通过 HNSW 索引高效检索</li>
+        <li>模型切换仅需配置变更，无需改代码</li>
+        <li>嵌入失败（模型 API 不可用）有明确错误处理</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 4: Semantic Retrieval -->
+  <div class="phase-card phase-retrieve">
+    <div class="phase-header">
+      <h2><span class="phase-number">4</span> 语义检索服务 <span class="priority p-medium">中优先级</span></h2>
+    </div>
+    <div class="phase-body">
+      <h3>功能目标</h3>
+      <ul>
+        <li>接受用户问题，生成问题嵌入</li>
+        <li>在向量空间中检索最相似的 top-K 个 chunk</li>
+        <li>返回匹配的 chunk 文本、来源文件、位置偏移等信息</li>
+        <li>为后续 RAG 流程提供结构化的检索上下文</li>
+      </ul>
+
+      <h3>API 设计建议</h3>
+      <ul>
+        <li><code>POST /api/search</code> — 接受查询文本和可选参数（top_k, similarity_threshold 等）</li>
+        <li>返回结果包含 chunk 文本、来源文件名、置信度分数和位置信息</li>
+      </ul>
+
+      <h3>验收标准</h3>
+      <ul>
+        <li>给定一个问题文本，返回语义相关度最高的 chunk 列表</li>
+        <li>检索结果包含来源溯源信息（文件名、段落位置等）</li>
+        <li>top_k 和相似度阈值可通过参数调整</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 5: RAG Q&A -->
+  <div class="phase-card phase-rag">
+    <div class="phase-header">
+      <h2><span class="phase-number">5</span> RAG 问答与引用展示 <span class="priority p-medium">中优先级</span></h2>
+    </div>
+    <div class="phase-body">
+      <h3>功能目标</h3>
+      <ul>
+        <li>将检索到的 chunk 上下文 + 用户问题提交给 LLM 生成回答</li>
+        <li>回答中附带引用来源（指向原始文档和具体段落）</li>
+        <li>前端展示问答界面：问题输入 → 加载状态 → 回答 + 引用卡片</li>
+        <li>支持引用来源点击跳转或展开查看原始段落</li>
+      </ul>
+
+      <h3>技术选型建议</h3>
+      <ul>
+        <li><strong>LLM</strong>：初期可使用 OpenAI GPT 系列，通过配置支持其他模型（Claude、本地部署等）</li>
+        <li><strong>Prompt 工程</strong>：系统提示词明确要求基于提供的参考资料回答，并标注引用编号</li>
+        <li><strong>前端交互</strong>：从当前单行输入扩展为完整的对话式界面，支持流式输出和引用展示</li>
+        <li>设计<strong>模型适配器接口</strong>：统一 <code>generate(prompt, context) → response</code> 协议</li>
+      </ul>
+
+      <h3>验收标准</h3>
+      <ul>
+        <li>用户可输入问题并得到基于知识库内容的回答</li>
+        <li>回答中的关键结论可追溯到原始文档和段落</li>
+        <li>无相关文档时有明确的兜底回复</li>
+        <li>前端流畅展示问答交互和引用来源</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 6: Infrastructure -->
+  <div class="phase-card phase-infra">
+    <div class="phase-header">
+      <h2><span class="phase-number">6</span> 基础设施与体验增强 <span class="priority p-low">可并行推进</span></h2>
+    </div>
+    <div class="phase-body">
+      <h3>这些不阻塞核心流程，但应在合适时机推进</h3>
+      <ul>
+        <li><strong>安全修复</strong>：从 Git 历史中移除 <code>backend/.env</code>，使用 <code>.env.example</code> 模板管理配置，远程数据库凭据轮换</li>
+        <li><strong>CI/CD</strong>：添加 GitHub Actions 配置，自动化 lint / format / test / build 检查</li>
+        <li><strong>文档管理 UI</strong>：用户可查看已上传文档列表、解析状态、删除文档</li>
+        <li><strong>用户认证</strong>：替换硬编码默认用户，实现注册/登录/会话管理（JWT 或 session）</li>
+        <li><strong>文件格式扩展</strong>：支持 EPUB、RTF 等更多文档类型</li>
+        <li><strong>高级检索</strong>：HyDE、Query Rewrite、混合检索（关键词 + 语义）</li>
+        <li><strong>异步处理</strong>：大文件解析 / 嵌入生成使用后台任务队列（Celery / ARQ 等）</li>
+      </ul>
+
+      <h3>建议时机</h3>
+      <ul>
+        <li>安全修复：<strong>立即</strong>（不阻塞核心流程，但越早越好）</li>
+        <li>CI/CD：<strong>阶段 1-2 完成后</strong>（此时项目规模增大，自动化质量保障变得必要）</li>
+        <li>认证：<strong>阶段 5 完成后</strong>（核心流程走通后再加用户体系）</li>
+        <li>其余增强：<strong>按需迭代</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Test coverage summary -->
+  <div class="card">
+    <h2>🧪 当前测试覆盖</h2>
+    <table class="test-table">
+      <thead>
+        <tr><th>领域</th><th>模块</th><th>测试数</th><th>覆盖范围</th></tr>
+      </thead>
+      <tbody>
+        <tr><td rowspan="5">后端</td><td>health</td><td>1</td><td>端点状态码和响应体</td></tr>
+        <tr><td>users</td><td>4</td><td>当前用户获取、各种异常状态</td></tr>
+        <tr><td>uploads</td><td>5</td><td>成功上传、各错误分支</td></tr>
+        <tr><td>services</td><td>7</td><td>用户服务 + 上传服务逻辑</td></tr>
+        <tr><td>migrations</td><td>3</td><td>迁移可执行性和默认数据</td></tr>
+        <tr><td rowspan="4">前端</td><td>api</td><td>4</td><td>请求路径、表单构造、错误处理</td></tr>
+        <tr><td>stores</td><td>4</td><td>状态管理成功/失败</td></tr>
+        <tr><td>HomeView</td><td>9</td><td>交互流程、上传、状态反馈</td></tr>
+        <tr><td colspan="2" style="text-align:right"><strong>合计 44 个测试</strong></td><td></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary);">
+      测试覆盖了现有的上传和用户功能，后续每个阶段都应按照 TDD 流程（Red → Green → Refactor）补充对应测试。
+    </p>
+  </div>
+
+  <!-- OpenSpec suggestions -->
+  <div class="card">
+    <h2>📋 OpenSpec 变更建议</h2>
+    <p style="margin-bottom: 0.75rem;">根据项目章程（<code>AGENTS.md</code>），新功能应先通过 OpenSpec 描述背景、设计、任务和验收方式。建议的变更提案顺序：</p>
+    <table class="test-table">
+      <thead>
+        <tr><th>优先级</th><th>变更名称</th><th>关键范围</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="priority p-high">高</span></td>
+          <td><code>add-document-parsing</code></td>
+          <td>解析器适配器、<code>parsed_documents</code> 模型、解析 API、Alembic 迁移（支持 PDF/MD/TXT/DOCX/PPTX）</td>
+        </tr>
+        <tr>
+          <td><span class="priority p-high">高</span></td>
+          <td><code>add-text-chunking</code></td>
+          <td>分块策略、<code>document_chunks</code> 模型、分块 API</td>
+        </tr>
+        <tr>
+          <td><span class="priority p-medium">中</span></td>
+          <td><code>add-vector-embedding</code></td>
+          <td>嵌入模型适配器、pgvector 列、HNSW 索引、嵌入 API</td>
+        </tr>
+        <tr>
+          <td><span class="priority p-medium">中</span></td>
+          <td><code>add-semantic-search</code></td>
+          <td>检索服务、搜索 API、相似度排序</td>
+        </tr>
+        <tr>
+          <td><span class="priority p-medium">中</span></td>
+          <td><code>add-rag-qa</code></td>
+          <td>LLM 适配器、RAG 编排、对话 API、前端问答 UI</td>
+        </tr>
+        <tr>
+          <td><span class="priority p-low">低</span></td>
+          <td><code>add-ci-pipeline</code></td>
+          <td>GitHub Actions 配置、质量门禁自动化</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Architecture preview -->
+  <div class="card">
+    <h2>🏗 目标架构演进</h2>
+    <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">从当前状态到核心流程完成的架构演进路径：</p>
+    <div class="dep-chain" style="line-height: 2.4;">
+      <strong>当前：</strong><br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → Upload Service → Local File Storage<br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → User Service → Default User<br>
+      <br>
+      <strong>目标：</strong><br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → Upload Service → Local File Storage<br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → <span style="color: #6d28d9;">Parsing Service</span> → Parsed Documents<br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → <span style="color: #4338ca;">Chunking Service</span> → Document Chunks<br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → <span style="color: #6d28d9;">Embedding Service</span> → pgvector<br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → <span style="color: #0f766e;">Search Service</span> → pgvector (ANN)<br>
+      <span style="color: var(--accent-green);">Frontend</span> → <span style="color: var(--accent-blue);">API Gateway</span> → <span style="color: #15803d;">RAG Service</span> → <span style="color: #0f766e;">Search</span> + <span style="color: #6d28d9;">LLM Adapter</span> → <span style="color: var(--accent-green);">Answer + Citations</span>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-color: #86efac;">
+    <h2>✅ 总结与行动建议</h2>
+    <p><strong>立即行动：</strong></p>
+    <ul>
+      <li>🚨 从 Git 历史中移除 <code>backend/.env</code>，轮换已泄露的数据库凭据</li>
+      <li>📋 创建 OpenSpec 变更提案 <code>add-document-parsing</code>，定义文档解析服务的设计和验收标准</li>
+    </ul>
+    <p style="margin-top: 0.75rem;"><strong>短期目标（Phase 1-2）：</strong></p>
+    <ul>
+      <li>实现文档解析服务，打通从文件到文本的路径</li>
+      <li>实现文本分块，建立可检索单元</li>
+    </ul>
+    <p style="margin-top: 0.75rem;"><strong>中期目标（Phase 3-5）：</strong></p>
+    <ul>
+      <li>完成嵌入 → 检索 → RAG 问答的完整核心流程</li>
+      <li>前端从上传界面演进为完整的问答交互界面</li>
+    </ul>
+    <p style="margin-top: 0.75rem;"><strong>并行推进：</strong></p>
+    <ul>
+      <li>CI/CD 流水线配置（Phase 1-2 后）</li>
+      <li>用户认证体系（核心流程走通后）</li>
+      <li>文档管理 UI 和更多格式支持</li>
+    </ul>
+  </div>
+
+  <footer style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 2rem; padding-bottom: 2rem;">
+    <p>基于 knowra 项目 main 分支分析生成 · 2026-06-01</p>
+    <p style="margin-top: 0.3rem;">遵循 OpenSpec SDD + Superpowers TDD 流程</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

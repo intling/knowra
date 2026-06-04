@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 文档解析功能方案（Docling）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5f6b7c;
+      --border: #dce3ec;
+      --accent: #1f6f8b;
+      --accent-soft: #e6f3f6;
+      --ok: #19764b;
+      --ok-soft: #e8f6ef;
+      --warn: #a86200;
+      --warn-soft: #fff4df;
+      --danger: #b42318;
+      --danger-soft: #fff0ed;
+      --code-bg: #101828;
+      --code-text: #eef4ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #101828;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      margin: 14px 0 20px;
+      border-collapse: collapse;
+      background: var(--panel);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+    }
+
+    .decision {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: #123d27;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+      color: #583800;
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+      color: #681f18;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini h3 {
+      margin-top: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .step {
+      min-height: 108px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    @media (max-width: 920px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 28px;
+      }
+
+      .grid,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 文档解析功能方案（Docling）</h1>
+      <p>
+        本文沉淀“在现有上传能力之后，新增基于 Docling 的文档解析能力”的方案。范围覆盖 PDF、DOCX、PPTX、TXT、Markdown 的接入、解析作业、解析结果存储、状态反馈和后续 RAG 扩展边界；不在本文中实现代码。
+      </p>
+      <div class="meta">
+        <span class="tag">阶段：方案探索</span>
+        <span class="tag">日期：2026-06-04</span>
+        <span class="tag">推荐变更：add-document-parsing-docling</span>
+        <span class="tag">解析核心：Docling DocumentConverter</span>
+        <span class="tag">产物策略：不保存派生图片</span>
+        <span class="tag">执行策略：先 BackgroundTasks，后 worker 队列</span>
+        <span class="tag">前置能力：file-upload-storage 已归档</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>1. 方案结论</h2>
+      <div class="note decision">
+        推荐把“文档解析”设计成上传记录之后的异步处理链路：上传 API 只负责保存原始文件；解析 API 或解析调度器读取 <code>uploaded_files.storage_key</code>，创建解析作业，调用 Docling 转换为统一的 <code>DoclingDocument</code>，再保存 Markdown、纯文本、Docling JSON 和结构化元数据。首版不保存 PDF 页面图、图表图片、表格截图等派生图片资产；执行上先使用 FastAPI <code>BackgroundTasks</code> 验证闭环，同时让服务边界兼容后续独立 worker + 队列。
+      </div>
+      <p>
+        这样做能让 knowra 先获得一个稳定的资料处理边界：用户上传的原始文件可追溯，解析结果可重建，后续分块、embedding、向量索引、引用定位和问答生成都可以消费同一份解析结果。
+      </p>
+      <p>
+        首个版本的成功标准不是“上传后立刻可问答”，而是“文档被可靠解析为可预览、可追溯、可供后续索引的标准中间结果”。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>2. 现有基础与约束</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>项目现状</th>
+            <th>对解析方案的影响</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>已有 <code>uploaded_files</code> 表，包含 <code>owner_user_id</code>、<code>storage_key</code>、<code>checksum_sha256</code>、<code>status</code> 和错误字段。</td>
+            <td>解析结果应引用上传记录，不重复保存原始文件路径，不由前端提交用户归属。</td>
+          </tr>
+          <tr>
+            <td>上传服务当前把文件写入本地可配置目录，<code>storage_key</code> 由服务端生成。</td>
+            <td>Docling 适配器从存储服务解析出本地路径或临时文件，而不是相信客户端文件名。</td>
+          </tr>
+          <tr>
+            <td>当前上传白名单已有 PDF、Markdown、TXT、DOCX，尚未包含 PPTX。</td>
+            <td>新增解析能力时需要同步扩展 <code>ALLOWED_UPLOAD_CONTENT_TYPES</code>，至少加入 PPTX MIME 类型。</td>
+          </tr>
+          <tr>
+            <td>项目章程要求新功能经 OpenSpec 管理，并按 TDD 推进。</td>
+            <td>下一步应先创建 OpenSpec 变更，再从失败测试驱动作业状态、权限、解析适配和 API 行为。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. Docling 能力匹配</h2>
+      <p>
+        Docling 官方文档说明它可以把多种输入格式转换为统一的 <code>DoclingDocument</code>，并导出 Markdown、JSON、Text、HTML 等格式。<code>DocumentConverter</code> 是主要入口，支持限制允许格式、设置 PDF pipeline 选项、设置最大文件大小和最大页数。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>目标类型</th>
+            <th>建议输入识别</th>
+            <th>Docling 处理策略</th>
+            <th>MVP 备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PDF</td>
+            <td><code>application/pdf</code>，扩展名 <code>.pdf</code></td>
+            <td>使用 <code>InputFormat.PDF</code>，PDF OCR 和表格结构提取通过配置控制；不导出或保存页面图、图表图片、表格截图。</td>
+            <td>默认优先文本型 PDF；扫描件 OCR 可配置开启，避免首版解析耗时不可控。</td>
+          </tr>
+          <tr>
+            <td>DOCX</td>
+            <td><code>application/vnd.openxmlformats-officedocument.wordprocessingml.document</code></td>
+            <td>使用 <code>InputFormat.DOCX</code>，导出 Markdown 和 Docling JSON。</td>
+            <td>适合作为首批稳定样例格式。</td>
+          </tr>
+          <tr>
+            <td>PPTX</td>
+            <td><code>application/vnd.openxmlformats-officedocument.presentationml.presentation</code></td>
+            <td>使用 <code>InputFormat.PPTX</code>，保留页/幻灯片序号用于引用。</td>
+            <td>需要补充上传白名单和前端接受类型。</td>
+          </tr>
+          <tr>
+            <td>Markdown</td>
+            <td><code>text/markdown</code>、<code>text/x-markdown</code>，扩展名 <code>.md</code></td>
+            <td>使用 <code>InputFormat.MD</code> 或字符串转换入口。</td>
+            <td>可作为解析链路最轻量的端到端测试样例。</td>
+          </tr>
+          <tr>
+            <td>TXT</td>
+            <td><code>text/plain</code>，扩展名 <code>.txt</code></td>
+            <td>优先通过当前 Docling 版本验证 plain text 支持；若安装版本未暴露 TXT 输入枚举，则在同一解析适配层内用轻量文本读取兜底，并输出同样的规范化结果。</td>
+            <td>TXT 不应阻塞整体方案；关键是输出契约一致。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note risk">
+        实施前建议做一个小型 spike：安装项目锁定版本的 Docling，分别用 5 个最小样例文件验证 <code>DocumentConverter</code> 的输入格式识别、输出字段、异常类型、耗时和 Python 3.14 兼容性。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. 推荐数据流</h2>
+      <div class="flow">
+        <div class="step">
+          <strong>1. 上传完成</strong>
+          原始文件已保存，<code>uploaded_files.status</code> 为 <code>stored</code>。
+        </div>
+        <div class="step">
+          <strong>2. 创建作业</strong>
+          用户或系统触发解析，写入 <code>document_parse_jobs</code>。
+        </div>
+        <div class="step">
+          <strong>3. 读取原文件</strong>
+          通过 <code>storage_key</code> 定位原始文件，校验用户归属和 checksum。
+        </div>
+        <div class="step">
+          <strong>4. Docling 转换</strong>
+          调用 <code>DocumentConverter</code> 得到 <code>DoclingDocument</code>。
+        </div>
+        <div class="step">
+          <strong>5. 保存结果</strong>
+          写入 Markdown、Text、Docling JSON、元数据和结构片段。
+        </div>
+        <div class="step">
+          <strong>6. 对外反馈</strong>
+          前端展示解析状态、预览、错误信息和后续可索引状态。
+        </div>
+      </div>
+      <pre>uploaded_files
+  id, owner_user_id, storage_key, checksum_sha256
+        |
+        v
+document_parse_jobs
+  queued -> running -> succeeded | failed
+        |
+        v
+DoclingDocument
+        |
+        +--> parsed_documents
+        |     markdown_storage_key
+        |     text_storage_key
+        |     docling_json_storage_key
+        |
+        +--> document_segments
+              sequence_index, page_no, heading_path, text, metadata</pre>
+    </section>
+
+    <section class="section">
+      <h2>5. 后端模块边界</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>职责</th>
+            <th>建议位置</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>DocumentParsingService</code></td>
+            <td>编排上传记录读取、作业状态流转、解析器调用、结果持久化和错误处理。</td>
+            <td><code>backend/app/services/document_parsing.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DoclingParserAdapter</code></td>
+            <td>封装 Docling SDK，只暴露项目内的 <code>ParsedDocument</code> 结果，不把第三方类型扩散到路由层和模型层。</td>
+            <td><code>backend/app/services/parsers/docling.py</code></td>
+          </tr>
+          <tr>
+            <td><code>ParsedArtifactStorage</code></td>
+            <td>保存解析产物，例如 Markdown、Text 和 Docling JSON，沿用 <code>storage_key</code> 抽象；不保存 PDF 页面图、图表图片或表格截图。</td>
+            <td>复用或扩展上传存储服务</td>
+          </tr>
+          <tr>
+            <td><code>DocumentParseJob</code></td>
+            <td>记录解析任务生命周期、重试次数、错误、耗时和解析器版本。</td>
+            <td><code>backend/app/models/document_parse_job.py</code></td>
+          </tr>
+          <tr>
+            <td><code>ParsedDocument</code></td>
+            <td>记录一次成功解析的规范化产物和文档级元数据。</td>
+            <td><code>backend/app/models/parsed_document.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DocumentSegment</code></td>
+            <td>保存解析后的可引用结构单元，后续可被 chunker、embedding 和引用展示复用。</td>
+            <td><code>backend/app/models/document_segment.py</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note decision">
+        核心原则：路由层只接收请求和返回 schema；Docling SDK 调用只能出现在适配器内；数据库模型保存 knowra 的稳定契约，而不是直接暴露第三方 SDK 内部结构。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. 数据模型草案</h2>
+      <h3><code>document_parse_jobs</code></h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID 主键。</td>
+          </tr>
+          <tr>
+            <td><code>uploaded_file_id</code></td>
+            <td>引用 <code>uploaded_files.id</code>。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>冗余当前用户归属，便于权限过滤和查询。</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td><code>queued</code>、<code>running</code>、<code>succeeded</code>、<code>failed</code>、<code>cancelled</code>。</td>
+          </tr>
+          <tr>
+            <td><code>parser_name</code> / <code>parser_version</code></td>
+            <td>记录 <code>docling</code> 和实际包版本，便于结果可重复性分析。</td>
+          </tr>
+          <tr>
+            <td><code>attempt_count</code></td>
+            <td>支持失败重试和诊断。</td>
+          </tr>
+          <tr>
+            <td><code>started_at</code> / <code>finished_at</code></td>
+            <td>记录耗时和状态观测。</td>
+          </tr>
+          <tr>
+            <td><code>error_code</code> / <code>error_message</code></td>
+            <td>保存可展示、可诊断的错误，不把完整堆栈返回给前端。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><code>parsed_documents</code></h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID 主键。</td>
+          </tr>
+          <tr>
+            <td><code>uploaded_file_id</code> / <code>parse_job_id</code></td>
+            <td>关联原文件和成功作业。</td>
+          </tr>
+          <tr>
+            <td><code>source_checksum_sha256</code></td>
+            <td>记录本次解析对应的原文件 checksum，原文件变化时可判断结果是否过期。</td>
+          </tr>
+          <tr>
+            <td><code>markdown_storage_key</code></td>
+            <td>保存给预览、轻量分块和调试使用的 Markdown。</td>
+          </tr>
+          <tr>
+            <td><code>text_storage_key</code></td>
+            <td>保存纯文本，便于全文搜索、快速预览和低成本回退。</td>
+          </tr>
+          <tr>
+            <td><code>docling_json_storage_key</code></td>
+            <td>保存无损 Docling JSON，便于未来重新分块或提取表格、图片、层级。</td>
+          </tr>
+          <tr>
+            <td><code>title</code>、<code>page_count</code>、<code>metadata_json</code></td>
+            <td>保存文档级元数据，字段按解析结果逐步扩展。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><code>document_segments</code></h3>
+      <p>
+        首版可以只保存粗粒度结构单元，例如标题、段落、表格、幻灯片文本、页内文本块。后续真正的 embedding chunks 可以在单独索引变更中从 <code>document_segments</code> 或 Docling JSON 派生。
+      </p>
+      <pre>{
+  "parsed_document_id": "...",
+  "sequence_index": 12,
+  "segment_type": "paragraph",
+  "page_no": 3,
+  "heading_path": ["第 2 章", "语义检索"],
+  "text": "用于引用和后续分块的正文片段",
+  "metadata_json": {
+    "source_format": "pdf",
+    "docling_ref": "..."
+  }
+}</pre>
+    </section>
+
+    <section class="section">
+      <h2>7. 解析产物存储</h2>
+      <p>
+        推荐把解析产物和原始文件一样纳入应用内存储，但使用不同前缀，避免把大 JSON、Markdown 或纯文本直接塞入关系型数据库。解析产物只保存文本与结构化中间表示，不在本地保存 PDF 页面图、图表图片、表格截图或其他派生图片资源。
+      </p>
+      <div class="note decision">
+        明确决策：解析链路保留原始文件、Docling JSON、Markdown 和纯文本；不保存页面渲染图、图表图片、表格图片等本地派生图片。后续如果需要引用图片，应从原始文件或外部对象存储策略重新设计，而不是在本阶段落本地图片缓存。
+      </div>
+      <pre>storage/
+└── parsed/
+    └── {owner_user_id}/
+        └── {uploaded_file_id}/
+            └── {parse_job_id}/
+                ├── content.md
+                ├── content.txt
+                └── docling.json</pre>
+      <table>
+        <thead>
+          <tr>
+            <th>产物</th>
+            <th>用途</th>
+            <th>是否 MVP 必需</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>content.md</code></td>
+            <td>前端预览、轻量调试、人工检查解析质量。</td>
+            <td>是</td>
+          </tr>
+          <tr>
+            <td><code>content.txt</code></td>
+            <td>快速全文预览、后续简单分块或全文搜索。</td>
+            <td>是</td>
+          </tr>
+          <tr>
+            <td><code>docling.json</code></td>
+            <td>保留结构化中间表示，后续可重新生成 chunks、引用坐标和表格结构。</td>
+            <td>是</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note risk">
+        这个取舍会降低本地存储膨胀和隐私暴露面，但也意味着首版引用定位主要落在文件、页码、标题路径、段落序号和 Docling 结构引用上，不承诺可视化框选图片区域。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>8. API 草案</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>接口</th>
+            <th>用途</th>
+            <th>响应语义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>POST /api/uploads/{upload_id}/parse</code></td>
+            <td>为当前用户的已上传文件创建解析作业。</td>
+            <td>返回 <code>202 Accepted</code> 和解析作业；如果已存在运行中作业，返回 <code>409</code> 或已有作业。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/document-parse-jobs/{job_id}</code></td>
+            <td>查询解析状态。</td>
+            <td>只允许当前用户读取自己的作业，返回状态、错误、时间戳。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/uploads/{upload_id}/parsed-document</code></td>
+            <td>读取当前上传文件的最新成功解析结果。</td>
+            <td>返回解析元数据、可预览 Markdown 摘要、segment 数量和产物引用。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/parsed-documents/{id}/segments</code></td>
+            <td>分页读取结构片段。</td>
+            <td>供前端预览、调试和后续引用展示使用。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        最小版本可以只做 <code>POST /api/uploads/{upload_id}/parse</code> 和 <code>GET /api/document-parse-jobs/{job_id}</code>，再让上传列表透出 <code>parse_status</code>。解析结果预览接口可以作为第二步。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>9. 作业执行策略</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>策略</th>
+            <th>优点</th>
+            <th>代价</th>
+            <th>结论</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>同步解析</td>
+            <td>实现最少，接口返回即可知道结果。</td>
+            <td>PDF、OCR、PPTX 可能耗时过长，容易阻塞请求和超时。</td>
+            <td>不推荐作为默认。</td>
+          </tr>
+          <tr>
+            <td>FastAPI BackgroundTasks</td>
+            <td>适合当前 MVP，部署简单，可直接跟现有 FastAPI 服务集成。</td>
+            <td>进程重启会中断正在执行的任务，多实例部署时不能天然保证任务分发和重试。</td>
+            <td>本阶段采用，但必须用数据库作业表作为事实源，任务函数保持幂等，避免把业务状态只放在内存里。</td>
+          </tr>
+          <tr>
+            <td>独立 worker + 队列</td>
+            <td>可靠、可限流、可重试，适合 CPU 密集解析。</td>
+            <td>需要 Redis/RQ/Celery/Arq 等基础设施和运维约束。</td>
+            <td>作为上线后的演进方向；首版接口、模型和服务边界需提前兼容 worker 替换。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note decision">
+        推荐路径：首版执行策略明确选择 FastAPI BackgroundTasks，以便快速完成上传后解析闭环；同时把 <code>document_parse_jobs</code> 作为唯一状态事实源，并把实际解析逻辑封装成可被 BackgroundTasks 或未来 worker 调用的 <code>run_parse_job(job_id)</code>。上线后如果出现多实例、长任务、失败重试或资源隔离需求，再把调度层替换为独立 worker + 队列，API 和数据模型保持不变。
+      </div>
+      <h3>BackgroundTasks 首版约束</h3>
+      <ul>
+        <li>API 只负责创建 <code>queued</code> 作业并提交后台任务，立即返回 <code>202</code>。</li>
+        <li>后台任务启动后从数据库重新读取作业和上传记录，不依赖请求上下文里的 ORM 对象。</li>
+        <li>任务执行前用状态更新把 <code>queued</code> 切到 <code>running</code>，执行完成后写入 <code>succeeded</code> 或 <code>failed</code>。</li>
+        <li>任务函数必须支持重复调用：如果作业已成功，直接跳过；如果原文件不存在或无权限，写失败状态。</li>
+        <li>部署上线前增加“启动时扫描 stuck jobs”的修复策略，例如把长时间 <code>running</code> 的作业标记为 <code>failed</code> 或重新入队。</li>
+      </ul>
+      <h3>上线演进边界</h3>
+      <pre>POST /api/uploads/{upload_id}/parse
+  -> create document_parse_jobs row
+  -> enqueue job id
+
+MVP enqueue:
+  BackgroundTasks.add_task(run_parse_job, job_id)
+
+Production enqueue:
+  queue.push(job_id)
+  worker.run(run_parse_job, job_id)</pre>
+    </section>
+
+    <section class="section">
+      <h2>10. 配置建议</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>配置项</th>
+            <th>示例</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>PARSED_ARTIFACT_STORAGE_DIR</code></td>
+            <td><code>storage/parsed</code></td>
+            <td>解析产物存储根目录。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_PARSING_ENABLED</code></td>
+            <td><code>true</code></td>
+            <td>部署开关，便于在依赖未就绪环境中禁用解析。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_PARSE_MAX_BYTES</code></td>
+            <td><code>20971520</code></td>
+            <td>解析层最大文件大小，可与上传限制相同或更严格。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_PARSE_MAX_PAGES</code></td>
+            <td><code>200</code></td>
+            <td>限制 PDF/PPTX 等页数，防止单任务耗尽 CPU。</td>
+          </tr>
+          <tr>
+            <td><code>DOCLING_PDF_OCR_ENABLED</code></td>
+            <td><code>false</code></td>
+            <td>首版建议默认关闭 OCR，后续对扫描件按需开启。</td>
+          </tr>
+          <tr>
+            <td><code>DOCLING_ARTIFACTS_DIR</code></td>
+            <td><code>storage/docling-artifacts</code></td>
+            <td>用于模型权重或 Docling 运行缓存，具体接法以锁定 Docling 版本为准；不用于保存页面图、图表图片或表格截图。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_PARSE_DISPATCHER</code></td>
+            <td><code>background_tasks</code></td>
+            <td>首版使用 FastAPI <code>BackgroundTasks</code>；后续可切换为 <code>queue</code> 以接入独立 worker。</td>
+          </tr>
+          <tr>
+            <td><code>ALLOWED_UPLOAD_CONTENT_TYPES</code></td>
+            <td>加入 PPTX、Markdown 兼容 MIME</td>
+            <td>上传白名单和解析支持格式应同步维护。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>11. 前端体验</h2>
+      <p>
+        前端不需要在首版做复杂资料库页面。可以在已有上传入口之后展示解析状态，让用户知道资料已经进入处理流程。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>状态</th>
+            <th>界面反馈</th>
+            <th>用户动作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>stored</code></td>
+            <td>上传完成，等待解析。</td>
+            <td>可点击“解析”或由系统自动触发。</td>
+          </tr>
+          <tr>
+            <td><code>queued</code> / <code>running</code></td>
+            <td>显示解析中，避免重复触发同一文件解析。</td>
+            <td>可刷新状态或稍后查看。</td>
+          </tr>
+          <tr>
+            <td><code>succeeded</code></td>
+            <td>展示解析完成，可预览文本。</td>
+            <td>后续可进入分块、索引或提问流程。</td>
+          </tr>
+          <tr>
+            <td><code>failed</code></td>
+            <td>展示可理解错误，例如文件格式不支持、文件损坏、页数超限。</td>
+            <td>允许重试或重新上传。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>12. MVP 范围</h2>
+      <div class="grid">
+        <div class="mini">
+          <h3>纳入 MVP</h3>
+          <ul>
+            <li>新增 OpenSpec 变更 <code>add-document-parsing-docling</code>。</li>
+            <li>支持 PDF、DOCX、PPTX、Markdown、TXT 的上传白名单和解析入口。</li>
+            <li>解析作业表和状态查询。</li>
+            <li>Docling 适配器，输出 Markdown、Text、Docling JSON。</li>
+            <li>解析结果元数据和粗粒度 segments。</li>
+            <li>FastAPI <code>BackgroundTasks</code> 测试版 dispatcher，用于验证异步解析闭环。</li>
+            <li>权限校验：只能解析和查看当前用户文件。</li>
+            <li>基础前端状态展示：等待解析、解析中、完成、失败。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>暂不纳入 MVP</h3>
+          <ul>
+            <li>向量 embedding 和 pgvector 索引。</li>
+            <li>RAG 问答生成。</li>
+            <li>复杂 OCR 多语言配置界面。</li>
+            <li>保存 PDF 页面图、图表图片、表格截图或其他派生图片资源。</li>
+            <li>图片、公式、表格的专门编辑或可视化。</li>
+            <li>独立 worker + 队列的生产级部署。</li>
+            <li>文档版本对比和增量解析。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>13. 测试与验收建议</h2>
+      <p>
+        实现时应严格按项目 TDD 约束推进：先写失败测试，再写最小实现，再重构。解析类测试要尽量使用小型 fixture，避免把大文件和慢 OCR 纳入默认测试集。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>测试层级</th>
+            <th>建议场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>模型测试</td>
+            <td>作业表字段、外键、状态索引、解析结果与上传记录关系。</td>
+          </tr>
+          <tr>
+            <td>服务测试</td>
+            <td>当前用户只能解析自己的文件；缺失原文件失败；重复解析返回已有作业或拒绝。</td>
+          </tr>
+          <tr>
+            <td>适配器测试</td>
+            <td>用 mock Docling 验证调用参数、产物写入、异常转换，并断言不会写入页面图、图表图片、表格截图等派生图片；另用极小 MD/TXT fixture 做真实转换 smoke test。</td>
+          </tr>
+          <tr>
+            <td>调度器测试</td>
+            <td>验证 <code>BackgroundTasks</code> dispatcher 会注册 <code>run_parse_job(job_id)</code>，API 立即返回 <code>202</code>，作业状态由持久化表驱动，后续可替换为队列 dispatcher。</td>
+          </tr>
+          <tr>
+            <td>API 测试</td>
+            <td><code>POST /api/uploads/{id}/parse</code> 返回 <code>202</code>；无权限返回非 2xx；查询作业返回状态。</td>
+          </tr>
+          <tr>
+            <td>前端测试</td>
+            <td>上传后触发解析、解析中禁用重复提交、失败展示错误、成功展示可预览状态。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        默认验证命令仍应包括后端 <code>uv run ruff check .</code>、<code>uv run ruff format --check .</code>、<code>uv run pytest</code>；前端按 <code>front/AGENTS.md</code> 的 lint/test/build 约束执行。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>14. 风险与开放问题</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>风险</th>
+            <th>影响</th>
+            <th>缓解方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PDF OCR 和模型依赖较重</td>
+            <td>安装慢、首次运行慢、CPU 占用高。</td>
+            <td>首版默认关闭 OCR；提供配置开关；把扫描件解析质量作为后续增强。</td>
+          </tr>
+          <tr>
+            <td>Docling 输出结构随版本演进</td>
+            <td>直接持久化第三方对象会带来迁移成本。</td>
+            <td>保存原始 Docling JSON，同时把 knowra 需要的字段规范化到自有表。</td>
+          </tr>
+          <tr>
+            <td>大文件和损坏文件</td>
+            <td>任务卡住、内存飙升或解析失败。</td>
+            <td>设置最大字节数、最大页数、超时、失败状态和重试次数。</td>
+          </tr>
+          <tr>
+            <td>TXT 支持细节需按版本确认</td>
+            <td>如果当前 SDK 没有显式 TXT 输入格式，强行走 Docling 会拖慢实现。</td>
+            <td>在 parser facade 下做版本探测和轻量兜底，保持输出契约一致。</td>
+          </tr>
+          <tr>
+            <td>引用定位还未完整设计</td>
+            <td>后续 RAG 引用可能只能指向段落或页，而不是精确坐标。</td>
+            <td>segments 先保存页码、序号、标题路径和 Docling 引用元数据；不依赖页面截图作为引用证据。</td>
+          </tr>
+          <tr>
+            <td>BackgroundTasks 不具备生产级可靠性</td>
+            <td>进程重启、滚动部署或多实例场景下可能中断正在执行的解析任务。</td>
+            <td>首版仅作为测试版执行策略；作业状态必须持久化，调度入口抽象为 dispatcher，后续替换为独立 worker + 队列。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>15. OpenSpec 建议</h2>
+      <p>
+        建议下一步创建 OpenSpec 变更 <code>add-document-parsing-docling</code>，新增能力规格 <code>document-parsing</code>。该变更应聚焦“从已上传文件生成可追溯解析结果”，不要同时承诺 embedding、检索或 RAG。
+      </p>
+      <h3>建议 requirements</h3>
+      <ul>
+        <li>系统 SHALL 为当前用户已上传文件创建文档解析作业。</li>
+        <li>系统 SHALL 使用 Docling 作为主要解析器处理 PDF、DOCX、PPTX、Markdown，并处理 TXT 的规范化输出。</li>
+        <li>系统 SHALL 持久化解析作业状态、错误、解析器版本和产物位置。</li>
+        <li>系统 SHALL 保存 Markdown、纯文本、Docling JSON 和文档级元数据。</li>
+        <li>系统 SHALL NOT 在首版保存 PDF 页面图、图表图片、表格截图等派生图片资产。</li>
+        <li>系统 SHALL 在首版使用 FastAPI <code>BackgroundTasks</code> 调度解析作业，并保留替换为独立 worker + 队列的服务边界。</li>
+        <li>系统 SHALL 防止用户解析或读取不属于自己的上传文件。</li>
+        <li>前端 SHALL 展示解析状态，并在失败时保留重试可能性。</li>
+      </ul>
+      <h3>建议 tasks</h3>
+      <ol>
+        <li>创建 OpenSpec proposal、design、tasks 和 <code>document-parsing</code> 规格增量。</li>
+        <li>准备最小 fixture：<code>.txt</code>、<code>.md</code>、<code>.docx</code>、<code>.pptx</code>、文本型 <code>.pdf</code>。</li>
+        <li>先写模型、服务、API 和适配器失败测试。</li>
+        <li>加入 Docling 依赖和配置项，完成最小解析适配；关闭派生图片资产保存。</li>
+        <li>实现基于 FastAPI <code>BackgroundTasks</code> 的测试版 dispatcher，并让服务边界兼容后续独立 worker + 队列。</li>
+        <li>新增前端解析状态展示和错误反馈。</li>
+        <li>运行后端和前端验证命令，更新 README 与环境变量模板。</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>16. 参考资料</h2>
+      <ul>
+        <li><a href="https://docling-project.github.io/docling/usage/supported_formats/">Docling Supported formats</a>：确认 PDF、DOCX、PPTX、Markdown 等输入格式，以及 Markdown、JSON、Text 等输出格式。</li>
+        <li><a href="https://docling-project.github.io/docling/reference/document_converter/">Docling DocumentConverter reference</a>：确认 <code>DocumentConverter</code>、<code>allowed_formats</code>、<code>convert</code>、<code>max_file_size</code> 和 <code>max_num_pages</code> 等入口能力。</li>
+        <li><a href="https://docling-project.github.io/docling/concepts/chunking/">Docling Chunking concepts</a>：确认后续可从 <code>DoclingDocument</code> 使用原生 chunker，或先导出 Markdown 后自定义分块。</li>
+        <li><a href="https://docling-project.github.io/docling/getting_started/installation/">Docling Installation</a>：确认安装方式、PyTorch 依赖、OCR extras 和系统依赖注意事项。</li>
+        <li><a href="https://pypi.org/project/docling/">Docling on PyPI</a>：确认当前包元数据、Python 版本约束和 Python 3.14 classifier。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
