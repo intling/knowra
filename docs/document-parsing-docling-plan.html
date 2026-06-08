@@ -285,8 +285,8 @@
             <td>Docling 适配器从存储服务解析出本地路径或临时文件，而不是相信客户端文件名。</td>
           </tr>
           <tr>
-            <td>当前上传白名单已有 PDF、Markdown、TXT、DOCX，尚未包含 PPTX。</td>
-            <td>新增解析能力时需要同步扩展 <code>ALLOWED_UPLOAD_CONTENT_TYPES</code>，至少加入 PPTX MIME 类型。</td>
+            <td>当前上传白名单由 <code>ALLOWED_UPLOAD_CONTENT_TYPES</code> 配置管理。</td>
+            <td>新增解析能力不应默认放宽上传白名单；PPTX 等格式是否可上传由部署配置显式开启，解析入口再通过独立格式策略二次校验。</td>
           </tr>
           <tr>
             <td>项目章程要求新功能经 OpenSpec 管理，并按 TDD 推进。</td>
@@ -327,7 +327,7 @@
             <td>PPTX</td>
             <td><code>application/vnd.openxmlformats-officedocument.presentationml.presentation</code></td>
             <td>使用 <code>InputFormat.PPTX</code>，保留页/幻灯片序号用于引用。</td>
-            <td>需要补充上传白名单和前端接受类型。</td>
+            <td>上传是否允许 PPTX 由配置显式开启；解析前需验证 OOXML 容器结构。</td>
           </tr>
           <tr>
             <td>Markdown</td>
@@ -711,7 +711,7 @@ Production enqueue:
           </tr>
           <tr>
             <td><code>DOCUMENT_PARSE_MAX_BYTES</code></td>
-            <td><code>20971520</code></td>
+            <td><code>52428800</code></td>
             <td>解析层最大文件大小，可与上传限制相同或更严格。</td>
           </tr>
           <tr>
@@ -735,9 +735,19 @@ Production enqueue:
             <td>首版使用 FastAPI <code>BackgroundTasks</code>；后续可切换为 <code>queue</code> 以接入独立 worker。</td>
           </tr>
           <tr>
+            <td><code>DOCUMENT_PARSE_ALLOWED_CONTENT_TYPES</code></td>
+            <td>PDF、DOCX、PPTX、TXT、Markdown</td>
+            <td>解析入口独立允许列表，不等同于上传默认白名单。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_PARSE_ALLOWED_EXTENSIONS</code></td>
+            <td><code>.pdf,.docx,.pptx,.txt,.md</code></td>
+            <td>配合 MIME、文件头、OOXML 容器和文本采样做轻量服务端识别。</td>
+          </tr>
+          <tr>
             <td><code>ALLOWED_UPLOAD_CONTENT_TYPES</code></td>
-            <td>加入 PPTX、Markdown 兼容 MIME</td>
-            <td>上传白名单和解析支持格式应同步维护。</td>
+            <td>按部署显式配置</td>
+            <td>不因解析能力默认放宽；需要 PPTX 上传时由环境配置显式加入。</td>
           </tr>
         </tbody>
       </table>
@@ -788,7 +798,7 @@ Production enqueue:
           <h3>纳入 MVP</h3>
           <ul>
             <li>新增 OpenSpec 变更 <code>add-document-parsing-docling</code>。</li>
-            <li>支持 PDF、DOCX、PPTX、Markdown、TXT 的上传白名单和解析入口。</li>
+            <li>支持 PDF、DOCX、PPTX、Markdown、TXT 的解析入口，并通过独立格式策略校验；上传白名单不默认随解析目标放宽。</li>
             <li>解析作业表和状态查询。</li>
             <li>Docling 适配器，输出 Markdown、Text、Docling JSON。</li>
             <li>解析结果元数据和粗粒度 segments。</li>
@@ -910,6 +920,7 @@ Production enqueue:
       <ul>
         <li>系统 SHALL 为当前用户已上传文件创建文档解析作业。</li>
         <li>系统 SHALL 使用 Docling 作为主要解析器处理 PDF、DOCX、PPTX、Markdown，并处理 TXT 的规范化输出。</li>
+        <li>系统 SHALL 使用独立解析允许列表和轻量服务端识别校验解析候选文件，不依赖上传默认白名单覆盖解析目标格式。</li>
         <li>系统 SHALL 持久化解析作业状态、错误、解析器版本和产物位置。</li>
         <li>系统 SHALL 保存 Markdown、纯文本、Docling JSON 和文档级元数据。</li>
         <li>系统 SHALL NOT 在首版保存 PDF 页面图、图表图片、表格截图等派生图片资产。</li>

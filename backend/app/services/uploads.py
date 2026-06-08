@@ -12,6 +12,8 @@ from app.models.uploaded_file import UploadedFile
 from app.models.user import User
 
 CHUNK_SIZE = 1024 * 1024
+PPTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+PPTX_BROWSER_COMPAT_CONTENT_TYPES = {"application/vnd.ms-powerpoint"}
 
 
 class UploadValidationError(Exception):
@@ -92,7 +94,7 @@ class UploadService:
 
     def create_upload(self, *, current_user: User, file: UploadFile) -> UploadedFile:
         content_type = file.content_type
-        if content_type and content_type not in self.allowed_content_types:
+        if not self._is_allowed_content_type(content_type, file.filename):
             raise UploadValidationError("Unsupported content type")
 
         upload_id = uuid4()
@@ -143,6 +145,16 @@ class UploadService:
     ) -> str:
         extension = safe_extension(original_filename)
         return f"uploads/{owner_user_id}/{upload_id}/original{extension}"
+
+    def _is_allowed_content_type(self, content_type: str | None, filename: str | None) -> bool:
+        if not content_type or content_type in self.allowed_content_types:
+            return True
+
+        return (
+            content_type in PPTX_BROWSER_COMPAT_CONTENT_TYPES
+            and safe_extension(filename) == ".pptx"
+            and PPTX_CONTENT_TYPE in self.allowed_content_types
+        )
 
 
 def safe_extension(filename: str | None) -> str:

@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from "vue"
 
+import { createDocumentParseJob, getDocumentParseJob } from "../api/documentParsing"
+import type {
+  DocumentParseConflictError,
+  DocumentParseJob,
+} from "../api/documentParsing"
 import { uploadFile } from "../api/uploads"
+import type { UploadedFile } from "../api/uploads"
 import { useAppStore } from "../stores/app"
 import { useUserStore } from "../stores/user"
 
@@ -13,6 +19,17 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const isUploading = ref(false)
 const uploadFeedback = ref<string | null>(null)
+const uploadedFileInfo = ref<UploadedFile | null>(null)
+const isParsing = ref(false)
+const parseFeedback = ref<string | null>(null)
+const canRetryParse = ref(false)
+
+const ACTIVE_PARSE_STATUSES = new Set<DocumentParseJob["status"]>([
+  "queued",
+  "running",
+])
+const PARSE_STATUS_POLL_INTERVAL_MS = 1000
+const PARSE_STATUS_MAX_POLLS = 60
 
 const canSend = computed(
   () =>
@@ -33,6 +50,12 @@ const uploadStatus = computed(() => {
   }
 
   return uploadFeedback.value
+})
+const parseStatusText = computed(() => {
+  if (isParsing.value) return "解析中"
+  if (parseFeedback.value) return parseFeedback.value
+  if (uploadedFileInfo.value) return "等待自动解析"
+  return null
 })
 
 const resizeInput = async () => {
@@ -58,11 +81,17 @@ const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
   uploadFeedback.value = null
+  uploadedFileInfo.value = null
+  parseFeedback.value = null
+  canRetryParse.value = false
 }
 
 const removeSelectedFile = () => {
   selectedFile.value = null
   uploadFeedback.value = null
+  uploadedFileInfo.value = null
+  parseFeedback.value = null
+  canRetryParse.value = false
 
   if (fileInputRef.value) {
     fileInputRef.value.value = ""
@@ -77,10 +106,94 @@ const clearFileInput = () => {
   }
 }
 
+const wait = (milliseconds: number) =>
+  new Promise<void>((resolve) => {
+    window.setTimeout(resolve, milliseconds)
+  })
+
+const waitForParseJobCompletion = async (
+  initialJob: DocumentParseJob,
+): Promise<DocumentParseJob> => {
+  let job = initialJob
+
+  for (
+    let pollCount = 0;
+    ACTIVE_PARSE_STATUSES.has(job.status) && pollCount < PARSE_STATUS_MAX_POLLS;
+    pollCount += 1
+  ) {
+    job = await getDocumentParseJob(job.id)
+    if (ACTIVE_PARSE_STATUSES.has(job.status)) {
+      await wait(PARSE_STATUS_POLL_INTERVAL_MS)
+    }
+  }
+
+  return job
+}
+
+const applyParseJobResult = (job: DocumentParseJob) => {
+  if (job.status === "succeeded") {
+    parseFeedback.value = "解析成功"
+    return
+  }
+
+  if (job.status === "failed") {
+    parseFeedback.value = job.error_message || "解析失败，请重试"
+    canRetryParse.value = true
+    return
+  }
+
+  if (job.status === "cancelled") {
+    parseFeedback.value = "解析已取消"
+    canRetryParse.value = true
+    return
+  }
+
+  parseFeedback.value = "解析仍在处理中"
+}
+
+const startParseForUpload = async (uploaded: UploadedFile) => {
+  if (isParsing.value) return
+
+  uploadedFileInfo.value = uploaded
+  isParsing.value = true
+  parseFeedback.value = null
+  canRetryParse.value = false
+
+  try {
+    const job = await createDocumentParseJob(uploaded.id)
+    const completedJob = await waitForParseJobCompletion(job)
+    applyParseJobResult(completedJob)
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      (error as DocumentParseConflictError).status === 409
+    ) {
+      const conflict = error as DocumentParseConflictError
+      parseFeedback.value = conflict.detail
+    } else {
+      parseFeedback.value =
+        error instanceof Error ? error.message : "解析失败，请重试"
+      canRetryParse.value = true
+    }
+  } finally {
+    isParsing.value = false
+  }
+}
+
+const handleParse = async () => {
+  if (!uploadedFileInfo.value) return
+
+  await startParseForUpload(uploadedFileInfo.value)
+}
+
 const handleSend = async () => {
   if (!canSend.value || isUploading.value) {
     return
   }
+
+  let uploadedForParsing: UploadedFile | null = null
 
   if (selectedFile.value) {
     if (!userStore.currentUser) {
@@ -90,9 +203,14 @@ const handleSend = async () => {
 
     isUploading.value = true
     uploadFeedback.value = null
+    uploadedFileInfo.value = null
+    parseFeedback.value = null
+    canRetryParse.value = false
 
     try {
       const uploaded = await uploadFile(selectedFile.value)
+      uploadedFileInfo.value = uploaded
+      uploadedForParsing = uploaded
       uploadFeedback.value = `${uploaded.original_filename} 上传成功`
       clearFileInput()
     } catch (error) {
@@ -102,6 +220,10 @@ const handleSend = async () => {
     } finally {
       isUploading.value = false
     }
+  }
+
+  if (uploadedForParsing) {
+    await startParseForUpload(uploadedForParsing)
   }
 
   message.value = ""
@@ -189,12 +311,36 @@ onMounted(() => {
         >
           {{ uploadStatus }}
         </p>
+        <div
+          v-if="uploadedFileInfo && !isUploading"
+          data-testid="parse-entry"
+          class="flex items-center gap-3 self-start px-1"
+        >
+          <button
+            v-if="canRetryParse"
+            data-testid="parse-action-button"
+            class="rounded-lg bg-zinc-950 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            :disabled="isParsing"
+            @click="handleParse"
+          >
+            重试解析
+          </button>
+          <span
+            v-if="parseStatusText"
+            data-testid="parse-status"
+            class="text-sm text-zinc-500"
+          >
+            {{ parseStatusText }}
+          </span>
+        </div>
         <div class="flex items-end gap-2 sm:gap-3">
           <input
             ref="fileInputRef"
             data-testid="attachment-input"
             class="hidden"
             type="file"
+            accept=".pdf,.md,.markdown,.txt,.docx,.pptx,application/pdf,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
             @change="handleFileChange"
           />
           <button

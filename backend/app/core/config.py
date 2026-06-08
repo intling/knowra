@@ -9,6 +9,24 @@ DEFAULT_ALLOWED_UPLOAD_CONTENT_TYPES = (
     "text/markdown",
     "text/plain",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+)
+
+DEFAULT_DOCUMENT_PARSE_ALLOWED_CONTENT_TYPES = (
+    "application/pdf",
+    "text/markdown",
+    "text/plain",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+)
+
+DEFAULT_DOCUMENT_PARSE_ALLOWED_EXTENSIONS = (
+    ".docx",
+    ".md",
+    ".markdown",
+    ".pdf",
+    ".pptx",
+    ".txt",
 )
 
 
@@ -20,9 +38,22 @@ class Settings(BaseSettings):
     backend_cors_origins: str = "http://localhost:5173"
     database_url: str = "postgresql+psycopg://knowra:knowra@localhost:5432/knowra"
     upload_storage_dir: str = "storage/uploads"
-    max_upload_bytes: int = 20 * 1024 * 1024
+    max_upload_bytes: int = 50 * 1024 * 1024
     allowed_upload_content_types: Annotated[list[str], NoDecode] = list(
         DEFAULT_ALLOWED_UPLOAD_CONTENT_TYPES
+    )
+    document_parse_enabled: bool = True
+    document_parse_artifact_dir: str = "storage/parsed"
+    document_parse_max_bytes: int = 50 * 1024 * 1024
+    document_parse_max_pages: int = 100
+    document_parse_ocr_enabled: bool = False
+    document_parse_docling_cache_dir: str = "storage/docling-cache"
+    document_parse_dispatcher: str = "background_tasks"
+    document_parse_allowed_content_types: Annotated[list[str], NoDecode] = list(
+        DEFAULT_DOCUMENT_PARSE_ALLOWED_CONTENT_TYPES
+    )
+    document_parse_allowed_extensions: Annotated[list[str], NoDecode] = list(
+        DEFAULT_DOCUMENT_PARSE_ALLOWED_EXTENSIONS
     )
 
     model_config = SettingsConfigDict(
@@ -47,12 +78,24 @@ class Settings(BaseSettings):
     @field_validator("allowed_upload_content_types", mode="before")
     @classmethod
     def parse_allowed_upload_content_types(cls, value: str | list[str]) -> list[str]:
-        if isinstance(value, str):
-            return [
-                content_type.strip() for content_type in value.split(",") if content_type.strip()
-            ]
+        return parse_csv_list(value)
 
-        return value
+    @field_validator("document_parse_allowed_content_types", mode="before")
+    @classmethod
+    def parse_document_parse_allowed_content_types(cls, value: str | list[str]) -> list[str]:
+        return parse_csv_list(value)
+
+    @field_validator("document_parse_allowed_extensions", mode="before")
+    @classmethod
+    def parse_document_parse_allowed_extensions(cls, value: str | list[str]) -> list[str]:
+        return [extension.lower() for extension in parse_csv_list(value)]
+
+
+def parse_csv_list(value: str | list[str]) -> list[str]:
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+
+    return value
 
 
 @lru_cache

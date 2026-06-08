@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils"
+import { flushPromises, mount } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   refreshHealthMock: vi.fn(),
   loadCurrentUserMock: vi.fn(),
   uploadFileMock: vi.fn(),
+  createDocumentParseJobMock: vi.fn(),
+  getDocumentParseJobMock: vi.fn(),
   userStoreState: {
     currentUser: {
       display_name: "Default User",
@@ -43,12 +45,43 @@ vi.mock("../api/uploads", () => ({
   uploadFile: mocks.uploadFileMock,
 }))
 
+vi.mock("../api/documentParsing", () => ({
+  createDocumentParseJob: mocks.createDocumentParseJobMock,
+  getDocumentParseJob: mocks.getDocumentParseJobMock,
+}))
+
 describe("HomeView", () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     mocks.refreshHealthMock.mockReset()
     mocks.loadCurrentUserMock.mockReset()
     mocks.uploadFileMock.mockReset()
+    mocks.createDocumentParseJobMock.mockReset()
+    mocks.getDocumentParseJobMock.mockReset()
+    mocks.createDocumentParseJobMock.mockResolvedValue({
+      id: "22222222-2222-2222-2222-222222222222",
+      uploaded_file_id: "11111111-1111-1111-1111-111111111111",
+      status: "queued",
+      parser_name: "docling",
+      parser_version: null,
+      error_code: null,
+      error_message: null,
+      created_at: "2026-06-08T00:00:00Z",
+      started_at: null,
+      finished_at: null,
+    })
+    mocks.getDocumentParseJobMock.mockResolvedValue({
+      id: "22222222-2222-2222-2222-222222222222",
+      uploaded_file_id: "11111111-1111-1111-1111-111111111111",
+      status: "succeeded",
+      parser_name: "docling",
+      parser_version: null,
+      error_code: null,
+      error_message: null,
+      created_at: "2026-06-08T00:00:00Z",
+      started_at: "2026-06-08T00:00:01Z",
+      finished_at: "2026-06-08T00:00:02Z",
+    })
     mocks.userStoreState.currentUser = {
       display_name: "Default User",
     }
@@ -143,10 +176,14 @@ describe("HomeView", () => {
     expect((textarea.element as HTMLTextAreaElement).value).toBe("First line")
   })
 
-  // 测试：文件上传成功后会调用上传接口、清空已选文件，并展示成功反馈。
-  it("uploads the selected file, clears it after success, and shows success feedback", async () => {
+  // 测试：文件上传成功后会调用上传接口、清空已选文件、展示成功反馈，并自动提交解析作业。
+  it("uploads the selected file, clears it after success, shows success feedback, and auto-starts parsing", async () => {
     mocks.uploadFileMock.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
       original_filename: "course-notes.pdf",
+      content_type: "application/pdf",
+      byte_size: 5,
+      status: "stored",
     })
     const wrapper = mount(HomeView)
     const fileInput = wrapper.get('[data-testid="attachment-input"]')
@@ -160,14 +197,195 @@ describe("HomeView", () => {
     })
 
     await fileInput.trigger("change")
-    await wrapper.get('[data-testid="send-button"]').trigger("submit")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
 
     expect(mocks.uploadFileMock).toHaveBeenCalledWith(file)
+    expect(mocks.createDocumentParseJobMock).toHaveBeenCalledWith(
+      "11111111-1111-1111-1111-111111111111",
+    )
+    expect(mocks.getDocumentParseJobMock).toHaveBeenCalledWith(
+      "22222222-2222-2222-2222-222222222222",
+    )
     expect(wrapper.find('[data-testid="selected-file-chip"]').exists()).toBe(false)
     expect(inputElement.value).toBe("")
     expect(wrapper.get('[data-testid="upload-status"]').text()).toContain(
       "course-notes.pdf 上传成功",
     )
+  })
+
+  // 测试：上传成功后会自动进入解析流程，不需要用户点击解析按钮。
+  it("automatically starts parsing after a file upload succeeds", async () => {
+    mocks.uploadFileMock.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      original_filename: "course-notes.pdf",
+      content_type: "application/pdf",
+      byte_size: 5,
+      status: "stored",
+    })
+    const wrapper = mount(HomeView)
+    const fileInput = wrapper.get('[data-testid="attachment-input"]')
+    const inputElement = fileInput.element as HTMLInputElement
+    const file = new File(["notes"], "course-notes.pdf", {
+      type: "application/pdf",
+    })
+    Object.defineProperty(inputElement, "files", {
+      configurable: true,
+      value: [file],
+    })
+
+    await fileInput.trigger("change")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(mocks.createDocumentParseJobMock).toHaveBeenCalledWith(
+      "11111111-1111-1111-1111-111111111111",
+    )
+    expect(mocks.getDocumentParseJobMock).toHaveBeenCalledWith(
+      "22222222-2222-2222-2222-222222222222",
+    )
+    expect(wrapper.find('[data-testid="parse-action-button"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="parse-status"]').text()).toContain(
+      "解析成功",
+    )
+  })
+
+  // 测试：解析作业只有真正 succeeded 后才展示解析成功。
+  it("shows parse success only after the parse job succeeds", async () => {
+    mocks.uploadFileMock.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      original_filename: "course-notes.pdf",
+      content_type: "application/pdf",
+      byte_size: 5,
+      status: "stored",
+    })
+    mocks.createDocumentParseJobMock.mockResolvedValue({
+      id: "22222222-2222-2222-2222-222222222222",
+      uploaded_file_id: "11111111-1111-1111-1111-111111111111",
+      status: "queued",
+    })
+    mocks.getDocumentParseJobMock.mockResolvedValue({
+      id: "22222222-2222-2222-2222-222222222222",
+      uploaded_file_id: "11111111-1111-1111-1111-111111111111",
+      status: "succeeded",
+    })
+    const wrapper = mount(HomeView)
+    const fileInput = wrapper.get('[data-testid="attachment-input"]')
+    const inputElement = fileInput.element as HTMLInputElement
+    Object.defineProperty(inputElement, "files", {
+      configurable: true,
+      value: [
+        new File(["notes"], "course-notes.pdf", {
+          type: "application/pdf",
+        }),
+      ],
+    })
+
+    await fileInput.trigger("change")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="parse-status"]').text()).toContain(
+      "解析成功",
+    )
+    expect(wrapper.get('[data-testid="parse-status"]').text()).not.toContain(
+      "解析已提交",
+    )
+  })
+
+  // 测试：解析作业失败时展示失败原因并允许重试，而不是显示已提交。
+  it("shows parse failure and retry when the parse job fails", async () => {
+    mocks.uploadFileMock.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      original_filename: "blank.pdf",
+      content_type: "application/pdf",
+      byte_size: 5,
+      status: "stored",
+    })
+    mocks.getDocumentParseJobMock.mockResolvedValue({
+      id: "22222222-2222-2222-2222-222222222222",
+      uploaded_file_id: "11111111-1111-1111-1111-111111111111",
+      status: "failed",
+      error_message: "Parsed document has no text content",
+    })
+    const wrapper = mount(HomeView)
+    const fileInput = wrapper.get('[data-testid="attachment-input"]')
+    const inputElement = fileInput.element as HTMLInputElement
+    Object.defineProperty(inputElement, "files", {
+      configurable: true,
+      value: [
+        new File([""], "blank.pdf", {
+          type: "application/pdf",
+        }),
+      ],
+    })
+
+    await fileInput.trigger("change")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="parse-status"]').text()).toContain(
+      "Parsed document has no text content",
+    )
+    expect(wrapper.get('[data-testid="parse-status"]').text()).not.toContain(
+      "解析已提交",
+    )
+    expect(wrapper.find('[data-testid="parse-action-button"]').exists()).toBe(true)
+  })
+
+  // 测试：文件选择器 accept 反映当前上传入口支持范围，包含 PPTX 格式。
+  it("keeps upload accept formats consistent with upload and parse supported types", () => {
+    const wrapper = mount(HomeView)
+    const accept = wrapper.get('[data-testid="attachment-input"]').attributes("accept")
+
+    expect(accept).toBe(
+      ".pdf,.md,.markdown,.txt,.docx,.pptx,application/pdf,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    )
+    expect(accept).toContain(".pptx")
+    expect(accept).toContain("presentationml")
+  })
+
+  // 测试：自动解析提交中不会展示手动解析按钮，并展示解析中状态。
+  it("does not show a manual parse trigger while the automatic parse job is being submitted", async () => {
+    let resolveParse!: (value: unknown) => void
+    mocks.uploadFileMock.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      original_filename: "course-notes.pdf",
+      content_type: "application/pdf",
+      byte_size: 5,
+      status: "stored",
+    })
+    mocks.createDocumentParseJobMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveParse = resolve
+      }),
+    )
+    const wrapper = mount(HomeView)
+    const fileInput = wrapper.get('[data-testid="attachment-input"]')
+    const inputElement = fileInput.element as HTMLInputElement
+    Object.defineProperty(inputElement, "files", {
+      configurable: true,
+      value: [
+        new File(["notes"], "course-notes.pdf", {
+          type: "application/pdf",
+        }),
+      ],
+    })
+
+    await fileInput.trigger("change")
+    await wrapper.get("form").trigger("submit")
+    await Promise.resolve()
+
+    expect(mocks.createDocumentParseJobMock).toHaveBeenCalledOnce()
+    expect(wrapper.find('[data-testid="parse-action-button"]').exists()).toBe(
+      false,
+    )
+    expect(wrapper.get('[data-testid="parse-status"]').text()).toContain(
+      "解析中",
+    )
+
+    resolveParse({ id: "job-1", status: "queued" })
+    await Promise.resolve()
   })
 
   // 测试：上传进行中会禁用提交，避免重复触发上传请求，并展示上传中状态。

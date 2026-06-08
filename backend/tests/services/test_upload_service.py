@@ -119,6 +119,60 @@ def test_create_upload_stores_original_file_and_current_user_metadata(
     assert tmp_path.joinpath(*storage_key.parts).read_bytes() == content
 
 
+# 测试部分浏览器把 .pptx 上报为旧 PowerPoint MIME 时，
+# 只要部署已允许 PPTX 官方 MIME，上传服务仍接受该 .pptx 文件。
+def test_create_upload_accepts_pptx_with_browser_legacy_powerpoint_mime(
+    session: Session,
+    user: User,
+    tmp_path,
+) -> None:
+    service = make_service(
+        session=session,
+        storage_root=tmp_path,
+        allowed_content_types={
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        },
+    )
+
+    record = service.create_upload(
+        current_user=user,
+        file=make_upload_file(
+            b"pptx payload",
+            filename="slides.pptx",
+            content_type="application/vnd.ms-powerpoint",
+        ),
+    )
+
+    assert record.original_filename == "slides.pptx"
+    assert record.content_type == "application/vnd.ms-powerpoint"
+    assert PurePosixPath(record.storage_key).name == "original.pptx"
+
+
+def test_create_upload_rejects_legacy_powerpoint_mime_without_pptx_extension(
+    session: Session,
+    user: User,
+    tmp_path,
+) -> None:
+    uploads = get_uploads_module()
+    service = make_service(
+        session=session,
+        storage_root=tmp_path,
+        allowed_content_types={
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        },
+    )
+
+    with pytest.raises(uploads.UploadValidationError, match="content type"):
+        service.create_upload(
+            current_user=user,
+            file=make_upload_file(
+                b"legacy ppt payload",
+                filename="slides.ppt",
+                content_type="application/vnd.ms-powerpoint",
+            ),
+        )
+
+
 @pytest.mark.parametrize(
     ("content", "filename", "content_type", "max_upload_bytes", "expected_message"),
     [
