@@ -1,0 +1,1231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 文档分块功能方案（Docling Chunking）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5f6b7c;
+      --border: #dce3ec;
+      --accent: #1f6f8b;
+      --accent-soft: #e6f3f6;
+      --ok: #19764b;
+      --ok-soft: #e8f6ef;
+      --warn: #a86200;
+      --warn-soft: #fff4df;
+      --danger: #b42318;
+      --danger-soft: #fff0ed;
+      --code-bg: #101828;
+      --code-text: #eef4ff;
+      --purple: #6b4c9a;
+      --purple-soft: #f0eaf8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #101828;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      margin: 14px 0 20px;
+      border-collapse: collapse;
+      background: var(--panel);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+    }
+
+    .decision {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: #123d27;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+      color: #583800;
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+      color: #681f18;
+    }
+
+    .purple {
+      border-left-color: var(--purple);
+      background: var(--purple-soft);
+      color: #3a2560;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini h3 {
+      margin-top: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .step {
+      min-height: 108px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 14px 0;
+    }
+
+    .compare-card {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .compare-card h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .compare-card.recommended {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+
+    .compare-card.not-recommended {
+      border-color: var(--muted);
+      opacity: 0.75;
+    }
+
+    @media (max-width: 920px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 28px;
+      }
+
+      .grid,
+      .grid-3,
+      .compare-grid,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 文档分块功能方案（Docling Chunking）</h1>
+      <p>
+        本文沉淀"在现有文档解析能力之后，新增基于 Docling 原生分块器的文档分块能力"的方案。范围覆盖分块作业模型、HybridChunker 适配、分块结果存储、分块作业 API、与解析结果的关系设计，以及后续 embedding 和检索的扩展边界；不在本文中实现代码。
+      </p>
+      <div class="meta">
+        <span class="tag">阶段：方案探索</span>
+        <span class="tag">日期：2026-06-10</span>
+        <span class="tag">推荐变更：add-document-chunking-docling</span>
+        <span class="tag">分块核心：Docling HybridChunker + Qwen2-7B tokenizer</span>
+        <span class="tag">分块策略：解析即分块，内存直传 DoclingDocument</span>
+        <span class="tag">禁止路径：从 docling.json 还原后分块</span>
+        <span class="tag">存储策略：≤2KB 入库，>2KB 走文件</span>
+        <span class="tag">前置能力：document-parsing 已归档</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>1. 方案结论</h2>
+      <div class="note decision">
+        推荐把"文档分块"设计为解析流程的内嵌步骤：解析 API 负责产出 <code>DoclingDocument</code>，并在同一后台任务中直接将内存中的 <code>DoclingDocument</code> 对象传入分块适配器，无需序列化/还原中间步骤。分块适配器调用 Docling 原生 <code>HybridChunker</code> 将文档分割为带结构元数据的 token 感知块，再持久化分块结果供后续 embedding、检索和引用定位消费。首版使用与解析相同的 <code>BackgroundTasks</code> 调度器，解析成功后自动在同一任务上下文中执行分块，通过 dispatcher 边界保留后续替换为独立 worker + 队列的空间。
+      </div>
+      <p>
+        分块的核心价值是：为语义检索和 RAG 问答提供粒度可控、结构可追溯、token 长度可感知的文本单元。不是简单地把原文切成等长片段，而是沿着文档的自然结构边界（标题、段落、表格、列表）切割，并在 token 超限时沿结构内部进一步拆分，在欠限时沿相同标题上下文合并。
+      </p>
+      <p>
+        首个版本的成功标准不是"分块后立刻可以语义检索"，而是"文档被可靠分块为可追溯、可索引、可供后续 embedding 消费的结构化文本单元"。
+      </p>
+      <div class="note decision">
+        <strong>分块触发策略：</strong>解析成功后在同一后台任务中自动执行分块，<code>DoclingDocument</code> 对象直接在内存中传递给分块适配器，无需经过序列化/还原。<strong>前置条件：</strong>只有解析运行仍持有内存中的 <code>DoclingDocument</code> 时才允许执行分块；如果系统只剩已持久化的 <code>parsed_documents</code>、<code>document_segments</code> 或 <code>docling.json</code>，不得从这些产物还原后启动首次分块。<strong>不再需要"手动触发分块"API</strong>：首次分块始终在解析成功后自动执行；如果需要重新分块（参数变更），使用 <code>/rechunk</code> API 触发重新解析原始文件并立即分块。<strong>重新分块策略：</strong>参数变更后重新分块时，必须重新读取原始上传文件并重新解析以获得新的内存 <code>DoclingDocument</code>；旧分块作业标记为 <code>superseded</code> 状态，其关联的 chunk 结果逻辑上不再活跃但保留在数据库中不主动删除；新作业使用新配置独立产出 chunk 集合。查询 chunk 结果时仅返回最新（非 superseded）作业的 chunk。<strong>Segment 保留原则：</strong><code>document_segments</code> 表的内容在分块过程中保持不变 — 分块不会修改或合并已有 segment；<code>source_segment_indices</code> 只有在 chunk 与 segment 来自同一次解析运行、映射可靠时才填充，否则保持为空并依赖页码、标题路径和 Docling 元数据追溯来源。<strong>产物存储策略：</strong>文本内容 ≤2KB 直接入库，>2KB 写入文件存储并通过 storage_key 引用，<code>text</code>/<code>text_storage_key</code> 和 <code>contextualized_text</code>/<code>contextualized_text_storage_key</code> 各自互斥填充。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 现有基础与约束</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>项目现状</th>
+            <th>对分块方案的影响</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>已有 <code>parsed_documents</code> 表，保存解析产物 <code>storage_key</code>、标题、页数和元数据，关联 <code>uploaded_file_id</code> 和 <code>parse_job_id</code>。</td>
+            <td><code>parsed_documents</code> 只作为持久化关系锚点和查询入口，不能作为运行时分块输入。首次分块必须在解析任务内使用仍在内存中的 <code>DoclingDocument</code>；分块结果关联到本次解析生成的 <code>parsed_document_id</code>。如果只剩已有解析产物，需要通过 <code>/rechunk</code> 重新解析原始上传文件后再分块。</td>
+          </tr>
+          <tr>
+            <td>已有 <code>document_segments</code> 表，保存粗粒度结构片段（段落、标题、表格等），包含 <code>sequence_index</code>、<code>segment_type</code>、<code>page_no</code>、<code>heading_path</code>、<code>text</code>。</td>
+            <td>分块结果与 segment 是不同粒度：<strong>segment 在分块过程中保持不变，不会被合并或修改</strong>。Chunk 可在映射可靠时通过 <code>source_segment_indices</code> 引用同一次解析运行生成的 segment；不能为了填充来源索引而从旧 <code>docling.json</code> 还原或对旧 segment 做不可靠对齐。分块结果应新建独立表，不复用 <code>document_segments</code>。</td>
+          </tr>
+          <tr>
+            <td>解析产物保存到 <code>storage/parsed/{owner_user_id}/{uploaded_file_id}/{parse_job_id}/</code> 下的 <code>content.md</code>、<code>content.txt</code>、<code>docling.json</code>。</td>
+            <td>分块在解析后台任务内执行，<code>DoclingDocument</code> 对象直接在内存中传递给分块适配器，无需从文件还原。<code>docling.json</code> 仅作为持久化产物保留供调试和后续分析，不参与分块流程。重新分块需要重新解析原始文件以获得内存中的 <code>DoclingDocument</code>。</td>
+          </tr>
+          <tr>
+            <td>已有 <code>document_parse_jobs</code> 表和 <code>BackgroundTasksParseJobDispatcher</code>，用于异步解析调度。</td>
+            <td>分块作为解析任务的后续步骤在同一后台任务中执行，不单独创建分块调度器。解析任务成功后直接在内存中调用分块适配器，分块状态写入 <code>document_chunk_jobs</code> 表。</td>
+          </tr>
+          <tr>
+            <td>已安装 <code>docling>=2.97.0</code>，项目依赖已包含 <code>DoclingDocument</code>、<code>DocumentConverter</code> 等核心能力。</td>
+            <td><code>HybridChunker</code> 在 <code>docling</code> 和 <code>docling-core</code> 包中均可用，但 HuggingFace tokenizer 分块需要 <code>docling-core[chunking]</code> extra 或直接使用 <code>docling</code> 包中的 <code>HybridChunker</code>。需要确认依赖是否已满足。</td>
+          </tr>
+          <tr>
+            <td>项目配置使用 Pydantic Settings + <code>.env</code> 管理，数据库使用 SQLModel + PostgreSQL。</td>
+            <td>分块配置项（max_tokens、merge_peers、tokenizer 模型等）应加入 <code>Settings</code> 类。分块结果表需要 Alembic migration。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. Docling 分块能力匹配</h2>
+      <p>
+        Docling 提供三种原生分块器，从 <code>DoclingDocument</code> 直接产出分块结果，无需先导出为 Markdown 再手动切分：
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card recommended">
+          <h4>✅ HybridChunker（推荐）</h4>
+          <p><strong>原理：</strong>先沿文档层级结构做 HierarchicalChunker 分块，再根据用户指定 tokenizer 的 token 限制做感知拆分合并。</p>
+          <p><strong>优点：</strong>同时尊重文档结构和 token 长度限制；超大块自动拆分、欠小块自动合并（同标题上下文下）；<code>contextualize()</code> 方法为每个块补充层级标题上下文，适合 embedding。</p>
+          <p><strong>缺点：</strong>需要指定 tokenizer 或 <code>max_tokens</code>；tokenizer 依赖增加安装体积（HuggingFace tokenizer 或 tiktoken）。</p>
+          <p><strong>适用场景：</strong>RAG 向量索引 — 需要控制 token 长度且保留文档结构。</p>
+        </div>
+        <div class="compare-card not-recommended">
+          <h4>HierarchicalChunker</h4>
+          <p><strong>原理：</strong>为每个检测到的文档元素生成一个块，默认合并列表项。不控制 token 长度。</p>
+          <p><strong>优点：</strong>完全保留结构，无 tokenizer 依赖。</p>
+          <p><strong>缺点：</strong>无法控制块大小；短元素（如单行标题）独立成块对 embedding 不友好；长段落可能超长。</p>
+          <p><strong>适用场景：</strong>文档结构导出、结构可视化 — 不适合直接用于 embedding。</p>
+        </div>
+      </div>
+
+      <div class="note decision">
+        推荐使用 <code>HybridChunker</code> 作为首版分块器，因为它同时满足两个核心约束：(1) 保留文档结构边界（标题、段落、表格），(2) 控制 token 长度以适配 embedding 模型。同时使用 <code>contextualize()</code> 方法为 embedding 输入补充层级标题上下文。<code>HierarchicalChunker</code> 的角色是在 <code>HybridChunker</code> 内部使用，不需要单独暴露。
+      </div>
+
+      <h3>HybridChunker 关键参数</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>参数</th>
+            <th>说明</th>
+            <th>knowra 推荐值</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>max_tokens</code></td>
+            <td>每个块的最大 token 数量。oversized 块会被拆分。</td>
+            <td>默认 <code>512</code>，可配置。需与 embedding 模型的 max input tokens 对齐。</td>
+          </tr>
+          <tr>
+            <td><code>tokenizer</code></td>
+            <td>用于 token 计数的分词器。可以是 HuggingFace tokenizer 或 tiktoken。</td>
+            <td>首版使用 <code>HybridChunker(max_tokens=512, tokenizer=AutoTokenizer.from_pretrained("Qwen/Qwen2-7B"))</code>，以 Qwen2-7B 模型的分词器计算 token 数；后续可配置指定其他 embedding 模型的 tokenizer。</td>
+          </tr>
+          <tr>
+            <td><code>merge_peers</code></td>
+            <td>是否合并同标题下欠大小的连续块。默认 <code>True</code>。</td>
+            <td>默认 <code>True</code>，通过配置项开放控制。</td>
+          </tr>
+          <tr>
+            <td><code>repeat_table_header</code></td>
+            <td>跨块表格是否重复表头。默认 <code>True</code>。</td>
+            <td>默认 <code>True</code>，保持表头上下文。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>HybridChunker 输出结构</h3>
+      <p><code>HybridChunker.chunk(dl_doc)</code> 返回 <code>Iterator[BaseChunk]</code>，每个 chunk 包含：</p>
+      <pre>{
+  "text": "块的纯文本内容",
+  "meta": {
+    "headings": ["第 2 章", "语义检索"],   // 层级标题路径
+    "captions": [...],                      // 图表标题
+    "page_numbers": [3, 4],                // 所在页码
+    "origin": {
+      "page_no": 3,
+      "doc_reference": "..."               // Docling 内部引用
+    }
+  }
+}</pre>
+      <p><code>HybridChunker.contextualize(chunk)</code> 方法会在块文本前拼接层级标题，产生适合 embedding 的富文本。例如：</p>
+      <pre># contextualize 输出示例
+"第 2 章 语义检索
+
+用于引用和后续分块的正文片段..."</pre>
+
+      <div class="note decision">
+        <strong>分词器选择：</strong>首版使用 HuggingFace <code>Qwen/Qwen2-7B</code> 模型的分词器（<code>AutoTokenizer.from_pretrained("Qwen/Qwen2-7B")</code>），与后续 embedding 和检索模型对齐。选择 Qwen2-7B 分词器的理由：(1) 对中文文本的分词质量优于通用英文分词器；(2) Qwen2 系列是 knowra 后续 embedding 模型的候选之一，分词器对齐可避免 token 切分不一致；(3) HuggingFace AutoTokenizer 接口稳定，切换模型只需修改配置。分词器文件约 10MB，首次运行自动下载并缓存。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. 推荐数据流</h2>
+      <div class="flow">
+        <div class="step">
+          <strong>1. 解析完成</strong>
+          <code>DoclingDocument</code> 对象在内存中就绪，解析产物已持久化。
+        </div>
+        <div class="step">
+          <strong>2. 创建分块作业</strong>
+          解析成功后自动创建分块作业，写入 <code>document_chunk_jobs</code>。
+        </div>
+        <div class="step">
+          <strong>3. 内存直传分块</strong>
+          <code>DoclingDocument</code> 直接在内存中传递给 <code>HybridChunker</code>，无需序列化/还原。
+        </div>
+        <div class="step">
+          <strong>4. HybridChunker</strong>
+          调用 <code>HybridChunker</code> 产出带元数据的 token 感知块。
+        </div>
+        <div class="step">
+          <strong>5. 保存结果</strong>
+          块文本写入存储，元数据和位置信息入库。
+        </div>
+      </div>
+      <pre>run_parse_job 执行解析
+        |
+        +--> parsed_documents + docling.json 持久化
+        |
+        +--> DoclingDocument (内存中，不落地)
+        |         |
+        |         v
+        |   HybridChunker(max_tokens=N, tokenizer=AutoTokenizer.from_pretrained("Qwen/Qwen2-7B"))
+        |         |
+        |         +--> document_chunk_jobs
+        |         |     running -> succeeded | failed
+        |         |
+        |         +--> document_chunks
+        |               sequence_index, chunk_text, token_count,
+        |               heading_path, page_numbers, contextualized_text,
+        |               metadata_json
+        |
+        v
+  解析 + 分块在同一后台任务中完成</pre>
+
+      <div class="note purple">
+        <strong>关键设计点：解析即分块（内存直传）</strong> — 分块的输入不是从文件还原的 <code>DoclingDocument</code>，而是解析过程中内存里的同一个对象。解析后台任务成功后，直接在内存中将 <code>DoclingDocument</code> 传递给分块适配器，避免了 pickle/JSON 序列化与还原的可靠性风险和版本兼容性问题。分块不再需要独立的"还原"步骤。<strong>重新分块</strong>时，由于内存中的 <code>DoclingDocument</code> 已不可用，需要重新解析原始文件以重新获得内存中的文档对象。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>5. 后端模块边界</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>职责</th>
+            <th>建议位置</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>DocumentChunkingService</code></td>
+            <td>编排分块作业的创建、状态校验、权限校验和错误处理。不直接调用 Docling。</td>
+            <td><code>backend/app/services/document_chunking.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DoclingChunkerAdapter</code></td>
+            <td>封装 Docling <code>HybridChunker</code>：接收内存中的 <code>DoclingDocument</code> 对象，执行分块，返回项目内的规范化结果 <code>ChunkedDocumentPayload</code>。不把第三方 SDK 类型扩散到路由和服务层。不再负责从文件还原 DoclingDocument。</td>
+            <td><code>backend/app/services/document_chunker.py</code></td>
+          </tr>
+          <tr>
+            <td><code>ChunkArtifactStorage</code></td>
+            <td>保存分块产物（每个 chunk 的纯文本和 contextualized 文本），≤2KB 直接入库，>2KB 写入文件存储。沿用 <code>storage_key</code> 抽象。</td>
+            <td>复用或扩展现有 <code>ParsedArtifactStorage</code> 模式</td>
+          </tr>
+          <tr>
+            <td><code>BackgroundTasksChunkJobDispatcher</code></td>
+            <td>首版分块不使用独立 dispatcher。分块在解析后台任务内执行，状态直接写入 <code>document_chunk_jobs</code> 表。后续独立部署时可替换为队列调度。</td>
+            <td>分块逻辑嵌入 <code>run_parse_job</code>，无独立模块</td>
+          </tr>
+          <tr>
+            <td><code>DocumentChunkJob</code></td>
+            <td>记录分块任务生命周期、重试次数、错误、耗时和 chunker 版本。</td>
+            <td><code>backend/app/models/document_chunking.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DocumentChunk</code></td>
+            <td>保存分块结果，包含文本、token 计数、层级标题、页码、元数据和来源追溯。</td>
+            <td><code>backend/app/models/document_chunking.py</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note decision">
+        核心原则：<code>DoclingChunkerAdapter</code> 是项目中唯一接触 Docling 分块 SDK 的地方；服务层只接收项目内定义的 <code>ChunkedDocumentPayload</code>；路由层只接收请求和返回 schema。数据库模型保存 knowra 的稳定契约，不直接暴露第三方 SDK 内部结构。分块适配器直接接收内存中的 <code>DoclingDocument</code>，不做文件还原。
+      </div>
+      <div class="note danger">
+        <strong>实现符合性检查：</strong>现有解析适配器如果只返回 <code>markdown</code>、<code>text</code> 和 <code>docling_json</code>，而没有把 Docling 转换结果里的 <code>document</code> 对象作为 transient 字段带回 <code>run_parse_job</code>，则仍不符合本方案。需要把解析输出契约调整为"持久化 payload + 内存 <code>DoclingDocument</code>"两部分：持久化部分继续写入 <code>parsed_documents</code>、<code>document_segments</code> 和文件产物；内存对象只在当前后台任务内传给 <code>DoclingChunkerAdapter</code>，不入库、不序列化、不从 <code>docling.json</code> 反向恢复。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. 数据模型草案</h2>
+
+      <h3><code>document_chunk_jobs</code> — 分块作业表</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID PK</td>
+            <td>主键。</td>
+          </tr>
+          <tr>
+            <td><code>parsed_document_id</code></td>
+            <td>UUID FK → parsed_documents.id</td>
+            <td>关联解析结果。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>UUID FK → users.id</td>
+            <td>冗余当前用户归属，便于权限过滤。</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>String(32)</td>
+            <td><code>queued</code>、<code>running</code>、<code>succeeded</code>、<code>failed</code>、<code>superseded</code>。<code>superseded</code> 表示被新参数的重新分块作业取代，旧结果保留但不活跃。</td>
+          </tr>
+          <tr>
+            <td><code>chunker_name</code></td>
+            <td>String(64)</td>
+            <td>分块器名称，例如 <code>docling_hybrid</code>。</td>
+          </tr>
+          <tr>
+            <td><code>chunker_version</code></td>
+            <td>String(64) nullable</td>
+            <td>Docling 包版本，便于结果可重复性分析。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_config_json</code></td>
+            <td>JSON nullable</td>
+            <td>分块配置快照，例如 <code>{"max_tokens": 512, "merge_peers": true, "tokenizer_model": "Qwen/Qwen2-7B"}</code>。用于审计、对比和重新解析后的重分块输入；不表示可以从已落地的 <code>docling.json</code> 还原文档对象。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_count</code></td>
+            <td>Integer nullable</td>
+            <td>成功后写入的分块总数。</td>
+          </tr>
+          <tr>
+            <td><code>attempt_count</code></td>
+            <td>Integer</td>
+            <td>重试次数。</td>
+          </tr>
+          <tr>
+            <td><code>started_at</code> / <code>finished_at</code></td>
+            <td>DateTime(tz) nullable</td>
+            <td>记录耗时。</td>
+          </tr>
+          <tr>
+            <td><code>error_code</code> / <code>error_message</code></td>
+            <td>String nullable</td>
+            <td>可展示、可诊断的错误。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code> / <code>updated_at</code></td>
+            <td>DateTime(tz)</td>
+            <td>时间戳。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><code>document_chunks</code> — 分块结果表</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID PK</td>
+            <td>主键。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_job_id</code></td>
+            <td>UUID FK → document_chunk_jobs.id</td>
+            <td>关联分块作业。</td>
+          </tr>
+          <tr>
+            <td><code>parsed_document_id</code></td>
+            <td>UUID FK → parsed_documents.id</td>
+            <td>关联解析结果。便于直接从 parsed_document 查询所有 chunk。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>UUID FK → users.id</td>
+            <td>冗余当前用户归属。</td>
+          </tr>
+          <tr>
+            <td><code>sequence_index</code></td>
+            <td>Integer</td>
+            <td>块在文档中的顺序编号，从 0 开始。</td>
+          </tr>
+          <tr>
+            <td><code>text</code></td>
+            <td>Text nullable</td>
+            <td>块的原始文本内容（≤2KB 时直接入库）。超过 2KB 时不填充此字段，改用 <code>text_storage_key</code> 引用文件存储。</td>
+          </tr>
+          <tr>
+            <td><code>text_storage_key</code></td>
+            <td>String(1024) nullable</td>
+            <td>原始文本超过 2KB 时的文件存储 key。与 <code>text</code> 互斥：一个有值时另一个为空。</td>
+          </tr>
+          <tr>
+            <td><code>contextualized_text</code></td>
+            <td>Text nullable</td>
+            <td>带层级标题上下文的富文本（≤2KB 时直接入库）。适合直接送入 embedding 模型。超过 2KB 时不填充，改用 <code>contextualized_text_storage_key</code>。</td>
+          </tr>
+          <tr>
+            <td><code>contextualized_text_storage_key</code></td>
+            <td>String(1024) nullable</td>
+            <td>带上下文富文本超过 2KB 时的文件存储 key。与 <code>contextualized_text</code> 互斥。</td>
+          </tr>
+          <tr>
+            <td><code>token_count</code></td>
+            <td>Integer nullable</td>
+            <td>块的 token 计数（由分块器计算）。</td>
+          </tr>
+          <tr>
+            <td><code>heading_path</code></td>
+            <td>JSON nullable</td>
+            <td>层级标题路径，例如 <code>["第 2 章", "语义检索"]</code>。</td>
+          </tr>
+          <tr>
+            <td><code>page_numbers</code></td>
+            <td>JSON nullable</td>
+            <td>块所在的页码列表，例如 <code>[3, 4]</code>。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_type</code></td>
+            <td>String(64)</td>
+            <td>块类型：例如 <code>text</code>、<code>table</code>、<code>list</code>、<code>mixed</code>。</td>
+          </tr>
+          <tr>
+            <td><code>source_segment_indices</code></td>
+            <td>JSON nullable</td>
+            <td>块来源的 segment 序号列表，与 <code>document_segments.sequence_index</code> 对应。仅在 chunk 与 segment 基于同一次解析运行且映射可靠时填充；否则保持为空。</td>
+          </tr>
+          <tr>
+            <td><code>metadata_json</code></td>
+            <td>JSON nullable</td>
+            <td>Docling chunk 元数据快照，包含 Docling 内部引用等。仅用于调试、引用辅助和结果对比，不作为重新分块的输入来源。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code></td>
+            <td>DateTime(tz)</td>
+            <td>时间戳。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>索引建议</h3>
+      <pre>-- document_chunk_jobs
+CREATE INDEX ix_chunk_jobs_owner_user_id ON document_chunk_jobs(owner_user_id);
+CREATE INDEX ix_chunk_jobs_parsed_document_id ON document_chunk_jobs(parsed_document_id);
+CREATE INDEX ix_chunk_jobs_status ON document_chunk_jobs(status);
+
+-- document_chunks
+CREATE INDEX ix_chunks_chunk_job_id ON document_chunks(chunk_job_id);
+CREATE INDEX ix_chunks_parsed_document_id ON document_chunks(parsed_document_id);
+CREATE INDEX ix_chunks_owner_user_id ON document_chunks(owner_user_id);
+CREATE INDEX ix_chunks_sequence_index ON document_chunks(parsed_document_id, sequence_index);</pre>
+
+      <div class="note">
+        <strong>为什么不复用 <code>document_segments</code> 表？</strong> Segment 是解析阶段产出的粗粒度结构单元（一个标题、一个段落、一个表格），不控制 token 长度。Chunk 是分块阶段产出的 token 感知可索引单元，可能在结构边界上拆分或合并多个 segment。<strong>Segment 在分块过程中始终保持不变，不会被合并或修改</strong>。两者的生命周期、粒度和用途不同：
+        <ul>
+          <li>Segment 的用途：文档预览、结构可视化、来源追溯。</li>
+          <li>Chunk 的用途：embedding 输入、向量检索、引用定位。</li>
+        </ul>
+        两者在映射可靠时通过 <code>source_segment_indices</code> 字段保持关联 — 一个 chunk 可以跨越多个 segment，但 segment 原始记录始终完整保留。映射不可靠时不要强填旧 segment 索引，应依赖 <code>page_numbers</code>、<code>heading_path</code> 和 <code>metadata_json</code> 做来源辅助。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. 分块产物存储</h2>
+      <p>
+        分块产物的文本内容策略需要权衡数据库存储和文件系统存储：
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card recommended">
+          <h4>✅ 推荐：阈值混合存储（≤2KB 入库，>2KB 走文件）</h4>
+          <p><code>chunk.text</code> 和 <code>contextualized_text</code> 统一采用阈值策略：<strong>文本长度 ≤ 2KB 时直接存入数据库 <code>Text</code> 字段</strong>（短文本快速查询和预览），<strong>> 2KB 时写入文件存储，数据库只保存 <code>storage_key</code></strong>。</p>
+          <p>字段设计：<code>text</code>（<code>Text</code> 可空）存 ≤2KB 的原始文本，<code>text_storage_key</code>（<code>String(1024)</code> 可空）存 >2KB 时的文件引用；<code>contextualized_text</code>（<code>Text</code> 可空）和 <code>contextualized_text_storage_key</code>（<code>String(1024)</code> 可空）同理。</p>
+          <p><strong>存储路径：</strong></p>
+          <pre>storage/chunked/{owner_user_id}/{parsed_document_id}/{chunk_job_id}/
+  chunk_0000.ctx.md        # >2KB 的 contextualized 文本
+  chunk_0000.txt           # >2KB 的原始文本
+  ...
+  chunks_meta.json         # 分块元数据快照</pre>
+          <p><strong>优点：</strong>短文本直接在数据库中查询、预览和过滤（大多数 chunk < 2KB）；长文本不占数据库容量；统一阈值逻辑清晰。</p>
+        </div>
+        <div class="compare-card not-recommended">
+          <h4>纯文件存储</h4>
+          <p>所有文本内容都写入文件，数据库只存 storage_key。</p>
+          <p><strong>优点：</strong>数据库最瘦。</p>
+          <p><strong>缺点：</strong>简单文本预览和搜索需要读文件；增加了存储服务复杂度；与 segment 设计不一致。</p>
+        </div>
+      </div>
+
+      <div class="note decision">
+        推荐<strong>阈值混合存储</strong>：文本 ≤2KB 入数据库 <code>Text</code> 字段，>2KB 写入文件存储并通过 <code>storage_key</code> 引用。<code>text</code>/<code>text_storage_key</code> 和 <code>contextualized_text</code>/<code>contextualized_text_storage_key</code> 各自一对，互斥填充（一个有值另一个为空）。<code>metadata_json</code> 保留 Docling chunk 原始元数据快照，便于调试、结果对比和引用辅助，但不能作为重分块输入。此策略与 <code>document_segments</code> 的文本存储方式保持一致。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>8. DoclingChunkerAdapter 设计</h2>
+      <p>分块适配器是项目中唯一接触 Docling 分块 SDK 的模块。核心流程：</p>
+      <pre>DoclingChunkerAdapter
+  ├─ __init__(max_tokens, merge_peers, tokenizer_model="Qwen/Qwen2-7B", ...)
+  └─ chunk(dl_doc: DoclingDocument) -> ChunkedDocumentPayload
+       ├─ HybridChunker(max_tokens=N, tokenizer=AutoTokenizer.from_pretrained("Qwen/Qwen2-7B"), merge_peers=True)
+       ├─ for chunk in chunker.chunk(dl_doc):
+       │    ├─ 提取 .text
+       │    ├─ 提取 .meta.headings, .meta.page_numbers, .meta.captions
+       │    ├─ chunker.contextualize(chunk) → 富文本
+       │    └─ 构建 ChunkPayload
+       └─ return ChunkedDocumentPayload(chunks=[...], total_token_count=...)</pre>
+
+      <h3>解析输出契约调整</h3>
+      <p>
+        为支持内存直传，解析适配器不能只返回可持久化的 JSON/Markdown/Text 产物，还必须把当前 Docling 转换结果中的 <code>DoclingDocument</code> 作为 transient 运行时对象交还给解析任务。该字段只用于当前进程内调用分块适配器，不参与 JSON 序列化、文件存储或 API 返回。
+      </p>
+      <pre>@dataclass(frozen=True)
+class ParsedDocumentPayload:
+    markdown: str
+    text: str
+    docling_json: dict[str, Any]
+    docling_document: Any | None = field(default=None, repr=False, compare=False)
+    title: str | None = None
+    page_count: int | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    segments: list[ParsedSegmentPayload] = field(default_factory=list)</pre>
+      <div class="note decision">
+        <strong>实现要求：</strong><code>DoclingParserAdapter._normalize_docling_result()</code> 应从 <code>result.document</code> 取出同一个 <code>DoclingDocument</code> 并放入 transient 字段；<code>save_parse_result()</code> 只保存可持久化字段；<code>run_parse_job</code> 在保存解析结果后、后台任务结束前立即调用 <code>DoclingChunkerAdapter.chunk(payload.docling_document)</code>。如果某种格式当前无法产生 <code>DoclingDocument</code>，首版应明确跳过 Docling 原生分块或将该格式改走 Docling converter，不能退回到从 <code>docling_json</code> 还原。
+      </div>
+
+      <div class="note decision">
+        <strong>内存直传设计：</strong>分块适配器直接接收内存中的 <code>DoclingDocument</code> 对象，不再包含 <code>restore_docling_document()</code> 方法。<code>DoclingDocument</code> 由解析流程在内存中直接传入，无需从 pickle 或 JSON 文件还原。这消除了序列化/还原的可靠性风险和版本兼容性问题。<strong>重新分块</strong>时需要重新解析原始文件以获得内存中的 <code>DoclingDocument</code>。
+      </div>
+
+      <h3>适配器输入输出契约</h3>
+      <pre>@dataclass(frozen=True)
+class ChunkPayload:
+    sequence_index: int
+    text: str | None          # ≤2KB 时有值，>2KB 时为 None，走 text_storage_key
+    text_storage_key: str | None  # >2KB 时有值，≤2KB 时为 None
+    contextualized_text: str | None     # ≤2KB 时有值，>2KB 时为 None
+    contextualized_text_storage_key: str | None  # >2KB 时有值
+    token_count: int | None
+    heading_path: list[str] | None
+    page_numbers: list[int] | None
+    chunk_type: str              # "text" | "table" | "list" | "mixed"
+    source_segment_indices: list[int] | None
+    metadata: dict[str, Any]
+
+@dataclass(frozen=True)
+class ChunkedDocumentPayload:
+    chunks: list[ChunkPayload]
+    total_token_count: int | None
+    chunker_name: str
+    chunker_version: str | None
+    chunk_config: dict[str, Any]</pre>
+
+      <div class="note">
+        <strong>不再需要还原策略：</strong>采用内存直传方案后，分块适配器不再需要从文件还原 <code>DoclingDocument</code>。<code>DoclingDocument</code> 由解析流程在内存中直接传入分块适配器，这从根本上规避了 pickle 序列化的跨版本兼容性风险和 JSON 反序列化的稳定性问题。<strong>trade-off：</strong>重新分块时需要重新解析原始文件（因为内存中的 <code>DoclingDocument</code> 已不可用），这是为了消除还原风险的合理代价。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>9. API 草案</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>接口</th>
+            <th>用途</th>
+            <th>响应语义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>POST /api/parsed-documents/{parsed_document_id}/rechunk</code></td>
+            <td>以当前解析结果作为用户入口，找到其关联的原始上传文件，使用新参数重新解析原始文件并立即分块。允许指定 <code>max_tokens</code>、<code>merge_peers</code> 等参数覆盖默认值。不得读取 <code>docling.json</code> 还原 <code>DoclingDocument</code>。旧分块作业及其结果标记为 <code>superseded</code> 状态，新作业独立产生新的 chunk 集合。</td>
+            <td>返回 <code>202 Accepted</code> 和新分块作业；存在运行中作业返回 <code>409</code>；原始上传文件不存在时返回可诊断错误。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/document-chunk-jobs/{job_id}</code></td>
+            <td>查询分块作业状态。</td>
+            <td>只允许当前用户读取自己的作业。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/parsed-documents/{parsed_document_id}/chunks</code></td>
+            <td>分页查询分块结果。</td>
+            <td>仅返回最新非 <code>superseded</code> 分块作业的结果，按 <code>sequence_index</code> 返回，支持分页。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/document-chunks/{chunk_id}</code></td>
+            <td>查询单个 chunk 详情（含 contextualized_text）。</td>
+            <td>返回块文本、元数据、页码、标题路径和 contextualized 文本。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>分块触发时机</h3>
+      <div class="grid">
+        <div class="mini">
+          <h3>方案 A：解析成功后内存直传自动分块 ✅ 首版采用</h3>
+          <p>解析后台任务成功后，直接在内存中将 DoclingDocument 传递给分块适配器。不需要独立的分块触发 API。</p>
+          <p><strong>优点：</strong>消除 pickle/JSON 还原风险；用户无需手动操作，端到端体验流畅；架构简单。</p>
+          <p><strong>缺点：</strong>分块参数（如 max_tokens）在首次分块时使用默认配置；分块和解析耦合在同一任务中。</p>
+        </div>
+        <div class="mini">
+          <h3>方案 B：参数变更后重新分块</h3>
+          <p>需要重新分块时，通过 <code>POST /rechunk</code> 触发重新解析原始文件 + 重新分块流程。旧作业标记为 <code>superseded</code>，新作业使用新配置独立产出 chunk 集合。</p>
+          <p><strong>优点：</strong>参数变更后可重新分块。</p>
+          <p><strong>缺点：</strong>重新分块需要重新解析原始文件（因为 DoclingDocument 不持久化到文件）。</p>
+        </div>
+      </div>
+
+      <div class="note decision">
+        <strong>分块触发策略：</strong>(1) 解析成功后在同一后台任务中<strong>自动执行</strong>分块（内存直传 DoclingDocument，使用默认配置）；(2) 不再提供独立的 <code>POST /chunk</code> API — 首次分块始终由解析流程自动触发；(3) 参数变更后可通过 <code>POST /rechunk</code> API <strong>重新分块</strong>（内部会重新解析原始上传文件以获得内存中的 DoclingDocument，不读取 <code>docling.json</code>），旧作业标记为 <code>superseded</code> 并保留、新作业独立产出 chunk 集合。仅解析成功（<code>status=succeeded</code>）的文档可查询分块结果。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>10. 作业执行策略</h2>
+      <p>分块在解析后台任务内自动执行，不单独调度：</p>
+      <pre>run_parse_job 执行流程：
+  1. 解析原始文件 → DoclingDocument
+  2. 构建 ParsedDocumentPayload，其中 docling_document 为 transient 内存字段
+  3. 持久化解析产物（docling.json, content.md 等），但不持久化 docling_document
+  4. 更新 parse_job 状态为 succeeded
+  5. 如果 DOCUMENT_CHUNKING_ENABLED=true：
+     a. 创建 document_chunk_jobs 行（status=running）
+     b. 校验 payload.docling_document 存在；不存在则将 chunk_job 标记为 failed
+     c. 在同一任务中调用 DoclingChunkerAdapter.chunk(payload.docling_document)
+     d. 保存 chunk 产物（≤2KB 入库，>2KB 走文件存储）
+     e. 更新 chunk_job 状态为 succeeded/failed
+
+重新分块（POST /rechunk）：
+  1. 校验 parsed_document 归属，并通过 uploaded_file_id 找到原始上传文件
+  2. 创建 document_chunk_jobs 行（status=queued/running）
+  3. 标记旧分块作业为 superseded
+  4. 重新解析原始上传文件 → 获得新的内存 DoclingDocument（不读取 docling.json）
+  5. 调用 DoclingChunkerAdapter.chunk(payload.docling_document) 使用新配置
+  6. 保存 chunk 产物
+  7. 更新 chunk_job 状态</pre>
+
+      <div class="note decision">
+        <strong>核心变更：</strong>首次分块不再是可从持久化解析产物启动的独立作业，而是解析任务的后续步骤。<code>DoclingDocument</code> 在内存中直接传递，不需要独立的 dispatch 机制和文件还原步骤。<strong>只有重新分块</strong>（<code>/rechunk</code>）需要重新解析原始文件；重新解析的目的只是重新获得内存文档对象，不允许从旧 <code>docling.json</code> 还原。分块状态仍然持久化到 <code>document_chunk_jobs</code> 表以便查询和追溯。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>11. 配置建议</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>配置项</th>
+            <th>示例</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>DOCUMENT_CHUNKING_ENABLED</code></td>
+            <td><code>true</code></td>
+            <td>分块功能总开关，便于在依赖或配置未就绪时禁用。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_CHUNK_TOKENIZER_MODEL</code></td>
+            <td><code>Qwen/Qwen2-7B</code></td>
+            <td>HybridChunker 使用的 HuggingFace tokenizer 模型名称。首版使用 Qwen2-7B 分词器，与后续 embedding 模型对齐。需要在项目依赖中添加 <code>transformers</code> 和 <code>tokenizers</code>，首次运行时自动从 HuggingFace Hub 下载分词器文件。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_CHUNK_DEFAULT_MAX_TOKENS</code></td>
+            <td><code>512</code></td>
+            <td>HybridChunker 默认 max_tokens。需与后续 embedding 模型的 max input tokens 对齐。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_CHUNK_DEFAULT_MERGE_PEERS</code></td>
+            <td><code>true</code></td>
+            <td>是否合并同标题下欠大小的连续块。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_CHUNK_ARTIFACT_DIR</code></td>
+            <td><code>storage/chunked</code></td>
+            <td>分块产物存储根目录。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_CHUNK_DISPATCHER</code></td>
+            <td><code>embedded</code></td>
+            <td>首版分块嵌入式执行（在解析任务内）；后续可切换为 queue。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>12. 与现有模块的关系</h2>
+      <pre>                    ┌───────────────────────┐
+                    │   uploaded_files       │
+                    │  (原始文件上传)         │
+                    └──────────┬─────────────┘
+                               │ POST /parse
+                               v
+                    ┌───────────────────────┐
+                    │  document_parse_jobs   │
+                    │  (解析作业)             │
+                    └──────────┬─────────────┘
+                               │ BackgroundTasks
+                               v
+                    ┌───────────────────────┐
+                    │  parsed_documents      │
+                    │  + docling.json        │
+                    └──────────┬─────────────┘
+                               │ 自动执行分块（内存直传）
+                               v
+                    ┌───────────────────────┐
+                    │  document_chunk_jobs  │
+                    │  (分块状态记录)        │
+                    └──────────┬─────────────┘
+                               │ 同一任务内内存直传
+                               v
+                    ┌───────────────────────┐
+                    │  document_chunks       │
+                    │  (分块结果)             │
+                    └──────────┬─────────────┘
+                               │ 后续：embedding + 检索
+                               v
+                    ┌───────────────────────┐
+                    │  (后续能力)             │
+                    │  embedding + pgvector  │
+                    │  语义检索 + RAG        │
+                    └───────────────────────┘</pre>
+
+      <div class="note decision">
+        <strong>关键约束：</strong>分块在解析后台任务内执行，<code>DoclingDocument</code> 直接在内存中传递给分块适配器，不需要独立的"还原"步骤或文件中间产物。<code>docling.json</code> 只用于调试、审计和后续分析，不作为分块输入。分块状态仍然持久化到 <code>document_chunk_jobs</code> 表以便查询和追溯。重新分块（<code>/rechunk</code>）需要重新解析原始文件以获得内存中的 <code>DoclingDocument</code>。如果原始文件被删除，无法重新分块。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>13. 前端体验</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>状态</th>
+            <th>界面反馈</th>
+            <th>用户动作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>解析成功，分块自动进行</td>
+            <td>展示"解析完成，分块中"。</td>
+            <td>无需操作。分块在解析后台任务内自动执行。</td>
+          </tr>
+          <tr>
+            <td><code>running</code></td>
+            <td>显示分块中。</td>
+            <td>可刷新状态或稍后查看。</td>
+          </tr>
+          <tr>
+            <td><code>succeeded</code></td>
+            <td>展示分块完成，可查看分块结果预览。</td>
+            <td>后续可进入 embedding 和检索流程。</td>
+          </tr>
+          <tr>
+            <td>分块作业失败后</td>
+            <td>展示可理解错误信息。</td>
+            <td>需要重新读取原始上传文件、重新解析并重新分块（通过 /rechunk 触发完整流程）。</td>
+          </tr>
+          <tr>
+            <td>重新分块（参数变更）</td>
+            <td>展示"重新分块"入口，允许调整 max_tokens 等参数。</td>
+            <td>触发重新读取原始上传文件、重新解析 + 重新分块，旧作业标记为 superseded。</td>
+          </tr>
+          <tr>
+            <td>解析中/解析失败</td>
+            <td>分块状态不可用，需先完成解析。</td>
+            <td>无法触发分块操作。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>14. MVP 范围</h2>
+      <div class="grid">
+        <div class="mini">
+          <h3>纳入 MVP</h3>
+          <ul>
+            <li>新增 OpenSpec 变更 <code>add-document-chunking-docling</code>。</li>
+            <li>分块作业表和分块结果表（含阈值混合存储字段和 superseded 状态）。</li>
+            <li>调整解析适配器输出契约，保留 transient <code>DoclingDocument</code> 供同一后台任务内分块使用；该对象不入库、不写文件、不从 <code>docling.json</code> 还原。</li>
+            <li>Docling <code>HybridChunker</code> 适配器，直接接收内存中的 <code>DoclingDocument</code> 对象执行分块（无需从文件还原）。</li>
+            <li>解析成功后自动在同一后台任务中执行分块（内存直传 DoclingDocument，使用默认配置）。</li>
+            <li>参数变更后重新分块（POST /rechunk，触发重新解析原始上传文件 + 重新分块，旧作业标记 superseded）。</li>
+            <li>分块结果的阈值混合存储（≤2KB 入库，>2KB 走文件），<code>document_segments</code> 在分块过程中保持不变；<code>source_segment_indices</code> 仅在同源映射可靠时填充。</li>
+            <li>分块作业状态查询、结果分页查询、重新分块 API。</li>
+            <li>权限校验：只能查看自己的分块结果。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>暂不纳入 MVP</h3>
+          <ul>
+            <li>向量 embedding 和 pgvector 索引。</li>
+            <li>语义检索和 RAG 问答。</li>
+            <li>自定义分块参数的 API（如用户指定 max_tokens 或 tokenizer）— 注：首版通过 rechunk 端点支持参数变更后重分块，但不支持在首次自动分块时自定义参数。</li>
+            <li>多种分块策略切换（如 HierarchicalChunker 或自定义分块器）。</li>
+            <li>分块结果向量化或向量化存储。</li>
+            <li>引用生成和来源展示。</li>
+            <li>独立 worker + 队列的生产级部署。</li>
+            <li>跨解析运行的分块结果与旧 segment 自动对齐算法（首版不做不可靠强对齐）。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>15. 测试与验收建议</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>测试层级</th>
+            <th>建议场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>模型测试</td>
+            <td>分块作业表字段、外键、状态索引、分块结果与解析结果关系；chunk 序号和来源追溯。</td>
+          </tr>
+          <tr>
+            <td>服务测试</td>
+            <td>当前用户只能查看自己的解析结果和分块结果；解析结果不存在时拒绝；已有运行中分块作业时返回 409；分块参数配置快照；当解析 payload 没有 transient <code>DoclingDocument</code> 时，分块失败并记录明确错误，不尝试从 <code>docling.json</code> 还原。</td>
+          </tr>
+          <tr>
+            <td>适配器测试</td>
+            <td>用 mock HybridChunker 验证调用参数、产物格式、异常转换；用极小 MD fixture 做真实分块 smoke test；验证 contextualize() 输出符合预期。</td>
+          </tr>
+          <tr>
+            <td>还原测试</td>
+            <td>不再需要验证"还原是否成功"。应改为验证没有 <code>restore_docling_document()</code>、pickle 加载或 <code>docling.json</code> 反序列化路径；分块在解析任务内内存直传，无需从文件还原 DoclingDocument。</td>
+          </tr>
+          <tr>
+            <td>调度器测试</td>
+            <td>验证分块在解析后台任务中自动执行；mock parser 返回的同一个 <code>DoclingDocument</code> 对象被传给 chunker；分块状态由持久化表驱动；重新分块 API 触发重新解析原始上传文件 + 重新分块。</td>
+          </tr>
+          <tr>
+            <td>API 测试</td>
+            <td>GET chunks 分页查询；GET chunk 详情；POST /rechunk 触发重新分块；无权限返回 403。</td>
+          </tr>
+          <tr>
+            <td>集成测试</td>
+            <td>端到端：上传 → 解析 → 自动分块（内存直传）→ 查询 chunks；重新分块：POST /rechunk → 重新读取原始上传文件 → 重新解析 → 重新分块 → 新 chunk 结果；验证 chunk 文本、token_count、heading_path 和 page_numbers 符合预期，并验证没有读取旧 <code>docling.json</code> 作为分块输入。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>16. 风险与开放问题</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>风险</th>
+            <th>影响</th>
+            <th>缓解方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Docling JSON 还原 DoclingDocument 不可靠</td>
+            <td>分块无法从已有产物启动，需要重新解析。</td>
+            <td><strong>已采用内存直传方案彻底规避：</strong>分块在解析后台任务内执行，<code>DoclingDocument</code> 直接在内存中传递给分块适配器，不再需要从 pickle 或 JSON 文件还原。这从根本上消除了还原不可靠的风险。<strong>trade-off：</strong>重新分块时需要重新解析原始文件以获得内存中的 <code>DoclingDocument</code>。</td>
+          </tr>
+          <tr>
+            <td>解析适配器输出丢失 DoclingDocument</td>
+            <td>即使方案写成内存直传，实现时也可能因为只拿到 <code>docling_json</code> 而被迫回到不可靠还原路径。</td>
+            <td><strong>必须调整解析输出契约：</strong>解析结果需要同时包含可持久化 payload 和 transient <code>DoclingDocument</code>。<code>run_parse_job</code> 在保存解析结果后立即使用该内存对象执行分块；如果对象不存在，分块作业失败并提示格式或解析适配器不支持 Docling 原生分块，禁止静默回退到 JSON 还原。</td>
+          </tr>
+          <tr>
+            <td>HybridChunker 依赖 tokenizer 增加 bundle 体积</td>
+            <td>如果使用 HuggingFace tokenizer，需要下载模型权重。</td>
+            <td>首版使用 HuggingFace <code>Qwen/Qwen2-7B</code> 分词器（<code>transformers.AutoTokenizer</code>），分词器文件约 10MB，首次运行自动从 HuggingFace Hub 下载并缓存；后续可配置指定其他 embedding 模型的 tokenizer。</td>
+          </tr>
+          <tr>
+            <td>分块作业失败后无法单独重试</td>
+            <td>分块失败后需要重新解析才能重试。</td>
+            <td>分块在解析任务内执行，失败时需要通过 <code>/rechunk</code> 触发完整的重新读取原始上传文件、重新解析 + 重新分块流程。分块状态仍然持久化到 <code>document_chunk_jobs</code> 表，便于诊断和追溯。</td>
+          </tr>
+          <tr>
+            <td>参数变更后重新分块</td>
+            <td>允许用户使用新参数（如不同 max_tokens）重新分块。</td>
+            <td>通过 <code>/rechunk</code> 触发重新解析原始上传文件 + 重新分块完整流程，明确不读取旧 <code>docling.json</code>。旧作业标记为 <code>superseded</code>，新作业使用新配置独立产出 chunk 集合。</td>
+          </tr>
+          <tr>
+            <td>大文档分块耗时不可控</td>
+            <td>与解析类似，大文档可能占用大量 CPU 和内存。</td>
+            <td>设置 max_tokens 限制单块大小；分块作业状态持久化；失败可重试。</td>
+          </tr>
+          <tr>
+            <td>BackgroundTasks 不具备生产级可靠性</td>
+            <td>与解析作业相同的风险。</td>
+            <td>分块在解析任务内执行，风险与解析相同。后续与解析一起替换为独立 worker + 队列。</td>
+          </tr>
+          <tr>
+            <td>chunk.text 入库可能增加数据库存储</td>
+            <td>大文档的分块文本累计可能较大。</td>
+            <td>采用 ≤2KB 入库、>2KB 走文件的阈值策略：大多数 chunk 短文本直接入库方便查询，长文本走文件存储避免膨胀数据库。<code>text</code>/<code>text_storage_key</code> 和 <code>contextualized_text</code>/<code>contextualized_text_storage_key</code> 各自互斥填充，与 document_segments 的文本存储策略保持一致。</td>
+          </tr>
+          <tr>
+            <td>参数变更后重新分块需要管理旧结果</td>
+            <td>用户更换 embedding 模型或调整 max_tokens 后，旧分块不再适用；旧 chunk 数据若不清理会累积占用存储。</td>
+            <td>旧作业标记为 <code>superseded</code> 状态，新作业独立产出 chunk 集合。查询 chunk 结果时仅返回最新（非 superseded）作业的 chunk。<strong>旧结果不主动删除</strong>，保留用于回溯和对比；后续可提供按 parsed_document 维度的清理 API，由用户或运维触发。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>17. OpenSpec 建议</h2>
+      <p>
+        建议下一步创建 OpenSpec 变更 <code>add-document-chunking-docling</code>，新增能力规格 <code>document-chunking</code>。该变更应聚焦"在解析运行内从内存 <code>DoclingDocument</code> 生成 token 感知的结构化分块"，不要同时承诺 embedding、检索或 RAG。
+      </p>
+      <h3>建议 requirements</h3>
+      <ul>
+        <li>系统 SHALL 在解析后台任务成功后为当前用户创建文档分块作业，并持久化作业状态以便查询。</li>
+        <li>系统 SHALL 调整解析输出契约，使解析结果同时包含可持久化 payload 和 transient <code>DoclingDocument</code>；transient 对象只允许在当前后台任务内使用，不入库、不写文件、不通过 API 返回。</li>
+        <li>系统 SHALL 在解析后台任务成功后自动使用默认分块配置在同一任务中执行分块，将内存中的 <code>DoclingDocument</code> 直接传递给分块适配器。</li>
+        <li>系统 SHALL NOT 提供独立的 POST /chunk API；首次分块始终由解析流程自动触发。</li>
+        <li>系统 SHALL 支持用户通过 /rechunk API 使用自定义参数重新分块；重新分块必须重新读取原始上传文件并执行完整解析 + 分块流程，旧作业标记为 superseded，新作业独立产出 chunk 集合。</li>
+        <li>系统 SHALL 使用 Docling HybridChunker（tokenizer 为 Qwen/Qwen2-7B）直接从内存中的 <code>DoclingDocument</code> 执行分块，不再从文件还原文档对象。</li>
+        <li>系统 SHALL NOT 从 <code>docling.json</code>、pickle 或其他已落地解析产物还原 <code>DoclingDocument</code> 后执行分块。</li>
+        <li>系统 SHALL NOT 在分块适配器外部暴露 Docling SDK 内部类型。</li>
+        <li>系统 SHALL 持久化分块作业状态、分块配置快照、分块器版本和错误信息。</li>
+        <li>系统 SHALL 在分块作业标记为 <code>superseded</code> 时保留旧 chunk 结果不主动删除，查询时仅返回最新（非 superseded）作业的 chunk。</li>
+        <li>系统 SHALL 持久化每个分块的文本、token 计数、层级标题、页码、元数据，并在同源映射可靠时持久化来源 segment 索引。</li>
+        <li>系统 SHALL NOT 在分块过程中修改或合并已有的 <code>document_segments</code> 记录；segment 始终保留完整。</li>
+        <li>系统 SHALL 对分块产物采用阈值混合存储：文本 ≤2KB 入数据库，>2KB 写入文件存储并通过 storage_key 引用。<code>text</code>/<code>text_storage_key</code> 和 <code>contextualized_text</code>/<code>contextualized_text_storage_key</code> 各自互斥填充。</li>
+        <li>系统 SHALL 在首版将分块逻辑嵌入解析后台任务中执行，并保留后续替换为独立 worker + 队列的服务边界。</li>
+        <li>系统 SHALL 防止用户读取不属于自己的分块结果。</li>
+        <li>系统 SHALL NOT 在首版实现 embedding、pgvector 索引、语义检索或 RAG 问答。</li>
+      </ul>
+      <h3>建议 tasks</h3>
+      <ol>
+        <li>创建 OpenSpec proposal、design、tasks 和 <code>document-chunking</code> 规格增量。</li>
+        <li>Spike 验证：HybridChunker 调用方式；验证从内存中直接传入 DoclingDocument 对象执行分块的可行性。</li>
+        <li>准备最小 fixture：使用已解析的 Markdown、PDF、DOCX 等样例文件。</li>
+        <li>调整 <code>ParsedDocumentPayload</code> 或新增解析结果对象，使其携带 transient <code>DoclingDocument</code>；更新 <code>DoclingParserAdapter._normalize_docling_result()</code> 和相关测试，确认该对象不会被持久化。</li>
+        <li>新增分块相关 SQLModel 模型（document_chunk_jobs、document_chunks）和 Alembic migration，包含阈值混合存储字段（text/text_storage_key、contextualized_text/contextualized_text_storage_key）和 superseded 作业状态。</li>
+        <li>实现 DoclingChunkerAdapter（接收内存中 DoclingDocument 对象，使用 HuggingFace <code>Qwen/Qwen2-7B</code> 分词器）、ChunkArtifactStorage（含 ≤2KB 入库、>2KB 走文件的阈值逻辑）和分块配置（含 <code>DOCUMENT_CHUNK_TOKENIZER_MODEL</code> 配置项）。</li>
+        <li>实现 DocumentChunkingService（编排分块状态记录）。</li>
+        <li>实现分块 API 路由（POST /rechunk、GET 分块作业状态、GET chunks）并注册到后端 API router。移除独立的 POST /chunk API。</li>
+        <li>在 run_parse_job 成功路径末尾自动执行分块：将内存中的 DoclingDocument 直接传递给 DoclingChunkerAdapter，分块状态写入 document_chunk_jobs 表。</li>
+        <li>实现参数变更后的重新分块逻辑（POST /rechunk 触发重新读取原始上传文件、重新解析 + 重新分块，新参数创建新作业、旧作业标记 superseded；测试确认不读取旧 <code>docling.json</code> 作为分块输入）。</li>
+        <li>运行后端和前端验证命令，更新 README 与环境变量模板。</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>18. 参考资料</h2>
+      <ul>
+        <li><a href="https://docling-project.github.io/docling/concepts/chunking/">Docling Chunking concepts</a>：HybridChunker、HierarchicalChunker 和 LineBasedTokenChunker 的官方说明。</li>
+        <li><a href="https://github.com/docling-project/docling/discussions/191">Advanced chunking for RAG (GitHub Discussion #191)</a>：HybridChunker 的设计动机和使用场景讨论。</li>
+        <li><a href="https://docling-project.github.io/docling/concepts/chunking/">Docling BaseChunker API</a>：<code>chunk()</code> 和 <code>contextualize()</code> 方法接口。</li>
+        <li><a href="https://docling-project.github.io/docling/getting_started/installation/">Docling Installation</a>：确认 chunking extras 和 tokenizer 依赖。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
