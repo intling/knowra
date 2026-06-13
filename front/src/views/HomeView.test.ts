@@ -1,4 +1,4 @@
-import { flushPromises, mount } from "@vue/test-utils"
+import { flushPromises, mount, type VueWrapper } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -10,6 +10,12 @@ const mocks = vi.hoisted(() => ({
   uploadFileMock: vi.fn(),
   createDocumentParseJobMock: vi.fn(),
   getDocumentParseJobMock: vi.fn(),
+  getParsedDocumentForUploadMock: vi.fn(),
+  getDocumentChunkJobMock: vi.fn(),
+  getLatestParsedDocumentChunkJobMock: vi.fn(),
+  getParsedDocumentChunksMock: vi.fn(),
+  getDocumentChunkMock: vi.fn(),
+  rechunkParsedDocumentMock: vi.fn(),
   userStoreState: {
     currentUser: {
       display_name: "Default User",
@@ -48,7 +54,132 @@ vi.mock("../api/uploads", () => ({
 vi.mock("../api/documentParsing", () => ({
   createDocumentParseJob: mocks.createDocumentParseJobMock,
   getDocumentParseJob: mocks.getDocumentParseJobMock,
+  getParsedDocumentForUpload: mocks.getParsedDocumentForUploadMock,
 }))
+
+vi.mock("../api/documentChunking", () => ({
+  getDocumentChunkJob: mocks.getDocumentChunkJobMock,
+  getLatestParsedDocumentChunkJob: mocks.getLatestParsedDocumentChunkJobMock,
+  getParsedDocumentChunks: mocks.getParsedDocumentChunksMock,
+  getDocumentChunk: mocks.getDocumentChunkMock,
+  rechunkParsedDocument: mocks.rechunkParsedDocumentMock,
+}))
+
+const UPLOADED_FILE_RESPONSE = {
+  id: "11111111-1111-1111-1111-111111111111",
+  owner_user_id: "00000000-0000-0000-0000-000000000001",
+  original_filename: "course-notes.pdf",
+  content_type: "application/pdf",
+  byte_size: 5,
+  storage_key: "uploads/default/course-notes.pdf",
+  checksum_sha256: "a".repeat(64),
+  status: "stored",
+  error_message: null,
+  deleted_at: null,
+  created_at: "2026-06-12T00:00:00Z",
+  updated_at: "2026-06-12T00:00:00Z",
+}
+
+const PARSED_DOCUMENT_RESPONSE = {
+  id: "33333333-3333-3333-3333-333333333333",
+  uploaded_file_id: UPLOADED_FILE_RESPONSE.id,
+  parse_job_id: "22222222-2222-2222-2222-222222222222",
+  owner_user_id: "00000000-0000-0000-0000-000000000001",
+  source_checksum_sha256: "a".repeat(64),
+  markdown_storage_key: "parsed/u/f/j/content.md",
+  text_storage_key: "parsed/u/f/j/content.txt",
+  docling_json_storage_key: "parsed/u/f/j/docling.json",
+  title: "Course Notes",
+  page_count: 2,
+  metadata: { parser: "docling" },
+  segment_count: 2,
+  created_at: "2026-06-12T00:00:01Z",
+}
+
+const CHUNK_JOB_RESPONSE = {
+  id: "55555555-5555-5555-5555-555555555555",
+  parsed_document_id: PARSED_DOCUMENT_RESPONSE.id,
+  owner_user_id: "00000000-0000-0000-0000-000000000001",
+  status: "succeeded",
+  chunker_name: "docling_hybrid",
+  chunker_version: "docling-core",
+  chunk_config_json: {
+    max_tokens: 512,
+    tokenizer_model: "Qwen/Qwen2-7B",
+    merge_peers: true,
+    repeat_table_header: true,
+    inline_text_max_bytes: 2048,
+  },
+  chunk_count: 2,
+  attempt_count: 1,
+  started_at: "2026-06-12T00:00:02Z",
+  finished_at: "2026-06-12T00:00:03Z",
+  error_code: null,
+  error_message: null,
+  created_at: "2026-06-12T00:00:02Z",
+  updated_at: "2026-06-12T00:00:03Z",
+}
+
+const CHUNK_PAGE_RESPONSE = {
+  items: [
+    {
+      id: "66666666-6666-6666-6666-666666666666",
+      chunk_job_id: CHUNK_JOB_RESPONSE.id,
+      parsed_document_id: PARSED_DOCUMENT_RESPONSE.id,
+      owner_user_id: "00000000-0000-0000-0000-000000000001",
+      sequence_index: 0,
+      text: "Chunk 0 explains retrieval.",
+      contextualized_text: "Course Notes\nChunk 0 explains retrieval.",
+      token_count: 10,
+      heading_path: ["Course Notes", "Retrieval"],
+      page_numbers: [1],
+      chunk_type: "text",
+      source_segment_indices: [0],
+      metadata: { docling_ref: "#/texts/0" },
+      created_at: "2026-06-12T00:00:03Z",
+    },
+    {
+      id: "77777777-7777-7777-7777-777777777777",
+      chunk_job_id: CHUNK_JOB_RESPONSE.id,
+      parsed_document_id: PARSED_DOCUMENT_RESPONSE.id,
+      owner_user_id: "00000000-0000-0000-0000-000000000001",
+      sequence_index: 1,
+      text: "Chunk 1 explains citations.",
+      contextualized_text: "Course Notes\nChunk 1 explains citations.",
+      token_count: 12,
+      heading_path: ["Course Notes", "Citations"],
+      page_numbers: [2],
+      chunk_type: "text",
+      source_segment_indices: [1],
+      metadata: { docling_ref: "#/texts/1" },
+      created_at: "2026-06-12T00:00:03Z",
+    },
+  ],
+  total: 2,
+  offset: 0,
+  limit: 20,
+}
+
+function mockSuccessfulUpload() {
+  mocks.uploadFileMock.mockResolvedValue(UPLOADED_FILE_RESPONSE)
+}
+
+async function submitCourseNotes(wrapper: VueWrapper) {
+  const fileInput = wrapper.get('[data-testid="attachment-input"]')
+  const inputElement = fileInput.element as HTMLInputElement
+  Object.defineProperty(inputElement, "files", {
+    configurable: true,
+    value: [
+      new File(["notes"], "course-notes.pdf", {
+        type: "application/pdf",
+      }),
+    ],
+  })
+
+  await fileInput.trigger("change")
+  await wrapper.get("form").trigger("submit")
+  await flushPromises()
+}
 
 describe("HomeView", () => {
   beforeEach(() => {
@@ -58,6 +189,12 @@ describe("HomeView", () => {
     mocks.uploadFileMock.mockReset()
     mocks.createDocumentParseJobMock.mockReset()
     mocks.getDocumentParseJobMock.mockReset()
+    mocks.getParsedDocumentForUploadMock.mockReset()
+    mocks.getDocumentChunkJobMock.mockReset()
+    mocks.getLatestParsedDocumentChunkJobMock.mockReset()
+    mocks.getParsedDocumentChunksMock.mockReset()
+    mocks.getDocumentChunkMock.mockReset()
+    mocks.rechunkParsedDocumentMock.mockReset()
     mocks.createDocumentParseJobMock.mockResolvedValue({
       id: "22222222-2222-2222-2222-222222222222",
       uploaded_file_id: "11111111-1111-1111-1111-111111111111",
@@ -81,6 +218,16 @@ describe("HomeView", () => {
       created_at: "2026-06-08T00:00:00Z",
       started_at: "2026-06-08T00:00:01Z",
       finished_at: "2026-06-08T00:00:02Z",
+    })
+    mocks.getParsedDocumentForUploadMock.mockResolvedValue(PARSED_DOCUMENT_RESPONSE)
+    mocks.getDocumentChunkJobMock.mockResolvedValue(CHUNK_JOB_RESPONSE)
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue(CHUNK_JOB_RESPONSE)
+    mocks.getParsedDocumentChunksMock.mockResolvedValue(CHUNK_PAGE_RESPONSE)
+    mocks.getDocumentChunkMock.mockResolvedValue(CHUNK_PAGE_RESPONSE.items[0])
+    mocks.rechunkParsedDocumentMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "queued",
+      finished_at: null,
     })
     mocks.userStoreState.currentUser = {
       display_name: "Default User",
@@ -504,5 +651,257 @@ describe("HomeView", () => {
     expect(wrapper.get('[data-testid="upload-status"]').text()).toContain(
       "当前用户不可用",
     )
+  })
+
+  // 测试：解析成功后若分块仍在运行，页面应展示分块中并禁用重复重分块触发。
+  it("shows chunking progress after parsing succeeds and disables duplicate rechunk", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock.mockResolvedValue({
+      items: [],
+      total: 0,
+      offset: 0,
+      limit: 20,
+    })
+    const runningChunkJob = {
+      ...CHUNK_JOB_RESPONSE,
+      status: "running",
+      finished_at: null,
+    }
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue(runningChunkJob)
+    mocks.getDocumentChunkJobMock.mockResolvedValue(runningChunkJob)
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(mocks.getParsedDocumentForUploadMock).toHaveBeenCalledWith(
+      UPLOADED_FILE_RESPONSE.id,
+    )
+    expect(mocks.getLatestParsedDocumentChunkJobMock).toHaveBeenCalledWith(
+      PARSED_DOCUMENT_RESPONSE.id,
+    )
+    expect(mocks.getDocumentChunkJobMock).toHaveBeenCalledWith(CHUNK_JOB_RESPONSE.id)
+    expect(mocks.getDocumentChunkJobMock).not.toHaveBeenCalledWith(
+      PARSED_DOCUMENT_RESPONSE.id,
+    )
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "分块中",
+    )
+    expect(wrapper.get('[data-testid="rechunk-button"]').attributes()).toHaveProperty(
+      "disabled",
+    )
+  })
+
+  // 测试：运行中的初次分块成功后，页面应自动刷新为分块成功并加载预览。
+  it("updates running initial chunking to completion and loads the preview", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock
+      .mockResolvedValueOnce({
+        items: [],
+        total: 0,
+        offset: 0,
+        limit: 20,
+      })
+      .mockResolvedValueOnce(CHUNK_PAGE_RESPONSE)
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "running",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "succeeded",
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await flushPromises()
+
+    expect(mocks.getDocumentChunkJobMock).toHaveBeenCalledWith(CHUNK_JOB_RESPONSE.id)
+    expect(mocks.getParsedDocumentChunksMock).toHaveBeenCalledTimes(2)
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "分块成功",
+    )
+    expect(wrapper.get('[data-testid="chunk-preview"]').text()).toContain(
+      "Chunk 0 explains retrieval.",
+    )
+  })
+
+  // 测试：分块成功后展示成功反馈和预览入口。
+  it("shows chunk completion and a preview entry after chunks are available", async () => {
+    mockSuccessfulUpload()
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(mocks.getParsedDocumentChunksMock).toHaveBeenCalledWith(
+      PARSED_DOCUMENT_RESPONSE.id,
+      expect.objectContaining({ offset: 0, limit: 20 }),
+    )
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "分块成功",
+    )
+    expect(wrapper.get('[data-testid="chunk-preview"]').text()).toContain(
+      "Chunk 0 explains retrieval.",
+    )
+  })
+
+  // 测试：分块失败时展示可理解的错误反馈，并保留重新分块入口。
+  it("shows chunking failure feedback and keeps rechunk available", async () => {
+    mockSuccessfulUpload()
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "failed",
+      error_message: "Parser did not provide a memory document object",
+    })
+    mocks.getParsedDocumentChunksMock.mockResolvedValue({
+      items: [],
+      total: 0,
+      offset: 0,
+      limit: 20,
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "分块失败",
+    )
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "Parser did not provide a memory document object",
+    )
+    expect(wrapper.get('[data-testid="rechunk-button"]').attributes("disabled")).toBeUndefined()
+  })
+
+  // 测试：重新分块运行中应保留旧预览，并禁用重复触发。
+  it("keeps the old preview visible while rechunk is running", async () => {
+    mockSuccessfulUpload()
+    mocks.rechunkParsedDocumentMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      id: "88888888-8888-8888-8888-888888888888",
+      status: "running",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      id: "88888888-8888-8888-8888-888888888888",
+      status: "running",
+      finished_at: null,
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await wrapper.get('[data-testid="rechunk-button"]').trigger("click")
+    await flushPromises()
+
+    expect(mocks.rechunkParsedDocumentMock).toHaveBeenCalledWith(
+      PARSED_DOCUMENT_RESPONSE.id,
+      expect.any(Object),
+    )
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "重新分块中",
+    )
+    expect(wrapper.get('[data-testid="chunk-preview"]').text()).toContain(
+      "Chunk 0 explains retrieval.",
+    )
+    expect(wrapper.get('[data-testid="rechunk-button"]').attributes()).toHaveProperty(
+      "disabled",
+    )
+  })
+
+  // 测试：重新分块失败时旧预览仍然可见，并展示新作业失败原因。
+  it("keeps the old preview when rechunk fails", async () => {
+    mockSuccessfulUpload()
+    mocks.rechunkParsedDocumentMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      id: "88888888-8888-8888-8888-888888888888",
+      status: "queued",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      id: "88888888-8888-8888-8888-888888888888",
+      status: "failed",
+      error_message: "tokenizer unavailable",
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await wrapper.get('[data-testid="rechunk-button"]').trigger("click")
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "重新分块失败",
+    )
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "tokenizer unavailable",
+    )
+    expect(wrapper.get('[data-testid="chunk-preview"]').text()).toContain(
+      "Chunk 0 explains retrieval.",
+    )
+  })
+
+  // 测试：分块查询遇到权限或网络错误时，页面应展示错误反馈。
+  it("shows chunk permission or network errors", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock.mockRejectedValue(new Error("请求失败：403"))
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(wrapper.get('[data-testid="chunk-status"]').text()).toContain(
+      "请求失败：403",
+    )
+  })
+
+  // 测试：chunk 预览按顺序展示正文、标题路径、页码和 token 计数。
+  it("renders chunk preview in order with text, headings, pages, and token counts", async () => {
+    mockSuccessfulUpload()
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    const previewItems = wrapper.findAll('[data-testid="chunk-preview-item"]')
+    expect(previewItems).toHaveLength(2)
+    expect(previewItems[0].text()).toContain("Chunk 0 explains retrieval.")
+    expect(previewItems[0].text()).toContain("Course Notes / Retrieval")
+    expect(previewItems[0].text()).toContain("第 1 页")
+    expect(previewItems[0].text()).toContain("10 tokens")
+    expect(previewItems[1].text()).toContain("Chunk 1 explains citations.")
+    expect(previewItems[1].text()).toContain("第 2 页")
+    expect(previewItems[1].text()).toContain("12 tokens")
+  })
+
+  // 测试：没有可用 chunks 时展示稳定空状态，而不是把空列表误报为检索可用。
+  it("shows an empty chunk preview state", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock.mockResolvedValue({
+      items: [],
+      total: 0,
+      offset: 0,
+      limit: 20,
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(wrapper.get('[data-testid="chunk-preview-empty"]').text()).toContain(
+      "暂无分块可预览",
+    )
+  })
+
+  // 测试：分块成功文案不承诺 embedding、语义检索或 RAG 问答已可用。
+  it("does not describe chunk completion as retrieval or RAG readiness", async () => {
+    mockSuccessfulUpload()
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    const chunkPanelText = wrapper.get('[data-testid="chunk-panel"]').text()
+    expect(chunkPanelText).toContain("分块成功")
+    expect(chunkPanelText).not.toContain("embedding")
+    expect(chunkPanelText).not.toContain("向量索引")
+    expect(chunkPanelText).not.toContain("语义检索")
+    expect(chunkPanelText).not.toContain("RAG")
+    expect(chunkPanelText).not.toContain("问答可用")
   })
 })

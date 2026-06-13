@@ -1,5 +1,5 @@
 from collections.abc import Callable, Generator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from uuid import UUID
 
@@ -11,12 +11,16 @@ from app.db.session import engine
 from app.models.document_parsing import DocumentParseJob, DocumentSegment, ParsedDocument
 from app.models.uploaded_file import UploadedFile
 from app.models.user import utc_now
+from app.services.document_chunk_storage import ChunkArtifactStorage
+from app.services.document_chunker import DoclingChunkerAdapter, DocumentChunkingConfig
+from app.services.document_chunking import DocumentChunkingService
 from app.services.document_parse_storage import ParsedArtifactStorage
 from app.services.document_parser import (
     DoclingParserAdapter,
     DocumentFormatPolicy,
     DocumentParseError,
     ParsedDocumentPayload,
+    ParsedDocumentResult,
     ensure_parsed_payload_has_text_content,
 )
 from app.services.uploads import LocalFileStorage
@@ -39,6 +43,8 @@ def run_parse_job(
     parser: object | None = None,
     upload_storage_root: str | Path | None = None,
     artifact_storage_root: str | Path | None = None,
+    document_chunking_enabled: bool | None = None,
+    chunking_service: object | None = None,
 ) -> None:
     settings = get_settings()
     session_context = session_factory or default_session_factory
@@ -76,9 +82,12 @@ def run_parse_job(
                 max_pages=settings.document_parse_max_pages,
                 docling_cache_dir=settings.document_parse_docling_cache_dir,
             )
-            payload = active_parser.parse(source_path, document_format=document_format)
+            parse_result = normalize_parse_result(
+                active_parser.parse(source_path, document_format=document_format)
+            )
+            payload = parse_result.persistent_payload
             ensure_parsed_payload_has_text_content(payload)
-            save_parse_result(
+            parsed_document = save_parse_result(
                 session=session,
                 job=job,
                 uploaded_file=uploaded_file,
@@ -87,14 +96,27 @@ def run_parse_job(
                     artifact_storage_root or settings.document_parse_artifact_dir
                 ),
             )
-            job.status = "succeeded"
-            job.error_code = None
-            job.error_message = None
+            mark_parse_job_succeeded(session=session, job=job)
+            should_chunk = (
+                settings.document_chunking_enabled
+                if document_chunking_enabled is None
+                else document_chunking_enabled
+            )
+            if should_chunk:
+                with suppress(Exception):
+                    service = chunking_service or make_document_chunking_service(
+                        session=session,
+                        settings=settings,
+                        upload_storage_root=upload_storage_root,
+                    )
+                    service.run_initial_chunking(
+                        parsed_document=parsed_document,
+                        transient_docling_document=parse_result.transient_docling_document,
+                    )
         except Exception as exc:
             job.status = "failed"
             job.error_code = "parse_failed"
             job.error_message = str(exc)
-        finally:
             job.finished_at = utc_now()
             job.updated_at = utc_now()
             session.add(job)
@@ -147,6 +169,52 @@ def save_parse_result(
     session.commit()
     session.refresh(parsed_document)
     return parsed_document
+
+
+def mark_parse_job_succeeded(*, session: Session, job: DocumentParseJob) -> None:
+    job.status = "succeeded"
+    job.error_code = None
+    job.error_message = None
+    job.finished_at = utc_now()
+    job.updated_at = utc_now()
+    session.add(job)
+    session.commit()
+    session.refresh(job)
+
+
+def normalize_parse_result(
+    result: ParsedDocumentPayload | ParsedDocumentResult,
+) -> ParsedDocumentResult:
+    if isinstance(result, ParsedDocumentResult):
+        return result
+
+    return ParsedDocumentResult(
+        persistent_payload=result,
+        transient_docling_document=getattr(result, "transient_docling_document", None),
+    )
+
+
+def make_document_chunking_service(
+    *,
+    session: Session,
+    settings,
+    upload_storage_root: str | Path | None = None,
+) -> DocumentChunkingService:
+    config = DocumentChunkingConfig(
+        tokenizer_model=settings.document_chunk_tokenizer_model,
+        max_tokens=settings.document_chunk_max_tokens,
+        merge_peers=settings.document_chunk_merge_peers,
+        repeat_table_header=settings.document_chunk_repeat_table_header,
+        inline_text_max_bytes=settings.document_chunk_inline_text_max_bytes,
+        tokenizer_cache_dir=settings.document_parse_docling_cache_dir,
+    )
+    return DocumentChunkingService(
+        session=session,
+        chunker=DoclingChunkerAdapter(config=config),
+        artifact_storage=ChunkArtifactStorage(settings.document_chunk_artifact_storage_dir),
+        config=config,
+        upload_storage=LocalFileStorage(upload_storage_root or settings.upload_storage_dir),
+    )
 
 
 @contextmanager

@@ -32,3 +32,4 @@ backend/storage/docling-cache/
 # Local runtime storage
 backend/storage/uploads/
 backend/storage/parsed/
+backend/storage/chunks/

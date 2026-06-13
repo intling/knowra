@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     document_parse_allowed_extensions: Annotated[list[str], NoDecode] = list(
         DEFAULT_DOCUMENT_PARSE_ALLOWED_EXTENSIONS
     )
+    document_chunking_enabled: bool = True
+    document_chunk_max_tokens: int = 512
+    document_chunk_tokenizer_model: str = "Qwen/Qwen2-7B"
+    document_chunk_merge_peers: bool = True
+    document_chunk_repeat_table_header: bool = True
+    document_chunk_inline_text_max_bytes: int = 2048
+    document_chunk_artifact_storage_dir: str = "storage/chunks"
 
     model_config = SettingsConfigDict(
         env_file=".env",
