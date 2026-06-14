@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -24,6 +25,8 @@ from app.services.document_parser import (
     ensure_parsed_payload_has_text_content,
 )
 from app.services.uploads import LocalFileStorage
+
+logger = logging.getLogger(__name__)
 
 SessionFactory = Callable[[], Generator[Session]]
 
@@ -62,6 +65,8 @@ def run_parse_job(
         session.commit()
         session.refresh(job)
 
+        logger.info("Parse started: job_id=%s", job.id)
+
         try:
             uploaded_file = session.get(UploadedFile, job.uploaded_file_id)
             if uploaded_file is None:
@@ -97,6 +102,12 @@ def run_parse_job(
                 ),
             )
             mark_parse_job_succeeded(session=session, job=job)
+            logger.info(
+                "Parse succeeded: job_id=%s pages=%d segments=%d",
+                job.id,
+                payload.page_count or 0,
+                len(payload.segments),
+            )
             should_chunk = (
                 settings.document_chunking_enabled
                 if document_chunking_enabled is None
@@ -104,16 +115,29 @@ def run_parse_job(
             )
             if should_chunk:
                 with suppress(Exception):
+                    logger.info("Auto-chunking started: parse_job_id=%s", job.id)
                     service = chunking_service or make_document_chunking_service(
                         session=session,
                         settings=settings,
                         upload_storage_root=upload_storage_root,
                     )
-                    service.run_initial_chunking(
+                    chunk_job = service.run_initial_chunking(
                         parsed_document=parsed_document,
                         transient_docling_document=parse_result.transient_docling_document,
                     )
+                    logger.info(
+                        "Auto-chunking succeeded: parse_job_id=%s chunk_job_id=%s chunks=%d",
+                        job.id,
+                        chunk_job.id,
+                        chunk_job.chunk_count or 0,
+                    )
         except Exception as exc:
+            logger.error(
+                "Parse failed: job_id=%s error=%s",
+                job.id,
+                exc,
+                exc_info=True,
+            )
             job.status = "failed"
             job.error_code = "parse_failed"
             job.error_message = str(exc)

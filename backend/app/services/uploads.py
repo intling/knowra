@@ -1,3 +1,4 @@
+import logging
 from contextlib import suppress
 from dataclasses import dataclass
 from hashlib import sha256
@@ -10,6 +11,8 @@ from sqlmodel import Session
 
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1024 * 1024
 PPTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -134,6 +137,12 @@ class UploadService:
             self.storage.delete(storage_key)
             raise UploadMetadataError("Failed to save upload metadata") from exc
 
+        logger.info(
+            "File uploaded: %s (%d bytes, %s)",
+            record.original_filename,
+            record.byte_size,
+            record.content_type,
+        )
         return record
 
     @staticmethod

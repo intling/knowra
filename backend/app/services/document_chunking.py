@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -11,6 +12,8 @@ from app.models.user import User, utc_now
 from app.services.document_chunk_storage import ChunkArtifactStorage
 from app.services.document_chunker import DocumentChunkingConfig, DocumentChunkingError
 from app.services.uploads import LocalFileStorage, UploadStorageError
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentChunkNotFoundError(Exception):
@@ -115,6 +118,12 @@ class DocumentChunkingService:
         self.session.add(job)
         self.session.commit()
 
+        logger.info(
+            "Chunking started: job_id=%s parsed_document_id=%s",
+            job.id,
+            parsed_document.id,
+        )
+
         try:
             if transient_docling_document is None:
                 raise MissingDoclingDocumentError(
@@ -136,14 +145,31 @@ class DocumentChunkingService:
             job.error_message = None
             if supersede_previous:
                 self._supersede_previous_jobs(parsed_document_id=parsed_document.id, keep_job=job)
+            logger.info(
+                "Chunking succeeded: job_id=%s chunks=%d",
+                job.id,
+                len(chunks),
+            )
         except MissingDoclingDocumentError as exc:
             job.status = DocumentChunkJobStatus.FAILED.value
             job.error_code = "missing_docling_document"
             job.error_message = str(exc)
+            logger.error(
+                "Chunking failed: job_id=%s reason=missing_docling_document error=%s",
+                job.id,
+                exc,
+                exc_info=True,
+            )
         except Exception as exc:
             job.status = DocumentChunkJobStatus.FAILED.value
             job.error_code = "chunking_failed"
             job.error_message = str(exc)
+            logger.error(
+                "Chunking failed: job_id=%s reason=chunking_failed error=%s",
+                job.id,
+                exc,
+                exc_info=True,
+            )
         finally:
             job.finished_at = utc_now()
             job.updated_at = utc_now()

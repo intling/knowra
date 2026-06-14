@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     app_name: str = "knowra"
     app_env: str = "local"
     debug: bool = True
+    log_level: str = "INFO"
     api_prefix: str = "/api"
     backend_cors_origins: str = "http://localhost:5173"
     database_url: str = "postgresql+psycopg://knowra:knowra@localhost:5432/knowra"
