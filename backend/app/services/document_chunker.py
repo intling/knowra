@@ -121,7 +121,16 @@ def make_huggingface_tokenizer(*, model_name: str, max_tokens: int, cache_dir: s
     if cache_dir is not None:
         kwargs["cache_dir"] = cache_dir
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name, **kwargs)
+    # Try local files first to avoid network calls when the tokenizer is
+    # already cached.  Fall back to network download only when local files
+    # are genuinely missing (e.g. first run or missing cache directory).
+    # This avoids Windows TCP connect timeouts (WSAETIMEDOUT / 10060)
+    # when huggingface.co is unreachable from the deployment network.
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True, **kwargs)
+    except Exception:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=False, **kwargs)
+
     return HuggingFaceTokenizer(tokenizer=tokenizer, max_tokens=max_tokens)
 
 
