@@ -28,6 +28,7 @@ describe("fetchHealth", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/health", {
       headers: {
         Accept: "application/json",
+        "X-Trace-ID": expect.any(String) as string,
       },
     })
   })

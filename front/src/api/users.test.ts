@@ -38,6 +38,7 @@ describe("getCurrentUser", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/users/me", {
       headers: {
         Accept: "application/json",
+        "X-Trace-ID": expect.any(String) as string,
       },
     })
   })

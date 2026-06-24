@@ -41,7 +41,10 @@ describe("uploadFile", () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe("/api/uploads")
     expect(init.method).toBe("POST")
-    expect(init.headers).toBeUndefined()
+    expect(init.headers).toEqual({
+      Accept: "application/json",
+      "X-Trace-ID": expect.any(String) as string,
+    })
     expect(init.body).toBeInstanceOf(FormData)
     expect(init.body.get("file")).toBe(file)
     expect(init.body.has("owner_user_id")).toBe(false)
