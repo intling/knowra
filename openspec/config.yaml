@@ -43,6 +43,10 @@ context: |
   - AGENTS.md 文件定义稳定的项目规则和工程规则。OpenSpec 工件定义具体变更范围、设计、任务和验收方式。
   - 如果实现过程中发现设计不匹配，应先更新相关 OpenSpec 工件，再继续实现。
   - 实现类工作应遵循 Superpowers 和 TDD：先写失败测试，确认 RED，编写最小 GREEN 实现，然后在保持测试通过的前提下重构。例外仅限探索性原型、生成代码或纯配置变更，并应提前说明。
+  - 所有代码模块 MUST 使用本项目内建的结构化日志系统输出日志，禁止使用任何其他日志方式：
+    - 后端：MUST 通过 `from app.core.logging import get_logger` 获取 `KnowraLogger` 实例；禁止使用 `print()`、原始 `logging.getLogger()`、`logging.basicConfig()`、或第三方日志库（如 `loguru`、`structlog` 等）。
+    - 前端：MUST 通过 `import { createLogger, getRingBuffer } from "@/shared/logger"` 获取 `Logger` 实例；禁止使用 `console.log()` / `console.warn()` / `console.error()` 等原生 console 方法、或第三方日志库（如 `loglevel`、`pino`、`winston` 等）。
+    - Code Review 阶段 MUST 拒绝违反上述规则的代码。
   - TDD 代码流程必须按阶段门禁推进：红测试阶段先全面分析需求，设计覆盖正常路径、边界情况、异常处理和潜在边缘情况的测试用例，只输出测试代码，并确认在当前缺少业务代码或对应行为实现时测试无法通过。
   - 输出红测试代码后必须立刻停止生成，并明确提示用户：“红测试已生成，请评审。确认无误后，请回复‘继续’，我将进入绿测试阶段。”在用户明确回复“继续”或给出修改意见前，不得进入绿测试阶段。
   - 如果用户提出修改意见，应先调整测试代码并重新停在红测试评审点。
