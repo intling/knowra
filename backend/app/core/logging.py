@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from logging.handlers import RotatingFileHandler
 from typing import Any
 
@@ -20,6 +20,22 @@ from app.core.trace_context import get_trace_id
 
 # Sentinel that marks extra keys we add automatically.
 _AUTO_KEYS = frozenset({"trace_id"})
+
+
+class TraceFilter(logging.Filter):
+    """Inject ``trace_id`` from contextvars into every LogRecord.
+
+    Applied on the root logger so that ALL log records — including those
+    emitted by third-party libraries (SQLAlchemy, uvicorn, etc.) — carry
+    the current request's trace_id without requiring the caller to use
+    :class:`KnowraLogger`.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not getattr(record, "trace_id", None):
+            record.trace_id = get_trace_id()
+        return True
+
 
 # ANSI escape sequences for log levels.
 _COLORS = {
@@ -62,10 +78,10 @@ class ConsoleFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         colour = _COLORS.get(record.levelname, "")
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:23] + "Z"
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:23] + "Z"
 
         # Build the base line.
-        trace = getattr(record, "trace_id", "-")
+        trace = getattr(record, "trace_id", None) or get_trace_id()
         base = (
             f"{colour}{record.levelname:<8}{_RESET} "
             f"{ts} "
@@ -90,9 +106,9 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         obj: dict[str, Any] = {
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "level": record.levelname,
-            "trace_id": getattr(record, "trace_id", "-"),
+            "trace_id": getattr(record, "trace_id", None) or get_trace_id(),
             "logger": record.name,
             "message": record.getMessage(),
         }
@@ -156,6 +172,10 @@ def configure_logging(
     """Set up log handlers and formatters for the whole application.
 
     Call once at startup (e.g. from ``create_app()``).
+
+    This function also integrates third-party library loggers (SQLAlchemy,
+    uvicorn) so that all logs flow through the same formatters and carry a
+    ``trace_id``.
     """
     fmt = log_format or ("console" if debug else "json")
     level = _level_from_str(log_level)
@@ -164,8 +184,29 @@ def configure_logging(
     root = logging.getLogger()
     root.setLevel(level)
 
-    # Remove any pre-existing handlers (idempotent for tests).
+    # Remove any pre-existing handlers and filters (idempotent for tests).
     root.handlers.clear()
+    root.filters.clear()
+
+    # Inject trace_id from contextvars into every LogRecord that reaches root.
+    root.addFilter(TraceFilter())
+
+    # --- Third-party logger integration ---
+    # SQLAlchemy: when echo=True is set on the engine, SQLAlchemy adds its own
+    # StreamHandler to the sqlalchemy.engine.* loggers. Remove it so logs flow
+    # through our formatters only once.
+    for _name in ("sqlalchemy.engine", "sqlalchemy.engine.Engine", "sqlalchemy.pool"):
+        _sqla = logging.getLogger(_name)
+        _sqla.handlers.clear()
+        _sqla.propagate = True
+        _sqla.setLevel(level if debug else logging.WARNING)
+
+    # Uvicorn: add TraceFilter so that its own formatters at least see trace_id.
+    # Uvicorn's dictConfig (called later during server startup) does NOT clear
+    # filters, so these survive and uvicorn's access/error logs also carry the id.
+    _trace_filter = TraceFilter()
+    for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        logging.getLogger(_name).addFilter(_trace_filter)
 
     # --- console handler ---
     console = logging.StreamHandler()

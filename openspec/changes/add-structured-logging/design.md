@@ -119,3 +119,46 @@ knowra 当前后端日志仅有一行 `logging.basicConfig`（`app/core/logging.
 ## Open Questions
 
 （无。探索阶段已与用户确认所有关键设计决定。）
+
+### 决策 9：使用 `logging.Filter` 实现全局 trace_id 注入
+
+**选择**：新增 `TraceFilter(logging.Filter)` 类，通过 root logger 的 `addFilter()` 注册，在 `filter()` 方法中直接从 `contextvars` 读取 `trace_id` 并注入到 `LogRecord.trace_id`。
+
+**理由**：
+- `LoggerAdapter`（KnowraLogger）只能覆盖业务代码主动调用 `get_logger()` 的场景，无法覆盖第三方库（SQLAlchemy、uvicorn）内部直接使用 `logging.getLogger()` 发出的日志。
+- `logging.Filter` 作用于 logger 层级，**所有**到达该 logger 的 `LogRecord` 都会经过 `filter()` 方法。将 `TraceFilter` 注册在 root logger 上，即可覆盖整个应用的全部日志输出。
+- `filter()` 中先检查 `record.trace_id` 是否已由 `KnowraLogger.process()` 设置，避免覆盖调用方显式传入的值。
+
+**替代方案**：
+- 仅依赖 `Formatter.format()` 中调用 `get_trace_id()` — 可以工作但 Formatter 的职责是格式化，从 contextvars 读取数据属于"上下文注入"而非"格式化"，职责不清晰。TraceFilter 将注入逻辑与格式化逻辑分离。
+- 在 `Formatter.format()` 中 fallback 调用 `get_trace_id()` — 作为兜底机制保留（当 TraceFilter 未覆盖到的边缘场景）。
+
+**结合使用**：`TraceFilter`（注入） + `Formatter` fallback（兜底）两层保障。TraceFilter 覆盖所有到达 root 的日志，Formatter fallback 确保即使 Filter 被跳过也能拿到值。
+
+### 决策 10：通过 FastAPI lifespan 处理器集成 uvicorn 日志
+
+**选择**：使用 FastAPI `lifespan` 上下文管理器，在 uvicorn 启动并完成其内部 `dictConfig()` 日志初始化之后，移除 uvicorn logger 的独立 handler 并设置 `propagate=True`。
+
+**理由**：
+- **启动时序问题**：`configure_logging()` 在 `create_app()` 中被调用（模块导入时执行），但 uvicorn 的 `dictConfig()` 在 uvicorn 服务器启动时（`uvicorn.run()` 或 `uvicorn.Config.configure_logging()`）才被调用，晚于应用代码的日志配置。在 uvicorn 配置自己的日志之前对 uvicorn loggers 做任何修改都会被覆盖。
+- **lifespan 的执行时机**：FastAPI `lifespan` 在 uvicorn 完成所有初始化（包括日志配置）之后、开始接收请求之前执行。在此处清理 uvicorn handler 并设置 `propagate=True`，可以确保 uvicorn 日志最终流向 root logger。
+- **`propagate=True` 的效果**：uvicorn 的 `dictConfig` 默认设置 `propagate=False`，这意味着 uvicorn 的日志不会向上传播到 root logger。设为 `True` 后，uvicorn 日志经 root 的 TraceFilter 注入 `trace_id` 再经 Formatter 格式化输出。
+
+**替代方案**：
+- 完全替换 uvicorn 的 `LOGGING_CONFIG` — 侵入性强，需要维护完整的 uvicorn 日志配置副本，升级 uvicorn 时可能引入不一致。
+- 仅依赖 `configure_logging()` 中预注册 TraceFilter — 只能让 uvicorn 的 handler 看到 trace_id，但 uvicorn 仍然用自己的 Formatter 输出，格式不统一。lifespan 方案使 uvicorn 日志完全流经应用 Formatter。
+
+**注**：`configure_logging()` 中仍保留对 uvicorn logger 预注册 TraceFilter 的操作，作为 lifespan 执行前的兜底（覆盖应用启动早期阶段的 uvicorn 日志）。lifespan 执行后会完全接管 uvicorn 日志的格式化。
+
+### 决策 11：业务代码使用延迟 Logger 创建模式
+
+**选择**：业务模块（stores、components、API client）在模块顶层 export 一个惰性 getter 函数（如 `function log()`），在首次调用时才创建 logger 实例，而非在模块导入时立即创建。
+
+**理由**：
+- **初始化时序**：`initLogger()` 在 `main.ts` 中调用，而业务模块的 import 发生在模块解析阶段，可能早于 `main.ts` 的执行。若在 import 时调用 `getRingBuffer()`，会因 `initLogger()` 尚未执行而抛出异常。
+- **lazy 模式的实现**：每个模块定义一个模块级 `_logger` 变量（初始为 `null`），以及一个 `log()` 函数，在首次调用时才执行 `createLogger("module:name", getRingBuffer())` 并缓存结果。
+- **运行时安全**：logger 的首次实际调用总是发生在用户交互或生命周期钩子中（点击按钮、`onMounted`、`store action` 等），此时 `main.ts` 已执行完毕，`initLogger()` 已确保 `getRingBuffer()` 可用。
+
+**替代方案**：
+- 在模块 import 时直接创建 logger — 时序不安全，`getRingBuffer()` 可能抛出异常。
+- 将所有 logger 实例放在 `main.ts` 中并通过 props/provide 传递 — 侵入性强，违背"业务代码仅需 import + 工厂函数调用"的设计目标。

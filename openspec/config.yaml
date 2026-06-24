@@ -47,6 +47,17 @@ context: |
     - 后端：MUST 通过 `from app.core.logging import get_logger` 获取 `KnowraLogger` 实例；禁止使用 `print()`、原始 `logging.getLogger()`、`logging.basicConfig()`、或第三方日志库（如 `loguru`、`structlog` 等）。
     - 前端：MUST 通过 `import { createLogger, getRingBuffer } from "@/shared/logger"` 获取 `Logger` 实例；禁止使用 `console.log()` / `console.warn()` / `console.error()` 等原生 console 方法、或第三方日志库（如 `loglevel`、`pino`、`winston` 等）。
     - Code Review 阶段 MUST 拒绝违反上述规则的代码。
+    - 说明：后端的 `configure_logging()` 已在应用启动时自动执行，通过 `TraceFilter`（root logger 级别）将所有日志（包括 SQLAlchemy、uvicorn 等第三方库产生的日志）统一注入 `trace_id` 并应用结构化格式。开发者无需也不应修改 `configure_logging()` 或手动配置第三方库的日志 handler。第三方库的日志输出应通过环境变量（`LOG_LEVEL`、`LOG_FORMAT` 等）控制，而非在业务代码中干预。
+    - 说明：前端 `initLogger()` 已在 `main.ts` 应用入口自动调用，完成 TraceManager（trace_id 生成/复用）、RingBuffer（内存环形缓冲区）和 DiskBuffer（IndexedDB 持久化）的初始化。`createLogger(module)` 返回的 Logger 实例自动注入 `trace_id`（通过 TraceManager 单例）和模块名，支持 debug/info/warn/error 四级日志，error 级别自动提取 Error 对象的 name/message/stack 字段。所有业务代码（组件、store、api client、router）和基础设施代码 MUST 使用 `createLogger()` 获取日志实例；Vue 全局错误和未捕获 Promise 拒绝已自动接入日志系统（通过 `app.config.errorHandler` 和 `window.unhandledrejection`），无需业务代码额外处理。
+    - 说明：前端业务模块 MUST 使用延迟 Logger 创建模式（惰性 getter 函数）以避免模块导入时 `getRingBuffer()` 尚未初始化的问题。标准模式如下：
+      ```typescript
+      let _logger: ReturnType<typeof createLogger> | null = null
+      function log() {
+        if (!_logger) _logger = createLogger("模块名", getRingBuffer())
+        return _logger
+      }
+      ```
+      Code Review 阶段 MUST 拒绝在模块顶层（import 时）直接调用 `getRingBuffer()` 或 `createLogger()` 创建 logger 实例的代码。Logger 的首次实例化 MUST 延迟到函数首次被调用时（用户交互、生命周期钩子、store action 等运行时阶段）。
   - TDD 代码流程必须按阶段门禁推进：红测试阶段先全面分析需求，设计覆盖正常路径、边界情况、异常处理和潜在边缘情况的测试用例，只输出测试代码，并确认在当前缺少业务代码或对应行为实现时测试无法通过。
   - 输出红测试代码后必须立刻停止生成，并明确提示用户：“红测试已生成，请评审。确认无误后，请回复‘继续’，我将进入绿测试阶段。”在用户明确回复“继续”或给出修改意见前，不得进入绿测试阶段。
   - 如果用户提出修改意见，应先调整测试代码并重新停在红测试评审点。

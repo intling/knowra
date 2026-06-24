@@ -152,3 +152,70 @@
 - **THEN** 日志系统 MUST 完成初始化（包括 handler、formatter 和 logger 层级设置）
 - **AND** Trace 中间件 MUST 已注册到 FastAPI 应用
 - **AND** 后续路由中的日志调用 MUST 能输出格式化的日志
+
+### Requirement: TraceFilter 全局 trace_id 注入
+
+系统 SHALL 通过 `logging.Filter` 子类（`TraceFilter`）在 root logger 层面自动将 `contextvars` 中的 `trace_id` 注入到每一条 `LogRecord` 上，使**所有**到达 root logger 的日志记录（包括第三方库 SQLAlchemy、uvicorn 等发出的日志）均携带当前请求的 `trace_id`，无需调用方使用 `KnowraLogger`。
+
+#### Scenario: 第三方库日志自动携带 trace_id
+
+- **WHEN** 一个 HTTP 请求被中间件设置 `trace_id = "01JFZ8KJ4X2Q3M5N"`
+- **AND** SQLAlchemy 在执行查询时发出 `sqlalchemy.engine.Engine` 日志
+- **AND** uvicorn 在请求完成时发出 `uvicorn.access` 日志
+- **THEN** SQLAlchemy 日志输出 MUST 包含 `trace_id = "01JFZ8KJ4X2Q3M5N"`
+- **AND** uvicorn 日志输出 MUST 包含 `trace_id = "01JFZ8KJ4X2Q3M5N"`
+
+#### Scenario: TraceFilter 不覆盖已有的 trace_id
+
+- **WHEN** `KnowraLogger.process()` 已通过 `extra` 设置 `record.trace_id = "caller-set"`
+- **AND** `TraceFilter.filter()` 被调用
+- **THEN** `record.trace_id` MUST 保持为 `"caller-set"`，不被覆盖
+
+#### Scenario: 无请求上下文时 TraceFilter 使用占位符
+
+- **WHEN** 日志在 HTTP 请求生命周期之外输出（如应用启动时）
+- **AND** `contextvars` 中无 trace_id 值（默认为 `"-"`）
+- **THEN** `TraceFilter` MUST 将 `record.trace_id` 设置为 `"-"`
+- **AND** 该日志 MUST NOT 抛出异常
+
+### Requirement: 第三方库日志集成
+
+系统 SHALL 在 `configure_logging()` 中整合 SQLAlchemy 和 uvicorn 的日志器，使其日志统一流经 root logger 的 `TraceFilter` 和 Formatter，消除重复输出，确保所有日志格式一致且携带 `trace_id`。
+
+#### Scenario: SQLAlchemy echo 日志不重复输出
+
+- **WHEN** `settings.debug = true` 且 `create_engine(echo=True)` 被调用
+- **THEN** SQLAlchemy 内部的 `_add_default_handler()` 添加的 `StreamHandler` MUST 被移除
+- **AND** `sqlalchemy.engine` logger 的 `propagate` MUST 为 `True`
+- **AND** SQLAlchemy 引擎日志在每个 handler 中 MUST 只输出一次
+
+#### Scenario: SQLAlchemy 日志级别随 debug 切换
+
+- **WHEN** `settings.debug = true`
+- **THEN** `sqlalchemy.engine` logger 级别 MUST 为 `INFO`
+- **WHEN** `settings.debug = false`
+- **THEN** `sqlalchemy.engine` logger 级别 MUST 为 `WARNING`
+
+#### Scenario: uvicorn logger 预注册 TraceFilter
+
+- **WHEN** `configure_logging()` 被调用
+- **THEN** `uvicorn`、`uvicorn.access`、`uvicorn.error` logger MUST 各自注册 `TraceFilter` 实例
+- **AND** 该 Filter 在 uvicorn 后续调用 `dictConfig()` 时 MUST NOT 被清除
+
+### Requirement: Lifespan 处理器接管 uvicorn 日志
+
+系统 SHALL 通过 FastAPI `lifespan` 上下文管理器，在 uvicorn 完成其内部的 `dictConfig()` 日志初始化之后，移除 uvicorn 的独立 handler 并将 `propagate` 设为 `True`，使 uvicorn 的访问日志和错误日志流向 root logger 的 `TraceFilter` 和 Formatter。
+
+#### Scenario: lifespan 启动后 uvicorn 日志流入 root
+
+- **WHEN** FastAPI 应用启动完成（lifespan 已执行）
+- **THEN** `uvicorn.access` logger 的 `handlers` MUST 为空列表
+- **AND** `uvicorn.access` logger 的 `propagate` MUST 为 `True`
+- **AND** `uvicorn.error` logger 的 `handlers` MUST 为空列表
+- **AND** `uvicorn.error` logger 的 `propagate` MUST 为 `True`
+
+#### Scenario: uvicorn 访问日志携带 trace_id
+
+- **WHEN** 一个 HTTP 请求完成且 uvicorn 输出访问日志（如 `"GET /api/health HTTP/1.1" 200`）
+- **THEN** 该日志 MUST 通过 root logger 的 Formatter 输出
+- **AND** 日志中 MUST 包含正确的 `trace_id`（由 TraceFilter 注入）

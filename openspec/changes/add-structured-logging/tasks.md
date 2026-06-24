@@ -105,3 +105,37 @@
 - [x] 15.1 更新 `backend/README.md`：添加日志配置项说明（LOG_LEVEL、LOG_FORMAT、LOG_FILE_PATH 等）
 - [x] 15.2 更新 `front/README.md`：添加日志模块目录结构和使用示例
 - [x] 15.3 检查并更新根目录 `README.md` 中与日志相关的启动说明（如有需要）
+
+## 5.5 后端全局 trace_id 注入与第三方库集成
+
+- [x] 5.5.1 在 `app/core/logging.py` 中新增 `TraceFilter(logging.Filter)` 类：在 `filter()` 中从 `contextvars` 读取 `trace_id` 并注入到 `LogRecord`，若已有值则保留
+- [x] 5.5.2 在 `configure_logging()` 中为 root logger 注册 `TraceFilter`（`root.addFilter(TraceFilter())`），并清除已有 filters（`root.filters.clear()`）以保证幂等性
+- [x] 5.5.3 在 `configure_logging()` 中清理 SQLAlchemy echo 引入的 handler：移除 `sqlalchemy.engine` / `sqlalchemy.engine.Engine` / `sqlalchemy.pool` logger 上的 handler，设置 `propagate=True`，根据 debug 设置级别
+- [x] 5.5.4 在 `configure_logging()` 中为 `uvicorn` / `uvicorn.access` / `uvicorn.error` logger 预注册 `TraceFilter`（uvicorn dictConfig 不会清除 filters）
+- [x] 5.5.5 修改 `ConsoleFormatter.format()` 和 `JsonFormatter.format()`：trace_id 取值改为 `getattr(record, "trace_id", None) or get_trace_id()`，作为 TraceFilter 的兜底
+
+## 5.6 后端 Lifespan 处理器集成 uvicorn
+
+- [x] 5.6.1 修改 `app/main.py`：新增 `lifespan` 异步上下文管理器，在其中移除 `uvicorn` / `uvicorn.access` / `uvicorn.error` 的 handler、清除 filters、设置 `propagate=True`、重新注册 `TraceFilter`
+- [x] 5.6.2 将 `lifespan` 传入 `FastAPI(lifespan=lifespan)`
+- [x] 5.6.3 修复 `.env` 和 `.env.example` 中日志配置 section 的注释格式（`---` → `# ---`）
+
+## 5.7 代码质量验证
+
+- [x] 5.7.1 运行 `uv run ruff check .` 和 `uv run ruff format .`，修复所有 lint 错误
+- [x] 5.7.2 运行 `uv run pytest`，确认全部 73 个测试通过
+
+## 14.5 前端日志系统强制执行规范
+
+- [x] 14.5.1 在 `config.yaml` 开发治理规则中新增前端日志系统说明条款：明确 `initLogger()` 自动初始化、`createLogger()` 自动注入 trace_id、全局错误自动捕获、API Client 自动注入 X-Trace-ID
+- [x] 14.5.2 在 `specs/frontend-structured-logging/spec.md` 中新增 "前端日志系统强制执行" Requirement：禁止 console.log 等原生方法、Vue 全局错误已自动接入、未捕获 Promise 拒绝已自动接入、API Client 已自动注入 X-Trace-ID
+- [x] 14.5.3 验证前端代码实现与规范一致：`main.ts` 已调用 `initLogger()` 并注册 `app.config.errorHandler` 和 `window.unhandledrejection`；`client.ts` 已通过 `commonHeaders()` 自动注入 `X-Trace-ID`
+
+## 14.6 前端业务代码日志集成
+
+- [x] 14.6.1 在 `stores/user.ts` 中集成 `createLogger("stores:user", getRingBuffer())`：记录用户加载开始、成功（含 userId/displayName）和失败
+- [x] 14.6.2 在 `stores/app.ts` 中集成 `createLogger("stores:app", getRingBuffer())`：记录健康检查开始、成功和失败
+- [x] 14.6.3 在 `views/HomeView.vue` 中集成 `createLogger("views:Home", getRingBuffer())`：记录组件挂载、文件选择、文件上传成功/失败
+- [x] 14.6.4 在 `api/client.ts` 中集成 `createLogger("api:client", getRingBuffer())`：记录 GET/POST 请求发送（debug）、成功（info）、网络错误（error）和非 2xx 状态（warn），含 path/status/duration
+- [x] 14.6.5 更新关联测试文件的 mock（`client.test.ts`、`user.test.ts`、`app.test.ts`、`HomeView.test.ts`、`health.test.ts`、`uploads.test.ts`、`users.test.ts`）：mock `../shared/logger` 模块以避免 `initLogger()` 前置依赖
+- [x] 14.6.6 运行 `npm run lint`、`npm run test`、`npm run build`，确认全部通过（61 测试，0 lint 错误，build 成功）

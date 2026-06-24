@@ -2,6 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { uploadFile } from "./uploads"
 
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] }),
+}))
+
 const UPLOAD_RESPONSE = {
   id: "11111111-1111-1111-1111-111111111111",
   owner_user_id: "00000000-0000-0000-0000-000000000001",

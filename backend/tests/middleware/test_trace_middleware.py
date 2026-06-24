@@ -9,9 +9,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.core.trace_context import clear_trace_id, get_trace_id
+from app.core.trace_context import get_trace_id
 from app.middleware.trace import TRACE_HEADER, TraceMiddleware, generate_uuid7
-
 
 # ---------------------------------------------------------------------------
 # UUID7 helper tests (needed by middleware)

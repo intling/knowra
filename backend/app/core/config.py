@@ -62,7 +62,7 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
-    def _resolve_log_format(self) -> "Settings":
+    def _resolve_log_format(self) -> Settings:
         if not self.log_format:
             self.log_format = "console" if self.debug else "json"
         return self

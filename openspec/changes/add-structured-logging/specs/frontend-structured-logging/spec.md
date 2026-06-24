@@ -166,3 +166,72 @@
 
 - **WHEN** 环境变量 `VITE_LOG_RING_SIZE=1000`
 - **THEN** 环形缓冲区最大条目数 MUST 为 1000
+
+### Requirement: 前端日志系统强制执行
+
+系统 SHALL 通过工程规范强制所有前端代码使用 `createLogger()` 输出日志，禁止任何绕过日志系统的行为。前端日志系统已在应用入口 (`main.ts`) 自动初始化，业务模块无需也不应手动初始化。
+
+#### Scenario: 业务代码使用 createLogger 而非 console.log
+
+- **WHEN** Code Review 发现任何前端源文件使用了 `console.log()` / `console.warn()` / `console.error()` / `console.debug()`
+- **THEN** 该代码 MUST 被拒绝
+- **AND** 应替换为 `import { createLogger } from "@/shared/logger"` + `createLogger("module:name")`
+
+#### Scenario: Vue 全局错误已自动接入
+
+- **WHEN** Vue 组件内部抛出任何未经捕获的错误
+- **THEN** 错误 MUST 被 `app.config.errorHandler` 自动捕获并通过 `appLogger.error()` 记录
+- **AND** 日志 MUST 包含 trace_id、模块名 ("app:vue")、错误堆栈和组件信息
+- **AND** 业务组件 MUST NOT 额外编写 try/catch 仅用于日志记录
+
+#### Scenario: 未捕获 Promise 拒绝已自动接入
+
+- **WHEN** 一个 Promise 被拒绝且未附加 `.catch()` 处理器
+- **THEN** 拒绝原因 MUST 被 `window.unhandledrejection` 事件处理器自动捕获并通过 `appLogger.error()` 记录
+- **AND** 业务代码 MUST NOT 依赖手动调用 logger 来处理已被全局处理器覆盖的拒绝
+
+#### Scenario: API Client 已自动注入 X-Trace-ID
+
+- **WHEN** 业务代码调用 `apiGet()` 或 `apiPostForm()`
+- **THEN** 请求头 MUST 自动包含 `X-Trace-ID`
+- **AND** 业务代码 MUST NOT 手动设置 `X-Trace-ID` 请求头
+- **AND** 业务代码 MUST NOT 直接使用 `fetch()` 绕过 API Client 层
+
+### Requirement: 业务代码日志接入
+
+系统 SHALL 在关键业务模块（stores、views、API client）中通过 `createLogger()` 输出结构化日志，使前端运行时行为可追踪、可诊断。
+
+#### Scenario: Store 操作日志记录
+
+- **WHEN** Store（如 `useUserStore`、`useAppStore`）执行异步数据加载操作
+- **THEN** 操作开始 MUST 输出 info 级别日志
+- **AND** 操作成功 MUST 输出 info 级别日志（含关键字段如 userId、status）
+- **AND** 操作失败 MUST 输出 error 级别日志（含 Error 对象）
+
+#### Scenario: Vue 组件生命周期日志
+
+- **WHEN** 关键页面组件（如 `HomeView`）挂载 (`onMounted`)
+- **THEN** MUST 输出 info 级别日志记录组件挂载事件
+
+#### Scenario: 用户交互操作日志
+
+- **WHEN** 用户选择文件准备上传
+- **THEN** MUST 输出 info 级别日志（含 fileName、fileSize、fileType）
+- **WHEN** 文件上传成功
+- **THEN** MUST 输出 info 级别日志（含 fileName、fileId、byteSize）
+- **WHEN** 文件上传失败
+- **THEN** MUST 输出 error 级别日志（含 Error 对象）
+
+#### Scenario: API Client 请求生命周期日志
+
+- **WHEN** API Client（`apiGet` / `apiPostForm`）发起 HTTP 请求
+- **THEN** 请求发送时 MUST 输出 debug 级别日志（含 path、url）
+- **AND** 请求成功（2xx）时 MUST 输出 info 级别日志（含 path、status、duration）
+- **AND** 请求失败（网络错误）时 MUST 输出 error 级别日志（含 path、url）
+- **AND** 非 2xx 响应时 MUST 输出 warn 级别日志（含 path、status、duration）
+
+#### Scenario: 日志创建时机延迟至运行时
+
+- **WHEN** 业务模块在模块级 `import` 中引入 `createLogger` 和 `getRingBuffer`
+- **THEN** logger 实例 MUST 在首次实际调用时（运行时）才创建，而非在模块加载时创建
+- **AND** 该延迟机制 MUST 确保 `initLogger()`（在 `main.ts` 中调用）已完成初始化

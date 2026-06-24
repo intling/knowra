@@ -1,6 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { apiGet, apiPostForm } from "./client"
 
+// Mock the logger module so client.ts can import it without needing initLogger().
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] } as unknown as ReturnType<typeof import("../shared/logger").getRingBuffer>),
+}))
+
 // Mock the traceManager to return a stable trace ID.
 // Must use the SAME import path as client.ts uses.
 vi.mock("../shared/logger/trace-context", () => ({

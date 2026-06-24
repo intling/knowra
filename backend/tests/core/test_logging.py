@@ -5,19 +5,14 @@
 
 import json
 import logging
-import re
-import time
 
-from app.core import logging as log_mod
 from app.core.logging import (
     ConsoleFormatter,
     JsonFormatter,
-    KnowraLogger,
     configure_logging,
     get_logger,
 )
 from app.core.trace_context import clear_trace_id, set_trace_id
-
 
 # ---------------------------------------------------------------------------
 # 3.1 — Structured Logger
@@ -222,7 +217,7 @@ class TestFileLoggingHandler:
         logger.setLevel(logging.DEBUG)
 
         # Write enough data to trigger rotation
-        for i in range(20):
+        for _i in range(20):
             logger.info("x" * 50)
 
         handler.close()
@@ -241,7 +236,7 @@ class TestFileLoggingHandler:
         logger.addHandler(handler)
         logger.setLevel(logging.DEBUG)
 
-        for i in range(30):
+        for _i in range(30):
             logger.info("y" * 30)
 
         handler.close()
