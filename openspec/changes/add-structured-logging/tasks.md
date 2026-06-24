@@ -1,0 +1,107 @@
+## 1. 后端追踪上下文
+
+- [ ] 1.1 为 `trace_context.py` 编写红测试：验证 `TraceContext.set_trace_id()` / `get_trace_id()` 的基本读写功能
+- [ ] 1.2 为 `trace_context.py` 编写红测试：验证并发场景下不同协程的追踪上下文隔离性
+- [ ] 1.3 实现 `app/core/trace_context.py`：封装 `contextvars.ContextVar`，提供 `set_trace_id()` 和 `get_trace_id()` 接口
+- [ ] 1.4 验证 trace_context 测试转为绿色
+
+## 2. 后端日志配置
+
+- [ ] 2.1 为 `config.py` 日志配置项编写红测试：验证新增配置项（`LOG_LEVEL`、`LOG_FORMAT`、`LOG_FILE_PATH`、`LOG_FILE_MAX_SIZE`、`LOG_FILE_BACKUP_COUNT`）的默认值和环境变量读取
+- [ ] 2.2 在 `app/core/config.py` 的 `Settings` 类中新增 5 个日志配置项
+- [ ] 2.3 更新 `.env.example` 添加日志配置项说明
+- [ ] 2.4 验证 config 测试转为绿色
+
+## 3. 后端结构化 Logger
+
+- [ ] 3.1 为结构化 Logger 编写红测试：验证 `get_logger()` 返回的 logger 输出的日志自动携带 `trace_id`（有上下文时）或 `-`（无上下文时）
+- [ ] 3.2 为双模式 Formatter 编写红测试：验证 `console` 模式输出包含 ANSI 颜色码和 `key=value` 格式
+- [ ] 3.3 为双模式 Formatter 编写红测试：验证 `json` 模式输出为单行有效 JSON，`extra` 字段平铺在根级别
+- [ ] 3.4 为文件日志 handler 编写红测试：验证日志写入文件、文件轮转触发和备份数量控制
+- [ ] 3.5 重构 `app/core/logging.py`：实现 `KnowraLogger`（`LoggerAdapter` 子类）、`ConsoleFormatter`（console 模式）、`JsonFormatter`（json 模式）、`configure_logging()`（整合 console handler + RotatingFileHandler）
+- [ ] 3.6 验证 logging 测试转为绿色
+
+## 4. 后端 Trace 中间件
+
+- [ ] 4.1 为 Trace 中间件编写红测试：验证请求携带有效 `X-Trace-ID` 时，中间件将其设置为 trace_id 且响应头包含相同值
+- [ ] 4.2 为 Trace 中间件编写红测试：验证请求缺少 `X-Trace-ID` 时，中间件生成新 UUID7
+- [ ] 4.3 为 Trace 中间件编写红测试：验证请求携带空白 `X-Trace-ID` 时，中间件生成新 UUID7
+- [ ] 4.4 实现 `app/middleware/__init__.py` 和 `app/middleware/trace.py`：FastAPI 中间件，读取/补发 `X-Trace-ID`，注入 `TraceContext`
+- [ ] 4.5 验证中间件测试转为绿色
+
+## 5. 后端应用入口集成
+
+- [ ] 5.1 修改 `app/main.py`：在 `create_app()` 中注册 Trace 中间件，确保中间件在所有路由之前执行
+- [ ] 5.2 为集成后的完整链路编写集成测试：验证从请求进入到响应的完整日志链路（`X-Trace-ID` → `TraceContext` → logger 输出）
+- [ ] 5.3 验证集成测试转为绿色，运行 `uv run ruff check .` 和 `uv run pytest` 全部通过
+
+## 6. 前端类型定义
+
+- [ ] 6.1 实现 `front/src/shared/logger/types.ts`：定义 `LogLevel`、`LogRecord`、`LoggerOptions` 等 TypeScript 类型和接口
+- [ ] 6.2 编写类型定义的单元测试：验证 `LogRecord` 类型约束（必填字段 `ts`、`level`、`trace_id`、`module`、`message`）
+
+## 7. 前端 Trace ID 生成与管理
+
+- [ ] 7.1 为 TraceManager 编写红测试：验证首次调用生成 UUID7 格式字符串并写入 sessionStorage
+- [ ] 7.2 为 TraceManager 编写红测试：验证 sessionStorage 已有值时复用已有 trace_id
+- [ ] 7.3 为 TraceManager 编写红测试：验证生成的 UUID7 首字符为 `0`（版本标识）且长度符合 UUID 规范
+- [ ] 7.4 实现 `front/src/shared/logger/trace-context.ts`：`TraceManager` 类，封装 UUID7 生成 + sessionStorage 读写
+- [ ] 7.5 验证 TraceManager 测试转为绿色
+
+## 8. 前端 Logger 核心
+
+- [ ] 8.1 为 Logger 类编写红测试：验证 `createLogger('module:name')` 返回包含 `debug/info/warn/error` 方法的实例
+- [ ] 8.2 为 Logger 类编写红测试：验证日志自动注入 `trace_id` 和 `module`，无需调用方手动传递
+- [ ] 8.3 为 Logger 类编写红测试：验证 `logger.error()` 自动提取 `Error.name`、`Error.message`、`Error.stack`
+- [ ] 8.4 为 Logger 类编写红测试：验证 `LOG_CONSOLE_LEVEL` 低于当前级别的日志不输出到控制台
+- [ ] 8.5 实现 `front/src/shared/logger/logger.ts`：`Logger` 类和 `createLogger()` 工厂函数
+- [ ] 8.6 验证 Logger 测试转为绿色
+
+## 9. 前端控制台格式化
+
+- [ ] 9.1 为 formatter 编写红测试：验证格式化输出包含时间戳、级别缩写、trace_id 前缀、模块名、消息
+- [ ] 9.2 为 formatter 编写红测试：验证不同日志级别使用不同 CSS 颜色（ERROR 红、WARN 橙、INFO 蓝、DEBUG 灰）
+- [ ] 9.3 实现 `front/src/shared/logger/formatter.ts`：`formatLogRecord()` 函数和 `consoleStyles` 颜色映射
+- [ ] 9.4 验证 formatter 测试转为绿色
+
+## 10. 前端环形缓冲区
+
+- [ ] 10.1 为 RingBuffer 编写红测试：验证追加日志条目，`getAll()` 返回按时间排序的条目列表
+- [ ] 10.2 为 RingBuffer 编写红测试：验证缓冲区满 (`LOG_RING_SIZE`) 时丢弃最旧条目
+- [ ] 10.3 为 RingBuffer 编写红测试：验证 debug 级别（低于 `LOG_BUFFER_LEVEL`）的条目不被追加
+- [ ] 10.4 为 RingBuffer 编写红测试：验证 `flush(count)` 返回最旧 count 条并从缓冲区移除
+- [ ] 10.5 实现 `front/src/shared/logger/ring-buffer.ts`：`RingBuffer` 类，固定大小数组 + writeIndex
+- [ ] 10.6 验证 RingBuffer 测试转为绿色
+
+## 11. 前端 IndexedDB 磁盘缓冲区
+
+- [ ] 11.1 为 DiskBuffer 编写红测试：验证 `write(chunk)` 将日志批量写入 IndexedDB
+- [ ] 11.2 为 DiskBuffer 编写红测试：验证总大小超过 `LOG_DISK_MAX_SIZE` 时删除最旧 chunk
+- [ ] 11.3 为 DiskBuffer 编写红测试：验证 IndexedDB 写入失败时静默降级，不抛异常
+- [ ] 11.4 为 DiskBuffer 编写红测试：验证 `readAll()` 按时间顺序返回全部持久化日志
+- [ ] 11.5 实现 `front/src/shared/logger/disk-buffer.ts`：`DiskBuffer` 类，封装 IndexedDB 的 chunk 存储和滚动逻辑
+- [ ] 11.6 验证 DiskBuffer 测试转为绿色
+
+## 12. 前端日志模块统一导出
+
+- [ ] 12.1 实现 `front/src/shared/logger/index.ts`：统一导出 `createLogger`、`TraceManager`、`RingBuffer`，导出初始化函数 `initLogger()`
+- [ ] 12.2 为 `initLogger()` 编写测试：验证初始化函数完成 TraceManager 创建、Logger 工厂配置和全局配置注入
+
+## 13. 前端 API Client 集成
+
+- [ ] 13.1 为 API Client 的 X-Trace-ID 注入编写红测试：验证 `apiGet` 和 `apiPostForm` 调用时请求头包含 `X-Trace-ID`
+- [ ] 13.2 修改 `front/src/api/client.ts`：在 `apiGet` 和 `apiPostForm` 中自动注入 `X-Trace-ID` 请求头
+- [ ] 13.3 验证 API Client 测试转为绿色
+
+## 14. 前端应用入口集成
+
+- [ ] 14.1 修改 `front/src/main.ts`：注册 `app.config.errorHandler`（Vue 全局错误 → logger.error）
+- [ ] 14.2 修改 `front/src/main.ts`：注册 `window.onunhandledrejection`（未捕获 Promise → logger.error）
+- [ ] 14.3 编写集成测试：模拟 Vue 组件错误，验证被 logger 捕获并正确记录
+- [ ] 14.4 验证集成测试转为绿色，运行 `npm run lint`、`npm run test`、`npm run build` 全部通过
+
+## 15. 文档更新
+
+- [ ] 15.1 更新 `backend/README.md`：添加日志配置项说明（LOG_LEVEL、LOG_FORMAT、LOG_FILE_PATH 等）
+- [ ] 15.2 更新 `front/README.md`：添加日志模块目录结构和使用示例
+- [ ] 15.3 检查并更新根目录 `README.md` 中与日志相关的启动说明（如有需要）
