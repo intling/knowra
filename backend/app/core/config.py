@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DEFAULT_ALLOWED_UPLOAD_CONTENT_TYPES = (
@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     allowed_upload_content_types: Annotated[list[str], NoDecode] = list(
         DEFAULT_ALLOWED_UPLOAD_CONTENT_TYPES
     )
+
+    # --- logging ---
+    log_level: str = "INFO"
+    log_format: str = ""  # empty → auto-detect from debug
+    log_file_path: str = "logs/knowra.log"
+    log_file_max_size: int = 10 * 1024 * 1024  # 10 MB
+    log_file_backup_count: int = 5
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -53,6 +60,12 @@ class Settings(BaseSettings):
             ]
 
         return value
+
+    @model_validator(mode="after")
+    def _resolve_log_format(self) -> Settings:
+        if not self.log_format:
+            self.log_format = "console" if self.debug else "json"
+        return self
 
 
 @lru_cache

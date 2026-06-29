@@ -1,0 +1,337 @@
+[32mINFO    [0m 2026-06-24T08:29:26.225Z [01JFZ8KJ4X2Q3M5N] tests.module — hello-world
+[32mINFO    [0m 2026-06-24T08:29:26.227Z [01JFZ8KJ4X2Q3M5N] tests.module — no-context
+[32mINFO    [0m 2026-06-24T08:29:26.256Z [extra-trace] tests.module — upload done  byte_size=2048 file_name=notes.pdf
+[32mINFO    [0m 2026-06-24T08:29:26.282Z [-] test_file — test message
+[32mINFO    [0m 2026-06-24T08:29:26.287Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.287Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.288Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.288Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.289Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.290Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.291Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.291Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.292Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.293Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.294Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.295Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.295Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.296Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.297Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.298Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.299Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.299Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.300Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.301Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:29:26.303Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.303Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.304Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.304Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.305Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.305Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.306Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.306Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.307Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.307Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.308Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.308Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.308Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.309Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.309Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.310Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.310Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.311Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.311Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.312Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.312Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.312Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.313Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.313Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.313Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.314Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.314Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.314Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.315Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:29:26.315Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.425Z [01JFZ8KJ4X2Q3M5N] tests.module — hello-world
+[32mINFO    [0m 2026-06-24T08:30:16.426Z [-] tests.module — no-context
+[32mINFO    [0m 2026-06-24T08:30:16.429Z [extra-trace] tests.module — upload done  byte_size=2048 file_name=notes.pdf
+[32mINFO    [0m 2026-06-24T08:30:16.446Z [-] test_file — test message
+[32mINFO    [0m 2026-06-24T08:30:16.449Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.449Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.450Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.451Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.452Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.453Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.453Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.454Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.455Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.456Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.456Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.457Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.458Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.459Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.459Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.460Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.461Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.461Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.462Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.463Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:30:16.465Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.465Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.466Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.466Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.466Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.467Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.467Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.467Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.468Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.468Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.468Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.469Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.469Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.469Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.470Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.470Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.471Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.471Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.471Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.472Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.472Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.472Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.473Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.473Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.473Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.474Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.474Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.474Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.475Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:30:16.475Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:32:31.060Z [-] httpx — HTTP Request: GET http://testserver/echo "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:32:31.063Z [-] httpx — HTTP Request: GET http://testserver/echo "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:32:31.066Z [-] httpx — HTTP Request: GET http://testserver/echo "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:32:31.069Z [-] httpx — HTTP Request: GET http://testserver/echo "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:41:19.416Z [integration-test-trace-id] tests.integration — ping-called
+[32mINFO    [0m 2026-06-24T08:41:19.417Z [-] httpx — HTTP Request: GET http://testserver/ping "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:41:19.419Z [019ef8ca-793b-7a89-8d46-ef1ab6e9588c] tests.integration — ping-called
+[32mINFO    [0m 2026-06-24T08:41:19.420Z [-] httpx — HTTP Request: GET http://testserver/ping "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:41:19.423Z [-] httpx — HTTP Request: GET http://testserver/api/health "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:42:05.298Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.schemas
+[32mINFO    [0m 2026-06-24T08:42:05.298Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.tables
+[32mINFO    [0m 2026-06-24T08:42:05.298Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.types
+[32mINFO    [0m 2026-06-24T08:42:05.299Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.constraints
+[32mINFO    [0m 2026-06-24T08:42:05.299Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.defaults
+[32mINFO    [0m 2026-06-24T08:42:05.299Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.comments
+[32mINFO    [0m 2026-06-24T08:42:05.337Z [-] httpx — HTTP Request: GET http://testserver/api/health "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:45:52.099Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.schemas
+[32mINFO    [0m 2026-06-24T08:45:52.099Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.tables
+[32mINFO    [0m 2026-06-24T08:45:52.100Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.types
+[32mINFO    [0m 2026-06-24T08:45:52.100Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.constraints
+[32mINFO    [0m 2026-06-24T08:45:52.100Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.defaults
+[32mINFO    [0m 2026-06-24T08:45:52.100Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.comments
+[32mINFO    [0m 2026-06-24T08:45:52.117Z [-] httpx — HTTP Request: GET http://testserver/api/health "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:45:52.170Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 201 Created"
+[32mINFO    [0m 2026-06-24T08:45:52.180Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 422 Unprocessable Entity"
+[32mINFO    [0m 2026-06-24T08:45:52.188Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:45:52.197Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 400 Bad Request"
+[32mINFO    [0m 2026-06-24T08:45:52.209Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 413 Request Entity Too Large"
+[32mINFO    [0m 2026-06-24T08:45:52.215Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:45:52.222Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:45:52.227Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:45:52.231Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:45:52.234Z [-] httpx — HTTP Request: POST http://testserver/api/users "HTTP/1.1 404 Not Found"
+[32mINFO    [0m 2026-06-24T08:45:52.235Z [01JFZ8KJ4X2Q3M5N] tests.module — hello-world
+[32mINFO    [0m 2026-06-24T08:45:52.236Z [-] tests.module — no-context
+[32mINFO    [0m 2026-06-24T08:45:52.238Z [extra-trace] tests.module — upload done  byte_size=2048 file_name=notes.pdf
+[32mINFO    [0m 2026-06-24T08:45:52.251Z [-] test_file — test message
+[32mINFO    [0m 2026-06-24T08:45:52.253Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.253Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.254Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.254Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.255Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.256Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.257Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.259Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.260Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.261Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.262Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.262Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.263Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.264Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.265Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.265Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.266Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.267Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.267Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.268Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:45:52.270Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.271Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.271Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.272Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.272Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.273Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.273Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.274Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.275Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.276Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.276Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.277Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.277Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.278Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.279Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.279Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.280Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.280Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.280Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.281Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.281Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.282Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.282Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.282Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.283Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.283Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.283Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.284Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.284Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:45:52.284Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.268Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.schemas
+[32mINFO    [0m 2026-06-24T08:59:28.268Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.tables
+[32mINFO    [0m 2026-06-24T08:59:28.268Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.types
+[32mINFO    [0m 2026-06-24T08:59:28.268Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.constraints
+[32mINFO    [0m 2026-06-24T08:59:28.268Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.defaults
+[32mINFO    [0m 2026-06-24T08:59:28.268Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.comments
+[32mINFO    [0m 2026-06-24T08:59:28.284Z [-] httpx — HTTP Request: GET http://testserver/api/health "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:59:28.316Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 201 Created"
+[32mINFO    [0m 2026-06-24T08:59:28.323Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 422 Unprocessable Entity"
+[32mINFO    [0m 2026-06-24T08:59:28.330Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:59:28.339Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 400 Bad Request"
+[32mINFO    [0m 2026-06-24T08:59:28.347Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 413 Request Entity Too Large"
+[32mINFO    [0m 2026-06-24T08:59:28.353Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T08:59:28.359Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:59:28.364Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:59:28.368Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T08:59:28.372Z [-] httpx — HTTP Request: POST http://testserver/api/users "HTTP/1.1 404 Not Found"
+[32mINFO    [0m 2026-06-24T08:59:28.374Z [01JFZ8KJ4X2Q3M5N] tests.module — hello-world
+[32mINFO    [0m 2026-06-24T08:59:28.375Z [-] tests.module — no-context
+[32mINFO    [0m 2026-06-24T08:59:28.377Z [extra-trace] tests.module — upload done  byte_size=2048 file_name=notes.pdf
+[32mINFO    [0m 2026-06-24T08:59:28.391Z [-] test_file — test message
+[32mINFO    [0m 2026-06-24T08:59:28.393Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.394Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.394Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.395Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.396Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.397Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.397Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.398Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.399Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.399Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.400Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.401Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.402Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.402Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.403Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.404Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.404Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.405Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.406Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.406Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T08:59:28.408Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.408Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.408Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.409Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.409Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.409Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.410Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.410Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.411Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.411Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.411Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.412Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.412Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.412Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.413Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.413Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.413Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.414Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.414Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.414Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.415Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.415Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.415Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.416Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.416Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.416Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.417Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.417Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.417Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T08:59:28.418Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.525Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.schemas
+[32mINFO    [0m 2026-06-24T09:00:30.525Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.tables
+[32mINFO    [0m 2026-06-24T09:00:30.525Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.types
+[32mINFO    [0m 2026-06-24T09:00:30.525Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.constraints
+[32mINFO    [0m 2026-06-24T09:00:30.525Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.defaults
+[32mINFO    [0m 2026-06-24T09:00:30.525Z [-] alembic.runtime.plugins — setup plugin alembic.autogenerate.comments
+[32mINFO    [0m 2026-06-24T09:00:30.542Z [-] httpx — HTTP Request: GET http://testserver/api/health "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T09:00:30.574Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 201 Created"
+[32mINFO    [0m 2026-06-24T09:00:30.582Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 422 Unprocessable Entity"
+[32mINFO    [0m 2026-06-24T09:00:30.589Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T09:00:30.597Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 400 Bad Request"
+[32mINFO    [0m 2026-06-24T09:00:30.605Z [-] httpx — HTTP Request: POST http://testserver/api/uploads "HTTP/1.1 413 Request Entity Too Large"
+[32mINFO    [0m 2026-06-24T09:00:30.614Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+[32mINFO    [0m 2026-06-24T09:00:30.622Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T09:00:30.627Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T09:00:30.633Z [-] httpx — HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 503 Service Unavailable"
+[32mINFO    [0m 2026-06-24T09:00:30.639Z [-] httpx — HTTP Request: POST http://testserver/api/users "HTTP/1.1 404 Not Found"
+[32mINFO    [0m 2026-06-24T09:00:30.641Z [01JFZ8KJ4X2Q3M5N] tests.module — hello-world
+[32mINFO    [0m 2026-06-24T09:00:30.642Z [-] tests.module — no-context
+[32mINFO    [0m 2026-06-24T09:00:30.646Z [extra-trace] tests.module — upload done  byte_size=2048 file_name=notes.pdf
+[32mINFO    [0m 2026-06-24T09:00:30.656Z [-] test_file — test message
+[32mINFO    [0m 2026-06-24T09:00:30.658Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.659Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.659Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.660Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.661Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.662Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.662Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.663Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.663Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.664Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.665Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.665Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.666Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.666Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.667Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.667Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.668Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.668Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.669Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.669Z [-] test_rotate — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[32mINFO    [0m 2026-06-24T09:00:30.671Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.671Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.672Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.672Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.672Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.673Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.673Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.673Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.674Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.674Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.674Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.675Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.675Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.676Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.676Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.676Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.677Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.677Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.677Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.678Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.678Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.678Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.679Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.679Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.680Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.680Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.680Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.681Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.681Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+[32mINFO    [0m 2026-06-24T09:00:30.681Z [-] test_bounded — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
