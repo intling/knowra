@@ -1,8 +1,12 @@
+import re
 from collections.abc import Generator
 
 from sqlmodel import Session, create_engine
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 settings = get_settings()
 engine = create_engine(
@@ -10,6 +14,10 @@ engine = create_engine(
     echo=settings.debug,
     pool_pre_ping=True,
 )
+
+# Desensitize password in database URL for logging.
+_desensitized_url = re.sub(r"://([^:]+):([^@]+)@", r"://\1:***@", settings.database_url)
+logger.info("数据库引擎已创建", extra={"database_url": _desensitized_url, "echo": settings.debug})
 
 
 def get_session() -> Generator[Session]:

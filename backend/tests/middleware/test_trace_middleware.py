@@ -3,6 +3,7 @@
 4.1–4.3 red tests for X-Trace-ID handling.
 """
 
+import logging
 import uuid
 
 import pytest
@@ -15,6 +16,7 @@ from app.middleware.trace import TRACE_HEADER, TraceMiddleware, generate_uuid7
 # ---------------------------------------------------------------------------
 # UUID7 helper tests (needed by middleware)
 # ---------------------------------------------------------------------------
+
 
 class TestUuid7Generation:
     def test_generates_valid_uuid_format(self):
@@ -92,3 +94,34 @@ class TestTraceMiddleware:
         assert response.status_code == 200
         trace_id = response.json()["trace_id"]
         uuid.UUID(trace_id)
+
+
+# =========================================================================
+# 日志记录测试（spec: 中间件层日志记录 — trace.py）
+# =========================================================================
+
+
+# 测试请求未携带 X-Trace-ID 时中间件应输出 DEBUG 级别日志，包含生成的 trace_id。
+def test_trace_middleware_logs_debug_on_new_trace_id(
+    trace_client,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+
+    trace_client.get("/echo")
+
+    middleware_records = [r for r in caplog.records if r.name == "app.middleware.trace"]
+    assert any(r.levelname == "DEBUG" for r in middleware_records)
+
+
+# 测试请求携带有效 X-Trace-ID 时中间件应输出 DEBUG 级别日志，包含接收到的 trace_id。
+def test_trace_middleware_logs_debug_on_received_trace_id(
+    trace_client,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+
+    trace_client.get("/echo", headers={TRACE_HEADER: "01JFZ8KJ4X2Q3M5N"})
+
+    middleware_records = [r for r in caplog.records if r.name == "app.middleware.trace"]
+    assert any(r.levelname == "DEBUG" for r in middleware_records)

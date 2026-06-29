@@ -18,6 +18,7 @@ from app.core.trace_context import clear_trace_id, set_trace_id
 # 3.1 — Structured Logger
 # ---------------------------------------------------------------------------
 
+
 class TestStructuredLogger:
     """验证 get_logger() 返回的 logger 自动携带 trace_id"""
 
@@ -64,6 +65,7 @@ class TestStructuredLogger:
 # ---------------------------------------------------------------------------
 # 3.2 — Console Formatter
 # ---------------------------------------------------------------------------
+
 
 class TestConsoleFormatter:
     """验证 console 模式输出包含 ANSI 颜色码和 key=value 格式"""
@@ -130,6 +132,7 @@ class TestConsoleFormatter:
 # 3.3 — JSON Formatter
 # ---------------------------------------------------------------------------
 
+
 class TestJsonFormatter:
     """验证 json 模式输出为单行有效 JSON，extra 字段平铺在根级别"""
 
@@ -185,6 +188,7 @@ class TestJsonFormatter:
 # 3.4 — File logging handler
 # ---------------------------------------------------------------------------
 
+
 class TestFileLoggingHandler:
     """验证日志写入文件、文件轮转触发和备份数量控制"""
 
@@ -208,9 +212,7 @@ class TestFileLoggingHandler:
     def test_file_rotation_triggers_at_max_size(self, tmp_path):
         log_path = tmp_path / "rotate.log"
         # Use a very small maxBytes to trigger rotation quickly
-        handler = logging.handlers.RotatingFileHandler(
-            str(log_path), maxBytes=100, backupCount=2
-        )
+        handler = logging.handlers.RotatingFileHandler(str(log_path), maxBytes=100, backupCount=2)
         handler.setFormatter(ConsoleFormatter())
         logger = logging.getLogger("test_rotate")
         logger.addHandler(handler)
@@ -228,9 +230,7 @@ class TestFileLoggingHandler:
 
     def test_backup_count_respected(self, tmp_path):
         log_path = tmp_path / "bounded.log"
-        handler = logging.handlers.RotatingFileHandler(
-            str(log_path), maxBytes=50, backupCount=1
-        )
+        handler = logging.handlers.RotatingFileHandler(str(log_path), maxBytes=50, backupCount=1)
         handler.setFormatter(ConsoleFormatter())
         logger = logging.getLogger("test_bounded")
         logger.addHandler(handler)
