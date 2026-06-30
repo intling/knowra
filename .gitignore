@@ -12,6 +12,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+.uv-cache/
 
 # Node
 node_modules/
@@ -19,7 +20,15 @@ dist/
 coverage/
 *.tsbuildinfo
 *.local
+.edge-profile-headless/
 
 # Tooling
 .worktrees/
 worktrees/
+
+# Docling model cache
+backend/storage/docling-cache/
+
+# Local runtime storage
+backend/storage/uploads/
+backend/storage/parsed/

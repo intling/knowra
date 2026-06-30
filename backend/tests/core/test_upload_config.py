@@ -5,6 +5,7 @@ DEFAULT_ALLOWED_CONTENT_TYPES = {
     "text/markdown",
     "text/plain",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 }
 
 
@@ -14,7 +15,7 @@ def test_upload_settings_default_values() -> None:
     settings = Settings(_env_file=None)
 
     assert settings.upload_storage_dir == "storage/uploads"
-    assert settings.max_upload_bytes == 20 * 1024 * 1024
+    assert settings.max_upload_bytes == 50 * 1024 * 1024
     assert set(settings.allowed_upload_content_types) == DEFAULT_ALLOWED_CONTENT_TYPES
 
 

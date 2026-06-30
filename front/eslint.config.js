@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint"
 
 export default [
   {
-    ignores: ["dist", "coverage"],
+    ignores: ["dist", "coverage", ".edge-profile-headless", ".edge-profile-headless/**"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
