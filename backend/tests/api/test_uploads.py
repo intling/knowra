@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Generator
 from contextlib import suppress
 from datetime import UTC, datetime
@@ -199,3 +200,62 @@ def test_post_uploads_rejects_file_over_configured_size_limit(
     assert response.status_code == 413
     assert "size" in response.text.lower()
     assert count_stored_uploads(session) == 0
+
+
+# =========================================================================
+# 日志记录测试（spec: API 路由层日志记录 — uploads.py）
+# RED 阶段：当前 routes/uploads.py 未接入日志，以下测试预期全部失败。
+# =========================================================================
+
+
+# 测试用户不可用时返回 503 前应输出 ERROR 级别日志。
+def test_post_uploads_logs_error_when_user_unavailable(
+    uploads_client: TestClient,
+    session: Session,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+
+    uploads_client.post(
+        "/api/uploads",
+        files={"file": ("notes.txt", b"content", "text/plain")},
+    )
+
+    route_records = [r for r in caplog.records if r.name == "app.api.routes.uploads"]
+    assert any(r.levelname == "ERROR" for r in route_records)
+
+
+# 测试文件超限时返回 413 前应输出 WARNING 级别日志。
+def test_post_uploads_logs_warning_on_oversize(
+    uploads_client: TestClient,
+    session: Session,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+    seed_current_user(session)
+
+    uploads_client.post(
+        "/api/uploads",
+        files={"file": ("large.txt", b"123456789", "text/plain")},
+    )
+
+    route_records = [r for r in caplog.records if r.name == "app.api.routes.uploads"]
+    assert any(r.levelname == "WARNING" for r in route_records)
+
+
+# 测试空文件校验失败时返回 400 前应输出 WARNING 级别日志。
+def test_post_uploads_logs_warning_on_empty_file(
+    uploads_client: TestClient,
+    session: Session,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+    seed_current_user(session)
+
+    uploads_client.post(
+        "/api/uploads",
+        files={"file": ("empty.txt", b"", "text/plain")},
+    )
+
+    route_records = [r for r in caplog.records if r.name == "app.api.routes.uploads"]
+    assert any(r.levelname == "WARNING" for r in route_records)

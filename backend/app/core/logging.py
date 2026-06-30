@@ -133,10 +133,11 @@ _INTERNAL_RECORD_ATTRS: set[str] = {
     for name in sorted(logging.LogRecord("", 0, "", 0, "", (), None).__dict__)
     if not name.startswith("_")
 }
-_INTERNAL_RECORD_ATTRS |= {  # extra fields set by our adapter
+_INTERNAL_RECORD_ATTRS |= {  # extra fields set by our adapter or third-party loggers
     "trace_id",
     "message",
     "asctime",
+    "color_message",  # uvicorn internal — don't leak as key=value
 }
 
 

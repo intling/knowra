@@ -10,7 +10,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.core.logging import get_logger
 from app.core.trace_context import set_trace_id
+
+logger = get_logger(__name__)
 
 TRACE_HEADER = "X-Trace-ID"
 
@@ -54,6 +57,9 @@ class TraceMiddleware(BaseHTTPMiddleware):
         trace_id = (request.headers.get(TRACE_HEADER, "")).strip()
         if not trace_id:
             trace_id = generate_uuid7()
+            logger.debug("生成新 trace_id", extra={"trace_id": trace_id})
+        else:
+            logger.debug("复用请求中的 trace_id", extra={"trace_id": trace_id})
 
         set_trace_id(trace_id)
 
