@@ -1,0 +1,1320 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 文档向量化方案（Embedding）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5f6b7c;
+      --border: #dce3ec;
+      --accent: #1f6f8b;
+      --accent-soft: #e6f3f6;
+      --ok: #19764b;
+      --ok-soft: #e8f6ef;
+      --warn: #a86200;
+      --warn-soft: #fff4df;
+      --danger: #b42318;
+      --danger-soft: #fff0ed;
+      --code-bg: #101828;
+      --code-text: #eef4ff;
+      --purple: #6b4c9a;
+      --purple-soft: #f0eaf8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #101828;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      margin: 14px 0 20px;
+      border-collapse: collapse;
+      background: var(--panel);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+    }
+
+    .decision {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: #123d27;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+      color: #583800;
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+      color: #681f18;
+    }
+
+    .purple {
+      border-left-color: var(--purple);
+      background: var(--purple-soft);
+      color: #3a2560;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini h3 {
+      margin-top: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .step {
+      min-height: 108px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 14px 0;
+    }
+
+    .compare-card {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .compare-card h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .compare-card.recommended {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+
+    .compare-card.not-recommended {
+      border-color: var(--muted);
+      opacity: 0.75;
+    }
+
+    .compare-card.note {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      opacity: 1;
+    }
+
+    @media (max-width: 920px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 28px;
+      }
+
+      .grid,
+      .grid-3,
+      .compare-grid,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 文档向量化方案（Document Embedding）</h1>
+      <p>
+        本文沉淀"在现有文档分块能力之后，新增基于 pgvector 的文档块向量化与向量存储能力"的方案。范围覆盖 Embedding 模型选型、向量化作业模型、Embedding 适配器、向量化 API、与分块结果的关系设计，以及后续语义检索的扩展边界（pgvector 索引与查询策略留待后续阶段）；不在本文中实现代码。
+      </p>
+      <div class="meta">
+        <span class="tag">阶段：方案探索</span>
+        <span class="tag">日期：2026-06-23</span>
+        <span class="tag">推荐变更：add-document-embedding</span>
+        <span class="tag">向量引擎：pgvector</span>
+        <span class="tag">推荐模型：BGE-M3 (1024d)</span>
+        <span class="tag">部署方式：Ollama 本地服务 / sentence-transformers 直连</span>
+        <span class="tag">分块自动触发向量化：内存直传 chunk text</span>
+        <span class="tag">前置能力：file-upload-storage ✓、document-parsing ✓、document-chunking ✓</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>1. 方案结论</h2>
+      <div class="note decision">
+        推荐把"文档向量化"设计为分块流程的内嵌步骤：分块作业成功后，在同一后台任务中直接将分块结果文本（<code>contextualized_text</code>）传入 Embedding 适配器生成向量，写入带 <code>pgvector</code> 类型的 <code>document_chunk_embeddings</code> 表。首版使用与解析/分块相同的 <code>BackgroundTasks</code> 调度器，分块成功后自动在同一任务上下文中执行向量化。重新分块时自动触发重新向量化；同时提供独立的 <code>/reembed</code> API 支持仅更换 Embedding 模型而不重新分块。
+      </div>
+      <p>
+        向量化的核心价值是：将不可直接计算的文本块转化为高维语义向量，使系统能够进行语义相似度比较——这是语义检索和 RAG 问答的前提能力。不是简单地把文本变成数字，而是用预训练语言模型将文本映射到一个语义空间，在这个空间里语义相近的文本向量距离也相近。
+      </p>
+      <p>
+        首个版本的成功标准不是"向量化后立刻可以语义检索和 RAG 问答"，而是"每个已分块文档的 chunks 被可靠地转化为可供后续检索消费的向量，向量持久化存储并可通过 pgvector 算子查询"。
+      </p>
+      <div class="note decision">
+        <strong>向量化触发策略：</strong>分块作业成功后在同一后台任务中自动执行向量化，chunk 文本（<code>contextualized_text</code>）直接从已持久化的 chunk 记录读取（文本已在内存或可通过 storage_key 读取）。<strong>前置条件：</strong>只有分块作业成功（<code>status=succeeded</code>）时才允许触发向量化；分块失败或分块被 <code>superseded</code> 的作业不应触发向量化。<strong>独立向量化 API：</strong>提供 <code>POST /reembed</code> API 支持在分块结果不变的情况下，更换 Embedding 模型或参数重新生成向量，旧向量作业标记为 <code>superseded</code>。<strong>重新分块时自动重新向量化：</strong>当用户通过 <code>/rechunk</code> 触发重新分块时，在新的分块作业成功后自动执行向量化，旧向量化作业跟随旧分块作业被标记为 <code>superseded</code>。<strong>存储策略：</strong>向量本身始终存储在 pgvector 列中，不走文件存储（向量维度固定，存储开销可预测）。向量化配置快照（模型名称、维度、batch_size 等）写入作业表的 <code>embed_config_json</code> 供审计。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 现有基础与约束</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>项目现状</th>
+            <th>对向量化方案的影响</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>已有 <code>document_chunks</code> 表，包含 <code>text</code>、<code>contextualized_text</code>、<code>token_count</code>、<code>heading_path</code>、<code>page_numbers</code> 等字段；分块文本 ≤2KB 直接入库、>2KB 走文件存储。</td>
+            <td>向量化输入使用 <code>contextualized_text</code>（带层级标题上下文的富文本）。需处理长文本从文件读取的情况。Chunk 的其他元数据（heading_path、page_numbers）不需要向量化但会在检索结果中一并返回。</td>
+          </tr>
+          <tr>
+            <td>已有 <code>document_chunk_jobs</code> 表，分块作业存在 <code>superseded</code> 状态；查询 chunks 时仅返回活跃作业的结果。</td>
+            <td>向量化作业沿用相同的 <code>superseded</code> 机制：当向量化作业被新作业取代时标记为 <code>superseded</code>，查询时仅返回活跃向量化作业的结果。重新分块时，新分块作业的向量化自动取代旧向量化。</td>
+          </tr>
+          <tr>
+            <td>分块 <code>superseded</code> 后旧 chunk 数据保留不删除，查询只返回最新活跃作业的 chunk。</td>
+            <td>向量化结果同样保留不删除；查询时通过活跃 embedding_job_id 过滤。旧向量仍占用存储空间，后续可提供清理 API。</td>
+          </tr>
+          <tr>
+            <td>项目已安装 <code>pgvector>=0.4.0</code>（Python 客户端）；PostgreSQL 已启用 <code>vector</code> 扩展（最初 migration 已执行 <code>CREATE EXTENSION vector</code>）。</td>
+            <td>可直接使用 pgvector 的 <code>vector(N)</code> 类型。后续语义检索阶段再评估合适的索引策略。Alembic migration 需新增向量列，须使用原始 SQL（SQLModel 不原生支持 pgvector 类型）。</td>
+          </tr>
+          <tr>
+            <td>解析和分块在 <code>BackgroundTasks</code> 内同步执行（<code>run_parse_job</code> 函数）。</td>
+            <td>向量化沿用同一模式：在分块成功后、<code>run_parse_job</code> 结束前同步调用向量化服务。首版不引入独立 worker 或队列。</td>
+          </tr>
+          <tr>
+            <td>外部能力由 Adapter 封装（<code>DoclingParserAdapter</code>、<code>DoclingChunkerAdapter</code>），SDK 类型不泄露到服务层和路由层。</td>
+            <td>向量化遵循同一模式：<code>EmbeddingAdapter</code> 封装具体的 Embedding 模型调用（Ollama API / sentence-transformers / 云 API），返回项目内的规范化向量结果。不把第三方 SDK 类型扩散到外部。</td>
+          </tr>
+          <tr>
+            <td>项目配置使用 Pydantic Settings + <code>.env</code> 管理。</td>
+            <td>向量化配置项（Embedding 模型名称、维度、服务地址、batch_size 等）加入 <code>Settings</code> 类。通过 <code>EMBEDDING_DISPATCHER</code> 预留后续切换调度器的空间。</td>
+          </tr>
+          <tr>
+            <td>当前用户模型使用硬编码 <code>DEFAULT_USER_ID</code>，无认证系统。</td>
+            <td>向量化结果沿用 <code>owner_user_id</code> 归属，所有查询和操作需校验用户权限。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. Embedding 模型选型</h2>
+      <p>
+        选型需同时满足：(1) 中英双语检索质量好，(2) 可本地部署保护隐私（与 knowra 的产品定位一致），(3) 硬件要求适中（不强制 GPU），(4) 生态成熟、接入成本低。
+      </p>
+
+      <h3>候选模型对比</h3>
+      <div class="compare-grid">
+        <div class="compare-card recommended">
+          <h4>✅ BGE-M3 (BAAI/bge-m3) — 推荐</h4>
+          <p><strong>维度：</strong>1024</p>
+          <p><strong>特点：</strong>多语言（中英均强）、支持 Dense + Sparse 混合检索、1024 维在质量和存储间平衡好、MTEB/C-MTEB 排名靠前。</p>
+          <p><strong>部署：</strong>Ollama 一键拉取（<code>ollama pull bge-m3</code>），~2.2GB 量化版本；也可通过 sentence-transformers 直接加载。</p>
+          <p><strong>优点：</strong>BGE 系列中文社区使用最广泛、资料丰富；Ollama 部署极简；1024 维度适中，不会过度膨胀索引。</p>
+          <p><strong>缺点：</strong>量化版精度略低于全精度；Ollama 服务需单独启动。</p>
+        </div>
+        <div class="compare-card note">
+          <h4>⭐ Qwen3-Embedding (0.6B) — 备选</h4>
+          <p><strong>维度：</strong>4096</p>
+          <p><strong>特点：</strong>2025 年 Qwen3 系列新模型，多语言 MTEB 排名顶尖，支持 Reranking。</p>
+          <p><strong>部署：</strong>Ollama 可拉取（<code>ollama pull qwen3-embedding</code>），~1.2GB 量化版（0.6B 参数版）。</p>
+          <p><strong>优点：</strong>检索质量最优；0.6B 小模型 CPU 可运行。</p>
+          <p><strong>缺点：</strong>4096 高维度增加索引和存储开销（约 BGE-M3 的 4 倍）；社区生态较 BGE 新。</p>
+        </div>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card not-recommended">
+          <h4>text2vec-large-chinese</h4>
+          <p><strong>维度：</strong>1024</p>
+          <p><strong>特点：</strong>纯中文模型，中文语义理解好。</p>
+          <p><strong>缺点：</strong>英文能力弱，不适合中英混合文档。</p>
+        </div>
+        <div class="compare-card not-recommended">
+          <h4>OpenAI text-embedding-3-small</h4>
+          <p><strong>维度：</strong>512（可调至 1536）</p>
+          <p><strong>特点：</strong>质量好、API 稳定。</p>
+          <p><strong>缺点：</strong>数据发送到外部（与 knowra 隐私定位冲突）；按 token 计费、大文档库成本高；依赖网络。</p>
+        </div>
+      </div>
+
+      <div class="note decision">
+        <strong>推荐 BGE-M3 作为首版 Embedding 模型。</strong>理由：(1) 多语言能力覆盖中英文文档；(2) 1024 维在检索质量和存储/索引开销间取得平衡；(3) Ollama 部署极简（<code>ollama pull bge-m3 && ollama serve</code>），适合个人知识库场景；(4) BGE 系列是中文 RAG 社区的事实标准，社区支持丰富；(5) 如果后续需要更高检索质量，可切换到 Qwen3-Embedding（通过 <code>/reembed</code> 触发重新向量化，无需重新分块）。
+      </div>
+
+      <h3>Embedding 服务部署方式</h3>
+      <div class="compare-grid">
+        <div class="compare-card recommended">
+          <h4>✅ 首版：Ollama 本地服务</h4>
+          <p><strong>原理：</strong>Ollama 作为独立的 HTTP 服务运行，提供兼容 OpenAI 的 <code>/api/embeddings</code> 端点。后端通过 HTTP 调用生成向量。</p>
+          <p><strong>优点：</strong>模型管理由 Ollama 负责（下载、量化、缓存）；服务解耦，重启后端不影响已加载模型；GPU 加速自动启用（如有 GPU）；CPU 亦可运行。</p>
+          <p><strong>缺点：</strong>需要额外启动 Ollama 服务；首次拉取模型需下载。</p>
+          <p><strong>配置：</strong><code>embedding_service_url=http://localhost:11434</code></p>
+        </div>
+        <div class="compare-card note">
+          <h4>备选：sentence-transformers 直连</h4>
+          <p><strong>原理：</strong>后端进程中直接加载 HuggingFace 模型（通过 <code>sentence-transformers</code> 库），调用 <code>model.encode()</code> 生成向量。</p>
+          <p><strong>优点：</strong>无外部服务依赖，部署最简单；延迟更低（无网络开销）。</p>
+          <p><strong>缺点：</strong>模型加载到后端进程内存中，增加内存占用；Python 进程启动变慢；不支持 GPU 时 CPU 推理较慢。</p>
+          <p><strong>配置：</strong><code>embedding_dispatcher=inline</code></p>
+        </div>
+      </div>
+      <div class="note decision">
+        <strong>采用 Adapter 模式：</strong>定义 <code>EmbeddingAdapter</code> 抽象接口，首版提供 <code>OllamaEmbeddingAdapter</code> 实现。适配器接口仅暴露 <code>embed(texts: list[str]) → list[list[float]]</code>，调用方不感知底层是 Ollama 还是其他服务。后续可随时新增 <code>SentenceTransformersEmbeddingAdapter</code> 或 <code>OpenAIEmbeddingAdapter</code>，通过配置切换。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. 推荐数据流</h2>
+      <div class="flow">
+        <div class="step">
+          <strong>1. 分块完成</strong>
+          chunk 文本（<code>contextualized_text</code>）已持久化，chunk_job 状态为 succeeded。
+        </div>
+        <div class="step">
+          <strong>2. 创建向量化作业</strong>
+          分块成功后自动创建，写入 <code>document_embedding_jobs</code>。
+        </div>
+        <div class="step">
+          <strong>3. 读取 chunk 文本</strong>
+          从 <code>document_chunks</code> 读取每个 chunk 的 <code>contextualized_text</code>（数据库或文件）。
+        </div>
+        <div class="step">
+          <strong>4. 批量生成向量</strong>
+          调用 Ollama <code>/api/embeddings</code>，batch 发送 chunk texts，返回 embedding vectors。
+        </div>
+        <div class="step">
+          <strong>5. 保存向量</strong>
+          向量写入 <code>document_chunk_embeddings</code> 表的 <code>vector</code> 列，关联 chunk_id 和 job_id。
+        </div>
+      </div>
+      <pre>run_parse_job 执行流程（扩展现有逻辑）：
+        |
+        +--> 解析原始文件 → DoclingDocument
+        |
+        +--> 持久化 parsed_documents + document_segments
+        |
+        +--> [document_chunking_enabled?]
+        |       |
+        |       +--> DoclingChunkerAdapter.chunk(docling_document)
+        |       |       |
+        |       |       +--> document_chunk_jobs (succeeded)
+        |       |       |
+        |       |       +--> document_chunks (N 条)
+        |       |
+        |       +--> [document_embedding_enabled?]  ← 新增加
+        |               |
+        |               +--> 创建 document_embedding_jobs (running)
+        |               |
+        |               +--> 从 document_chunks 读取 contextualized_text
+        |               |
+        |               +--> EmbeddingAdapter.embed(texts) → vectors
+        |               |
+        |               +--> 逐条写入 document_chunk_embeddings
+        |               |
+        |               +--> document_embedding_jobs (succeeded)
+
+重新分块 (POST /rechunk)：
+  1. 重新解析原始文件 → 新 DoclingDocument
+  2. 新 chunk_job + 新 chunks
+  3. 旧 chunk_job → superseded
+  4. 新 chunks → 自动触发向量化
+  5. 旧 embedding_job → superseded
+
+独立重新向量化 (POST /reembed)：
+  1. 校验 parsed_document 归属
+  2. 校验存在活跃 (非 superseded) chunk_job
+  3. 创建新 embedding_job
+  4. 旧 embedding_job → superseded
+  5. 从已有 chunks 读取文本 → 生成向量 → 写入新 embeddings</pre>
+    </section>
+
+    <section class="section">
+      <h2>5. 后端模块边界</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>职责</th>
+            <th>建议位置</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>EmbeddingAdapter</code>（接口）</td>
+            <td>定义 embed 接口契约：<code>embed(texts: list[str]) → list[list[float]]</code>。所有 Embedding 实现需遵循此接口。</td>
+            <td><code>backend/app/services/embedding_adapter.py</code></td>
+          </tr>
+          <tr>
+            <td><code>OllamaEmbeddingAdapter</code></td>
+            <td>封装 Ollama HTTP API 调用：向 <code>{base_url}/api/embeddings</code> 发送 POST 请求，解析返回向量。支持 batch 和 retry。</td>
+            <td><code>backend/app/services/embedding_adapter.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DocumentEmbeddingConfig</code></td>
+            <td>向量化配置 dataclass：模型名称、维度、服务地址、batch_size、超时、重试次数。提供 <code>snapshot()</code> 方法写入作业。</td>
+            <td><code>backend/app/services/embedding_config.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DocumentEmbeddingService</code></td>
+            <td>编排向量化作业的创建、状态管理、chunk 文本读取、批量调用适配器、结果持久化。不直接调用 Embedding 模型。</td>
+            <td><code>backend/app/services/document_embedding.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DocumentEmbeddingJob</code></td>
+            <td>记录向量化作业生命周期：状态、模型名、版本、维度、配置快照、chunk 数、错误信息。</td>
+            <td><code>backend/app/models/document_embedding.py</code></td>
+          </tr>
+          <tr>
+            <td><code>DocumentChunkEmbedding</code></td>
+            <td>存储单个 chunk 的向量（pgvector <code>vector(N)</code>），关联 chunk_id 和 embedding_job_id。</td>
+            <td><code>backend/app/models/document_embedding.py</code></td>
+          </tr>
+          <tr>
+            <td>分块服务扩展点</td>
+            <td>在 <code>run_parse_job</code> 中，分块成功后自动调用 <code>DocumentEmbeddingService</code>。沿用 <code>make_document_chunking_service</code> 的工厂模式。</td>
+            <td><code>backend/app/services/document_parse_dispatcher.py</code></td>
+          </tr>
+          <tr>
+            <td>向量化 API 路由</td>
+            <td>提供向量化作业查询、向量结果分页查询、重新向量化 API。</td>
+            <td><code>backend/app/api/routes/document_embedding.py</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note decision">
+        核心原则：<code>EmbeddingAdapter</code> 是项目中唯一接触 Embedding 模型的地方；服务层只接收项目内定义的向量结果；路由层只接收请求和返回 schema。适配器接口仅暴露 <code>embed(texts) → vectors</code>，屏蔽 Ollama/sentence-transformers/cloud API 的实现差异。数据库模型保存 knowra 的稳定契约，pgvector 类型只出现在模型层和 migration 中。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. 数据模型设计</h2>
+
+      <h3><code>document_embedding_jobs</code> — 向量化作业表</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID PK</td>
+            <td>主键。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_job_id</code></td>
+            <td>UUID FK → document_chunk_jobs.id</td>
+            <td>关联分块作业。独立 <code>/reembed</code> 时，此字段指向当前活跃的分块作业。</td>
+          </tr>
+          <tr>
+            <td><code>parsed_document_id</code></td>
+            <td>UUID FK → parsed_documents.id</td>
+            <td>冗余关联解析结果，便于从 parsed_document 维度直接查询向量化状态。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>UUID FK → users.id</td>
+            <td>冗余当前用户归属，便于权限过滤。</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>String(32)</td>
+            <td><code>queued</code>、<code>running</code>、<code>succeeded</code>、<code>failed</code>、<code>superseded</code>。<code>superseded</code> 表示被新参数的向量化作业取代，旧向量保留但不活跃。</td>
+          </tr>
+          <tr>
+            <td><code>embedder_name</code></td>
+            <td>String(64)</td>
+            <td>Embedding 模型名称，例如 <code>bge-m3</code>、<code>qwen3-embedding</code>。</td>
+          </tr>
+          <tr>
+            <td><code>embedder_version</code></td>
+            <td>String(64) nullable</td>
+            <td>Embedding 模型版本标识，便于结果可重复性分析。</td>
+          </tr>
+          <tr>
+            <td><code>embedding_dim</code></td>
+            <td>Integer</td>
+            <td>向量维度，例如 <code>1024</code>。用于校验和 pgvector 类型对齐。</td>
+          </tr>
+          <tr>
+            <td><code>embed_config_json</code></td>
+            <td>JSON nullable</td>
+            <td>向量化配置快照，例如 <code>{"model": "bge-m3", "service": "ollama", "base_url": "http://localhost:11434", "batch_size": 32}</code>。用于审计、对比和重新向量化。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_count</code></td>
+            <td>Integer</td>
+            <td>成功后写入的向量总数，应等于被向量化的 chunk 数。</td>
+          </tr>
+          <tr>
+            <td><code>attempt_count</code></td>
+            <td>Integer</td>
+            <td>重试次数。</td>
+          </tr>
+          <tr>
+            <td><code>started_at</code> / <code>finished_at</code></td>
+            <td>DateTime(tz) nullable</td>
+            <td>记录耗时。</td>
+          </tr>
+          <tr>
+            <td><code>error_code</code> / <code>error_message</code></td>
+            <td>String nullable</td>
+            <td>可展示、可诊断的错误（如 Ollama 服务不可达、模型未找到、超时）。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code> / <code>updated_at</code></td>
+            <td>DateTime(tz)</td>
+            <td>时间戳。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><code>document_chunk_embeddings</code> — 向量存储表</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>类型</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>id</code></td>
+            <td>UUID PK</td>
+            <td>主键。</td>
+          </tr>
+          <tr>
+            <td><code>chunk_id</code></td>
+            <td>UUID FK → document_chunks.id</td>
+            <td>关联被向量化的 chunk。一个 chunk 可以有多个 embedding（不同 embedding_job），查询时只返回活跃 job 的。</td>
+          </tr>
+          <tr>
+            <td><code>embedding_job_id</code></td>
+            <td>UUID FK → document_embedding_jobs.id</td>
+            <td>关联向量化作业。</td>
+          </tr>
+          <tr>
+            <td><code>owner_user_id</code></td>
+            <td>UUID FK → users.id</td>
+            <td>冗余当前用户归属。</td>
+          </tr>
+          <tr>
+            <td><code>embedding</code></td>
+            <td>pgvector <code>vector(N)</code></td>
+            <td>向量数据，N 由模型维度决定（首版 1024）。<strong>使用原始 SQL 创建此列</strong>（SQLModel 不原生支持 pgvector 类型）。</td>
+          </tr>
+          <tr>
+            <td><code>sequence_index</code></td>
+            <td>Integer</td>
+            <td>冗余 chunk 序号，便于按文档顺序返回检索结果时使用。</td>
+          </tr>
+          <tr>
+            <td><code>created_at</code></td>
+            <td>DateTime(tz)</td>
+            <td>时间戳。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>为什么不直接在 document_chunks 表上加 vector 列？</strong>
+        <ul>
+          <li>一个 chunk 可能需要多个不同模型的向量版本（通过 <code>/reembed</code> 切换模型）。</li>
+          <li><code>superseded</code> 机制要求旧向量保留但不活跃，独立表更容易隔离活跃/非活跃数据。</li>
+          <li>chunk 和 embedding 的生命周期不同：chunk 随分块变更而变化，embedding 可以独立更新（不重新分块时）。</li>
+          <li>独立表避免向量索引重建影响 chunk 查询性能。</li>
+        </ul>
+      </div>
+
+      <div class="note decision">
+        <strong>pgvector SQLModel 集成方案：</strong>SQLModel 不原生支持 pgvector 类型。Model 中使用 <code>Any = Field(sa_type=VECTOR(dim))</code> 声明 embedding 列（需要导入 pgvector 的 <code>VECTOR</code>）。Migration 中使用 <code>op.execute("ALTER TABLE ... ADD COLUMN embedding vector(1024)")</code> 原始 SQL。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. Embedding 适配器设计</h2>
+      <p>向量化适配器是项目中唯一接触 Embedding 模型/SDK 的模块。定义统一的 <code>EmbeddingAdapter</code> 接口，首版提供 <code>OllamaEmbeddingAdapter</code> 实现。</p>
+
+      <h3>适配器接口契约</h3>
+      <pre>from abc import ABC, abstractmethod
+
+class EmbeddingAdapter(ABC):
+    """将文本列表转化为向量列表的统一接口。"""
+
+    @abstractmethod
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        """
+        接收文本列表，返回相同长度的向量列表。
+
+        text[i] 对应返回的 vectors[i]。
+        每个 vector 的长度等于模型维度。
+
+        Raises:
+            EmbeddingServiceError: 服务不可达、模型未找到等。
+            EmbeddingTimeoutError: 请求超时。
+            EmbeddingBatchError: 批量请求失败（部分成功）。
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def dimension(self) -> int:
+        """返回当前模型的 Embedding 维度。"""
+        ...
+
+    @property
+    @abstractmethod
+    def model_name(self) -> str:
+        """返回当前模型的名称标识。"""
+        ...</pre>
+
+      <h3>OllamaEmbeddingAdapter 实现</h3>
+      <pre>class OllamaEmbeddingAdapter(EmbeddingAdapter):
+    def __init__(
+        self,
+        base_url: str = "http://localhost:11434",
+        model: str = "bge-m3",
+        timeout: float = 60.0,
+        max_retries: int = 3,
+    ):
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self._dimension: int | None = None
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        # 第一次调用时探测模型维度
+        if self._dimension is None:
+            self._dimension = self._probe_dimension()
+
+        vectors: list[list[float]] = []
+        for text in texts:
+            vector = self._embed_one(text)
+            vectors.append(vector)
+        return vectors
+
+    def _embed_one(self, text: str) -> list[float]:
+        url = f"{self.base_url}/api/embeddings"
+        payload = {"model": self.model, "prompt": text}
+        # HTTP POST with retry/backoff
+        # 解析 response["embedding"] → list[float]
+        ...
+
+    def _probe_dimension(self) -> int:
+        # 用短文本调用一次 embed 以获取维度
+        vector = self._embed_one("dimension probe")
+        return len(vector)</pre>
+
+      <h3>批量优化</h3>
+      <div class="note">
+        Ollama 的 <code>/api/embeddings</code> 当前版本只支持单文本输入。如需批量优化，有两个方向：(1) 客户端并发请求（asyncio + aiohttp）；(2) 切换到支持批量输入的部署方式（如 sentence-transformers 直连或 vLLM embedding 端点）。首版按顺序单条请求即可——个人知识库文档量小，分块完成后后台任务中每条约 50-200ms（BGE-M3 on CPU），100 个 chunk 约 5-20 秒。如果觉得慢，后续可通过 <code>concurrent.futures.ThreadPoolExecutor</code> 并发调用 Ollama。
+      </div>
+
+      <h3>错误处理策略</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>错误场景</th>
+            <th>处理方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ollama 服务不可达</td>
+            <td>重试 3 次（指数退避），仍失败则标记 embedding_job 为 failed，error_code=<code>service_unreachable</code>。</td>
+          </tr>
+          <tr>
+            <td>模型未找到</td>
+            <td>不重试，标记 failed，error_code=<code>model_not_found</code>，提示用户执行 <code>ollama pull bge-m3</code>。</td>
+          </tr>
+          <tr>
+            <td>单条请求超时</td>
+            <td>重试 1 次，仍失败则标记 failed，error_code=<code>request_timeout</code>。已成功生成的向量不保存（原子性：全部成功或全部失败）。</td>
+          </tr>
+          <tr>
+            <td>向量维度不匹配</td>
+            <td>在适配器初始化时探测维度，与配置的 <code>embedding_dim</code> 比对；不匹配则抛错阻止写入。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>8. API 设计</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>接口</th>
+            <th>用途</th>
+            <th>响应语义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>GET /api/document-embedding-jobs/{job_id}</code></td>
+            <td>查询向量化作业状态（模型、维度、进度、错误）。</td>
+            <td>只允许当前用户读取自己的作业。404 如果不存在或无权限。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/parsed-documents/{parsed_document_id}/embedding-job</code></td>
+            <td>查询某解析结果的最新向量化作业状态。</td>
+            <td>返回最新（非 superseded）向量化作业；404 如果从未向量化。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/parsed-documents/{parsed_document_id}/embeddings?offset=0&limit=50</code></td>
+            <td>分页查询活跃向量化结果（含关联 chunk 的元数据）。</td>
+            <td>仅返回最新非 superseded 向量化作业的结果，按 <code>sequence_index</code> 排序。没有活跃作业时返回空页。</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/document-chunks/{chunk_id}/embedding</code></td>
+            <td>查询单个 chunk 的活跃向量详情。</td>
+            <td>返回向量、维度、模型名称、创建时间。向量在 JSON 中以浮点数组返回。</td>
+          </tr>
+          <tr>
+            <td><code>POST /api/parsed-documents/{parsed_document_id}/reembed</code></td>
+            <td>使用新参数（模型、服务地址等）重新向量化，不重新分块。旧向量化作业标记为 <code>superseded</code>。</td>
+            <td>返回 <code>202 Accepted</code> 和新向量化作业；存在运行中作业返回 <code>409</code>；无可用的分块结果返回 <code>412</code>。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>请求/响应 Schema 草案</h3>
+      <pre># POST /parsed-documents/{id}/reembed 请求体
+class ReembedRequest(BaseModel):
+    embedder_name: str | None = None       # 覆盖默认模型，如 "qwen3-embedding"
+    embedding_service_url: str | None = None  # 覆盖 Ollama 地址
+    batch_size: int | None = None          # 覆盖批处理大小
+
+# 查询向量列表响应（分页）
+class DocumentChunkEmbeddingRead(BaseModel):
+    id: UUID
+    chunk_id: UUID
+    sequence_index: int
+    embedding: list[float]  # 全量向量数组
+    chunk_text: str | None  # chunk 的原始文本（便于调试）
+    chunk_heading_path: list[str] | None
+    chunk_page_numbers: list[int] | None
+    created_at: datetime
+
+class DocumentChunkEmbeddingPageRead(BaseModel):
+    items: list[DocumentChunkEmbeddingRead]
+    total: int
+    offset: int
+    limit: int</pre>
+
+      <div class="note decision">
+        <strong>不提供独立的 POST /embed API：</strong>首次向量化始终由分块流程自动触发，与分块的自动触发策略一致。只有需要更换 Embedding 模型或参数时才通过 <code>POST /reembed</code> 手动触发重新向量化。重新分块（<code>/rechunk</code>）成功后自动触发新分块结果的向量化。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>9. 作业执行策略</h2>
+      <p>向量化在当前 <code>run_parse_job</code> 后台任务内扩展执行，分块成功后自动触发：</p>
+      <pre>run_parse_job 执行流程（嵌入扩展）：
+
+  # --- 现有流程（不变）---
+  1. 解析原始文件 → DoclingDocument
+  2. 持久化 parsed_documents + document_segments
+  3. mark_parse_job_succeeded()
+
+  # --- 分块（已有）---
+  4. if document_chunking_enabled:
+       a. 创建 chunk_job (queued → running)
+       b. DoclingChunkerAdapter.chunk(docling_document)
+       c. 持久化 document_chunks
+       d. chunk_job → succeeded
+
+  # --- 向量化（新增）---
+  5. if document_embedding_enabled and chunk_job.succeeded:
+       a. 创建 embedding_job (queued → running)
+       b. 从 document_chunks 读取每个 chunk 的 contextualized_text
+          （≤2KB 从 text 字段读，>2KB 从 storage_key 对应的文件读）
+       c. EmbeddingAdapter.embed(texts) → vectors
+       d. 逐条写入 document_chunk_embeddings
+          （embedding 列使用 pgvector VECTOR 类型）
+       e. embedding_job.chunk_count = len(vectors)
+       f. embedding_job → succeeded
+  6. 向量化失败不影响解析和分块结果（兜底 log + 作业状态标记）</pre>
+
+      <h3>chunk 文本读取策略</h3>
+      <pre>def get_contextualized_text(chunk: DocumentChunk, artifact_storage: ChunkArtifactStorage) -> str:
+    """获取 chunk 的 contextualized_text，自动处理数据库/文件存储。"""
+    if chunk.contextualized_text is not None:
+        return chunk.contextualized_text  # ≤2KB，直接从 DB 读
+    if chunk.contextualized_text_storage_key is not None:
+        path = artifact_storage.path_for(chunk.contextualized_text_storage_key)
+        return path.read_text(encoding="utf-8")  # >2KB，从文件读
+    # fallback: 使用原始 text
+    if chunk.text is not None:
+        return chunk.text
+    if chunk.text_storage_key is not None:
+        path = artifact_storage.path_for(chunk.text_storage_key)
+        return path.read_text(encoding="utf-8")
+    raise MissingChunkTextError(f"Chunk {chunk.id} has no readable text")</pre>
+
+      <h3>独立重新向量化（POST /reembed）</h3>
+      <pre>reembed 执行流程：
+  1. 校验 parsed_document 归属
+  2. 获取当前活跃 chunk_job 及其 chunks
+     → 如果没有活跃 chunk_job，返回 412 "无可用的分块结果"
+  3. 检查是否有运行中的 embedding_job
+     → 如果有，返回 409 "向量化作业已在运行中"
+  4. 创建新 embedding_job (queued → running)
+     → embedder_name、embedding_dim 等由请求或默认配置决定
+  5. for each chunk in active_chunks:
+       text = get_contextualized_text(chunk)
+       vectors[i] = adapter.embed([text])[0]
+       写入 document_chunk_embeddings
+  6. embedding_job → succeeded
+  7. 旧 embedding_job → superseded</pre>
+</section>
+
+    <section class="section">
+      <h2>10. 配置建议</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>配置项</th>
+            <th>默认值</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDING_ENABLED</code></td>
+            <td><code>true</code></td>
+            <td>向量化功能总开关，便于在 Ollama 服务未就绪或依赖未安装时禁用。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDER_NAME</code></td>
+            <td><code>bge-m3</code></td>
+            <td>Embedding 模型名称。可选值：<code>bge-m3</code>、<code>qwen3-embedding</code>、<code>nomic-embed-text</code>（Ollama 支持的模型）。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDING_DIM</code></td>
+            <td><code>1024</code></td>
+            <td>向量维度。必须与所选模型的实际输出维度一致。BGE-M3=1024，Qwen3-Embedding=4096。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDING_SERVICE_URL</code></td>
+            <td><code>http://localhost:11434</code></td>
+            <td>Ollama 服务地址。后续可切换为云 API 地址。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDING_TIMEOUT</code></td>
+            <td><code>60.0</code></td>
+            <td>单次 Embedding 请求超时秒数。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDING_MAX_RETRIES</code></td>
+            <td><code>3</code></td>
+            <td>单次请求失败后的最大重试次数。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDING_DISPATCHER</code></td>
+            <td><code>background_tasks</code></td>
+            <td>首版使用 BackgroundTasks；后续可切换为 <code>queue</code>。</td>
+          </tr>
+          <tr>
+            <td><code>DOCUMENT_EMBEDDING_CONCURRENCY</code></td>
+            <td><code>1</code></td>
+            <td>并发调用 Ollama 的线程数。CPU 模式建议 1，GPU 模式可增大。首版保守设为 1。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>.env 示例补充：</strong>
+        <pre># --- 文档向量化 ---
+DOCUMENT_EMBEDDING_ENABLED=true
+DOCUMENT_EMBEDDER_NAME=bge-m3
+DOCUMENT_EMBEDDING_DIM=1024
+DOCUMENT_EMBEDDING_SERVICE_URL=http://localhost:11434
+DOCUMENT_EMBEDDING_TIMEOUT=60.0
+DOCUMENT_EMBEDDING_MAX_RETRIES=3
+DOCUMENT_EMBEDDING_DISPATCHER=background_tasks</pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>11. 与现有模块的关系</h2>
+      <pre>                      ┌───────────────────────┐
+                      │   uploaded_files       │
+                      │  (原始文件上传)         │  ← file-upload-storage
+                      └──────────┬─────────────┘
+                                 │ POST /parse
+                                 v
+                      ┌───────────────────────┐
+                      │  document_parse_jobs   │
+                      │  (解析作业)             │  ← document-parsing
+                      └──────────┬─────────────┘
+                                 │ BackgroundTasks
+                                 v
+                      ┌───────────────────────┐
+                      │  parsed_documents      │
+                      │  + document_segments   │
+                      └──────────┬─────────────┘
+                                 │ 自动分块（内存直传 DoclingDocument）
+                                 v
+                      ┌───────────────────────┐
+                      │  document_chunk_jobs   │
+                      │  (分块作业)             │  ← document-chunking
+                      └──────────┬─────────────┘
+                                 │ 自动向量化（读取 chunk text）
+                                 v
+                      ┌───────────────────────┐
+      新 增  ────────▶│  document_embedding    │  ← document-embedding ★
+                      │  _jobs (向量化作业)     │
+                      └──────────┬─────────────┘
+                                 │ 调用 Embedding 模型
+                                 v
+                      ┌───────────────────────┐
+      新 增  ────────▶│  document_chunk_       │
+                      │  embeddings (向量存储)  │
+                      └──────────┬─────────────┘
+                                 │ 后续：语义检索 + RAG
+                                 v
+                      ┌───────────────────────┐
+                      │  (后续能力)             │
+                      │  语义检索 / 混合检索    │
+                      │  RAG 问答 / 引用展示    │
+                      └───────────────────────┘</pre>
+
+      <div class="note decision">
+        <strong>关键设计约束：</strong>
+        <ul>
+          <li>向量化在分块成功的同一后台任务中自动执行，chunk text 从已持久化的 <code>document_chunks</code> 记录读取（而非内存直传——因为 chunk 文本可能 >2KB 走文件存储，内存中不一定有全文）。</li>
+          <li><code>document_chunks</code> 表保持不变，不新增字段。向量存储完全独立于 chunk 表。</li>
+          <li>重新分块（<code>/rechunk</code>）成功后自动触发新分块结果的向量化，旧向量化作业跟随旧分块作业被标记为 <code>superseded</code>。</li>
+          <li>独立重新向量化（<code>/reembed</code>）只更换模型参数，不重新分块，旧向量化作业被标记为 <code>superseded</code>。</li>
+          <li>分块失败或被禁用的文档不触发向量化。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>12. 前端体验</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>状态</th>
+            <th>界面反馈</th>
+            <th>用户动作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>分块成功，向量化自动进行</td>
+            <td>展示"分块完成，正在生成语义向量…"。</td>
+            <td>无需操作。向量化在分块后台任务内自动执行。</td>
+          </tr>
+          <tr>
+            <td><code>running</code></td>
+            <td>显示带进度提示的状态（"正在向量化 15/100…"）。</td>
+            <td>可刷新状态或稍后查看。</td>
+          </tr>
+          <tr>
+            <td><code>succeeded</code></td>
+            <td>展示"向量化完成" + 模型名称 + 维度 + chunk 数。</td>
+            <td>后续可进入语义检索和 RAG 问答流程。</td>
+          </tr>
+          <tr>
+            <td>向量化作业失败</td>
+            <td>展示可理解错误信息（"Ollama 服务未连接"、"模型未安装" 等）。</td>
+            <td>提供"重新向量化"入口；分块结果仍可用（不受影响）。</td>
+          </tr>
+          <tr>
+            <td>重新向量化（<code>/reembed</code>）</td>
+            <td>展示"重新向量化"入口，允许切换模型、调整配置。</td>
+            <td>触发使用新参数重新生成向量，旧向量保留但标记为 superseded。</td>
+          </tr>
+          <tr>
+            <td>分块中/分块失败</td>
+            <td>向量化状态不可用，需先完成分块。</td>
+            <td>无法触发向量化操作。</td>
+          </tr>
+          <tr>
+            <td>嵌入功能被禁用</td>
+            <td>展示"向量化未启用"提示。</td>
+            <td>分块仍然可用，但无向量化入口。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>前端接口调用流：</strong>沿用 HomeView 中已建立的模式：
+        <ol>
+          <li>上传 → 解析 → 自动分块 → 自动向量化（一条链式轮询）</li>
+          <li>分块完成后，调用 <code>GET /parsed-documents/{id}/embedding-job</code> 轮询向量化状态</li>
+          <li>向量化完成后，调用 <code>GET /parsed-documents/{id}/embeddings</code> 获取向量预览</li>
+          <li>在分块面板中新增"向量化状态"区域，展示模型名称、维度、向量数、错误信息</li>
+          <li>重新分块按钮旁边新增"重新向量化"按钮（可选模型切换）</li>
+        </ol>
+        <strong>前端不承诺已完成语义检索或 RAG 问答——</strong>向量化完成只表示"文本已转化为可检索的语义向量"，实际检索和问答在后续能力中实现。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>13. MVP 范围</h2>
+      <div class="grid">
+        <div class="mini">
+          <h3>纳入 MVP</h3>
+          <ul>
+            <li>新增 OpenSpec 变更 <code>add-document-embedding</code>，新增能力规格 <code>document-embedding</code>。</li>
+            <li>向量化作业表（<code>document_embedding_jobs</code>）和向量存储表（<code>document_chunk_embeddings</code>），含 pgvector <code>vector(1024)</code> 列。</li>
+            <li>Alembic migration（原始 SQL 创建 vector 列）。</li>
+            <li><code>EmbeddingAdapter</code> 抽象接口 + <code>OllamaEmbeddingAdapter</code> 实现（连接本地 Ollama 服务，调用 bge-m3）。</li>
+            <li><code>DocumentEmbeddingConfig</code> 配置 dataclass，支持 <code>snapshot()</code> 写入作业。</li>
+            <li><code>DocumentEmbeddingService</code> 编排向量化作业创建、chunk 文本读取、批量调用适配器、结果持久化。</li>
+            <li>分块成功后在同一后台任务中自动触发向量化（扩展 <code>run_parse_job</code>）。</li>
+            <li>独立重新向量化 API（<code>POST /parsed-documents/{id}/reembed</code>），旧作业标记 <code>superseded</code>。</li>
+            <li>向量化作业状态查询 API + 向量结果分页查询 API。</li>
+            <li>权限校验：只能查看和操作自己的向量化结果。</li>
+            <li>配置项：开关、模型名、维度、服务地址、超时、重试。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>暂不纳入 MVP</h3>
+          <ul>
+            <li>语义检索和 RAG 问答。</li>
+            <li>混合检索（向量 + 全文 + 元数据过滤）。</li>
+            <li>多模型向量并存（同时维护多套活跃向量）。</li>
+            <li>向量化进度实时推送（WebSocket）。</li>
+            <li>独立 worker + 队列的生产级部署。</li>
+            <li>sentence-transformers 直连适配器（首版仅 Ollama）。</li>
+            <li>云 API 适配器（OpenAI/Cohere 等）。</li>
+            <li>向量质量评估和检索质量评测。</li>
+            <li>旧向量清理 API。</li>
+            <li>批量并发调用 Ollama（首版顺序单条请求）。</li>
+            <li>reranking 模型集成。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>14. 测试与验收建议</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>测试层级</th>
+            <th>建议场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>模型测试</td>
+            <td>向量化作业表字段、外键、状态索引；向量存储表 pgvector 列类型正确（<code>vector(1024)</code>）。</td>
+          </tr>
+          <tr>
+            <td>配置测试</td>
+            <td>各配置项默认值正确；环境变量解析正确；维度不匹配时在初始化时检测并报错。</td>
+          </tr>
+          <tr>
+            <td>适配器测试</td>
+            <td>Mock Ollama HTTP 响应验证 <code>embed()</code> 向量解析正确；维度探测逻辑正确；超时/连接错误正确转换为项目异常；模型不可达时抛出 <code>EmbeddingServiceError</code>。</td>
+          </tr>
+          <tr>
+            <td>服务测试</td>
+            <td>分块成功时自动创建向量化作业；chunk 文本 ≤2KB 从数据库读取、>2KB 从文件读取；全部成功写入向量、任意失败回滚作业状态；陈旧 chunk 文本处理（文件被删）。</td>
+          </tr>
+          <tr>
+            <td>集成测试</td>
+            <td>端到端：上传 → 解析 → 分块 → 自动向量化 → 查询向量化作业状态和向量列表；验证向量维度与模型声明一致；<code>/reembed</code> 后旧作业 superseded、新向量可查询。</td>
+          </tr>
+          <tr>
+            <td>API 测试</td>
+            <td>GET embedding-job 返回正确状态；GET embeddings 分页正确、按 sequence_index 排序；POST /reembed 触发重新向量化并 supersede 旧作业；409 冲突（运行中作业）；412 无可用的分块结果；404 无权限/不存在。</td>
+          </tr>
+          <tr>
+            <td>Migration 测试</td>
+            <td>upgrade 创建 vector 列成功；downgrade 删除列成功；已有数据不受影响。</td>
+          </tr>
+          <tr>
+            <td>集成验证</td>
+            <td><code>ruff check</code>、<code>ruff format --check</code>、<code>pytest</code> 全部通过；Alembic upgrade/downgrade 循环无残留；手动 smoke test：上传 PDF → 验证解析 → 验证分块 → 验证向量化状态和向量维度。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>15. 风险与开放问题</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>风险</th>
+            <th>影响</th>
+            <th>缓解方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ollama 服务依赖</td>
+            <td>Ollama 未启动或模型未下载时无法向量化。</td>
+            <td>① 健康检查：后端启动时可探测 Ollama <code>/api/tags</code> 端点，log 警告而非崩溃。② 错误信息明确告诉用户执行 <code>ollama pull bge-m3</code>。③ 向量化作为可选增强，失败不影响分块结果可用性。④ <code>DOCUMENT_EMBEDDING_ENABLED=false</code> 可全局禁用。</td>
+          </tr>
+          <tr>
+            <td>向量化耗时不可控</td>
+            <td>CPU 模式下 BGE-M3 每条约 50-200ms，1000 条 chunk 需 50-200 秒。</td>
+            <td>① 首版顺序单条请求，适合个人知识库（单文档通常 &lt; 100 chunks，约 5-20 秒）。② 后续可并发请求（<code>DOCUMENT_EMBEDDING_CONCURRENCY</code>）或切换到 sentence-transformers 直连（一次 encode 批量文本，更快）。</td>
+          </tr>
+          <tr>
+            <td>向量维度与模型不匹配</td>
+            <td>切换模型后维度变更，pgvector 列类型必须匹配。</td>
+            <td>① 首版固定 BGE-M3 (1024d)，Alembic migration 中写死 <code>vector(1024)</code>。② 如果后续需要不同维度，建议新增独立的 embedding 表或动态 DDL——但这是后续变更，不在首版范围内。③ <code>/reembed</code> 请求中如果指定了不同模型，校验其维度必须与当前表结构一致。</td>
+          </tr>
+          <tr>
+            <td>Ollama API 限流/不稳定</td>
+            <td>并发或高频请求可能被限流或超时。</td>
+            <td>① 首版顺序单条请求（<code>concurrency=1</code>），不存在并发压力。② 重试 3 次（指数退避）。③ 超时配置可调。</td>
+          </tr>
+          <tr>
+            <td>长 chunk 文本读取性能</td>
+            <td>chunk 文本 >2KB 需从文件系统读取，可能增加 I/O。</td>
+            <td>① 大多数 chunk 文本 ≤2KB（直接入库），只有极少数超长文本走文件。② 文件读取是顺序 I/O，影响可控。</td>
+          </tr>
+          <tr>
+            <td>BackgroundTasks 不具备生产级可靠性</td>
+            <td>与解析和分块作业相同的风险。</td>
+            <td>① 与解析和分块一起，后续统一替换为独立 worker + 队列。② 向量化作业状态持久化，失败可诊断和重试。</td>
+          </tr>
+          <tr>
+            <td>Ollama embedding 端点仅支持单文本</td>
+            <td>无法批量输入，N 个 chunk 需 N 次 HTTP 请求。</td>
+            <td>① 在个人知识库场景下可接受（几十到几百个 chunk）。② 后续可通过 <code>concurrent.futures</code> 并发请求优化。③ 或切换到 sentence-transformers 直连获得原生 batch 支持。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>16. OpenSpec 建议</h2>
+      <p>
+        建议创建 OpenSpec 变更 <code>add-document-embedding</code>，新增能力规格 <code>document-embedding</code>。该变更应聚焦"在分块完成后将 chunk 文本转化为语义向量并持久化到 pgvector"，不要同时承诺语义检索、RAG 问答或混合检索。
+      </p>
+      <h3>建议 requirements</h3>
+      <ul>
+        <li>系统 SHALL 在分块作业成功后为当前用户自动创建向量化作业，并持久化作业状态以便查询。</li>
+        <li>系统 SHALL 在分块作业成功后，在同一后台任务中自动从已持久化的 chunk 记录读取 <code>contextualized_text</code> 并调用 Embedding 适配器生成向量。</li>
+        <li>系统 SHALL NOT 提供独立的 POST /embed API；首次向量化始终由分块流程自动触发。</li>
+        <li>系统 SHALL 支持用户通过 <code>POST /parsed-documents/{id}/reembed</code> API 使用自定义参数重新向量化（不重新分块）；旧向量化作业标记为 superseded。</li>
+        <li>系统 SHALL 在重新分块（<code>/rechunk</code>）成功后自动触发新分块结果的向量化，旧向量化作业标记为 superseded。</li>
+        <li>系统 SHALL 使用 <code>EmbeddingAdapter</code> 抽象接口封装 Embedding 模型调用，首版提供 <code>OllamaEmbeddingAdapter</code> 实现（调用 Ollama HTTP API）。</li>
+        <li>系统 SHALL 将向量存储到 <code>document_chunk_embeddings</code> 表的 pgvector <code>vector</code> 列，维度与模型对齐（首版 BGE-M3 = 1024）。</li>
+        <li>系统 SHALL 持久化向量化作业状态、配置快照、模型名称和维度、错误信息。</li>
+        <li>系统 SHALL 在向量化作业标记为 superseded 时保留旧向量不主动删除，查询时仅返回最新（非 superseded）作业的向量。</li>
+        <li>系统 SHALL NOT 修改已有的 <code>document_chunks</code> 表结构。</li>
+        <li>系统 SHALL 防止用户读取不属于自己的向量化结果。</li>
+        <li>系统 SHALL 处理 Ollama 服务不可达、模型未安装、请求超时等异常并给出可诊断的错误信息。</li>
+        <li>系统 SHALL NOT 在首版实现语义检索、RAG 问答、混合检索或 reranking，也不实现 pgvector 高级索引（如 HNSW/IVFFlat）。</li>
+      </ul>
+      <h3>建议 tasks</h3>
+      <ol>
+        <li>创建 OpenSpec proposal、design、tasks 和 <code>document-embedding</code> 规格增量。</li>
+        <li>Spike 验证：Ollama API 调用方式（<code>/api/embeddings</code> 端点）、BGE-M3 输出维度确认、pgvector 插入和查询测试。</li>
+        <li>新增 <code>EmbeddingAdapter</code> 抽象接口和 <code>OllamaEmbeddingAdapter</code> 实现（含维度探测、超时、重试）。</li>
+        <li>新增 <code>DocumentEmbeddingConfig</code> 配置 dataclass + Pydantic Settings 配置项。</li>
+        <li>新增 <code>DocumentEmbeddingJob</code> 和 <code>DocumentChunkEmbedding</code> SQLModel 模型（含 pgvector VECTOR 类型）。</li>
+        <li>新增 Alembic migration：创建 <code>document_embedding_jobs</code> 和 <code>document_chunk_embeddings</code> 表。</li>
+        <li>新增 Pydantic schemas（<code>DocumentEmbeddingJobRead</code>、<code>DocumentChunkEmbeddingRead</code>、<code>ReembedRequest</code> 等）。</li>
+        <li>实现 <code>DocumentEmbeddingService</code>（编排向量化作业创建、chunk 文本读取、批量调用适配器、结果持久化）。</li>
+        <li>在 <code>run_parse_job</code> 中扩展向量化逻辑：分块成功后自动触发。</li>
+        <li>实现向量化 API 路由：作业查询、向量分页查询、重新向量化；注册到 <code>api_router</code>。</li>
+        <li>实现前端向量化状态展示和重新向量化入口（新增 API 函数、类型、状态管理和 UI 组件）。</li>
+        <li>编写各层级测试（模型、配置、适配器、服务、API、集成）。</li>
+        <li>更新 <code>.env.example</code>、README 和端侧章程；运行 lint/test/build 验证。</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>17. 参考资料</h2>
+      <ul>
+        <li><a href="https://github.com/pgvector/pgvector">pgvector GitHub</a>：PostgreSQL 向量扩展官方仓库。</li>
+        <li><a href="https://github.com/pgvector/pgvector-python">pgvector-python</a>：pgvector Python 客户端，含 SQLAlchemy/SQLModel 集成示例。</li>
+        <li><a href="https://huggingface.co/BAAI/bge-m3">BAAI/bge-m3 on HuggingFace</a>：BGE-M3 模型卡片，含维度、多语言能力、使用方式。</li>
+        <li><a href="https://ollama.com/library/bge-m3">Ollama bge-m3</a>：Ollama 上的 BGE-M3 模型页面，含安装命令和 API 用法。</li>
+        <li><a href="https://github.com/ollama/ollama/blob/main/docs/api.md#generate-embeddings">Ollama API: Embeddings</a>：Ollama Embedding API 端点文档。</li>
+        <li><a href="https://arxiv.org/pdf/2506.05176">Qwen3 Embedding 论文 (arXiv 2506.05176)</a>：Qwen3 系列 Embedding 模型技术报告。</li>
+        <li><a href="https://milvus.io/blog/choose-embedding-model-rag-2026.md">Best Embedding Model for RAG 2026 (Milvus)</a>：2026 年 Embedding 模型对比评测。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
