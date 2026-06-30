@@ -2,6 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { fetchHealth } from "./health"
 
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] }),
+}))
+
 describe("fetchHealth", () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -28,6 +38,7 @@ describe("fetchHealth", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/health", {
       headers: {
         Accept: "application/json",
+        "X-Trace-ID": expect.any(String) as string,
       },
     })
   })

@@ -2,6 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { uploadFile } from "./uploads"
 
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] }),
+}))
+
 const UPLOAD_RESPONSE = {
   id: "11111111-1111-1111-1111-111111111111",
   owner_user_id: "00000000-0000-0000-0000-000000000001",
@@ -41,7 +51,10 @@ describe("uploadFile", () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe("/api/uploads")
     expect(init.method).toBe("POST")
-    expect(init.headers).toBeUndefined()
+    expect(init.headers).toEqual({
+      Accept: "application/json",
+      "X-Trace-ID": expect.any(String) as string,
+    })
     expect(init.body).toBeInstanceOf(FormData)
     expect(init.body.get("file")).toBe(file)
     expect(init.body.has("owner_user_id")).toBe(false)

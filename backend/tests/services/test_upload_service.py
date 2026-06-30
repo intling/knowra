@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Generator
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -255,3 +256,130 @@ def test_create_upload_cleans_stored_file_when_metadata_commit_fails(
         )
 
     assert not any(path.is_file() for path in tmp_path.rglob("*"))
+
+
+# =========================================================================
+# 日志记录测试（spec: Service 层日志记录 — uploads.py）
+# GREEN 阶段：uploads.py 已接入日志，以下测试验证日志正确输出。
+# =========================================================================
+
+
+# 测试上传成功后应输出 INFO 级别日志，包含 upload_id、byte_size、checksum_sha256 字段。
+def test_create_upload_logs_info_on_success(
+    session: Session,
+    user: User,
+    tmp_path,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="app.services.uploads")
+    content = b"lecture notes"
+    service = make_service(session=session, storage_root=tmp_path)
+
+    record = service.create_upload(
+        current_user=user,
+        file=make_upload_file(content, content_type="application/pdf"),
+    )
+
+    assert str(record.id) in caplog.text
+    assert str(len(content)) in caplog.text
+    assert any(r.levelname == "INFO" and "上传" in r.message for r in caplog.records)
+
+
+# 测试 content type 校验失败时应输出 WARNING 级别日志，包含 content_type 和 allowed_types。
+def test_create_upload_logs_warning_on_bad_content_type(
+    session: Session,
+    user: User,
+    tmp_path,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="app.services.uploads")
+    uploads = get_uploads_module()
+    service = make_service(
+        session=session,
+        storage_root=tmp_path,
+        allowed_content_types={"text/plain"},
+    )
+
+    with pytest.raises(uploads.UploadValidationError):
+        service.create_upload(
+            current_user=user,
+            file=make_upload_file(
+                b"payload", filename="script.exe", content_type="application/x-msdownload"
+            ),
+        )
+
+    assert any(
+        r.levelname == "WARNING" for r in caplog.records if r.message and "不支持" in r.message
+    )
+
+
+# 测试空文件上传时应输出 WARNING 级别日志，包含 upload_id。
+def test_create_upload_logs_warning_on_empty_file(
+    session: Session,
+    user: User,
+    tmp_path,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="app.services.uploads")
+    uploads = get_uploads_module()
+    service = make_service(
+        session=session,
+        storage_root=tmp_path,
+        allowed_content_types={"text/plain"},
+    )
+
+    with pytest.raises(uploads.UploadValidationError, match="empty"):
+        service.create_upload(
+            current_user=user,
+            file=make_upload_file(b"", filename="empty.txt", content_type="text/plain"),
+        )
+
+    assert any(r.levelname == "WARNING" for r in caplog.records if r.message and "空" in r.message)
+
+
+# 测试存储写入失败时应输出 ERROR 级别日志，包含 storage_key 和异常信息。
+def test_create_upload_logs_error_on_storage_failure(
+    session: Session,
+    user: User,
+    tmp_path,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="app.services.uploads")
+    uploads = get_uploads_module()
+    blocked_storage_root = tmp_path / "blocked-root"
+    blocked_storage_root.write_text("not a directory", encoding="utf-8")
+    service = make_service(session=session, storage_root=blocked_storage_root)
+
+    with pytest.raises(uploads.UploadStorageError):
+        service.create_upload(
+            current_user=user,
+            file=make_upload_file(b"content", content_type="application/pdf"),
+        )
+
+    assert any(r.levelname == "ERROR" for r in caplog.records if r.message and "存储" in r.message)
+
+
+# 测试元数据 commit 失败触发 rollback 时应输出 ERROR 级别日志，包含 upload_id 和异常信息。
+def test_create_upload_logs_error_on_metadata_commit_failure(
+    monkeypatch,
+    session: Session,
+    user: User,
+    tmp_path,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="app.services.uploads")
+    uploads = get_uploads_module()
+    service = make_service(session=session, storage_root=tmp_path)
+
+    def fail_commit() -> None:
+        raise RuntimeError("metadata failure")
+
+    monkeypatch.setattr(session, "commit", fail_commit)
+
+    with pytest.raises(uploads.UploadMetadataError, match="metadata"):
+        service.create_upload(
+            current_user=user,
+            file=make_upload_file(b"content", content_type="application/pdf"),
+        )
+
+    assert any(r.levelname == "ERROR" for r in caplog.records if r.message and "回滚" in r.message)

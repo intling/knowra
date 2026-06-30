@@ -8,6 +8,16 @@ vi.mock("../api/health", () => ({
   fetchHealth: vi.fn(),
 }))
 
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] }),
+}))
+
 const fetchHealthMock = vi.mocked(fetchHealth)
 
 describe("useAppStore", () => {

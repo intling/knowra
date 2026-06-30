@@ -84,6 +84,18 @@ npm run dev
 
 前端默认运行在 `http://localhost:5173`，开发环境通过 Vite proxy 将 `/api` 转发到后端。
 
+## 日志配置
+
+后端和前端各自维护了一套结构化日志系统，通过 `X-Trace-ID` 请求头串联调用链。详见各子目录的 README。
+
+后端日志配置项（`.env`）：
+
+- `LOG_LEVEL`（默认 `INFO`）、`LOG_FORMAT`（`console` / `json`，默认自动）、`LOG_FILE_PATH`（默认 `logs/knowra.log`）、`LOG_FILE_MAX_SIZE`（默认 10 MB）、`LOG_FILE_BACKUP_COUNT`（默认 5）
+
+前端日志配置项（`.env`）：
+
+- `VITE_LOG_RING_SIZE`（默认 500）、`VITE_LOG_DISK_MAX_SIZE`（默认 5 MB）、`VITE_LOG_FLUSH_SIZE`（默认 100）、`VITE_LOG_CONSOLE_LEVEL`（默认 `debug`）、`VITE_LOG_BUFFER_LEVEL`（默认 `info`）
+
 ## 基础验证
 
 后端：
