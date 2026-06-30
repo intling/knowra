@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -14,6 +15,8 @@ from app.services.document_parser import (
     UnsupportedDocumentFormatError as ParserUnsupportedDocumentFormatError,
 )
 from app.services.uploads import LocalFileStorage, UploadStorageError
+
+logger = logging.getLogger(__name__)
 
 UnsupportedDocumentFormatError = ParserUnsupportedDocumentFormatError
 
@@ -92,6 +95,12 @@ class DocumentParseService:
         self.session.add(job)
         self.session.commit()
         self.session.refresh(job)
+        logger.info(
+            "Parse job created: job_id=%s upload_id=%s file=%s",
+            job.id,
+            upload_id,
+            uploaded_file.original_filename,
+        )
         return job
 
     def _get_owned_upload(self, *, current_user: User, upload_id: UUID) -> UploadedFile:

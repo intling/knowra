@@ -42,6 +42,16 @@ class ParsedDocumentPayload:
     segments: list[ParsedSegmentPayload] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class ParsedDocumentResult:
+    persistent_payload: ParsedDocumentPayload
+    transient_docling_document: Any | None = None
+    transient_missing_reason: str | None = None
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.persistent_payload, name)
+
+
 def ensure_parsed_payload_has_text_content(payload: ParsedDocumentPayload) -> None:
     text_candidates = [payload.markdown, payload.text]
     text_candidates.extend(segment.text for segment in payload.segments)
@@ -149,7 +159,7 @@ class DoclingParserAdapter:
         self.docling_cache_dir = Path(docling_cache_dir)
         self.converter = converter
 
-    def parse(self, path: str | Path, *, document_format: DocumentFormat) -> ParsedDocumentPayload:
+    def parse(self, path: str | Path, *, document_format: DocumentFormat) -> ParsedDocumentResult:
         file_path = Path(path)
         if document_format in {DocumentFormat.TXT, DocumentFormat.MARKDOWN}:
             return self._parse_text(file_path, document_format=document_format)
@@ -167,7 +177,7 @@ class DoclingParserAdapter:
         path: Path,
         *,
         document_format: DocumentFormat,
-    ) -> ParsedDocumentPayload:
+    ) -> ParsedDocumentResult:
         text = path.read_text(encoding="utf-8")
         source_format = document_format.value
         payload = ParsedDocumentPayload(
@@ -190,7 +200,11 @@ class DoclingParserAdapter:
             ],
         )
         ensure_parsed_payload_has_text_content(payload)
-        return payload
+        return ParsedDocumentResult(
+            persistent_payload=payload,
+            transient_docling_document=None,
+            transient_missing_reason="native_docling_document_unavailable",
+        )
 
     def _create_converter(self) -> object:
         try:
@@ -218,7 +232,7 @@ class DoclingParserAdapter:
             return False
 
     @staticmethod
-    def _normalize_docling_result(result: object) -> ParsedDocumentPayload:
+    def _normalize_docling_result(result: object) -> ParsedDocumentResult:
         document = getattr(result, "document", result)
         markdown = call_optional(document, "export_to_markdown") or ""
         text = call_optional(document, "export_to_text") or markdown
@@ -248,7 +262,10 @@ class DoclingParserAdapter:
             ],
         )
         ensure_parsed_payload_has_text_content(payload)
-        return payload
+        return ParsedDocumentResult(
+            persistent_payload=payload,
+            transient_docling_document=document,
+        )
 
 
 def call_optional(target: object, name: str) -> Any | None:

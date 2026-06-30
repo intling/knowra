@@ -74,6 +74,36 @@ The API module (`documentParsing.ts`) exposes:
 
 All endpoints use the `/api` prefix and `VITE_API_BASE_URL` convention.
 
+## Document chunking
+
+After parsing reaches `succeeded`, the home view loads the latest parsed
+document and reads its chunk preview from
+`GET /api/parsed-documents/{parsed_document_id}/chunks`. If no successful
+preview is available yet, it reads the latest chunk job from
+`GET /api/parsed-documents/{parsed_document_id}/chunk-job` so queued/running
+chunking is shown as "分块中" instead of leaving the parse status ambiguous. The
+chunk panel shows chunking progress, success, failure feedback, and a quiet preview list with
+sequence, text, heading path, page numbers, and token count.
+
+The panel exposes a small rechunk control for supported parameters such as max
+tokens and peer merging. Triggering rechunk calls
+`POST /api/parsed-documents/{parsed_document_id}/rechunk`. While rechunking is
+queued or running, repeat triggers are disabled and the previous successful
+preview stays visible. If rechunking fails, the old preview remains visible and
+the new job error is shown.
+
+The API module (`documentChunking.ts`) exposes:
+
+- `getDocumentChunkJob(jobId)` — GET chunking job status
+- `getLatestParsedDocumentChunkJob(docId)` — GET latest chunking job for a parsed document
+- `getParsedDocumentChunks(docId, { offset, limit })` — GET paginated chunks
+- `getDocumentChunk(chunkId)` — GET one chunk detail
+- `rechunkParsedDocument(docId, config)` — POST rechunk config overrides
+
+Chunking copy intentionally says "分块成功". It does not describe
+the document as embedding-ready, indexed, semantic-search-ready, RAG-ready, or
+question-answering-ready.
+
 Development requests use `VITE_API_BASE_URL`, defaulting to `/api`. In local
 development the Vite proxy forwards `/api` to `http://localhost:8000`, so the
 backend must be running for upload and parse testing through the browser.

@@ -152,6 +152,72 @@ content.
 If Docling returns no Markdown, text, or segment text for a document, the parse
 job is marked `failed` instead of writing empty artifacts.
 
+## Document chunking
+
+When document parsing succeeds and `DOCUMENT_CHUNKING_ENABLED=true`, the backend
+automatically creates a document chunking job after `parsed_documents` and
+`document_segments` have been persisted. The chunking service receives the
+transient in-memory Docling document from the same parse run and passes it to
+Docling `HybridChunker`; it does not rebuild a Docling document from
+`docling.json`, pickle, or any other persisted parse artifact.
+
+### API endpoints
+
+- `GET /api/document-chunk-jobs/{job_id}` — query chunking job status,
+  configuration snapshot, chunk count, and failure details
+- `GET /api/parsed-documents/{parsed_document_id}/chunk-job` — query the latest
+  chunking job for a parsed document, including queued/running/failed states
+- `GET /api/parsed-documents/{parsed_document_id}/chunks` — read paginated
+  chunks for the latest active successful chunking job
+- `GET /api/document-chunks/{chunk_id}` — read a single chunk, including text,
+  contextualized text, heading path, page numbers, token count, source segment
+  indices, and metadata
+- `POST /api/parsed-documents/{parsed_document_id}/rechunk` — create a new
+  chunking job with optional config overrides
+
+`/rechunk` validates ownership and original-upload availability, then rereads
+the original uploaded file and reparses it to obtain a fresh in-memory Docling
+document. If a chunking job for the same parsed document is already `queued` or
+`running`, the API returns `409 Conflict` with the existing job. While a new
+rechunk job is running, or if it fails, the previous successful job remains the
+active result. Only after the new chunk collection is fully persisted does the
+backend mark the old successful job as `superseded`.
+
+### Chunk configuration
+
+Environment variables control chunking behavior:
+
+- `DOCUMENT_CHUNKING_ENABLED`: enable automatic chunking after parse success,
+  default `true`
+- `DOCUMENT_CHUNK_MAX_TOKENS`: HybridChunker max tokens, default `512`
+- `DOCUMENT_CHUNK_TOKENIZER_MODEL`: Hugging Face tokenizer model, default
+  `Qwen/Qwen2-7B`
+- `DOCUMENT_CHUNK_MERGE_PEERS`: HybridChunker peer merge behavior, default
+  `true`
+- `DOCUMENT_CHUNK_REPEAT_TABLE_HEADER`: repeat table headers in table chunks,
+  default `true`
+- `DOCUMENT_CHUNK_INLINE_TEXT_MAX_BYTES`: inline text threshold before using
+  chunk artifact storage, default `2048`
+- `DOCUMENT_CHUNK_ARTIFACT_STORAGE_DIR`: local root for long chunk text
+  artifacts, default `storage/chunks`
+
+The configured tokenizer uses the Docling cache directory
+`DOCUMENT_PARSE_DOCLING_CACHE_DIR`. In restricted networks, pre-populate that
+cache with the tokenizer/model artifacts needed by Docling and Hugging Face
+before running parse-and-chunk flows.
+
+### Chunk artifacts and scope
+
+Short `text` and `contextualized_text` values are stored inline in
+`document_chunks`. Values larger than `DOCUMENT_CHUNK_INLINE_TEXT_MAX_BYTES`
+are written under `DOCUMENT_CHUNK_ARTIFACT_STORAGE_DIR`, and the database stores
+the corresponding storage key. Chunking never modifies existing
+`document_segments`.
+
+This version only produces durable, previewable chunks. It does not create
+embeddings, write pgvector chunk indexes, enable semantic retrieval, run RAG
+question answering, or generate final citations.
+
 ### Dispatcher limitations
 
 The `background_tasks` dispatcher runs in-process and is intended for local
