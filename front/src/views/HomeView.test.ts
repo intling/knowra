@@ -4,6 +4,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import HomeView from "./HomeView.vue"
 
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] }),
+}))
+
 const mocks = vi.hoisted(() => ({
   refreshHealthMock: vi.fn(),
   loadCurrentUserMock: vi.fn(),

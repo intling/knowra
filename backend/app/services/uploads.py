@@ -9,10 +9,11 @@ from uuid import UUID, uuid4
 from fastapi import UploadFile
 from sqlmodel import Session
 
+from app.core.logging import get_logger
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 CHUNK_SIZE = 1024 * 1024
 PPTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -72,6 +73,10 @@ class LocalFileStorage:
             raise
         except OSError as exc:
             self.delete(storage_key)
+            logger.error(
+                "存储写入失败",
+                extra={"storage_key": storage_key, "error": str(exc)},
+            )
             raise UploadStorageError("Failed to write uploaded file") from exc
 
         return StoredFile(byte_size=byte_size, checksum_sha256=digest.hexdigest())
@@ -97,7 +102,14 @@ class UploadService:
 
     def create_upload(self, *, current_user: User, file: UploadFile) -> UploadedFile:
         content_type = file.content_type
-        if not self._is_allowed_content_type(content_type, file.filename):
+        if content_type and content_type not in self.allowed_content_types:
+            logger.warning(
+                "不支持的文件类型",
+                extra={
+                    "content_type": content_type,
+                    "allowed_types": sorted(self.allowed_content_types),
+                },
+            )
             raise UploadValidationError("Unsupported content type")
 
         upload_id = uuid4()
@@ -112,8 +124,18 @@ class UploadService:
         except UploadTooLargeError:
             raise
 
+        logger.info(
+            "文件写入存储成功",
+            extra={
+                "upload_id": str(upload_id),
+                "byte_size": stored_file.byte_size,
+                "checksum_sha256": stored_file.checksum_sha256,
+            },
+        )
+
         if stored_file.byte_size == 0:
             self.storage.delete(storage_key)
+            logger.warning("上传文件为空", extra={"upload_id": str(upload_id)})
             raise UploadValidationError("Uploaded file is empty")
 
         record = UploadedFile(
@@ -135,14 +157,13 @@ class UploadService:
         except Exception as exc:
             self.session.rollback()
             self.storage.delete(storage_key)
+            logger.error(
+                "数据库提交失败，已回滚",
+                extra={"upload_id": str(upload_id), "error": str(exc)},
+            )
             raise UploadMetadataError("Failed to save upload metadata") from exc
 
-        logger.info(
-            "File uploaded: %s (%d bytes, %s)",
-            record.original_filename,
-            record.byte_size,
-            record.content_type,
-        )
+        logger.info("上传记录创建成功", extra={"upload_id": str(upload_id)})
         return record
 
     @staticmethod

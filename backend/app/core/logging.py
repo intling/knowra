@@ -1,130 +1,240 @@
+"""Structured logging for knowra.
+
+Provides:
+- ``KnowraLogger`` — a ``LoggerAdapter`` that auto-injects ``trace_id``
+- ``ConsoleFormatter`` / ``JsonFormatter`` — dual-mode formatting
+- ``configure_logging()`` — wires everything together
+- ``get_logger()`` — factory for caller modules
+"""
+
+from __future__ import annotations
+
+import json
 import logging
-import sys
-from datetime import datetime, timezone
+import os
+from datetime import UTC, datetime
+from logging.handlers import RotatingFileHandler
+from typing import Any
+
+from app.core.trace_context import get_trace_id
+
+# Sentinel that marks extra keys we add automatically.
+_AUTO_KEYS = frozenset({"trace_id"})
 
 
-# ── third-party loggers that produce excessive noise ──────────────────
-_NOISY_LOGGERS: dict[str, int] = {
-    "transformers": logging.WARNING,
-    "transformers.configuration_utils": logging.WARNING,
-    "transformers.modeling_utils": logging.WARNING,
-    "transformers.tokenization_utils_base": logging.WARNING,
-    "huggingface_hub": logging.WARNING,
-    "tokenizers": logging.WARNING,
-    "docling": logging.WARNING,
-    "docling_core": logging.WARNING,
-    "torch": logging.WARNING,
-    "torch.distributed": logging.ERROR,
-    "PIL": logging.WARNING,
-    "PIL.Image": logging.WARNING,
-    "urllib3": logging.WARNING,
-    "urllib3.connectionpool": logging.WARNING,
-    "httpx": logging.WARNING,
-    "fsspec": logging.WARNING,
-    "filelock": logging.WARNING,
-    "asyncio": logging.WARNING,
-    "httpcore": logging.WARNING,
-    "sentence_transformers": logging.WARNING,
-    "accelerate": logging.WARNING,
-    "safetensors": logging.WARNING,
-    "tqdm": logging.WARNING,
+class TraceFilter(logging.Filter):
+    """Inject ``trace_id`` from contextvars into every LogRecord.
+
+    Applied on the root logger so that ALL log records — including those
+    emitted by third-party libraries (SQLAlchemy, uvicorn, etc.) — carry
+    the current request's trace_id without requiring the caller to use
+    :class:`KnowraLogger`.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not getattr(record, "trace_id", None):
+            record.trace_id = get_trace_id()
+        return True
+
+
+# ANSI escape sequences for log levels.
+_COLORS = {
+    "DEBUG": "\033[34m",  # blue
+    "INFO": "\033[32m",  # green
+    "WARNING": "\033[33m",  # yellow
+    "ERROR": "\033[31m",  # red
+    "CRITICAL": "\033[35m",  # magenta
+}
+_RESET = "\033[0m"
+
+
+# ---------------------------------------------------------------------------
+# Logger adapter
+# ---------------------------------------------------------------------------
+
+
+class KnowraLogger(logging.LoggerAdapter):
+    """Adapter that automatically injects ``trace_id`` from contextvars."""
+
+    def __init__(self, logger: logging.Logger, extra: dict[str, Any] | None = None) -> None:
+        super().__init__(logger, extra or {})
+
+    def process(self, msg: Any, kwargs: Any) -> tuple[Any, Any]:
+        """Merge trace_id and caller-supplied extra into the record."""
+        kwargs = dict(kwargs) if kwargs else {}
+        extra = dict(kwargs.get("extra", {}))
+        extra.setdefault("trace_id", get_trace_id())
+        kwargs["extra"] = extra
+        return msg, kwargs
+
+
+# ---------------------------------------------------------------------------
+# Formatters
+# ---------------------------------------------------------------------------
+
+
+class ConsoleFormatter(logging.Formatter):
+    """Human-readable formatter with ANSI colours and ``key=value`` extras."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        colour = _COLORS.get(record.levelname, "")
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:23] + "Z"
+
+        # Build the base line.
+        trace = getattr(record, "trace_id", None) or get_trace_id()
+        base = (
+            f"{colour}{record.levelname:<8}{_RESET} "
+            f"{ts} "
+            f"[{trace}] "
+            f"{record.name} — "
+            f"{record.getMessage()}"
+        )
+
+        # Inline extra fields (everything beyond the logging built-ins and our autos).
+        extra_parts = _build_extra_kv(record)
+        if extra_parts:
+            base += "  " + " ".join(extra_parts)
+
+        if record.exc_info and record.exc_info[1]:
+            base += "\n" + self.formatException(record.exc_info)
+
+        return base
+
+
+class JsonFormatter(logging.Formatter):
+    """JSON Lines formatter — one JSON object per line, extra fields at root."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        obj: dict[str, Any] = {
+            "ts": datetime.now(UTC).isoformat(),
+            "level": record.levelname,
+            "trace_id": getattr(record, "trace_id", None) or get_trace_id(),
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+
+        # Flatten extra fields onto root.
+        for key, val in _iter_extra(record):
+            obj[key] = val
+
+        if record.exc_info and record.exc_info[1]:
+            obj["exception"] = self.formatException(record.exc_info)
+
+        return json.dumps(obj, ensure_ascii=False, default=str)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+# Built-in LogRecord attributes: don't repeat them as key=value extras.
+_INTERNAL_RECORD_ATTRS: set[str] = {
+    name
+    for name in sorted(logging.LogRecord("", 0, "", 0, "", (), None).__dict__)
+    if not name.startswith("_")
+}
+_INTERNAL_RECORD_ATTRS |= {  # extra fields set by our adapter or third-party loggers
+    "trace_id",
+    "message",
+    "asctime",
+    "color_message",  # uvicorn internal — don't leak as key=value
 }
 
 
-def _silence_noisy_libraries() -> None:
-    """Push noisy third-party loggers to WARNING (or ERROR) so they only
-    surface real problems."""
-    for name, level in _NOISY_LOGGERS.items():
-        logging.getLogger(name).setLevel(level)
+def _build_extra_kv(record: logging.LogRecord) -> list[str]:
+    """Return ``key=value`` strings for every non-internal record attribute."""
+    parts: list[str] = []
+    for key, val in _iter_extra(record):
+        parts.append(f"{key}={val}")
+    return parts
 
 
-# ── formatters ────────────────────────────────────────────────────────
-
-class _ColourFormatter(logging.Formatter):
-    """Coloured console output for human-readable development logs."""
-
-    LEVEL_COLOURS = {
-        logging.DEBUG: "\033[2;37m",     # grey
-        logging.INFO: "\033[0m",          # default
-        logging.WARNING: "\033[33m",      # yellow
-        logging.ERROR: "\033[31m",        # red
-        logging.CRITICAL: "\033[1;31m",   # bold red
-    }
-    RESET = "\033[0m"
-    DIM = "\033[2m"
-
-    def format(self, record: logging.LogRecord) -> str:
-        colour = self.LEVEL_COLOURS.get(record.levelno, "")
-        time_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
-        level = record.levelname
-
-        # application loggers get full detail; third-party loggers get a
-        # compact single-line format
-        if record.name.startswith("app"):
-            base = f"{self.DIM}{time_str}{self.RESET} {colour}{level:<5}{self.RESET} {record.name} | {record.getMessage()}"
-        else:
-            base = f"{self.DIM}{time_str}{self.RESET} {colour}{level:<5}{self.RESET} [{record.name}] {record.getMessage()}"
-
-        if record.exc_info and record.exc_info[1] is not None:
-            base += "\n"
-            base += self.formatException(record.exc_info)
-        return base
+def _iter_extra(record: logging.LogRecord):
+    """Yield (key, value) pairs for user-defined extra fields on *record*."""
+    for key, val in sorted(record.__dict__.items()):
+        if key in _INTERNAL_RECORD_ATTRS:
+            continue
+        yield key, val
 
 
-class _PlainFormatter(logging.Formatter):
-    """Plain-text single-line format for non-TTY / production."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        time_str = datetime.now(timezone.utc).isoformat()
-        base = f"{time_str} {record.levelname:<5} [{record.name}] {record.getMessage()}"
-        if record.exc_info and record.exc_info[1] is not None:
-            base += "\n"
-            base += self.formatException(record.exc_info)
-        return base
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
 
-# ── public API ────────────────────────────────────────────────────────
+def configure_logging(
+    debug: bool = True,
+    log_level: str = "INFO",
+    log_format: str = "",
+    log_file_path: str = "logs/knowra.log",
+    log_file_max_size: int = 10 * 1024 * 1024,
+    log_file_backup_count: int = 5,
+) -> None:
+    """Set up log handlers and formatters for the whole application.
 
-def configure_logging(debug: bool = False, log_level: str = "INFO") -> None:
-    """Set up logging for the application.
+    Call once at startup (e.g. from ``create_app()``).
 
-    * Suppresses noisy third-party loggers (transformers, huggingface, etc.)
-    * Coloured output in the terminal; plain text when piped
-    * Application-level loggers under ``app.*`` use the configured level
-    * ``sqlalchemy.engine`` is set to WARNING (no raw SQL dumps)
-    * ``uvicorn.access`` is set to WARNING (HTTP access is handled by
-      the request middleware)
+    This function also integrates third-party library loggers (SQLAlchemy,
+    uvicorn) so that all logs flow through the same formatters and carry a
+    ``trace_id``.
     """
-    # resolve effective level
-    if debug:
-        level = logging.DEBUG
-    else:
-        try:
-            level = getattr(logging, log_level.upper())
-        except AttributeError:
-            level = logging.INFO
+    fmt = log_format or ("console" if debug else "json")
+    level = _level_from_str(log_level)
 
-    _silence_noisy_libraries()
-
-    # application-level logger threshold
-    logging.getLogger("app").setLevel(level)
-
-    # suppress SQLAlchemy raw SQL (use echo=False on engine instead)
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-
-    # suppress uvicorn access log — middleware handles HTTP logging
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-    # keep uvicorn.error at the configured level for lifecycle events
-    logging.getLogger("uvicorn.error").setLevel(level)
-
-    # root handler
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(
-        _ColourFormatter() if sys.stderr.isatty() else _PlainFormatter()
-    )
-
+    # Resolve root logger.
     root = logging.getLogger()
     root.setLevel(level)
-    # replace any pre-existing handlers (e.g. from basicConfig)
+
+    # Remove any pre-existing handlers and filters (idempotent for tests).
     root.handlers.clear()
-    root.addHandler(handler)
+    root.filters.clear()
+
+    # Inject trace_id from contextvars into every LogRecord that reaches root.
+    root.addFilter(TraceFilter())
+
+    # --- Third-party logger integration ---
+    # SQLAlchemy: when echo=True is set on the engine, SQLAlchemy adds its own
+    # StreamHandler to the sqlalchemy.engine.* loggers. Remove it so logs flow
+    # through our formatters only once.
+    for _name in ("sqlalchemy.engine", "sqlalchemy.engine.Engine", "sqlalchemy.pool"):
+        _sqla = logging.getLogger(_name)
+        _sqla.handlers.clear()
+        _sqla.propagate = True
+        _sqla.setLevel(level if debug else logging.WARNING)
+
+    # Uvicorn: add TraceFilter so that its own formatters at least see trace_id.
+    # Uvicorn's dictConfig (called later during server startup) does NOT clear
+    # filters, so these survive and uvicorn's access/error logs also carry the id.
+    _trace_filter = TraceFilter()
+    for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        logging.getLogger(_name).addFilter(_trace_filter)
+
+    # --- console handler ---
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    console.setFormatter(ConsoleFormatter() if fmt == "console" else JsonFormatter())
+    root.addHandler(console)
+
+    # --- file handler ---
+    os.makedirs(os.path.dirname(log_file_path) or ".", exist_ok=True)
+    file_handler = RotatingFileHandler(
+        log_file_path,
+        maxBytes=log_file_max_size,
+        backupCount=log_file_backup_count,
+        encoding="utf-8",
+    )
+    file_handler.setLevel(level)
+    file_handler.setFormatter(ConsoleFormatter() if fmt == "console" else JsonFormatter())
+    root.addHandler(file_handler)
+
+
+def get_logger(name: str) -> KnowraLogger:
+    """Return a ``KnowraLogger`` that automatically carries ``trace_id``."""
+    return KnowraLogger(logging.getLogger(name))
+
+
+def _level_from_str(raw: str) -> int:
+    try:
+        return getattr(logging, raw.upper())
+    except AttributeError:
+        return logging.INFO

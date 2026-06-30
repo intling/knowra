@@ -8,6 +8,16 @@ vi.mock("../api/users", () => ({
   getCurrentUser: vi.fn(),
 }))
 
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] }),
+}))
+
 const getCurrentUserMock = vi.mocked(getCurrentUser)
 
 describe("useUserStore", () => {

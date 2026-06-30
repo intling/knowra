@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Generator
 from datetime import UTC, datetime
 
@@ -118,3 +119,21 @@ def test_no_user_registration_endpoint_is_exposed(users_client: TestClient) -> N
     )
 
     assert response.status_code >= 400
+
+
+# =========================================================================
+# 日志记录测试（spec: API 路由层日志记录 — users.py）
+# =========================================================================
+
+
+# 测试用户不可用时返回 503 前应输出 ERROR 级别日志。
+def test_read_current_user_logs_error_on_unavailable(
+    users_client: TestClient,
+    caplog,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+
+    users_client.get("/api/users/me")
+
+    route_records = [r for r in caplog.records if r.name == "app.api.routes.users"]
+    assert any(r.levelname == "ERROR" for r in route_records)

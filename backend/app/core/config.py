@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DEFAULT_ALLOWED_UPLOAD_CONTENT_TYPES = (
@@ -64,6 +64,13 @@ class Settings(BaseSettings):
     document_chunk_inline_text_max_bytes: int = 2048
     document_chunk_artifact_storage_dir: str = "storage/chunks"
 
+    # --- logging ---
+    log_level: str = "INFO"
+    log_format: str = ""  # empty → auto-detect from debug
+    log_file_path: str = "logs/knowra.log"
+    log_file_max_size: int = 10 * 1024 * 1024  # 10 MB
+    log_file_backup_count: int = 5
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -104,6 +111,12 @@ def parse_csv_list(value: str | list[str]) -> list[str]:
         return [item.strip() for item in value.split(",") if item.strip()]
 
     return value
+
+    @model_validator(mode="after")
+    def _resolve_log_format(self) -> Settings:
+        if not self.log_format:
+            self.log_format = "console" if self.debug else "json"
+        return self
 
 
 @lru_cache

@@ -22,10 +22,17 @@ import type {
   DocumentParseJob,
   ParsedDocument,
 } from "../api/documentParsing"
-import { uploadFile } from "../api/uploads"
 import type { UploadedFile } from "../api/uploads"
+import { createLogger, getRingBuffer } from "../shared/logger"
 import { useAppStore } from "../stores/app"
 import { useUserStore } from "../stores/user"
+
+/** Lazy logger — getRingBuffer() is only available after main.ts initLogger(). */
+let _logger: ReturnType<typeof createLogger> | null = null
+function log() {
+  if (!_logger) _logger = createLogger("views:Home", getRingBuffer())
+  return _logger
+}
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -163,10 +170,13 @@ const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
   uploadFeedback.value = null
-  uploadedFileInfo.value = null
-  parseFeedback.value = null
-  canRetryParse.value = false
-  resetChunkState()
+  if (selectedFile.value) {
+    log().info("用户选择了文件", {
+      fileName: selectedFile.value.name,
+      fileSize: selectedFile.value.size,
+      fileType: selectedFile.value.type,
+    })
+  }
 }
 
 const removeSelectedFile = () => {
@@ -449,10 +459,16 @@ const handleSend = async () => {
       uploadedFileInfo.value = uploaded
       uploadedForParsing = uploaded
       uploadFeedback.value = `${uploaded.original_filename} 上传成功`
+      log().info("文件上传成功", {
+        fileName: uploaded.original_filename,
+        fileId: uploaded.id,
+        byteSize: uploaded.byte_size,
+      })
       clearFileInput()
     } catch (error) {
       uploadFeedback.value =
         error instanceof Error ? error.message : "上传失败，请重试"
+      log().error("文件上传失败", error)
       return
     } finally {
       isUploading.value = false
@@ -523,6 +539,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
 }
 
 onMounted(() => {
+  log().info("首页组件挂载")
   void appStore.refreshHealth()
   void userStore.loadCurrentUser()
   void resizeInput()

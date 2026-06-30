@@ -233,6 +233,37 @@ uv run ruff format --check .
 uv run pytest
 ```
 
+## Structured logging
+
+The backend uses the Python standard library `logging` with a custom
+`LoggerAdapter` (`KnowraLogger`) that automatically injects a `trace_id` into
+every log record.  Trace IDs are carried across requests via the `X-Trace-ID`
+HTTP header (read by `TraceMiddleware`).
+
+### Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOG_LEVEL` | `INFO` | Root logger level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `LOG_FORMAT` | auto | Output format — `console` (coloured, human-readable) or `json` (JSON Lines).  Default depends on `DEBUG`: `console` when `DEBUG=true`, `json` when `DEBUG=false`. |
+| `LOG_FILE_PATH` | `logs/knowra.log` | Path to the log file (parent directory is created automatically). |
+| `LOG_FILE_MAX_SIZE` | `10485760` | Max bytes per log file before rotation (10 MB). |
+| `LOG_FILE_BACKUP_COUNT` | `5` | Number of rotated backup files to retain. |
+
+Set any of these in `.env` or as environment variables.
+
+### Usage in code
+
+```python
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+logger.info("文件上传完成", extra={"file_name": "notes.pdf", "byte_size": 2048})
+```
+
+The `trace_id` is automatically injected — callers never need to pass it
+manually.
+
 ## Database migrations
 
 Start PostgreSQL, then run:
