@@ -200,7 +200,9 @@ def configure_logging(
         _sqla = logging.getLogger(_name)
         _sqla.handlers.clear()
         _sqla.propagate = True
-        _sqla.setLevel(level if debug else logging.WARNING)
+        # SQLAlchemy engine logs (BEGIN/SELECT/ROLLBACK etc.) are noisy —
+        # demote them to DEBUG so they only appear when explicitly debugging.
+        _sqla.setLevel(logging.DEBUG)
 
     # Uvicorn: add TraceFilter so that its own formatters at least see trace_id.
     # Uvicorn's dictConfig (called later during server startup) does NOT clear

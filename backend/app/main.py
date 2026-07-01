@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.logging import TraceFilter, configure_logging
+from app.core.middleware import RequestLoggingMiddleware
 from app.middleware.trace import TraceMiddleware
 
 

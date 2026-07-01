@@ -22,7 +22,7 @@ import type {
   DocumentParseJob,
   ParsedDocument,
 } from "../api/documentParsing"
-import type { UploadedFile } from "../api/uploads"
+import { uploadFile, type UploadedFile } from "../api/uploads"
 import { createLogger, getRingBuffer } from "../shared/logger"
 import { useAppStore } from "../stores/app"
 import { useUserStore } from "../stores/user"

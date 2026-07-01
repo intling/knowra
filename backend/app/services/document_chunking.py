@@ -1,4 +1,4 @@
-import logging
+from app.core.logging import get_logger
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -13,7 +13,7 @@ from app.services.document_chunk_storage import ChunkArtifactStorage
 from app.services.document_chunker import DocumentChunkingConfig, DocumentChunkingError
 from app.services.uploads import LocalFileStorage, UploadStorageError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class DocumentChunkNotFoundError(Exception):

@@ -1,4 +1,4 @@
-import logging
+from app.core.logging import get_logger
 from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -26,7 +26,7 @@ from app.services.document_parser import (
 )
 from app.services.uploads import LocalFileStorage
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 SessionFactory = Callable[[], Generator[Session]]
 

@@ -1,4 +1,3 @@
-import logging
 from contextlib import suppress
 from dataclasses import dataclass
 from hashlib import sha256

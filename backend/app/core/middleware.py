@@ -1,4 +1,3 @@
-import logging
 import time
 from uuid import uuid4
 
@@ -6,9 +5,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.core.logging import get_logger
 from app.core.request_context import request_id_var
 
-logger = logging.getLogger("app.http")
+logger = get_logger("app.http")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
