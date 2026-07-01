@@ -5,12 +5,34 @@
 
 import logging
 
+import structlog
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.core.logging import get_logger
+from app.core.logging import TraceFilter, _trace_id_injector, get_logger
 from app.core.trace_context import get_trace_id
 from app.middleware.trace import TRACE_HEADER, TraceMiddleware
+
+# Configure structlog minimally for integration tests — no file handlers,
+# just the processor chain. caplog captures stdlib output which is what
+# structlog's stdlib LoggerFactory produces.
+structlog.configure(
+    processors=[
+        _trace_id_injector,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.stdlib.add_logger_name,
+        structlog.processors.format_exc_info,
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
+
+# Add TraceFilter to root so third-party (non-structlog) log records get trace_id.
+logging.getLogger().addFilter(TraceFilter())
 
 
 def _make_test_app() -> FastAPI:
@@ -41,10 +63,10 @@ class TestEndToEndTraceLoggingIntegration:
         assert response.json()["trace_id"] == "integration-test-trace-id"
         assert response.headers[TRACE_HEADER] == "integration-test-trace-id"
 
-        # Verify the log record carries the trace_id
-        records = [r for r in caplog.records if r.message == "ping-called"]
-        assert len(records) == 1
-        assert records[0].trace_id == "integration-test-trace-id"
+        # With structlog, caplog records contain the event dict as the message.
+        # Verify the log exists by checking the rendered log text.
+        assert "integration-test-trace-id" in caplog.text
+        assert "ping-called" in caplog.text
 
     def test_missing_trace_id_generates_new_one_with_caplog(self, caplog):
         """未携带 X-Trace-ID 时生成新的 UUID7 并注入到日志"""
@@ -54,12 +76,12 @@ class TestEndToEndTraceLoggingIntegration:
         response = client.get("/ping")
         trace_id = response.json()["trace_id"]
         assert response.headers[TRACE_HEADER] == trace_id
-
-        records = [r for r in caplog.records if r.message == "ping-called"]
-        assert len(records) == 1
-        assert records[0].trace_id == trace_id
         # trace_id should not be the placeholder
         assert trace_id != "-"
+
+        # The generated trace_id should appear in the log output.
+        assert trace_id in caplog.text
+        assert "ping-called" in caplog.text
 
     def test_x_trace_id_in_response_on_health_check(self):
         """响应头包含 X-Trace-ID（健康检查路由）"""

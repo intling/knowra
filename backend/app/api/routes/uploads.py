@@ -51,7 +51,8 @@ def create_upload(
     except UploadTooLargeError as exc:
         logger.warning(
             "上传文件超过大小限制",
-            extra={"file_name": file.filename, "content_type": file.content_type},
+            file_name=file.filename,
+            content_type=file.content_type,
         )
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,
@@ -60,13 +61,15 @@ def create_upload(
     except UploadValidationError as exc:
         logger.warning(
             "上传文件校验失败",
-            extra={"file_name": file.filename, "reason": str(exc)},
+            file_name=file.filename,
+            reason=str(exc),
         )
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except (UploadStorageError, UploadMetadataError) as exc:
         logger.error(
             "上传文件存储或元数据保存失败",
-            extra={"file_name": file.filename, "error": str(exc)},
+            file_name=file.filename,
+            error=str(exc),
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

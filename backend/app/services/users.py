@@ -23,8 +23,8 @@ def get_current_user(session: Session) -> User:
     user = session.exec(statement).first()
 
     if user is None:
-        logger.warning("当前用户不可用", extra={"default_user_id": str(DEFAULT_USER_ID)})
+        logger.warning("当前用户不可用", default_user_id=str(DEFAULT_USER_ID))
         raise CurrentUserUnavailableError
 
-    logger.debug("查询到当前用户", extra={"user_id": str(user.id)})
+    logger.debug("查询到当前用户", user_id=str(user.id))
     return user

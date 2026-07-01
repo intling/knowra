@@ -74,7 +74,8 @@ class LocalFileStorage:
             self.delete(storage_key)
             logger.error(
                 "存储写入失败",
-                extra={"storage_key": storage_key, "error": str(exc)},
+                storage_key=storage_key,
+                error=str(exc),
             )
             raise UploadStorageError("Failed to write uploaded file") from exc
 
@@ -104,10 +105,8 @@ class UploadService:
         if content_type and content_type not in self.allowed_content_types:
             logger.warning(
                 "不支持的文件类型",
-                extra={
-                    "content_type": content_type,
-                    "allowed_types": sorted(self.allowed_content_types),
-                },
+                content_type=content_type,
+                allowed_types=sorted(self.allowed_content_types),
             )
             raise UploadValidationError("Unsupported content type")
 
@@ -125,16 +124,14 @@ class UploadService:
 
         logger.info(
             "文件写入存储成功",
-            extra={
-                "upload_id": str(upload_id),
-                "byte_size": stored_file.byte_size,
-                "checksum_sha256": stored_file.checksum_sha256,
-            },
+            upload_id=str(upload_id),
+            byte_size=stored_file.byte_size,
+            checksum_sha256=stored_file.checksum_sha256,
         )
 
         if stored_file.byte_size == 0:
             self.storage.delete(storage_key)
-            logger.warning("上传文件为空", extra={"upload_id": str(upload_id)})
+            logger.warning("上传文件为空", upload_id=str(upload_id))
             raise UploadValidationError("Uploaded file is empty")
 
         record = UploadedFile(
@@ -158,11 +155,12 @@ class UploadService:
             self.storage.delete(storage_key)
             logger.error(
                 "数据库提交失败，已回滚",
-                extra={"upload_id": str(upload_id), "error": str(exc)},
+                upload_id=str(upload_id),
+                error=str(exc),
             )
             raise UploadMetadataError("Failed to save upload metadata") from exc
 
-        logger.info("上传记录创建成功", extra={"upload_id": str(upload_id)})
+        logger.info("上传记录创建成功", upload_id=str(upload_id))
         return record
 
     @staticmethod

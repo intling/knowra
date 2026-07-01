@@ -1,25 +1,26 @@
-"""Structured logging for knowra.
+"""Structured logging for knowra via structlog.
 
 Provides:
-- ``KnowraLogger`` — a ``LoggerAdapter`` that auto-injects ``trace_id``
-- ``ConsoleFormatter`` / ``JsonFormatter`` — dual-mode formatting
-- ``configure_logging()`` — wires everything together
-- ``get_logger()`` — factory for caller modules
+- ``TraceFilter`` — injects ``trace_id`` into every LogRecord (root level)
+- ``configure_logging()`` — wires structlog + stdlib handlers together
+- ``get_logger()`` — factory returning a ``structlog.stdlib.BoundLogger``
 """
 
 from __future__ import annotations
 
-import json
 import logging
 import os
-from datetime import UTC, datetime
 from logging.handlers import RotatingFileHandler
-from typing import Any
+
+import structlog
+from structlog.dev import ConsoleRenderer
+from structlog.processors import JSONRenderer, TimeStamper, add_log_level, format_exc_info
 
 from app.core.trace_context import get_trace_id
 
-# Sentinel that marks extra keys we add automatically.
-_AUTO_KEYS = frozenset({"trace_id"})
+# ---------------------------------------------------------------------------
+# TraceFilter — kept from previous implementation, unchanged
+# ---------------------------------------------------------------------------
 
 
 class TraceFilter(logging.Filter):
@@ -28,7 +29,7 @@ class TraceFilter(logging.Filter):
     Applied on the root logger so that ALL log records — including those
     emitted by third-party libraries (SQLAlchemy, uvicorn, etc.) — carry
     the current request's trace_id without requiring the caller to use
-    :class:`KnowraLogger`.
+    structlog.
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -37,124 +38,20 @@ class TraceFilter(logging.Filter):
         return True
 
 
-# ANSI escape sequences for log levels.
-_COLORS = {
-    "DEBUG": "\033[34m",  # blue
-    "INFO": "\033[32m",  # green
-    "WARNING": "\033[33m",  # yellow
-    "ERROR": "\033[31m",  # red
-    "CRITICAL": "\033[35m",  # magenta
-}
-_RESET = "\033[0m"
-
-
 # ---------------------------------------------------------------------------
-# Logger adapter
+# Processor helpers
 # ---------------------------------------------------------------------------
 
 
-class KnowraLogger(logging.LoggerAdapter):
-    """Adapter that automatically injects ``trace_id`` from contextvars."""
+def _trace_id_injector(_, __, event_dict: dict) -> dict:
+    """structlog processor that injects ``trace_id`` from contextvars.
 
-    def __init__(self, logger: logging.Logger, extra: dict[str, Any] | None = None) -> None:
-        super().__init__(logger, extra or {})
-
-    def process(self, msg: Any, kwargs: Any) -> tuple[Any, Any]:
-        """Merge trace_id and caller-supplied extra into the record."""
-        kwargs = dict(kwargs) if kwargs else {}
-        extra = dict(kwargs.get("extra", {}))
-        extra.setdefault("trace_id", get_trace_id())
-        kwargs["extra"] = extra
-        return msg, kwargs
-
-
-# ---------------------------------------------------------------------------
-# Formatters
-# ---------------------------------------------------------------------------
-
-
-class ConsoleFormatter(logging.Formatter):
-    """Human-readable formatter with ANSI colours and ``key=value`` extras."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        colour = _COLORS.get(record.levelname, "")
-        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:23] + "Z"
-
-        # Build the base line.
-        trace = getattr(record, "trace_id", None) or get_trace_id()
-        base = (
-            f"{colour}{record.levelname:<8}{_RESET} "
-            f"{ts} "
-            f"[{trace}] "
-            f"{record.name} — "
-            f"{record.getMessage()}"
-        )
-
-        # Inline extra fields (everything beyond the logging built-ins and our autos).
-        extra_parts = _build_extra_kv(record)
-        if extra_parts:
-            base += "  " + " ".join(extra_parts)
-
-        if record.exc_info and record.exc_info[1]:
-            base += "\n" + self.formatException(record.exc_info)
-
-        return base
-
-
-class JsonFormatter(logging.Formatter):
-    """JSON Lines formatter — one JSON object per line, extra fields at root."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        obj: dict[str, Any] = {
-            "ts": datetime.now(UTC).isoformat(),
-            "level": record.levelname,
-            "trace_id": getattr(record, "trace_id", None) or get_trace_id(),
-            "logger": record.name,
-            "message": record.getMessage(),
-        }
-
-        # Flatten extra fields onto root.
-        for key, val in _iter_extra(record):
-            obj[key] = val
-
-        if record.exc_info and record.exc_info[1]:
-            obj["exception"] = self.formatException(record.exc_info)
-
-        return json.dumps(obj, ensure_ascii=False, default=str)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-# Built-in LogRecord attributes: don't repeat them as key=value extras.
-_INTERNAL_RECORD_ATTRS: set[str] = {
-    name
-    for name in sorted(logging.LogRecord("", 0, "", 0, "", (), None).__dict__)
-    if not name.startswith("_")
-}
-_INTERNAL_RECORD_ATTRS |= {  # extra fields set by our adapter or third-party loggers
-    "trace_id",
-    "message",
-    "asctime",
-    "color_message",  # uvicorn internal — don't leak as key=value
-}
-
-
-def _build_extra_kv(record: logging.LogRecord) -> list[str]:
-    """Return ``key=value`` strings for every non-internal record attribute."""
-    parts: list[str] = []
-    for key, val in _iter_extra(record):
-        parts.append(f"{key}={val}")
-    return parts
-
-
-def _iter_extra(record: logging.LogRecord):
-    """Yield (key, value) pairs for user-defined extra fields on *record*."""
-    for key, val in sorted(record.__dict__.items()):
-        if key in _INTERNAL_RECORD_ATTRS:
-            continue
-        yield key, val
+    Used in BOTH the structlog pre-chain and the ProcessorFormatter's
+    foreign_pre_chain, so trace_id appears regardless of log source.
+    """
+    if "trace_id" not in event_dict:
+        event_dict["trace_id"] = get_trace_id()
+    return event_dict
 
 
 # ---------------------------------------------------------------------------
@@ -170,54 +67,65 @@ def configure_logging(
     log_file_max_size: int = 10 * 1024 * 1024,
     log_file_backup_count: int = 5,
 ) -> None:
-    """Set up log handlers and formatters for the whole application.
+    """Set up structlog + stdlib handlers for the whole application.
 
     Call once at startup (e.g. from ``create_app()``).
 
-    This function also integrates third-party library loggers (SQLAlchemy,
-    uvicorn) so that all logs flow through the same formatters and carry a
-    ``trace_id``.
+    Architecture:
+    - structlog processors prepare the event dict (without rendering)
+    - ``ProcessorFormatter`` on stdlib handlers does the final rendering,
+      handling BOTH structlog events and raw stdlib LogRecords
+    - ``TraceFilter`` on root logger injects trace_id for third-party libs
     """
     fmt = log_format or ("console" if debug else "json")
     level = _level_from_str(log_level)
 
-    # Resolve root logger.
+    # --- Renderer (used by ProcessorFormatter, not in structlog chain) ---
+    renderer = ConsoleRenderer() if fmt == "console" else JSONRenderer()
+
+    # --- structlog: prepare event dict, don't render ---
+    # ``wrap_for_formatter`` stores the event dict on the LogRecord so that
+    # ``ProcessorFormatter`` can retrieve and render it later.  Without this
+    # processor the event dict would be lost and only a raw string passed.
+    structlog.configure(
+        processors=[
+            _trace_id_injector,
+            add_log_level,
+            TimeStamper(fmt="iso"),
+            structlog.stdlib.add_logger_name,
+            format_exc_info,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        context_class=dict,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
+    )
+
+    # --- stdlib handler setup ---
     root = logging.getLogger()
     root.setLevel(level)
-
-    # Remove any pre-existing handlers and filters (idempotent for tests).
     root.handlers.clear()
     root.filters.clear()
 
-    # Inject trace_id from contextvars into every LogRecord that reaches root.
     root.addFilter(TraceFilter())
 
-    # --- Third-party logger integration ---
-    # SQLAlchemy: when echo=True is set on the engine, SQLAlchemy adds its own
-    # StreamHandler to the sqlalchemy.engine.* loggers. Remove it so logs flow
-    # through our formatters only once.
-    for _name in ("sqlalchemy.engine", "sqlalchemy.engine.Engine", "sqlalchemy.pool"):
-        _sqla = logging.getLogger(_name)
-        _sqla.handlers.clear()
-        _sqla.propagate = True
-        # SQLAlchemy engine logs (BEGIN/SELECT/ROLLBACK etc.) are noisy —
-        # demote them to DEBUG so they only appear when explicitly debugging.
-        _sqla.setLevel(logging.DEBUG)
+    # ProcessorFormatter renders BOTH structlog events and foreign LogRecords
+    handler_fmt = structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=[
+            _trace_id_injector,
+            format_exc_info,
+        ],
+        processor=renderer,
+    )
 
-    # Uvicorn: add TraceFilter so that its own formatters at least see trace_id.
-    # Uvicorn's dictConfig (called later during server startup) does NOT clear
-    # filters, so these survive and uvicorn's access/error logs also carry the id.
-    _trace_filter = TraceFilter()
-    for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
-        logging.getLogger(_name).addFilter(_trace_filter)
-
-    # --- console handler ---
+    # Console handler
     console = logging.StreamHandler()
     console.setLevel(level)
-    console.setFormatter(ConsoleFormatter() if fmt == "console" else JsonFormatter())
+    console.setFormatter(handler_fmt)
     root.addHandler(console)
 
-    # --- file handler ---
+    # File handler
     os.makedirs(os.path.dirname(log_file_path) or ".", exist_ok=True)
     file_handler = RotatingFileHandler(
         log_file_path,
@@ -226,13 +134,24 @@ def configure_logging(
         encoding="utf-8",
     )
     file_handler.setLevel(level)
-    file_handler.setFormatter(ConsoleFormatter() if fmt == "console" else JsonFormatter())
+    file_handler.setFormatter(handler_fmt)
     root.addHandler(file_handler)
 
+    # --- Third-party logger integration ---
+    for _name in ("sqlalchemy.engine", "sqlalchemy.engine.Engine", "sqlalchemy.pool"):
+        _sqla = logging.getLogger(_name)
+        _sqla.handlers.clear()
+        _sqla.propagate = True
+        _sqla.setLevel(logging.DEBUG if level <= logging.DEBUG else logging.WARNING)
 
-def get_logger(name: str) -> KnowraLogger:
-    """Return a ``KnowraLogger`` that automatically carries ``trace_id``."""
-    return KnowraLogger(logging.getLogger(name))
+    _trace_filter = TraceFilter()
+    for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        logging.getLogger(_name).addFilter(_trace_filter)
+
+
+def get_logger(name: str) -> structlog.stdlib.BoundLogger:
+    """Return a structlog ``BoundLogger`` that automatically carries ``trace_id``."""
+    return structlog.get_logger(name)
 
 
 def _level_from_str(raw: str) -> int:

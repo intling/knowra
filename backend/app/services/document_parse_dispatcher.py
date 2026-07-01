@@ -1,4 +1,3 @@
-from app.core.logging import get_logger
 from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -8,6 +7,7 @@ from fastapi import BackgroundTasks
 from sqlmodel import Session
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.db.session import engine
 from app.models.document_parsing import DocumentParseJob, DocumentSegment, ParsedDocument
 from app.models.uploaded_file import UploadedFile

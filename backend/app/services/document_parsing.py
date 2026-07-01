@@ -1,10 +1,10 @@
-from app.core.logging import get_logger
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
 from sqlmodel import Session, select
 
+from app.core.logging import get_logger
 from app.models.document_parsing import DocumentParseJob
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User, utc_now
