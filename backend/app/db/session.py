@@ -17,7 +17,7 @@ engine = create_engine(
 
 # Desensitize password in database URL for logging.
 _desensitized_url = re.sub(r"://([^:]+):([^@]+)@", r"://\1:***@", settings.database_url)
-logger.info("数据库引擎已创建", extra={"database_url": _desensitized_url, "echo": settings.debug})
+logger.info("数据库引擎已创建", database_url=_desensitized_url, echo=settings.debug)
 
 
 def get_session() -> Generator[Session]:

@@ -57,9 +57,9 @@ class TraceMiddleware(BaseHTTPMiddleware):
         trace_id = (request.headers.get(TRACE_HEADER, "")).strip()
         if not trace_id:
             trace_id = generate_uuid7()
-            logger.debug("生成新 trace_id", extra={"trace_id": trace_id})
+            logger.debug("生成新 trace_id", trace_id=trace_id)
         else:
-            logger.debug("复用请求中的 trace_id", extra={"trace_id": trace_id})
+            logger.debug("复用请求中的 trace_id", trace_id=trace_id)
 
         set_trace_id(trace_id)
 

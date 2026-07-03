@@ -1,10 +1,10 @@
-from app.core.logging import get_logger
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
 from sqlmodel import Session, col, select
 
+from app.core.logging import get_logger
 from app.models.document_chunking import DocumentChunk, DocumentChunkJob, DocumentChunkJobStatus
 from app.models.document_parsing import ParsedDocument
 from app.models.uploaded_file import UploadedFile

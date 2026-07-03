@@ -1,4 +1,3 @@
-from app.core.logging import get_logger
 from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -8,6 +7,7 @@ from fastapi import BackgroundTasks
 from sqlmodel import Session
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.db.session import engine
 from app.models.document_parsing import DocumentParseJob, DocumentSegment, ParsedDocument
 from app.models.uploaded_file import UploadedFile
@@ -65,7 +65,7 @@ def run_parse_job(
         session.commit()
         session.refresh(job)
 
-        logger.info("Parse started: job_id=%s", job.id)
+        logger.info("Parse started", job_id=str(job.id))
 
         try:
             uploaded_file = session.get(UploadedFile, job.uploaded_file_id)
@@ -115,7 +115,7 @@ def run_parse_job(
             )
             if should_chunk:
                 with suppress(Exception):
-                    logger.info("Auto-chunking started: parse_job_id=%s", job.id)
+                    logger.info("Auto-chunking started", parse_job_id=str(job.id))
                     service = chunking_service or make_document_chunking_service(
                         session=session,
                         settings=settings,

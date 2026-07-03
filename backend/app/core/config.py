@@ -105,18 +105,18 @@ class Settings(BaseSettings):
     def parse_document_parse_allowed_extensions(cls, value: str | list[str]) -> list[str]:
         return [extension.lower() for extension in parse_csv_list(value)]
 
+    @model_validator(mode="after")
+    def _resolve_log_format(self) -> Settings:
+        if not self.log_format:
+            self.log_format = "console" if self.debug else "json"
+        return self
+
 
 def parse_csv_list(value: str | list[str]) -> list[str]:
     if isinstance(value, str):
         return [item.strip() for item in value.split(",") if item.strip()]
 
     return value
-
-    @model_validator(mode="after")
-    def _resolve_log_format(self) -> Settings:
-        if not self.log_format:
-            self.log_format = "console" if self.debug else "json"
-        return self
 
 
 @lru_cache

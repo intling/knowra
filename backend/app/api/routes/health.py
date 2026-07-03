@@ -20,7 +20,7 @@ class HealthResponse(BaseModel):
 
 @router.get("/health", response_model=HealthResponse)
 def read_health(settings: SettingsDep) -> HealthResponse:
-    logger.debug("健康检查", extra={"app_name": settings.app_name, "environment": settings.app_env})
+    logger.debug("健康检查", app_name=settings.app_name, environment=settings.app_env)
     return HealthResponse(
         status="ok",
         app_name=settings.app_name,

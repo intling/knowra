@@ -1,10 +1,10 @@
-from app.core.logging import get_logger
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
 from sqlmodel import Session, select
 
+from app.core.logging import get_logger
 from app.models.document_parsing import DocumentParseJob
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User, utc_now
@@ -96,10 +96,10 @@ class DocumentParseService:
         self.session.commit()
         self.session.refresh(job)
         logger.info(
-            "Parse job created: job_id=%s upload_id=%s file=%s",
-            job.id,
-            upload_id,
-            uploaded_file.original_filename,
+            "Parse job created",
+            job_id=str(job.id),
+            upload_id=str(upload_id),
+            file=uploaded_file.original_filename,
         )
         return job
 
