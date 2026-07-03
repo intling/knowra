@@ -32,10 +32,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         duration_ms = (time.perf_counter() - start) * 1000
         status_code = getattr(response, "status_code", 500)
         logger.info(
-            "%s %s → %d (%.1fms)",
-            request.method,
-            request.url.path,
-            status_code,
-            duration_ms,
+            f"{request.method} {request.url.path} → {status_code} ({duration_ms:.1f}ms)",
         )
         return response

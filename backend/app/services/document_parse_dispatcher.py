@@ -65,7 +65,7 @@ def run_parse_job(
         session.commit()
         session.refresh(job)
 
-        logger.info("Parse started: job_id=%s", job.id)
+        logger.info("Parse started", job_id=str(job.id))
 
         try:
             uploaded_file = session.get(UploadedFile, job.uploaded_file_id)
@@ -115,7 +115,7 @@ def run_parse_job(
             )
             if should_chunk:
                 with suppress(Exception):
-                    logger.info("Auto-chunking started: parse_job_id=%s", job.id)
+                    logger.info("Auto-chunking started", parse_job_id=str(job.id))
                     service = chunking_service or make_document_chunking_service(
                         session=session,
                         settings=settings,

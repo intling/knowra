@@ -96,10 +96,10 @@ class DocumentParseService:
         self.session.commit()
         self.session.refresh(job)
         logger.info(
-            "Parse job created: job_id=%s upload_id=%s file=%s",
-            job.id,
-            upload_id,
-            uploaded_file.original_filename,
+            "Parse job created",
+            job_id=str(job.id),
+            upload_id=str(upload_id),
+            file=uploaded_file.original_filename,
         )
         return job
 

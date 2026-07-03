@@ -202,10 +202,10 @@ class TestLoggerBind:
 
 
 class TestConsoleMode:
-    """验证 structlog ConsoleRenderer 输出行为。"""
+    """验证 structlog ConsoleRenderer 输出行为（console 输出到 stderr，文件始终 JSON）。"""
 
     def test_console_output_contains_trace_id(self, tmp_path):
-        """console 模式文件输出中包含 trace_id。"""
+        """文件 JSON 输出中包含 trace_id。"""
         _cleanup_root()
         log_path = tmp_path / "test.log"
         configure_logging(
@@ -221,11 +221,12 @@ class TestConsoleMode:
         logger.info("测试消息")
         _close_all_handlers()
 
-        content = log_path.read_text()
-        assert "01JFZ8AAAAAA" in content
+        content = log_path.read_text().strip()
+        parsed = json.loads(content)
+        assert parsed["trace_id"] == "01JFZ8AAAAAA"
 
     def test_console_output_contains_logger_name(self, tmp_path):
-        """console 模式文件输出中包含 logger 名称。"""
+        """文件 JSON 输出中包含 logger 名称。"""
         _cleanup_root()
         log_path = tmp_path / "test.log"
         configure_logging(
@@ -240,11 +241,12 @@ class TestConsoleMode:
         logger.info("测试消息")
         _close_all_handlers()
 
-        content = log_path.read_text()
-        assert "app.service" in content
+        content = log_path.read_text().strip()
+        parsed = json.loads(content)
+        assert parsed["logger"] == "app.service"
 
     def test_console_output_contains_message(self, tmp_path):
-        """console 模式文件输出中包含事件消息。"""
+        """文件 JSON 输出中包含事件消息。"""
         _cleanup_root()
         log_path = tmp_path / "test.log"
         configure_logging(
@@ -259,11 +261,12 @@ class TestConsoleMode:
         logger.info("文件上传完成")
         _close_all_handlers()
 
-        content = log_path.read_text()
-        assert "文件上传完成" in content
+        content = log_path.read_text().strip()
+        parsed = json.loads(content)
+        assert parsed["event"] == "文件上传完成"
 
     def test_console_output_inlines_extra_fields(self, tmp_path):
-        """console 模式文件输出中包含关键字参数传入的额外字段。"""
+        """文件 JSON 输出中包含关键字参数传入的额外字段。"""
         _cleanup_root()
         log_path = tmp_path / "test.log"
         configure_logging(
@@ -279,9 +282,10 @@ class TestConsoleMode:
         logger.info("上传完成", file_name="notes.pdf", byte_size=2048)
         _close_all_handlers()
 
-        content = log_path.read_text()
-        assert "notes.pdf" in content
-        assert "2048" in content
+        content = log_path.read_text().strip()
+        parsed = json.loads(content)
+        assert parsed["file_name"] == "notes.pdf"
+        assert parsed["byte_size"] == 2048
 
 
 # ---------------------------------------------------------------------------
@@ -492,7 +496,7 @@ class TestAutoFormatSelection:
         assert len(root.handlers) >= 1
 
     def test_debug_true_auto_sets_console_format(self, tmp_path):
-        """debug=True 且 LOG_FORMAT 为空时，日志应符合 console 格式。"""
+        """debug=True 且 LOG_FORMAT 为空时，文件日志应为 JSON 格式。"""
         _cleanup_root()
         log_path = tmp_path / "auto.log"
         configure_logging(
@@ -507,8 +511,9 @@ class TestAutoFormatSelection:
         logger.info("auto format test")
         _close_all_handlers()
 
-        content = log_path.read_text()
-        assert "auto format test" in content
+        content = log_path.read_text().strip()
+        parsed = json.loads(content)
+        assert parsed["event"] == "auto format test"
 
 
 # ---------------------------------------------------------------------------

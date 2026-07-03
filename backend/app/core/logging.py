@@ -8,8 +8,10 @@ Provides:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+from datetime import UTC, datetime
 from logging.handlers import RotatingFileHandler
 
 import structlog
@@ -54,9 +56,63 @@ def _trace_id_injector(_, __, event_dict: dict) -> dict:
     return event_dict
 
 
+# ── Foreign-record processors ────────────────────────────────────────────────
+# These extract metadata from the stdlib LogRecord (stored as ``_record`` in
+# the event dict) so that third-party / foreign log records are rendered with
+# the same fields as structlog events.
+
+
+def _foreign_add_level(_, __, event_dict: dict) -> dict:
+    """Extract log level from the LogRecord for foreign (non-structlog) records."""
+    record = event_dict.get("_record")
+    if record is not None:
+        event_dict.setdefault("level", record.levelname.lower())
+    return event_dict
+
+
+def _foreign_add_timestamp(_, __, event_dict: dict) -> dict:
+    """Add an ISO-8601 timestamp for foreign records, matching structlog's format."""
+    event_dict.setdefault(
+        "timestamp",
+        datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+    )
+    return event_dict
+
+
+def _foreign_add_logger_name(_, __, event_dict: dict) -> dict:
+    """Extract logger name from the LogRecord for foreign records."""
+    record = event_dict.get("_record")
+    if record is not None:
+        event_dict.setdefault("logger", record.name)
+    return event_dict
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+
+
+def _make_uvicorn_logging_config(level: int) -> dict:
+    """Return a minimal logging config that neutralizes uvicorn's handlers.
+
+    Uvicorn calls ``logging.config.dictConfig(LOGGING_CONFIG)`` during
+    ``Server.run()``.  The default config adds uvicorn's own formatter and
+    handler with ``propagate=False``.  We replace it with this stub that
+    only sets ``propagate=True`` — all uvicorn records bubble up to root
+    where our ``ProcessorFormatter`` and ``TraceFilter`` are installed.
+    """
+    level_name = logging.getLevelName(level)
+    return {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {},
+        "handlers": {},
+        "loggers": {
+            "uvicorn": {"propagate": True},
+            "uvicorn.error": {"level": level_name, "propagate": True},
+            "uvicorn.access": {"level": level_name, "propagate": True},
+        },
+    }
 
 
 def configure_logging(
@@ -80,8 +136,15 @@ def configure_logging(
     fmt = log_format or ("console" if debug else "json")
     level = _level_from_str(log_level)
 
-    # --- Renderer (used by ProcessorFormatter, not in structlog chain) ---
-    renderer = ConsoleRenderer() if fmt == "console" else JSONRenderer()
+    # --- Renderers ---
+    # Console: human-readable with colours in debug mode, JSON in production.
+    # File: always JSON Lines (one JSON object per line) for downstream ingestion.
+    console_renderer = (
+        ConsoleRenderer(pad_level=False, pad_event_to=0) if fmt == "console" else JSONRenderer()
+    )
+    file_renderer = JSONRenderer(
+        serializer=lambda obj, **kw: json.dumps(obj, ensure_ascii=False, **kw)
+    )
 
     # --- structlog: prepare event dict, don't render ---
     # ``wrap_for_formatter`` stores the event dict on the LogRecord so that
@@ -110,22 +173,40 @@ def configure_logging(
 
     root.addFilter(TraceFilter())
 
-    # ProcessorFormatter renders BOTH structlog events and foreign LogRecords
-    handler_fmt = structlog.stdlib.ProcessorFormatter(
+    # ProcessorFormatter renders BOTH structlog events and foreign LogRecords.
+    # ``foreign_pre_chain`` enriches non-structlog records (SQLAlchemy, uvicorn,
+    # docling, etc.) with level, timestamp, logger name, and trace_id so they
+    # look the same as structlog events.
+    console_formatter = structlog.stdlib.ProcessorFormatter(
         foreign_pre_chain=[
+            _foreign_add_level,
+            _foreign_add_timestamp,
+            _foreign_add_logger_name,
             _trace_id_injector,
             format_exc_info,
         ],
-        processor=renderer,
+        processor=console_renderer,
+    )
+
+    # File formatter: same enrichment, but always renders as JSON.
+    file_formatter = structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=[
+            _foreign_add_level,
+            _foreign_add_timestamp,
+            _foreign_add_logger_name,
+            _trace_id_injector,
+            format_exc_info,
+        ],
+        processor=file_renderer,
     )
 
     # Console handler
     console = logging.StreamHandler()
     console.setLevel(level)
-    console.setFormatter(handler_fmt)
+    console.setFormatter(console_formatter)
     root.addHandler(console)
 
-    # File handler
+    # File handler — always JSON Lines format
     os.makedirs(os.path.dirname(log_file_path) or ".", exist_ok=True)
     file_handler = RotatingFileHandler(
         log_file_path,
@@ -134,19 +215,47 @@ def configure_logging(
         encoding="utf-8",
     )
     file_handler.setLevel(level)
-    file_handler.setFormatter(handler_fmt)
+    file_handler.setFormatter(file_formatter)
     root.addHandler(file_handler)
 
     # --- Third-party logger integration ---
+    # SQLAlchemy
     for _name in ("sqlalchemy.engine", "sqlalchemy.engine.Engine", "sqlalchemy.pool"):
         _sqla = logging.getLogger(_name)
         _sqla.handlers.clear()
         _sqla.propagate = True
         _sqla.setLevel(logging.DEBUG if level <= logging.DEBUG else logging.WARNING)
 
+    # Docling — ensure its logs propagate through our formatter
+    for _name in ("docling", "docling_core"):
+        _logger = logging.getLogger(_name)
+        _logger.propagate = True
+
+    # --- Uvicorn: neutralize its built-in logging config ---
+    #
+    # Uvicorn's ``Server.run()`` calls ``config.configure_logging()`` AFTER the
+    # app module is imported.  That applies a ``dictConfig`` which resets
+    # uvicorn's internal loggers with ``propagate=False`` and its own handler.
+    # If we don't interfere here, the early startup messages ("Started server
+    # process", "Waiting for application startup") would use uvicorn's native
+    # format instead of our ProcessorFormatter.
+    #
+    # We replace uvicorn's LOGGING_CONFIG with a minimal version that only
+    # enables propagation — all records bubble up to root, through our
+    # ProcessorFormatter + TraceFilter.
+    _uvicorn_cfg = _make_uvicorn_logging_config(level)
+    import uvicorn.config as _uv_config
+
+    _uv_config.LOGGING_CONFIG = _uvicorn_cfg
+
+    # Pre-configure uvicorn loggers now so that even before uvicorn runs its
+    # (now-harmless) dictConfig, any messages go through our formatter.
     _trace_filter = TraceFilter()
     for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
-        logging.getLogger(_name).addFilter(_trace_filter)
+        _uvi = logging.getLogger(_name)
+        _uvi.handlers.clear()
+        _uvi.propagate = True
+        _uvi.addFilter(_trace_filter)
 
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
