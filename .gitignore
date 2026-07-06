@@ -33,3 +33,7 @@ backend/storage/docling-cache/
 backend/storage/uploads/
 backend/storage/parsed/
 backend/storage/chunks/
+
+# Logs
+logs/
+*.log
