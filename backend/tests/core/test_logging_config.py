@@ -10,14 +10,16 @@ class TestLoggingConfigDefaults:
         settings = Settings(_env_file=None)
         assert settings.log_level == "INFO"
 
-    def test_log_format_default_when_debug_true(self):
+    def test_log_format_default_when_debug_true(self, monkeypatch):
         """debug=true（默认）且未设置 LOG_FORMAT 时，自动推断为 console"""
+        monkeypatch.delenv("LOG_FORMAT", raising=False)
         settings = Settings(_env_file=None)
         assert settings.debug is True
         assert settings.log_format == "console"
 
     def test_log_format_default_when_debug_false(self, monkeypatch):
         """debug=false 且未设置 LOG_FORMAT 时，自动推断为 json"""
+        monkeypatch.delenv("LOG_FORMAT", raising=False)
         monkeypatch.setenv("DEBUG", "false")
         settings = Settings(_env_file=None)
         assert settings.debug is False

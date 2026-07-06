@@ -545,3 +545,24 @@ class TestTraceFilterPreserved:
         content = log_path.read_text().strip()
         parsed = json.loads(content)
         assert parsed["trace_id"] == "filter-test-123"
+
+
+class TestHttpAccessLogLevel:
+    """验证访问日志默认不再占用 INFO 输出。"""
+
+    def test_uvicorn_access_logs_are_hidden_at_info_level(self, tmp_path):
+        _cleanup_root()
+        log_path = tmp_path / "access.log"
+        configure_logging(
+            debug=True,
+            log_level="INFO",
+            log_format="json",
+            log_file_path=str(log_path),
+            log_file_max_size=1024 * 1024,
+            log_file_backup_count=2,
+        )
+
+        logging.getLogger("uvicorn.access").info('127.0.0.1:64500 - "GET /api/health HTTP/1.1" 200')
+        _close_all_handlers()
+
+        assert log_path.read_text() == ""

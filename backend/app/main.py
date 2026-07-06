@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import Settings, get_settings
-from app.core.logging import TraceFilter, configure_logging
+from app.core.logging import configure_logging, configure_uvicorn_loggers
 
 # ── Configure logging BEFORE any app module that logs at import time ──────────
 # db/session.py creates the engine and logs "数据库引擎已创建" at module
@@ -29,6 +28,11 @@ configure_logging(
 from app.api.router import api_router  # noqa: E402
 from app.core.middleware import RequestLoggingMiddleware  # noqa: E402
 from app.middleware.trace import TraceMiddleware  # noqa: E402
+from app.services.document_model_bootstrap import DocumentModelBootstrapService  # noqa: E402
+from app.services.document_model_runtime import (  # noqa: E402
+    DocumentModelPreloader,
+    DocumentModelRuntime,
+)
 
 
 @asynccontextmanager
@@ -41,15 +45,22 @@ async def lifespan(app: FastAPI):
     handler re-applies the fix just in case something else re-confiqures
     uvicorn's loggers before startup.
     """
-    _trace_filter = TraceFilter()
-    for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
-        _uvi = logging.getLogger(_name)
-        _uvi.handlers.clear()
-        _uvi.filters.clear()
-        _uvi.propagate = True
-        _uvi.addFilter(_trace_filter)
+    configure_uvicorn_loggers()
 
-    yield
+    if not hasattr(app.state, "document_model_readiness"):
+        bootstrap_factory = app.state.document_model_bootstrap_service_factory
+        runtime_factory = app.state.document_model_runtime_factory
+        bootstrap_readiness = bootstrap_factory().run()
+        runtime = runtime_factory(bootstrap_readiness)
+        app.state.document_model_readiness = runtime
+        runtime.start_async()
+
+    try:
+        yield
+    finally:
+        runtime = getattr(app.state, "document_model_readiness", None)
+        if hasattr(runtime, "shutdown"):
+            runtime.shutdown()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -70,6 +81,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title=app_settings.app_name,
         debug=app_settings.debug,
         lifespan=lifespan,
+    )
+    app.state.settings = app_settings
+    app.state.document_model_bootstrap_service_factory = lambda: DocumentModelBootstrapService(
+        settings=app_settings
+    )
+    app.state.document_model_runtime_factory = lambda readiness: (
+        DocumentModelRuntime.from_bootstrap_readiness(
+            readiness,
+            preloader=DocumentModelPreloader(settings=app_settings),
+        )
     )
     # TraceMiddleware must be outermost so trace_id is set in the same
     # asyncio task before any child middleware creates subtasks.  Any

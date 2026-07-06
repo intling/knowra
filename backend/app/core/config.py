@@ -29,6 +29,11 @@ DEFAULT_DOCUMENT_PARSE_ALLOWED_EXTENSIONS = (
     ".txt",
 )
 
+DEFAULT_DOCUMENT_MODEL_DOCLING_REQUIRED_MODELS = (
+    "layout",
+    "tableformer",
+)
+
 
 class Settings(BaseSettings):
     app_name: str = "knowra"
@@ -63,6 +68,16 @@ class Settings(BaseSettings):
     document_chunk_repeat_table_header: bool = True
     document_chunk_inline_text_max_bytes: int = 2048
     document_chunk_artifact_storage_dir: str = "storage/chunks"
+    document_model_bootstrap_enabled: bool = True
+    document_model_bootstrap_strategy: str = "download_missing"
+    document_model_bootstrap_failure_policy: str = "degraded"
+    document_model_docling_artifact_dir: str = "storage/document-models/docling"
+    document_model_hf_endpoint: str = ""
+    document_model_docling_required_models: Annotated[list[str], NoDecode] = list(
+        DEFAULT_DOCUMENT_MODEL_DOCLING_REQUIRED_MODELS
+    )
+    document_model_tokenizer_name: str = "Qwen/Qwen2-7B"
+    document_model_tokenizer_cache_dir: str = "storage/document-models/tokenizers"
 
     # --- logging ---
     log_level: str = "INFO"
@@ -104,6 +119,11 @@ class Settings(BaseSettings):
     @classmethod
     def parse_document_parse_allowed_extensions(cls, value: str | list[str]) -> list[str]:
         return [extension.lower() for extension in parse_csv_list(value)]
+
+    @field_validator("document_model_docling_required_models", mode="before")
+    @classmethod
+    def parse_document_model_docling_required_models(cls, value: str | list[str]) -> list[str]:
+        return parse_csv_list(value)
 
     @model_validator(mode="after")
     def _resolve_log_format(self) -> Settings:

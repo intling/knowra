@@ -44,19 +44,22 @@ class DoclingChunkerAdapter:
         self,
         *,
         config: DocumentChunkingConfig,
+        model_readiness: object | None = None,
         hybrid_chunker_cls: type | None = None,
         tokenizer_factory: Callable[..., Any] | None = None,
     ) -> None:
         self.config = config
+        self.model_readiness = model_readiness
         self.hybrid_chunker_cls = hybrid_chunker_cls or load_hybrid_chunker_cls()
         self.tokenizer_factory = tokenizer_factory or make_huggingface_tokenizer
 
     def chunk(self, document: object) -> list[NormalizedChunk]:
         try:
-            tokenizer = self.tokenizer_factory(
-                model_name=self.config.tokenizer_model,
+            tokenizer_model = self._tokenizer_model()
+            tokenizer = self._preloaded_tokenizer() or self.tokenizer_factory(
+                model_name=tokenizer_model,
                 max_tokens=self.config.max_tokens,
-                cache_dir=self.config.tokenizer_cache_dir,
+                cache_dir=self._tokenizer_cache_dir(),
             )
             chunker = self.hybrid_chunker_cls(
                 tokenizer=tokenizer,
@@ -76,6 +79,28 @@ class DoclingChunkerAdapter:
             raise
         except Exception as exc:
             raise DocumentChunkingError(str(exc)) from exc
+
+    def _tokenizer_model(self) -> str:
+        tokenizer = getattr(self.model_readiness, "tokenizer", None)
+        return str(getattr(tokenizer, "model_name", None) or self.config.tokenizer_model)
+
+    def _tokenizer_cache_dir(self) -> str | None:
+        tokenizer = getattr(self.model_readiness, "tokenizer", None)
+        return getattr(tokenizer, "cache_dir", None) or self.config.tokenizer_cache_dir
+
+    def _preloaded_tokenizer(self) -> object | None:
+        tokenizer = getattr(self.model_readiness, "tokenizer", None)
+        if getattr(tokenizer, "status", None) == "ready":
+            resource = getattr(tokenizer, "resource", None)
+            if resource is not None and self._tokenizer_max_tokens_matches(resource):
+                return resource
+        return None
+
+    def _tokenizer_max_tokens_matches(self, tokenizer: object) -> bool:
+        get_max_tokens = getattr(tokenizer, "get_max_tokens", None)
+        if not callable(get_max_tokens):
+            return True
+        return int(get_max_tokens()) == self.config.max_tokens
 
     def _normalize_chunk(
         self,

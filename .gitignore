@@ -35,5 +35,8 @@ backend/storage/parsed/
 backend/storage/chunks/
 
 # Logs
-logs/
+backend/logs/**
 *.log
+
+# Models
+backend/storage/**

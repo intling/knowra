@@ -18,6 +18,7 @@ from app.services.document_chunking import DocumentChunkingService
 from app.services.document_parse_storage import ParsedArtifactStorage
 from app.services.document_parser import (
     DoclingParserAdapter,
+    DocumentFormat,
     DocumentFormatPolicy,
     DocumentParseError,
     ParsedDocumentPayload,
@@ -48,6 +49,7 @@ def run_parse_job(
     artifact_storage_root: str | Path | None = None,
     document_chunking_enabled: bool | None = None,
     chunking_service: object | None = None,
+    model_readiness: object | None = None,
 ) -> None:
     settings = get_settings()
     session_context = session_factory or default_session_factory
@@ -82,10 +84,15 @@ def run_parse_job(
                 original_filename=uploaded_file.original_filename,
                 content_type=uploaded_file.content_type,
             )
+            ensure_docling_models_ready(
+                document_format=document_format,
+                model_readiness=model_readiness,
+            )
             active_parser = parser or DoclingParserAdapter(
                 ocr_enabled=settings.document_parse_ocr_enabled,
                 max_pages=settings.document_parse_max_pages,
-                docling_cache_dir=settings.document_parse_docling_cache_dir,
+                docling_artifact_dir=get_docling_artifact_dir(settings, model_readiness),
+                converter=get_docling_converter(model_readiness),
             )
             parse_result = normalize_parse_result(
                 active_parser.parse(source_path, document_format=document_format)
@@ -103,10 +110,10 @@ def run_parse_job(
             )
             mark_parse_job_succeeded(session=session, job=job)
             logger.info(
-                "Parse succeeded: job_id=%s pages=%d segments=%d",
-                job.id,
-                payload.page_count or 0,
-                len(payload.segments),
+                "Parse succeeded",
+                job_id=str(job.id),
+                pages=payload.page_count or 0,
+                segments=len(payload.segments),
             )
             should_chunk = (
                 settings.document_chunking_enabled
@@ -120,22 +127,38 @@ def run_parse_job(
                         session=session,
                         settings=settings,
                         upload_storage_root=upload_storage_root,
+                        model_readiness=model_readiness,
                     )
                     chunk_job = service.run_initial_chunking(
                         parsed_document=parsed_document,
                         transient_docling_document=parse_result.transient_docling_document,
                     )
                     logger.info(
-                        "Auto-chunking succeeded: parse_job_id=%s chunk_job_id=%s chunks=%d",
-                        job.id,
-                        chunk_job.id,
-                        chunk_job.chunk_count or 0,
+                        "Auto-chunking succeeded",
+                        parse_job_id=str(job.id),
+                        chunk_job_id=str(chunk_job.id),
+                        chunks=chunk_job.chunk_count or 0,
                     )
+        except DocumentModelUnavailableError as exc:
+            logger.error(
+                "Parse failed",
+                job_id=str(job.id),
+                reason="model_unavailable",
+                error=str(exc),
+                exc_info=True,
+            )
+            job.status = "failed"
+            job.error_code = "model_unavailable"
+            job.error_message = str(exc)
+            job.finished_at = utc_now()
+            job.updated_at = utc_now()
+            session.add(job)
+            session.commit()
         except Exception as exc:
             logger.error(
-                "Parse failed: job_id=%s error=%s",
-                job.id,
-                exc,
+                "Parse failed",
+                job_id=str(job.id),
+                error=str(exc),
                 exc_info=True,
             )
             job.status = "failed"
@@ -218,26 +241,68 @@ def normalize_parse_result(
     )
 
 
+class DocumentModelUnavailableError(DocumentParseError):
+    pass
+
+
+def ensure_docling_models_ready(
+    *,
+    document_format: DocumentFormat,
+    model_readiness: object | None,
+) -> None:
+    if document_format in {DocumentFormat.TXT, DocumentFormat.MARKDOWN}:
+        return
+    docling = getattr(model_readiness, "docling", None)
+    if docling is None or getattr(docling, "status", "ready") == "ready":
+        return
+    if getattr(docling, "status", "ready") == "skipped":
+        return
+    if getattr(docling, "status", "ready") == "loading":
+        raise DocumentModelUnavailableError("Document models are still loading")
+    missing = ", ".join(getattr(docling, "missing_models", []) or [])
+    detail = (
+        f"Document models are unavailable: {missing}"
+        if missing
+        else "Document models are unavailable"
+    )
+    raise DocumentModelUnavailableError(detail)
+
+
+def get_docling_artifact_dir(settings, model_readiness: object | None) -> str:
+    docling = getattr(model_readiness, "docling", None)
+    artifact_dir = getattr(docling, "artifact_dir", None)
+    if artifact_dir:
+        return str(artifact_dir)
+    return settings.document_model_docling_artifact_dir
+
+
+def get_docling_converter(model_readiness: object | None) -> object | None:
+    docling = getattr(model_readiness, "docling", None)
+    return getattr(docling, "resource", None)
+
+
 def make_document_chunking_service(
     *,
     session: Session,
     settings,
     upload_storage_root: str | Path | None = None,
+    model_readiness: object | None = None,
 ) -> DocumentChunkingService:
     config = DocumentChunkingConfig(
-        tokenizer_model=settings.document_chunk_tokenizer_model,
+        tokenizer_model=settings.document_model_tokenizer_name,
         max_tokens=settings.document_chunk_max_tokens,
         merge_peers=settings.document_chunk_merge_peers,
         repeat_table_header=settings.document_chunk_repeat_table_header,
         inline_text_max_bytes=settings.document_chunk_inline_text_max_bytes,
-        tokenizer_cache_dir=settings.document_parse_docling_cache_dir,
+        tokenizer_cache_dir=settings.document_model_tokenizer_cache_dir,
     )
     return DocumentChunkingService(
         session=session,
-        chunker=DoclingChunkerAdapter(config=config),
+        chunker=DoclingChunkerAdapter(config=config, model_readiness=model_readiness),
         artifact_storage=ChunkArtifactStorage(settings.document_chunk_artifact_storage_dir),
         config=config,
         upload_storage=LocalFileStorage(upload_storage_root or settings.upload_storage_dir),
+        model_readiness=model_readiness,
     )
 
 

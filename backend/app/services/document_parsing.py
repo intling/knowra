@@ -33,6 +33,10 @@ class DocumentParseTooLargeError(Exception):
     pass
 
 
+class DocumentParseModelLoadingError(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class DocumentParseConflictError(Exception):
     job: DocumentParseJob
@@ -102,6 +106,36 @@ class DocumentParseService:
             file=uploaded_file.original_filename,
         )
         return job
+
+    def ensure_parse_request_allowed(
+        self,
+        *,
+        current_user: User,
+        upload_id: UUID,
+        model_readiness: object | None,
+    ) -> None:
+        uploaded_file = self._get_owned_upload(current_user=current_user, upload_id=upload_id)
+        path = self._path_for_upload(uploaded_file)
+        document_format = self.format_policy.validate(
+            path,
+            original_filename=uploaded_file.original_filename,
+            content_type=uploaded_file.content_type,
+        )
+        if document_format.value in {"txt", "markdown"}:
+            return
+
+        docling = getattr(model_readiness, "docling", None)
+        status = getattr(docling, "status", "ready")
+        if status == "loading":
+            raise DocumentParseModelLoadingError("Document models are still loading")
+        if status == "unavailable":
+            missing = ", ".join(getattr(docling, "missing_models", []) or [])
+            detail = (
+                f"Document models are unavailable: {missing}"
+                if missing
+                else "Document models are unavailable"
+            )
+            raise DocumentParseModelLoadingError(detail)
 
     def _get_owned_upload(self, *, current_user: User, upload_id: UUID) -> UploadedFile:
         statement = select(UploadedFile).where(

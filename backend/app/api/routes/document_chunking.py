@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy import func
@@ -137,6 +137,7 @@ def read_document_chunk(chunk_id: UUID, session: SessionDep) -> DocumentChunkRea
 )
 def rechunk_parsed_document(
     parsed_document_id: UUID,
+    http_request: Request,
     session: SessionDep,
     settings: SettingsDep,
     request: RechunkRequest | None = None,
@@ -158,6 +159,16 @@ def rechunk_parsed_document(
             content=jsonable_encoder(payload),
         )
 
+    requested_tokenizer = request.tokenizer_model if request and request.tokenizer_model else None
+    if requested_tokenizer and requested_tokenizer != settings.document_model_tokenizer_name:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(f"Tokenizer {requested_tokenizer} is not in startup-prepared model scope"),
+        )
+    ensure_tokenizer_runtime_ready(
+        getattr(http_request.app.state, "document_model_readiness", None)
+    )
+
     if not original_upload_file_is_available(
         session=session,
         parsed_document=parsed_document,
@@ -174,6 +185,25 @@ def rechunk_parsed_document(
         config=make_chunking_config(settings=settings, request=request),
     )
     return DocumentChunkJobRead.model_validate(job, from_attributes=True)
+
+
+def ensure_tokenizer_runtime_ready(model_readiness: object | None) -> None:
+    tokenizer = getattr(model_readiness, "tokenizer", None)
+    status_value = getattr(tokenizer, "status", "ready")
+    if status_value in {"ready", "skipped"}:
+        return
+    if status_value == "loading":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Tokenizer models are still loading",
+        )
+    missing = ", ".join(getattr(tokenizer, "missing_models", []) or [])
+    detail = (
+        f"Tokenizer models are unavailable: {missing}"
+        if missing
+        else "Tokenizer models are unavailable"
+    )
+    raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
 
 
 def require_current_user(session: Session):
@@ -300,7 +330,7 @@ def make_chunking_config(
     return DocumentChunkingConfig(
         tokenizer_model=request.tokenizer_model
         if request and request.tokenizer_model
-        else settings.document_chunk_tokenizer_model,
+        else settings.document_model_tokenizer_name,
         max_tokens=max_tokens,
         merge_peers=request.merge_peers
         if request and request.merge_peers is not None
@@ -309,7 +339,7 @@ def make_chunking_config(
         if request and request.repeat_table_header is not None
         else settings.document_chunk_repeat_table_header,
         inline_text_max_bytes=settings.document_chunk_inline_text_max_bytes,
-        tokenizer_cache_dir=settings.document_parse_docling_cache_dir,
+        tokenizer_cache_dir=settings.document_model_tokenizer_cache_dir,
     )
 
 

@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
 
 from app.core.config import get_settings
 from app.db.session import get_session
@@ -60,7 +60,7 @@ def parse_client(monkeypatch, session: Session, tmp_path) -> Generator[TestClien
 
     with suppress(ModuleNotFoundError):
         dispatcher = import_module("app.services.document_parse_dispatcher")
-        monkeypatch.setattr(dispatcher, "run_parse_job", lambda job_id: None)
+        monkeypatch.setattr(dispatcher, "run_parse_job", lambda *args, **kwargs: None)
 
     def override_get_session() -> Generator[Session]:
         yield session
@@ -93,6 +93,14 @@ def get_models_module():
     return import_module("app.models.document_parsing")
 
 
+def make_loading_readiness():
+    return import_module("types").SimpleNamespace(
+        status="loading",
+        docling=import_module("types").SimpleNamespace(status="loading", missing_models=[]),
+        tokenizer=import_module("types").SimpleNamespace(status="loading", missing_models=[]),
+    )
+
+
 # 测试 POST /api/uploads/{upload_id}/parse 成功创建异步解析作业。
 def test_post_upload_parse_returns_accepted_job(
     parse_client: TestClient,
@@ -111,6 +119,49 @@ def test_post_upload_parse_returns_accepted_job(
     assert payload["owner_user_id"] == str(user.id)
     assert payload["status"] in {"queued", "running"}
     assert payload["created_at"].endswith("Z")
+
+
+# 测试 Docling 模型仍在内存加载时，PDF 解析请求快速返回 503 且不创建作业。
+# 该测试避免首个 PDF 请求进入 Docling pipeline 的长时间懒加载。
+def test_post_upload_parse_returns_503_when_docling_models_are_loading(
+    parse_client: TestClient,
+    session: Session,
+    tmp_path,
+) -> None:
+    parse_client.app.state.document_model_readiness = make_loading_readiness()
+    user = seed_current_user(session)
+    upload = make_uploaded_file(session, tmp_path / "uploads", user)
+
+    response = parse_client.post(f"/api/uploads/{upload.id}/parse")
+
+    assert response.status_code == 503
+    assert "loading" in response.text.lower()
+    models = get_models_module()
+    assert session.exec(select(models.DocumentParseJob)).all() == []
+
+
+# 测试纯文本解析不依赖 Docling 内存模型，loading 状态下仍可创建解析作业。
+# 该测试保护文本资料接入不被 PDF 模型预加载无谓阻塞。
+def test_post_upload_parse_allows_text_when_docling_models_are_loading(
+    parse_client: TestClient,
+    session: Session,
+    tmp_path,
+) -> None:
+    parse_client.app.state.document_model_readiness = make_loading_readiness()
+    user = seed_current_user(session)
+    upload = make_uploaded_file(
+        session,
+        tmp_path / "uploads",
+        user,
+        content=b"plain notes",
+        original_filename="notes.txt",
+        content_type="text/plain",
+    )
+
+    response = parse_client.post(f"/api/uploads/{upload.id}/parse")
+
+    assert response.status_code == 202
+    assert response.json()["uploaded_file_id"] == str(upload.id)
 
 
 # 测试当前用户不可用时拒绝创建无归属解析作业。

@@ -40,6 +40,16 @@ class TraceFilter(logging.Filter):
         return True
 
 
+class HttpAccessDebugFilter(logging.Filter):
+    """Demote HTTP access logs so request/response noise only appears in DEBUG."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.name == "uvicorn.access" and record.levelno == logging.INFO:
+            record.levelno = logging.DEBUG
+            record.levelname = logging.getLevelName(logging.DEBUG)
+        return True
+
+
 # ---------------------------------------------------------------------------
 # Processor helpers
 # ---------------------------------------------------------------------------
@@ -250,12 +260,20 @@ def configure_logging(
 
     # Pre-configure uvicorn loggers now so that even before uvicorn runs its
     # (now-harmless) dictConfig, any messages go through our formatter.
+    configure_uvicorn_loggers()
+
+
+def configure_uvicorn_loggers() -> None:
     _trace_filter = TraceFilter()
+    _access_filter = HttpAccessDebugFilter()
     for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
         _uvi = logging.getLogger(_name)
         _uvi.handlers.clear()
+        _uvi.filters.clear()
         _uvi.propagate = True
         _uvi.addFilter(_trace_filter)
+        if _name == "uvicorn.access":
+            _uvi.addFilter(_access_filter)
 
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:

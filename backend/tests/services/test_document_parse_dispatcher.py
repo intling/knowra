@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from contextlib import suppress
 from importlib import import_module
+from types import SimpleNamespace
 
 import pytest
 from fastapi import BackgroundTasks
@@ -51,6 +52,27 @@ class FakeParser:
         if self.error is not None:
             raise self.error
         return self.payload
+
+
+def make_loading_readiness():
+    return SimpleNamespace(
+        status="loading",
+        docling=SimpleNamespace(status="loading", missing_models=[]),
+        tokenizer=SimpleNamespace(status="ready", missing_models=[]),
+    )
+
+
+def make_ready_readiness_with_converter(converter):
+    return SimpleNamespace(
+        status="ready",
+        docling=SimpleNamespace(
+            status="ready",
+            artifact_dir="storage/document-models/docling",
+            missing_models=[],
+            resource=converter,
+        ),
+        tokenizer=SimpleNamespace(status="ready", missing_models=[]),
+    )
 
 
 # 测试 BackgroundTasks dispatcher 成功注册 run_parse_job(job_id)。
@@ -198,3 +220,76 @@ def test_run_parse_job_skips_jobs_that_are_not_queued(
     stored_job = session.get(models.DocumentParseJob, job.id)
     assert stored_job.status == status
     assert parser.calls == 0
+
+
+# 测试 Docling 模型 loading 时后台 PDF 解析作业快速失败，不调用 parser。
+# 该测试覆盖绕过 API 直接执行后台任务的保护分支。
+def test_run_parse_job_marks_model_unavailable_when_docling_models_are_loading(
+    session: Session,
+    tmp_path,
+) -> None:
+    dispatcher_module = get_dispatcher_module()
+    models = get_models_module()
+    user = make_user(session)
+    upload = make_uploaded_file(session, tmp_path / "uploads", user)
+    job = models.DocumentParseJob(uploaded_file_id=upload.id, owner_user_id=user.id)
+    session.add(job)
+    session.commit()
+    parser = FakeParser()
+
+    dispatcher_module.run_parse_job(
+        job.id,
+        session_factory=SessionFactory(session),
+        parser=parser,
+        upload_storage_root=tmp_path / "uploads",
+        artifact_storage_root=tmp_path / "parsed",
+        model_readiness=make_loading_readiness(),
+    )
+
+    stored_job = session.get(models.DocumentParseJob, job.id)
+    assert stored_job.status == "failed"
+    assert stored_job.error_code == "model_unavailable"
+    assert "loading" in stored_job.error_message.lower()
+    assert parser.calls == 0
+
+
+# 测试 runtime ready 时后台解析会把预加载 converter 注入 DoclingParserAdapter。
+# 该测试确保预加载完成后不会重新初始化 Docling PDF pipeline。
+def test_run_parse_job_reuses_preloaded_docling_converter(
+    monkeypatch,
+    session: Session,
+    tmp_path,
+) -> None:
+    dispatcher_module = get_dispatcher_module()
+    parser_module = import_module("app.services.document_parser")
+    models = get_models_module()
+    user = make_user(session)
+    upload = make_uploaded_file(session, tmp_path / "uploads", user)
+    job = models.DocumentParseJob(uploaded_file_id=upload.id, owner_user_id=user.id)
+    session.add(job)
+    session.commit()
+    preloaded_converter = object()
+    captured = {}
+
+    class FakeDoclingParserAdapter:
+        def __init__(self, **kwargs):
+            captured["kwargs"] = kwargs
+
+        def parse(self, *_args, **_kwargs):
+            return parser_module.ParsedDocumentResult(
+                persistent_payload=ParsedPayloadFactory().make()
+            )
+
+    monkeypatch.setattr(dispatcher_module, "DoclingParserAdapter", FakeDoclingParserAdapter)
+
+    dispatcher_module.run_parse_job(
+        job.id,
+        session_factory=SessionFactory(session),
+        upload_storage_root=tmp_path / "uploads",
+        artifact_storage_root=tmp_path / "parsed",
+        model_readiness=make_ready_readiness_with_converter(preloaded_converter),
+    )
+
+    stored_job = session.get(models.DocumentParseJob, job.id)
+    assert stored_job.status == "succeeded"
+    assert captured["kwargs"]["converter"] is preloaded_converter
