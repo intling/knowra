@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy import func
@@ -23,6 +23,7 @@ from app.services.document_parse_dispatcher import BackgroundTasksParseJobDispat
 from app.services.document_parser import UnsupportedDocumentFormatError
 from app.services.document_parsing import (
     DocumentParseConflictError,
+    DocumentParseModelLoadingError,
     DocumentParseNotFoundError,
     DocumentParseService,
     DocumentParseTooLargeError,
@@ -44,6 +45,7 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 def create_document_parse_job(
     upload_id: UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     session: SessionDep,
     settings: SettingsDep,
 ) -> DocumentParseJobRead | JSONResponse:
@@ -51,11 +53,21 @@ def create_document_parse_job(
     service = make_document_parse_service(session=session, settings=settings)
 
     try:
+        service.ensure_parse_request_allowed(
+            current_user=current_user,
+            upload_id=upload_id,
+            model_readiness=getattr(request.app.state, "document_model_readiness", None),
+        )
         job = service.create_parse_job(current_user=current_user, upload_id=upload_id)
     except DocumentParsingDisabledError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Document parsing is disabled",
+        ) from exc
+    except DocumentParseModelLoadingError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
         ) from exc
     except DocumentParseNotFoundError as exc:
         raise HTTPException(

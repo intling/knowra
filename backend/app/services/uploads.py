@@ -102,7 +102,7 @@ class UploadService:
 
     def create_upload(self, *, current_user: User, file: UploadFile) -> UploadedFile:
         content_type = file.content_type
-        if content_type and content_type not in self.allowed_content_types:
+        if not self._is_allowed_content_type(content_type, file.filename):
             logger.warning(
                 "不支持的文件类型",
                 content_type=content_type,

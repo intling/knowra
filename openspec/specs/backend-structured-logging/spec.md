@@ -271,18 +271,29 @@
 所有业务模块 SHALL 使用以下模式输出日志：
 
 - 获取 logger：`from app.core.logging import get_logger` + `logger = get_logger(__name__)`
-- 结构化字段：使用关键字参数传递，如 `logger.info("上传完成", file_name="notes.pdf", byte_size=2048)`
-- 禁止使用 `%s` / `%d` 格式占位符——structlog 会将其捕获为 `positional_args` 而非展开渲染，导致日志不可读
+- 事件消息：使用固定、稳定的字符串描述发生了什么，如 `logger.info("上传完成", ...)`
+- 结构化字段：所有动态值 MUST 使用关键字参数传递，如 `logger.info("上传完成", file_name="notes.pdf", byte_size=2048)`
+- 禁止使用 `%s` / `%d` 等位置参数格式化——structlog 会将其捕获为 `positional_args`，导致日志不可读
+- 禁止使用 f-string、`str.format()` 或字符串拼接把动态值写入事件消息
+- 禁止使用 `extra={...}` 字典传递字段；字段 MUST 直接作为 keyword arguments 传入
 - 上下文绑定：`logger.bind(key=value)` 用于在调用链中持久化上下文
 
-#### Scenario: 关键字参数替代 extra 字典和 % 占位符
+#### Scenario: 使用关键字参数传递动态字段
 
 - **WHEN** 业务代码调用 `logger.info("处理完成", user_id="u_01", duration_ms=150)`
 - **THEN** 日志输出 MUST 包含 `user_id` 和 `duration_ms` 字段（作为结构化数据，而非嵌入在消息字符串中）
+- **AND** 日志的 `event` 字段 MUST 保持为固定字符串 `"处理完成"`
 - **AND** 该调用方式 SHALL 通过 Code Review 检查
 
-#### Scenario: 禁止使用 print 和 C 风格占位符
+#### Scenario: 禁止混用不同日志字段写法
 
-- **WHEN** Code Review 发现代码中使用 `print()`、`logging.getLogger()` 直接输出日志，或使用 `logger.info("%s %d", arg1, arg2)` 占位符风格
+- **WHEN** Code Review 发现业务代码使用 `logger.info("处理完成: user_id=%s", user_id)`、`logger.info(f"处理完成: {user_id}")`、`logger.info("处理完成: {}".format(user_id))` 或 `logger.info("处理完成", extra={"user_id": user_id})`
 - **THEN** Review MUST 拒绝该代码
-- **AND** 提示使用 `from app.core.logging import get_logger` + 关键字参数方式替代
+- **AND** 提示使用 `logger.info("处理完成", user_id=user_id)` 形式替代
+- **AND** 对应测试或静态检查 SHOULD 覆盖这类禁止写法，避免后续重新引入
+
+#### Scenario: 禁止绕过项目 logger
+
+- **WHEN** Code Review 发现代码中使用 `print()`、`logging.getLogger()` 或 `logging.basicConfig()` 直接输出日志
+- **THEN** Review MUST 拒绝该代码
+- **AND** 提示使用 `from app.core.logging import get_logger` 获取项目 logger

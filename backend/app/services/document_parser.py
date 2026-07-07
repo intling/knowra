@@ -151,12 +151,18 @@ class DoclingParserAdapter:
         *,
         ocr_enabled: bool,
         max_pages: int,
-        docling_cache_dir: str | Path,
+        docling_cache_dir: str | Path | None = None,
+        docling_artifact_dir: str | Path | None = None,
         converter: object | None = None,
     ) -> None:
         self.ocr_enabled = ocr_enabled
         self.max_pages = max_pages
-        self.docling_cache_dir = Path(docling_cache_dir)
+        artifact_dir = (
+            docling_artifact_dir if docling_artifact_dir is not None else docling_cache_dir
+        )
+        if artifact_dir is None:
+            raise ValueError("docling_artifact_dir is required")
+        self.docling_artifact_dir = Path(artifact_dir)
         self.converter = converter
 
     def parse(self, path: str | Path, *, document_format: DocumentFormat) -> ParsedDocumentResult:
@@ -207,6 +213,13 @@ class DoclingParserAdapter:
         )
 
     def _create_converter(self) -> object:
+        return self._create_converter_instance(preload=False)
+
+    def create_preloaded_converter(self) -> object:
+        converter = self._create_converter_instance(preload=True)
+        return converter
+
+    def _create_converter_instance(self, *, preload: bool) -> object:
         try:
             from docling.datamodel.base_models import InputFormat
             from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -216,18 +229,21 @@ class DoclingParserAdapter:
 
         pdf_options = PdfPipelineOptions()
         pdf_options.do_ocr = self.ocr_enabled
-        if self._docling_cache_dir_has_artifacts():
-            pdf_options.artifacts_path = self.docling_cache_dir
+        if self._docling_artifact_dir_has_artifacts():
+            pdf_options.artifacts_path = self.docling_artifact_dir
 
-        return DocumentConverter(
+        converter = DocumentConverter(
             format_options={
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_options),
             }
         )
+        if preload:
+            converter.initialize_pipeline(InputFormat.PDF)
+        return converter
 
-    def _docling_cache_dir_has_artifacts(self) -> bool:
+    def _docling_artifact_dir_has_artifacts(self) -> bool:
         try:
-            return self.docling_cache_dir.is_dir() and any(self.docling_cache_dir.iterdir())
+            return self.docling_artifact_dir.is_dir() and any(self.docling_artifact_dir.iterdir())
         except OSError:
             return False
 

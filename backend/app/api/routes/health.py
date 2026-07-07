@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from app.core.config import Settings, get_settings
@@ -16,13 +16,37 @@ class HealthResponse(BaseModel):
     status: str
     app_name: str
     environment: str
+    document_models: dict | None = None
 
 
 @router.get("/health", response_model=HealthResponse)
-def read_health(settings: SettingsDep) -> HealthResponse:
+def read_health(request: Request, settings: SettingsDep) -> HealthResponse:
     logger.debug("健康检查", app_name=settings.app_name, environment=settings.app_env)
     return HealthResponse(
         status="ok",
         app_name=settings.app_name,
         environment=settings.app_env,
+        document_models=serialize_document_model_readiness(
+            getattr(request.app.state, "document_model_readiness", None)
+        ),
     )
+
+
+def serialize_document_model_readiness(readiness: object | None) -> dict:
+    if readiness is None:
+        return {"status": "skipped", "docling": None, "tokenizer": None}
+
+    return {
+        "status": getattr(readiness, "status", "skipped"),
+        "docling": serialize_component(getattr(readiness, "docling", None)),
+        "tokenizer": serialize_component(getattr(readiness, "tokenizer", None)),
+    }
+
+
+def serialize_component(component: object | None) -> dict | None:
+    if component is None:
+        return None
+    return {
+        "status": getattr(component, "status", "skipped"),
+        "missing_models": list(getattr(component, "missing_models", []) or []),
+    }

@@ -69,7 +69,24 @@ backend/app/
 - 检索和生成链路应保留可观测信息，例如查询、召回片段、引用来源和错误原因。
 - 数据模型和 API schema 应区分清楚，避免把数据库内部结构直接暴露为长期 API 契约。
 
-## 7. 质量门禁
+## 7. 日志调用规范
+
+后端业务代码必须通过 `from app.core.logging import get_logger` 获取项目 logger，并统一使用“固定事件消息 + 关键字参数结构化字段”的写法：
+
+```python
+logger.info("上传完成", file_name="notes.pdf", byte_size=2048)
+```
+
+动态值必须作为 keyword field 传入，保持 `event` 字段稳定且便于检索。禁止使用以下混用方式：
+
+- `%s` / `%d` 等位置参数格式化，例如 `logger.info("上传完成: %s", file_name)`。
+- f-string、`str.format()` 或字符串拼接把动态值写入日志消息。
+- `extra={...}` 字典传递结构化字段。
+- `print()`、原始 `logging.getLogger()`、`logging.basicConfig()` 或其他绕过项目日志系统的方式。
+
+OpenSpec proposal、design、spec、tasks 或 README 中出现后端日志示例时，也必须使用同一写法。Code Review 和测试应拒绝上述禁止写法。
+
+## 8. 质量门禁
 
 后端变更完成前，应根据影响范围运行必要验证命令：
 
@@ -81,7 +98,7 @@ uv run pytest
 
 涉及数据库结构的改动，应验证 Alembic 迁移可执行。涉及 API 的改动，应至少覆盖状态码、响应结构和关键错误分支。涉及第三方模型服务的改动，应优先通过可替换配置、mock 或集成开关降低测试脆弱性。
 
-## 8. 文档同步
+## 9. 文档同步
 
 以下变化需要同步更新文档：
 

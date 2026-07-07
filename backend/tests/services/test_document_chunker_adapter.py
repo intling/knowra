@@ -115,3 +115,38 @@ def test_docling_chunker_adapter_converts_sdk_errors_to_project_error() -> None:
 
     with pytest.raises(module.DocumentChunkingError, match="chunking exploded"):
         adapter.chunk(object())
+
+
+# 测试 tokenizer 已预加载时，适配器直接复用 readiness 中的 tokenizer。
+# 该测试避免分块作业再次调用 Hugging Face tokenizer 加载路径。
+def test_docling_chunker_adapter_reuses_preloaded_tokenizer_from_readiness() -> None:
+    module = import_module("app.services.document_chunker")
+    preloaded_tokenizer = SimpleNamespace(count_tokens=lambda text: len(text.split()))
+    captured = {}
+
+    class CapturingHybridChunker(FakeHybridChunker):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            captured["tokenizer"] = kwargs["tokenizer"]
+
+    def forbidden_tokenizer_factory(**_kwargs):
+        raise AssertionError("预加载 tokenizer ready 时不应重新创建 tokenizer")
+
+    adapter = module.DoclingChunkerAdapter(
+        config=module.DocumentChunkingConfig(),
+        model_readiness=SimpleNamespace(
+            tokenizer=SimpleNamespace(
+                status="ready",
+                resource=preloaded_tokenizer,
+                model_name="Qwen/Qwen2-7B",
+                cache_dir="storage/document-models/tokenizers",
+            )
+        ),
+        hybrid_chunker_cls=CapturingHybridChunker,
+        tokenizer_factory=forbidden_tokenizer_factory,
+    )
+
+    chunks = adapter.chunk(object())
+
+    assert captured["tokenizer"] is preloaded_tokenizer
+    assert len(chunks) == 2

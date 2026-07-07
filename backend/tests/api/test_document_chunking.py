@@ -5,6 +5,7 @@ from collections.abc import Generator
 from contextlib import suppress
 from datetime import UTC, datetime
 from importlib import import_module
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -111,6 +112,14 @@ def seed_current_user(session: Session) -> User:
     session.commit()
     session.refresh(user)
     return user
+
+
+def make_loading_readiness():
+    return SimpleNamespace(
+        status="loading",
+        docling=SimpleNamespace(status="ready", missing_models=[]),
+        tokenizer=SimpleNamespace(status="loading", missing_models=[]),
+    )
 
 
 # 种下当前用户的一次成功分块结果，并故意乱序插入两个 chunk。
@@ -273,6 +282,29 @@ def test_get_latest_parsed_document_chunk_job_returns_404_when_missing(
     assert response.json() == {"detail": "Chunk job not found"}
 
 
+# 测试 tokenizer 仍在内存加载时，重新分块请求快速返回 503 且不创建作业。
+# 该测试避免用户请求被排队后才在分块作业里懒加载 tokenizer。
+def test_rechunk_returns_503_when_tokenizer_models_are_loading(
+    chunking_client: TestClient,
+    session: Session,
+    tmp_path,
+) -> None:
+    chunking_client.app.state.document_model_readiness = make_loading_readiness()
+    user = seed_current_user(session)
+    _owner, _upload, _parse_job, parsed = make_parsed_document_with_segment(
+        session,
+        tmp_path / "uploads",
+        user=user,
+    )
+
+    response = chunking_client.post(f"/api/parsed-documents/{parsed.id}/rechunk")
+
+    assert response.status_code == 503
+    assert "loading" in response.text.lower()
+    models = import_module("app.models.document_chunking")
+    assert session.exec(select(models.DocumentChunkJob)).all() == []
+
+
 # chunk 列表接口应选择解析结果的成功分块作业，并按 sequence_index 返回分页数据。
 # 测试还确认列表项携带前端展示所需字段。
 def test_get_parsed_document_chunks_returns_latest_active_successful_job_in_order(
@@ -391,6 +423,31 @@ def test_post_rechunk_returns_202_and_created_job(
     assert set(payload) == JOB_RESPONSE_FIELDS
     assert payload["parsed_document_id"] == str(parsed.id)
     assert payload["status"] in {"queued", "running", "succeeded"}
+
+
+# 重分块请求指定未准备 tokenizer 时应被拒绝。
+# 该测试防止请求路径临时下载非启动准备范围内的 tokenizer。
+def test_post_rechunk_rejects_tokenizer_outside_startup_prepared_contract(
+    chunking_client: TestClient,
+    session: Session,
+    tmp_path,
+) -> None:
+    user = seed_current_user(session)
+    _owner, _upload, _parse_job, parsed = make_parsed_document_with_segment(
+        session,
+        tmp_path / "uploads",
+        user=user,
+    )
+
+    response = chunking_client.post(
+        f"/api/parsed-documents/{parsed.id}/rechunk",
+        json={"tokenizer_model": "Other/Tokenizer"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "Tokenizer Other/Tokenizer is not in startup-prepared model scope"
+    )
 
 
 # 原始上传记录缺失时，重分块接口应返回明确错误。

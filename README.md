@@ -29,6 +29,22 @@
 
 后续会逐步扩展语义检索、RAG 对话、知识图谱和效果评测等能力。当前实现已经支持资料上传、Docling 解析、解析后自动分块、chunk 预览和重新分块入口；首版分块只生成可追溯的知识单元，不代表已经完成 embedding、pgvector 索引、语义检索、RAG 问答或引用生成。
 
+## 文档模型启动准备
+
+后端启动时会执行文档模型 bootstrap，提前检查 PDF 解析所需的 Docling artifacts 和分块所需的 tokenizer。文件准备就绪后，应用会启动非阻塞后台预加载，把 Docling PDF pipeline 和 tokenizer 加载到进程内存里。现有 `GET /api/health` 会返回 `document_models` 摘要；不会新增独立的 `/api/health/document-models`。
+
+模型内存预加载期间，`document_models.status` 或组件状态可能为 `loading`。这时 PDF 解析和分块/重分块会快速返回模型仍在加载或 `model_unavailable`，不会在用户请求路径里触发第一次长加载；纯文本解析不受 Docling 模型 loading 状态阻塞。
+
+模型准备只读取新的 `DOCUMENT_MODEL_*` 变量，不复用、不扩展、也不 fallback 到既有 `DOCUMENT_PARSE_*` 或 `DOCUMENT_CHUNK_*`。常用配置包括：
+
+- `DOCUMENT_MODEL_BOOTSTRAP_STRATEGY=download_missing`：启动时下载缺失模型；也可设为 `check_only` 只检查本地文件
+- `DOCUMENT_MODEL_BOOTSTRAP_FAILURE_POLICY=degraded`：模型不可用时允许启动，但解析/分块会快速失败为 `model_unavailable`；生产环境可改为 `fail_fast`
+- `DOCUMENT_MODEL_DOCLING_ARTIFACT_DIR=storage/document-models/docling`
+- `DOCUMENT_MODEL_TOKENIZER_CACHE_DIR=storage/document-models/tokenizers`
+- `DOCUMENT_MODEL_HF_ENDPOINT=`：可填写 Hugging Face 镜像地址，例如 `https://hf-mirror.com`
+
+最终交付 Docker 镜像时，建议在镜像构建阶段或容器单进程初始化阶段预热模型目录；首版不实现多进程同时下载同一模型目录的强文件锁。更多变量和离线预热命令见 `backend/README.md`。
+
 ## 文档分块能力
 
 后端在解析作业成功保存 `parsed_documents` 后，会在同一个后台任务中把内存里的 Docling document 交给 Docling `HybridChunker` 自动分块。分块结果写入 `document_chunk_jobs` 和 `document_chunks`，长文本超过阈值时写入 `storage/chunks` 并在数据库中保存 storage key。

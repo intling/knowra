@@ -38,12 +38,14 @@ class DocumentChunkingService:
         artifact_storage: ChunkArtifactStorage,
         config: DocumentChunkingConfig,
         upload_storage: LocalFileStorage | None = None,
+        model_readiness: object | None = None,
     ) -> None:
         self.session = session
         self.chunker = chunker
         self.artifact_storage = artifact_storage
         self.config = config
         self.upload_storage = upload_storage
+        self.model_readiness = model_readiness
 
     def run_initial_chunking(
         self,
@@ -119,12 +121,13 @@ class DocumentChunkingService:
         self.session.commit()
 
         logger.info(
-            "Chunking started: job_id=%s parsed_document_id=%s",
-            job.id,
-            parsed_document.id,
+            "Chunking started",
+            job_id=str(job.id),
+            parsed_document_id=str(parsed_document.id),
         )
 
         try:
+            self._ensure_tokenizer_ready()
             if transient_docling_document is None:
                 raise MissingDoclingDocumentError(
                     "Parser did not provide a memory document object for native chunking"
@@ -145,19 +148,27 @@ class DocumentChunkingService:
             job.error_message = None
             if supersede_previous:
                 self._supersede_previous_jobs(parsed_document_id=parsed_document.id, keep_job=job)
-            logger.info(
-                "Chunking succeeded: job_id=%s chunks=%d",
-                job.id,
-                len(chunks),
-            )
+            logger.info("Chunking succeeded", job_id=str(job.id), chunks=len(chunks))
         except MissingDoclingDocumentError as exc:
             job.status = DocumentChunkJobStatus.FAILED.value
             job.error_code = "missing_docling_document"
             job.error_message = str(exc)
             logger.error(
-                "Chunking failed: job_id=%s reason=missing_docling_document error=%s",
-                job.id,
-                exc,
+                "Chunking failed",
+                job_id=str(job.id),
+                reason="missing_docling_document",
+                error=str(exc),
+                exc_info=True,
+            )
+        except DocumentModelUnavailableError as exc:
+            job.status = DocumentChunkJobStatus.FAILED.value
+            job.error_code = "model_unavailable"
+            job.error_message = str(exc)
+            logger.error(
+                "Chunking failed",
+                job_id=str(job.id),
+                reason="model_unavailable",
+                error=str(exc),
                 exc_info=True,
             )
         except Exception as exc:
@@ -165,9 +176,10 @@ class DocumentChunkingService:
             job.error_code = "chunking_failed"
             job.error_message = str(exc)
             logger.error(
-                "Chunking failed: job_id=%s reason=chunking_failed error=%s",
-                job.id,
-                exc,
+                "Chunking failed",
+                job_id=str(job.id),
+                reason="chunking_failed",
+                error=str(exc),
                 exc_info=True,
             )
         finally:
@@ -178,6 +190,22 @@ class DocumentChunkingService:
             self.session.refresh(job)
 
         return job
+
+    def _ensure_tokenizer_ready(self) -> None:
+        tokenizer = getattr(self.model_readiness, "tokenizer", None)
+        if tokenizer is None or getattr(tokenizer, "status", "ready") == "ready":
+            return
+        if getattr(tokenizer, "status", "ready") == "skipped":
+            return
+        if getattr(tokenizer, "status", "ready") == "loading":
+            raise DocumentModelUnavailableError("Tokenizer models are still loading")
+        missing = ", ".join(getattr(tokenizer, "missing_models", []) or [])
+        detail = (
+            f"Tokenizer models are unavailable: {missing}"
+            if missing
+            else "Tokenizer models are unavailable"
+        )
+        raise DocumentModelUnavailableError(detail)
 
     def _save_chunk(
         self,
@@ -294,6 +322,10 @@ class DocumentChunkingService:
 
 
 class MissingDoclingDocumentError(DocumentChunkingError):
+    pass
+
+
+class DocumentModelUnavailableError(DocumentChunkingError):
     pass
 
 
