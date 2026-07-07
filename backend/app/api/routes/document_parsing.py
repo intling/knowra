@@ -49,6 +49,12 @@ def create_document_parse_job(
     session: SessionDep,
     settings: SettingsDep,
 ) -> DocumentParseJobRead | JSONResponse:
+    shutdown_state = getattr(request.app.state, "application_shutdown_state", None)
+    if getattr(shutdown_state, "is_shutting_down", False):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service is shutting down",
+        )
     current_user = require_current_user(session)
     service = make_document_parse_service(session=session, settings=settings)
 

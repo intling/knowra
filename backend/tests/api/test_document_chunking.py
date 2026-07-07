@@ -122,6 +122,13 @@ def make_loading_readiness():
     )
 
 
+def make_shutdown_state():
+    return SimpleNamespace(
+        is_shutting_down=True,
+        reason="signal",
+    )
+
+
 # 种下当前用户的一次成功分块结果，并故意乱序插入两个 chunk。
 # 列表 API 测试用它验证只读取成功作业，并按 sequence_index 排序返回。
 def seed_successful_chunk_job(session: Session, tmp_path):
@@ -301,6 +308,31 @@ def test_rechunk_returns_503_when_tokenizer_models_are_loading(
 
     assert response.status_code == 503
     assert "loading" in response.text.lower()
+    models = import_module("app.models.document_chunking")
+    assert session.exec(select(models.DocumentChunkJob)).all() == []
+
+
+# 测试应用关闭期间重分块请求快速返回 503 且不创建新作业。
+# 该测试驱动 Ctrl+C/SIGTERM 收尾期不再接收新的分块工作。
+def test_rechunk_returns_503_when_application_is_shutting_down(
+    chunking_client: TestClient,
+    session: Session,
+    tmp_path,
+) -> None:
+    chunking_client.app.state.application_shutdown_state = make_shutdown_state()
+    user = seed_current_user(session)
+    _owner, _upload, _parse_job, parsed = make_parsed_document_with_segment(
+        session,
+        tmp_path / "uploads",
+        user=user,
+    )
+    try:
+        response = chunking_client.post(f"/api/parsed-documents/{parsed.id}/rechunk")
+    finally:
+        delattr(chunking_client.app.state, "application_shutdown_state")
+
+    assert response.status_code == 503
+    assert "shutting down" in response.text.lower()
     models = import_module("app.models.document_chunking")
     assert session.exec(select(models.DocumentChunkJob)).all() == []
 

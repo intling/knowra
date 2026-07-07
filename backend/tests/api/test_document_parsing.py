@@ -101,6 +101,13 @@ def make_loading_readiness():
     )
 
 
+def make_shutdown_state():
+    return import_module("types").SimpleNamespace(
+        is_shutting_down=True,
+        reason="signal",
+    )
+
+
 # 测试 POST /api/uploads/{upload_id}/parse 成功创建异步解析作业。
 def test_post_upload_parse_returns_accepted_job(
     parse_client: TestClient,
@@ -119,6 +126,27 @@ def test_post_upload_parse_returns_accepted_job(
     assert payload["owner_user_id"] == str(user.id)
     assert payload["status"] in {"queued", "running"}
     assert payload["created_at"].endswith("Z")
+
+
+# 测试应用关闭期间解析请求快速返回 503 且不创建新作业。
+# 该测试驱动 Ctrl+C/SIGTERM 收尾期不再接收新的文档解析工作。
+def test_post_upload_parse_returns_503_when_application_is_shutting_down(
+    parse_client: TestClient,
+    session: Session,
+    tmp_path,
+) -> None:
+    parse_client.app.state.application_shutdown_state = make_shutdown_state()
+    user = seed_current_user(session)
+    upload = make_uploaded_file(session, tmp_path / "uploads", user)
+    try:
+        response = parse_client.post(f"/api/uploads/{upload.id}/parse")
+    finally:
+        delattr(parse_client.app.state, "application_shutdown_state")
+
+    assert response.status_code == 503
+    assert "shutting down" in response.text.lower()
+    models = get_models_module()
+    assert session.exec(select(models.DocumentParseJob)).all() == []
 
 
 # 测试 Docling 模型仍在内存加载时，PDF 解析请求快速返回 503 且不创建作业。

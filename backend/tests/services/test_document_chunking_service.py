@@ -42,6 +42,12 @@ class FakeChunker:
         return self.chunks
 
 
+class ShutdownState:
+    def __init__(self, *, is_shutting_down: bool = True) -> None:
+        self.is_shutting_down = is_shutting_down
+        self.reason = "signal"
+
+
 # 装配使用内存 session、临时 artifact 目录和 fake chunker 的服务实例。
 # 每个测试通过它专注验证分块业务行为。
 def make_service(module, session, tmp_path, chunker=None):
@@ -207,3 +213,155 @@ def test_rechunk_success_supersedes_old_job_only_after_new_chunks_are_saved(tmp_
         session.refresh(old_job)
         assert new_job.status == "succeeded"
         assert old_job.status == "superseded"
+
+
+# 测试 shutdown 收尾会把 queued/running 分块作业标记为 process_shutdown。
+# 该测试防止进程退出后分块作业永久残留并阻塞后续重分块。
+def test_mark_incomplete_chunk_jobs_failed_for_shutdown_marks_only_queued_and_running(
+    tmp_path,
+) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        running_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="running",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        succeeded_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="succeeded",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        failed_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="failed",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+            error_code="chunking_failed",
+            error_message="bad chunk",
+        )
+        superseded_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="superseded",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.add(running_job)
+        session.add(succeeded_job)
+        session.add(failed_job)
+        session.add(superseded_job)
+        session.commit()
+
+        module.mark_incomplete_chunk_jobs_failed_for_shutdown(
+            session=session,
+            reason="signal",
+        )
+
+        for job in (queued_job, running_job, succeeded_job, failed_job, superseded_job):
+            session.refresh(job)
+        for job in (queued_job, running_job):
+            assert job.status == "failed"
+            assert job.error_code == "process_shutdown"
+            assert "shutdown" in job.error_message.lower()
+            assert job.finished_at is not None
+        assert succeeded_job.status == "succeeded"
+        assert succeeded_job.error_code is None
+        assert failed_job.status == "failed"
+        assert failed_job.error_code == "chunking_failed"
+        assert failed_job.error_message == "bad chunk"
+        assert superseded_job.status == "superseded"
+        assert superseded_job.error_code is None
+
+
+# 测试分块服务在调用 chunker 前发现 shutdown 时快速失败。
+# 该测试避免关闭期继续进入 tokenizer 或 Docling HybridChunker。
+def test_document_chunking_service_marks_process_shutdown_before_calling_chunker(
+    tmp_path,
+) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    storage_module = import_module("app.services.document_chunk_storage")
+    with chunking_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        chunker = FakeChunker()
+        service = module.DocumentChunkingService(
+            session=session,
+            chunker=chunker,
+            artifact_storage=storage_module.ChunkArtifactStorage(tmp_path / "chunks"),
+            config=module.DocumentChunkingConfig(),
+            shutdown_state=ShutdownState(is_shutting_down=True),
+        )
+
+        job = service.run_initial_chunking(
+            parsed_document=parsed_document,
+            transient_docling_document=make_minimal_docling_document(),
+        )
+
+        stored_job = session.get(models.DocumentChunkJob, job.id)
+        assert stored_job.status == "failed"
+        assert stored_job.error_code == "process_shutdown"
+        assert "shutdown" in stored_job.error_message.lower()
+        assert chunker.calls == []
+
+
+# 测试 chunker 生成结果后但写成功前进入 shutdown 时，作业不能被标记为 succeeded。
+# 该测试保护关闭期不会留下成功误报或覆盖 process_shutdown。
+def test_document_chunking_service_marks_process_shutdown_before_success_persistence(
+    tmp_path,
+) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    storage_module = import_module("app.services.document_chunk_storage")
+    shutdown_state = ShutdownState(is_shutting_down=False)
+
+    class ShutdownAfterChunker(FakeChunker):
+        def chunk(self, document):
+            chunks = super().chunk(document)
+            shutdown_state.is_shutting_down = True
+            return chunks
+
+    with chunking_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        chunker = ShutdownAfterChunker()
+        service = module.DocumentChunkingService(
+            session=session,
+            chunker=chunker,
+            artifact_storage=storage_module.ChunkArtifactStorage(tmp_path / "chunks"),
+            config=module.DocumentChunkingConfig(),
+            shutdown_state=shutdown_state,
+        )
+
+        job = service.run_initial_chunking(
+            parsed_document=parsed_document,
+            transient_docling_document=make_minimal_docling_document(),
+        )
+
+        stored_job = session.get(models.DocumentChunkJob, job.id)
+        assert stored_job.status == "failed"
+        assert stored_job.error_code == "process_shutdown"
+        assert chunker.calls != []

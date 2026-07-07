@@ -104,6 +104,34 @@ def test_health_check_returns_document_model_loading_summary(client: TestClient)
     }
 
 
+# 测试应用进入 graceful shutdown 后，现有 health 摘要表达模型不可服务状态。
+# 该测试驱动关闭期复用 /api/health 暴露 shutting_down，而不是新增 endpoint。
+def test_health_check_returns_document_model_shutting_down_summary(
+    client: TestClient,
+) -> None:
+    client.app.state.document_model_readiness = make_document_model_readiness(
+        status="ready",
+        docling_status="ready",
+        tokenizer_status="ready",
+    )
+    client.app.state.application_shutdown_state = SimpleNamespace(
+        is_shutting_down=True,
+        reason="signal",
+    )
+    try:
+        response = client.get("/api/health")
+    finally:
+        delattr(client.app.state, "application_shutdown_state")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["document_models"] == {
+        "status": "shutting_down",
+        "docling": {"status": "shutting_down", "missing_models": []},
+        "tokenizer": {"status": "shutting_down", "missing_models": []},
+    }
+
+
 # 测试首版不新增独立文档模型健康检查 endpoint。
 # 模型 readiness 必须通过既有 /api/health 的摘要暴露。
 def test_health_check_does_not_add_dedicated_document_models_endpoint(

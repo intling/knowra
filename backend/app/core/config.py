@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     )
     document_model_tokenizer_name: str = "Qwen/Qwen2-7B"
     document_model_tokenizer_cache_dir: str = "storage/document-models/tokenizers"
+    document_model_shutdown_timeout_seconds: float = 5.0
 
     # --- logging ---
     log_level: str = "INFO"

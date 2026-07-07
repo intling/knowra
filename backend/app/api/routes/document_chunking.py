@@ -142,6 +142,15 @@ def rechunk_parsed_document(
     settings: SettingsDep,
     request: RechunkRequest | None = None,
 ) -> DocumentChunkJobRead | JSONResponse:
+    if getattr(
+        getattr(http_request.app.state, "application_shutdown_state", None),
+        "is_shutting_down",
+        False,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service is shutting down",
+        )
     current_user = require_current_user(session)
     parsed_document = get_owned_parsed_document(
         session=session,

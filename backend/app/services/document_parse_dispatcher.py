@@ -4,7 +4,7 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import BackgroundTasks
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -50,6 +50,7 @@ def run_parse_job(
     document_chunking_enabled: bool | None = None,
     chunking_service: object | None = None,
     model_readiness: object | None = None,
+    shutdown_state: object | None = None,
 ) -> None:
     settings = get_settings()
     session_context = session_factory or default_session_factory
@@ -70,6 +71,9 @@ def run_parse_job(
         logger.info("Parse started", job_id=str(job.id))
 
         try:
+            if is_shutting_down(shutdown_state):
+                mark_parse_job_process_shutdown(session=session, job=job)
+                return
             uploaded_file = session.get(UploadedFile, job.uploaded_file_id)
             if uploaded_file is None:
                 raise DocumentParseError("Uploaded file not found")
@@ -97,6 +101,9 @@ def run_parse_job(
             parse_result = normalize_parse_result(
                 active_parser.parse(source_path, document_format=document_format)
             )
+            if is_shutting_down(shutdown_state):
+                mark_parse_job_process_shutdown(session=session, job=job)
+                return
             payload = parse_result.persistent_payload
             ensure_parsed_payload_has_text_content(payload)
             parsed_document = save_parse_result(
@@ -227,6 +234,35 @@ def mark_parse_job_succeeded(*, session: Session, job: DocumentParseJob) -> None
     session.add(job)
     session.commit()
     session.refresh(job)
+
+
+def mark_incomplete_parse_jobs_failed_for_shutdown(*, session: Session, reason: str) -> int:
+    jobs = session.exec(
+        select(DocumentParseJob).where(DocumentParseJob.status.in_(["queued", "running"]))
+    ).all()
+    for job in jobs:
+        job.status = "failed"
+        job.error_code = "process_shutdown"
+        job.error_message = f"Process shutdown before parse job could finish: {reason}"
+        job.finished_at = utc_now()
+        job.updated_at = utc_now()
+        session.add(job)
+    session.commit()
+    return len(jobs)
+
+
+def mark_parse_job_process_shutdown(*, session: Session, job: DocumentParseJob) -> None:
+    job.status = "failed"
+    job.error_code = "process_shutdown"
+    job.error_message = "Process shutdown before parse job could finish"
+    job.finished_at = utc_now()
+    job.updated_at = utc_now()
+    session.add(job)
+    session.commit()
+
+
+def is_shutting_down(shutdown_state: object | None) -> bool:
+    return bool(getattr(shutdown_state, "is_shutting_down", False))
 
 
 def normalize_parse_result(
