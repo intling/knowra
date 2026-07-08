@@ -54,6 +54,12 @@ class FakeParser:
         return self.payload
 
 
+class ShutdownState:
+    def __init__(self, *, is_shutting_down: bool = True) -> None:
+        self.is_shutting_down = is_shutting_down
+        self.reason = "signal"
+
+
 def make_loading_readiness():
     return SimpleNamespace(
         status="loading",
@@ -293,3 +299,131 @@ def test_run_parse_job_reuses_preloaded_docling_converter(
     stored_job = session.get(models.DocumentParseJob, job.id)
     assert stored_job.status == "succeeded"
     assert captured["kwargs"]["converter"] is preloaded_converter
+
+
+# 测试 shutdown 收尾会把 queued/running 解析作业标记为 process_shutdown。
+# 该测试防止进程退出后解析作业永久残留并阻塞后续重试。
+def test_mark_incomplete_parse_jobs_failed_for_shutdown_marks_only_queued_and_running(
+    session: Session,
+    tmp_path,
+) -> None:
+    dispatcher_module = get_dispatcher_module()
+    models = get_models_module()
+    user = make_user(session)
+    upload = make_uploaded_file(session, tmp_path / "uploads", user)
+    queued_job = models.DocumentParseJob(
+        uploaded_file_id=upload.id,
+        owner_user_id=user.id,
+        status="queued",
+    )
+    running_job = models.DocumentParseJob(
+        uploaded_file_id=upload.id,
+        owner_user_id=user.id,
+        status="running",
+    )
+    succeeded_job = models.DocumentParseJob(
+        uploaded_file_id=upload.id,
+        owner_user_id=user.id,
+        status="succeeded",
+    )
+    failed_job = models.DocumentParseJob(
+        uploaded_file_id=upload.id,
+        owner_user_id=user.id,
+        status="failed",
+        error_code="parse_failed",
+        error_message="bad pdf",
+    )
+    session.add(queued_job)
+    session.add(running_job)
+    session.add(succeeded_job)
+    session.add(failed_job)
+    session.commit()
+
+    dispatcher_module.mark_incomplete_parse_jobs_failed_for_shutdown(
+        session=session,
+        reason="signal",
+    )
+
+    session.refresh(queued_job)
+    session.refresh(running_job)
+    session.refresh(succeeded_job)
+    session.refresh(failed_job)
+    for job in (queued_job, running_job):
+        assert job.status == "failed"
+        assert job.error_code == "process_shutdown"
+        assert "shutdown" in job.error_message.lower()
+        assert job.finished_at is not None
+    assert succeeded_job.status == "succeeded"
+    assert succeeded_job.error_code is None
+    assert failed_job.status == "failed"
+    assert failed_job.error_code == "parse_failed"
+    assert failed_job.error_message == "bad pdf"
+
+
+# 测试后台解析在进入 parser 前发现 shutdown 时快速失败且不调用 parser。
+# 该测试覆盖绕过 HTTP API 的后台任务保护分支。
+def test_run_parse_job_marks_process_shutdown_before_calling_parser(
+    session: Session,
+    tmp_path,
+) -> None:
+    dispatcher_module = get_dispatcher_module()
+    models = get_models_module()
+    user = make_user(session)
+    upload = make_uploaded_file(session, tmp_path / "uploads", user)
+    job = models.DocumentParseJob(uploaded_file_id=upload.id, owner_user_id=user.id)
+    session.add(job)
+    session.commit()
+    parser = FakeParser()
+
+    dispatcher_module.run_parse_job(
+        job.id,
+        session_factory=SessionFactory(session),
+        parser=parser,
+        upload_storage_root=tmp_path / "uploads",
+        artifact_storage_root=tmp_path / "parsed",
+        shutdown_state=ShutdownState(is_shutting_down=True),
+    )
+
+    stored_job = session.get(models.DocumentParseJob, job.id)
+    assert stored_job.status == "failed"
+    assert stored_job.error_code == "process_shutdown"
+    assert "shutdown" in stored_job.error_message.lower()
+    assert parser.calls == 0
+
+
+# 测试解析完成后但写成功前进入 shutdown 时，作业不能被标记为 succeeded。
+# 该测试保护关闭期不会留下“成功但资源未完整收尾”的误报。
+def test_run_parse_job_marks_process_shutdown_before_success_persistence(
+    session: Session,
+    tmp_path,
+) -> None:
+    dispatcher_module = get_dispatcher_module()
+    models = get_models_module()
+    user = make_user(session)
+    upload = make_uploaded_file(session, tmp_path / "uploads", user)
+    job = models.DocumentParseJob(uploaded_file_id=upload.id, owner_user_id=user.id)
+    session.add(job)
+    session.commit()
+    shutdown_state = ShutdownState(is_shutting_down=False)
+
+    class ShutdownAfterParseParser(FakeParser):
+        def parse(self, *_args, **_kwargs):
+            result = super().parse(*_args, **_kwargs)
+            shutdown_state.is_shutting_down = True
+            return result
+
+    parser = ShutdownAfterParseParser()
+
+    dispatcher_module.run_parse_job(
+        job.id,
+        session_factory=SessionFactory(session),
+        parser=parser,
+        upload_storage_root=tmp_path / "uploads",
+        artifact_storage_root=tmp_path / "parsed",
+        shutdown_state=shutdown_state,
+    )
+
+    stored_job = session.get(models.DocumentParseJob, job.id)
+    assert stored_job.status == "failed"
+    assert stored_job.error_code == "process_shutdown"
+    assert parser.calls == 1

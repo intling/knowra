@@ -152,6 +152,8 @@ Environment variables:
   `Qwen/Qwen2-7B`
 - `DOCUMENT_MODEL_TOKENIZER_CACHE_DIR`: tokenizer cache directory, default
   `storage/document-models/tokenizers`
+- `DOCUMENT_MODEL_SHUTDOWN_TIMEOUT_SECONDS`: maximum seconds to wait for the
+  runtime preload thread during graceful shutdown, default `5.0`
 
 With `degraded`, the app can start even when required model files are missing,
 but later parse or chunk jobs fail quickly with `error_code=model_unavailable`.
@@ -166,6 +168,14 @@ single-process init step, then run with `check_only` and usually `fail_fast`.
 The first version assumes a single backend process prepares the model
 directories. It does not implement cross-process file locks for multiple
 workers downloading into the same path.
+
+During graceful shutdown (`Ctrl+C`, `SIGTERM`, or ASGI lifespan teardown), the
+backend marks document model readiness as `shutting_down`, waits up to
+`DOCUMENT_MODEL_SHUTDOWN_TIMEOUT_SECONDS` for preload work, releases in-process
+Docling converter/tokenizer references, and best-effort clears torch/CUDA cache
+when available. The process does not delete model files on disk. `SIGKILL`,
+host crashes, or a container runtime force-kill after its grace period cannot be
+cleaned up inside the Python process.
 
 ### Docling model artifacts
 
@@ -294,9 +304,10 @@ question answering, or generate final citations.
 ### Dispatcher limitations
 
 The `background_tasks` dispatcher runs in-process and is intended for local
-development and testing only. If the process restarts while a job is running,
-the job remains in `running` status. Production deployments should migrate to
-an external worker queue when available.
+development and testing only. On graceful shutdown, queued or running parse and
+chunk jobs are marked `failed` with `error_code=process_shutdown` so they do not
+remain stuck. Production deployments should still migrate to an external worker
+queue when available, especially for multi-process or multi-replica execution.
 
 ## Quality gates
 

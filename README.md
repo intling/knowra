@@ -42,8 +42,11 @@
 - `DOCUMENT_MODEL_DOCLING_ARTIFACT_DIR=storage/document-models/docling`
 - `DOCUMENT_MODEL_TOKENIZER_CACHE_DIR=storage/document-models/tokenizers`
 - `DOCUMENT_MODEL_HF_ENDPOINT=`：可填写 Hugging Face 镜像地址，例如 `https://hf-mirror.com`
+- `DOCUMENT_MODEL_SHUTDOWN_TIMEOUT_SECONDS=5.0`：收到 `Ctrl+C`、`SIGTERM` 或 lifespan teardown 时，模型预加载线程的优雅停止等待上限
 
 最终交付 Docker 镜像时，建议在镜像构建阶段或容器单进程初始化阶段预热模型目录；首版不实现多进程同时下载同一模型目录的强文件锁。更多变量和离线预热命令见 `backend/README.md`。
+
+应用优雅关闭时会把模型 readiness 标记为 `shutting_down`，清空进程内 Docling converter/tokenizer 引用，并把仍处于 `queued` 或 `running` 的解析/分块作业标记为 `failed`，错误码为 `process_shutdown`。这覆盖 `Ctrl+C`、`SIGTERM` 和 ASGI lifespan teardown；`SIGKILL`、宿主机崩溃或容器被强制杀死不属于进程内清理可保证范围。
 
 ## 文档分块能力
 

@@ -27,6 +27,11 @@ configure_logging(
 # Safe to import modules that create loggers at import time now.
 from app.api.router import api_router  # noqa: E402
 from app.core.middleware import RequestLoggingMiddleware  # noqa: E402
+from app.core.shutdown import (  # noqa: E402
+    ApplicationShutdownCoordinator,
+    ApplicationShutdownState,
+    default_shutdown_session_factory,  # noqa: E402
+)
 from app.middleware.trace import TraceMiddleware  # noqa: E402
 from app.services.document_model_bootstrap import DocumentModelBootstrapService  # noqa: E402
 from app.services.document_model_runtime import (  # noqa: E402
@@ -46,6 +51,13 @@ async def lifespan(app: FastAPI):
     uvicorn's loggers before startup.
     """
     configure_uvicorn_loggers()
+    if not hasattr(app.state, "application_shutdown_state") or getattr(
+        app.state.application_shutdown_state,
+        "is_shutting_down",
+        False,
+    ):
+        app.state.application_shutdown_state = ApplicationShutdownState()
+        app.state.application_shutdown_coordinator = None
 
     if not hasattr(app.state, "document_model_readiness"):
         bootstrap_factory = app.state.document_model_bootstrap_service_factory
@@ -58,9 +70,11 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        runtime = getattr(app.state, "document_model_readiness", None)
-        if hasattr(runtime, "shutdown"):
-            runtime.shutdown()
+        coordinator = getattr(app.state, "application_shutdown_coordinator", None)
+        if coordinator is None:
+            coordinator = app.state.application_shutdown_coordinator_factory()
+            app.state.application_shutdown_coordinator = coordinator
+        coordinator.shutdown()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -92,6 +106,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             preloader=DocumentModelPreloader(settings=app_settings),
         )
     )
+    app.state.application_shutdown_state = ApplicationShutdownState()
+    app.state.application_shutdown_session_factory = default_shutdown_session_factory
+    app.state.application_shutdown_coordinator_factory = lambda: ApplicationShutdownCoordinator(
+        app=app,
+        shutdown_state=get_or_create_shutdown_state(app),
+        model_shutdown_timeout_seconds=app_settings.document_model_shutdown_timeout_seconds,
+        session_factory=app.state.application_shutdown_session_factory,
+    )
     # TraceMiddleware must be outermost so trace_id is set in the same
     # asyncio task before any child middleware creates subtasks.  Any
     # asyncio subtask created by inner BaseHTTPMiddleware inherits the
@@ -111,6 +133,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(api_router, prefix=app_settings.api_prefix)
 
     return app
+
+
+def get_or_create_shutdown_state(app: FastAPI) -> ApplicationShutdownState:
+    if not hasattr(app.state, "application_shutdown_state"):
+        app.state.application_shutdown_state = ApplicationShutdownState()
+    return app.state.application_shutdown_state
 
 
 app = create_app()

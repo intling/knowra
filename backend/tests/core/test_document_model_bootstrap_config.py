@@ -66,3 +66,21 @@ def test_document_model_bootstrap_settings_do_not_fallback_to_parse_or_chunk_env
     assert settings.document_model_tokenizer_name == "Qwen/Qwen2-7B"
     assert settings.document_model_tokenizer_name != legacy_tokenizer
     assert settings.document_model_tokenizer_cache_dir == "storage/document-models/tokenizers"
+
+
+# 测试模型 runtime shutdown timeout 使用独立 DOCUMENT_MODEL_* 命名空间。
+# 该测试驱动 Ctrl+C/SIGTERM 收尾等待边界配置化，且不污染解析/分块配置。
+def test_document_model_shutdown_timeout_setting_is_available(monkeypatch) -> None:
+    settings = Settings(_env_file=None)
+
+    assert settings.document_model_shutdown_timeout_seconds == 5.0
+
+    monkeypatch.setenv("DOCUMENT_MODEL_SHUTDOWN_TIMEOUT_SECONDS", "1.25")
+    monkeypatch.setenv("DOCUMENT_PARSE_MAX_PAGES", "2")
+    monkeypatch.setenv("DOCUMENT_CHUNK_MAX_TOKENS", "128")
+
+    overridden = Settings(_env_file=None)
+
+    assert overridden.document_model_shutdown_timeout_seconds == 1.25
+    assert overridden.document_parse_max_pages == 2
+    assert overridden.document_chunk_max_tokens == 128

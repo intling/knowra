@@ -39,6 +39,7 @@ class DocumentChunkingService:
         config: DocumentChunkingConfig,
         upload_storage: LocalFileStorage | None = None,
         model_readiness: object | None = None,
+        shutdown_state: object | None = None,
     ) -> None:
         self.session = session
         self.chunker = chunker
@@ -46,6 +47,7 @@ class DocumentChunkingService:
         self.config = config
         self.upload_storage = upload_storage
         self.model_readiness = model_readiness
+        self.shutdown_state = shutdown_state
 
     def run_initial_chunking(
         self,
@@ -127,6 +129,7 @@ class DocumentChunkingService:
         )
 
         try:
+            self._ensure_not_shutting_down()
             self._ensure_tokenizer_ready()
             if transient_docling_document is None:
                 raise MissingDoclingDocumentError(
@@ -134,6 +137,7 @@ class DocumentChunkingService:
                 )
 
             chunks = self.chunker.chunk(transient_docling_document)
+            self._ensure_not_shutting_down()
             for index, chunk in enumerate(chunks):
                 self._save_chunk(
                     job=job,
@@ -171,6 +175,16 @@ class DocumentChunkingService:
                 error=str(exc),
                 exc_info=True,
             )
+        except ProcessShutdownError as exc:
+            job.status = DocumentChunkJobStatus.FAILED.value
+            job.error_code = "process_shutdown"
+            job.error_message = str(exc)
+            logger.warning(
+                "Chunking stopped for process shutdown",
+                job_id=str(job.id),
+                reason="process_shutdown",
+                error=str(exc),
+            )
         except Exception as exc:
             job.status = DocumentChunkJobStatus.FAILED.value
             job.error_code = "chunking_failed"
@@ -206,6 +220,10 @@ class DocumentChunkingService:
             else "Tokenizer models are unavailable"
         )
         raise DocumentModelUnavailableError(detail)
+
+    def _ensure_not_shutting_down(self) -> None:
+        if getattr(self.shutdown_state, "is_shutting_down", False):
+            raise ProcessShutdownError("Process shutdown before chunk job could finish")
 
     def _save_chunk(
         self,
@@ -329,6 +347,32 @@ class DocumentModelUnavailableError(DocumentChunkingError):
     pass
 
 
+class ProcessShutdownError(DocumentChunkingError):
+    pass
+
+
 @dataclass(frozen=True)
 class DeferredOriginalFileDocument:
     source_path: Path
+
+
+def mark_incomplete_chunk_jobs_failed_for_shutdown(*, session: Session, reason: str) -> int:
+    jobs = session.exec(
+        select(DocumentChunkJob).where(
+            col(DocumentChunkJob.status).in_(
+                [
+                    DocumentChunkJobStatus.QUEUED.value,
+                    DocumentChunkJobStatus.RUNNING.value,
+                ]
+            )
+        )
+    ).all()
+    for job in jobs:
+        job.status = DocumentChunkJobStatus.FAILED.value
+        job.error_code = "process_shutdown"
+        job.error_message = f"Process shutdown before chunk job could finish: {reason}"
+        job.finished_at = utc_now()
+        job.updated_at = utc_now()
+        session.add(job)
+    session.commit()
+    return len(jobs)

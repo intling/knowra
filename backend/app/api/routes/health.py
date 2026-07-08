@@ -27,12 +27,25 @@ def read_health(request: Request, settings: SettingsDep) -> HealthResponse:
         app_name=settings.app_name,
         environment=settings.app_env,
         document_models=serialize_document_model_readiness(
-            getattr(request.app.state, "document_model_readiness", None)
+            getattr(request.app.state, "document_model_readiness", None),
+            shutdown_state=getattr(request.app.state, "application_shutdown_state", None),
         ),
     )
 
 
-def serialize_document_model_readiness(readiness: object | None) -> dict:
+def serialize_document_model_readiness(
+    readiness: object | None,
+    *,
+    shutdown_state: object | None = None,
+) -> dict:
+    if getattr(shutdown_state, "is_shutting_down", False):
+        return {
+            "status": "shutting_down",
+            "docling": serialize_component_as_shutting_down(getattr(readiness, "docling", None)),
+            "tokenizer": serialize_component_as_shutting_down(
+                getattr(readiness, "tokenizer", None)
+            ),
+        }
     if readiness is None:
         return {"status": "skipped", "docling": None, "tokenizer": None}
 
@@ -40,6 +53,15 @@ def serialize_document_model_readiness(readiness: object | None) -> dict:
         "status": getattr(readiness, "status", "skipped"),
         "docling": serialize_component(getattr(readiness, "docling", None)),
         "tokenizer": serialize_component(getattr(readiness, "tokenizer", None)),
+    }
+
+
+def serialize_component_as_shutting_down(component: object | None) -> dict | None:
+    if component is None:
+        return None
+    return {
+        "status": "shutting_down",
+        "missing_models": list(getattr(component, "missing_models", []) or []),
     }
 
 
