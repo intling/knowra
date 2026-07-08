@@ -133,7 +133,6 @@ def run_parse_job(
                     service = chunking_service or make_document_chunking_service(
                         session=session,
                         settings=settings,
-                        upload_storage_root=upload_storage_root,
                         model_readiness=model_readiness,
                     )
                     chunk_job = service.run_initial_chunking(
@@ -321,7 +320,6 @@ def make_document_chunking_service(
     *,
     session: Session,
     settings,
-    upload_storage_root: str | Path | None = None,
     model_readiness: object | None = None,
 ) -> DocumentChunkingService:
     config = DocumentChunkingConfig(
@@ -337,7 +335,6 @@ def make_document_chunking_service(
         chunker=DoclingChunkerAdapter(config=config, model_readiness=model_readiness),
         artifact_storage=ChunkArtifactStorage(settings.document_chunk_artifact_storage_dir),
         config=config,
-        upload_storage=LocalFileStorage(upload_storage_root or settings.upload_storage_dir),
         model_readiness=model_readiness,
     )
 

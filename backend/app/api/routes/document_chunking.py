@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy import func
@@ -21,6 +21,7 @@ from app.schemas.document_chunking import (
     RechunkRequest,
 )
 from app.services.document_chunker import DocumentChunkingConfig
+from app.services.document_chunking import RechunkDispatcher
 from app.services.uploads import LocalFileStorage
 from app.services.users import CurrentUserUnavailableError, get_current_user
 
@@ -140,6 +141,7 @@ def rechunk_parsed_document(
     http_request: Request,
     session: SessionDep,
     settings: SettingsDep,
+    background_tasks: BackgroundTasks,
     request: RechunkRequest | None = None,
 ) -> DocumentChunkJobRead | JSONResponse:
     if getattr(
@@ -193,6 +195,7 @@ def rechunk_parsed_document(
         parsed_document=parsed_document,
         config=make_chunking_config(settings=settings, request=request),
     )
+    RechunkDispatcher(background_tasks).enqueue(job.id)
     return DocumentChunkJobRead.model_validate(job, from_attributes=True)
 
 

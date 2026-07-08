@@ -153,9 +153,9 @@ def test_document_chunking_service_does_not_modify_document_segments(tmp_path) -
         ]
 
 
-# 同一解析结果已有 running 作业时，rechunk 应抛出冲突并带回已有作业。
-# 这个测试防止并发重分块造成重复作业。
-def test_rechunk_rejects_running_job_with_conflict(tmp_path) -> None:
+# 同一解析结果已有 running 作业时，_get_running_job 应能返回该作业。
+# 冲突检测已移至 API 层（见 test_document_chunking.py 中的 409 测试）。
+def test_get_running_job_returns_active_job(tmp_path) -> None:
     module = import_module("app.services.document_chunking")
     models = import_module("app.models.document_chunking")
     with chunking_session() as session:
@@ -174,17 +174,14 @@ def test_rechunk_rejects_running_job_with_conflict(tmp_path) -> None:
         session.commit()
         service = make_service(module, session, tmp_path)
 
-        try:
-            service.rechunk(parsed_document_id=parsed_document.id, current_user=user)
-        except module.DocumentChunkConflictError as exc:
-            assert exc.job.id == running_job.id
-        else:
-            raise AssertionError("Expected running chunk job conflict")
+        found = service._get_running_job(parsed_document_id=parsed_document.id)
+        assert found is not None
+        assert found.id == running_job.id
 
 
-# 重分块成功写入新 chunks 后，才应把旧 succeeded 作业标记为 superseded。
-# 这样新分块失败时仍能保留旧的可用结果。
-def test_rechunk_success_supersedes_old_job_only_after_new_chunks_are_saved(tmp_path) -> None:
+# execute_queued_job 在成功分块后应 supersede 旧 succeeded 作业。
+# 该测试验证 supersede 时机：新 chunks 写入成功后旧作业才被标记为 superseded。
+def test_execute_queued_job_supersedes_old_job_after_success(tmp_path) -> None:
     module = import_module("app.services.document_chunking")
     models = import_module("app.models.document_chunking")
     with chunking_session() as session:
@@ -202,16 +199,28 @@ def test_rechunk_success_supersedes_old_job_only_after_new_chunks_are_saved(tmp_
         )
         session.add(old_job)
         session.commit()
+
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
         service = make_service(module, session, tmp_path)
 
-        new_job = service.rechunk(
-            parsed_document_id=parsed_document.id,
-            current_user=user,
-            parser=SimpleNamespace(parse=lambda *_args, **_kwargs: make_minimal_docling_document()),
+        result = service.execute_queued_job(
+            job=queued_job,
+            parsed_document=parsed_document,
+            transient_docling_document=make_minimal_docling_document(),
         )
 
         session.refresh(old_job)
-        assert new_job.status == "succeeded"
+        assert result.status == "succeeded"
         assert old_job.status == "superseded"
 
 
@@ -364,4 +373,330 @@ def test_document_chunking_service_marks_process_shutdown_before_success_persist
         stored_job = session.get(models.DocumentChunkJob, job.id)
         assert stored_job.status == "failed"
         assert stored_job.error_code == "process_shutdown"
+        assert chunker.calls != []
+
+
+# ── T1.1: execute_queued_job() 单元测试 ────────────────────────────
+
+
+# execute_queued_job 应对 QUEUED 作业执行分块，并 supersede 旧 succeeded 作业。
+# 测试验证方法委托 _run_job 以 supersede_previous=True 模式运行。
+def test_execute_queued_job_runs_with_supersede_previous_true(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        old_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="succeeded",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+            chunk_count=1,
+        )
+        session.add(old_job)
+        session.commit()
+
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        chunker = FakeChunker()
+        service = make_service(module, session, tmp_path, chunker=chunker)
+
+        result = service.execute_queued_job(
+            job=queued_job,
+            parsed_document=parsed_document,
+            transient_docling_document=make_minimal_docling_document(),
+        )
+
+        session.refresh(old_job)
+        session.refresh(result)
+        assert result.status == "succeeded"
+        assert old_job.status == "superseded"
+        assert chunker.calls != []
+
+
+# execute_queued_job 不应创建新作业，直接使用传入的 job 参数。
+# 测试验证作业总数不变，且返回的 job ID 与传入一致。
+def test_execute_queued_job_does_not_create_new_job(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=parsed_document.owner_user_id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        job_count_before = len(session.exec(select(models.DocumentChunkJob)).all())
+        service = make_service(module, session, tmp_path)
+
+        result = service.execute_queued_job(
+            job=queued_job,
+            parsed_document=parsed_document,
+            transient_docling_document=make_minimal_docling_document(),
+        )
+
+        job_count_after = len(session.exec(select(models.DocumentChunkJob)).all())
+        assert result.id == queued_job.id
+        assert job_count_after == job_count_before
+
+
+# ── T1.2: run_rechunk_job 单元测试 ──────────────────────────────────
+
+
+class FakeParser:
+    """注入到 run_rechunk_job 的假解析器，返回可控的解析结果。"""
+
+    def __init__(self, result=None, error: Exception | None = None) -> None:
+        self.result = result
+        self.error = error
+        self.calls: list = []
+
+    def parse(self, path, *, document_format=None):
+        self.calls.append((path, document_format))
+        if self.error is not None:
+            raise self.error
+        if self.result is not None:
+            return self.result
+        return SimpleNamespace(transient_docling_document=make_minimal_docling_document())
+
+
+def _make_session_factory(session):
+    """将单个 SQLModel Session 包装为 run_rechunk_job 兼容的工厂。"""
+    from contextlib import contextmanager
+
+    @contextmanager
+    def factory():
+        yield session
+
+    return factory
+
+
+# run_rechunk_job 正常路径：加载 QUEUED job → 解析 → 分块 → SUCCEEDED。
+# 测试通过注入假 parser 和 chunking_service 隔离真实 Docling 依赖。
+def test_run_rechunk_job_succeeds_with_valid_queued_job(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        chunker = FakeChunker()
+        service = make_service(module, session, tmp_path, chunker=chunker)
+        fake_parser = FakeParser()
+
+        module.run_rechunk_job(
+            queued_job.id,
+            session_factory=_make_session_factory(session),
+            parser=fake_parser,
+            upload_storage_root=tmp_path / "uploads",
+            chunking_service=service,
+        )
+
+        session.refresh(queued_job)
+        assert queued_job.status == "succeeded"
+        assert chunker.calls != []
+        assert len(fake_parser.calls) == 1
+
+
+# 作业已非 QUEUED 时，run_rechunk_job 应幂等返回，不修改作业。
+def test_run_rechunk_job_idempotent_when_job_not_queued(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        succeeded_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="succeeded",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+            chunk_count=1,
+        )
+        session.add(succeeded_job)
+        session.commit()
+        session.refresh(succeeded_job)
+
+        original_status = succeeded_job.status
+        original_chunk_count = succeeded_job.chunk_count
+
+        module.run_rechunk_job(
+            succeeded_job.id,
+            session_factory=_make_session_factory(session),
+            upload_storage_root=tmp_path / "uploads",
+        )
+
+        session.refresh(succeeded_job)
+        assert succeeded_job.status == original_status
+        assert succeeded_job.chunk_count == original_chunk_count
+
+
+# 原始文件缺失时，run_rechunk_job 应将作业标记为 failed 且不抛异常。
+def test_run_rechunk_job_fails_when_original_file_missing(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        # 指向不存在的上传存储目录
+        module.run_rechunk_job(
+            queued_job.id,
+            session_factory=_make_session_factory(session),
+            upload_storage_root=tmp_path / "nonexistent",
+        )
+
+        session.refresh(queued_job)
+        assert queued_job.status == "failed"
+
+
+# 解析器抛错时，run_rechunk_job 应将作业标记为 failed 且不传播异常。
+def test_run_rechunk_job_fails_when_parse_throws(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        # 不应传播异常
+        module.run_rechunk_job(
+            queued_job.id,
+            session_factory=_make_session_factory(session),
+            parser=FakeParser(error=RuntimeError("simulated parse failure")),
+            upload_storage_root=tmp_path / "uploads",
+        )
+
+        session.refresh(queued_job)
+        assert queued_job.status == "failed"
+
+
+# shutdown 时 run_rechunk_job 应将作业标记为 process_shutdown 且不调用 parser/chunker。
+def test_run_rechunk_job_fails_on_shutdown_without_calling_parser_or_chunker(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        fake_parser = FakeParser()
+        module.run_rechunk_job(
+            queued_job.id,
+            session_factory=_make_session_factory(session),
+            parser=fake_parser,
+            upload_storage_root=tmp_path / "uploads",
+            shutdown_state=ShutdownState(is_shutting_down=True),
+        )
+
+        session.refresh(queued_job)
+        assert queued_job.status == "failed"
+        assert queued_job.error_code == "process_shutdown"
+        assert fake_parser.calls == []
+
+
+# run_rechunk_job 应使用注入的 session_factory 和 parser，而非默认实现。
+def test_run_rechunk_job_uses_injected_dependencies(tmp_path) -> None:
+    module = import_module("app.services.document_chunking")
+    models = import_module("app.models.document_chunking")
+    with chunking_session() as session:
+        user, upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session,
+            tmp_path / "uploads",
+        )
+        queued_job = models.DocumentChunkJob(
+            parsed_document_id=parsed_document.id,
+            owner_user_id=user.id,
+            status="queued",
+            chunker_name="docling_hybrid",
+            chunk_config_json={},
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        fake_parser = FakeParser()
+        chunker = FakeChunker()
+        service = make_service(module, session, tmp_path, chunker=chunker)
+
+        module.run_rechunk_job(
+            queued_job.id,
+            session_factory=_make_session_factory(session),
+            parser=fake_parser,
+            upload_storage_root=tmp_path / "uploads",
+            chunking_service=service,
+        )
+
+        # 验证注入了 parser 和 chunking_service
+        assert len(fake_parser.calls) == 1
         assert chunker.calls != []
