@@ -22,6 +22,17 @@ import type {
   DocumentParseJob,
   ParsedDocument,
 } from "../api/documentParsing"
+import {
+  getChunkJobEmbeddings,
+  getChunkJobLatestEmbeddingJob,
+  getDocumentEmbeddingJob,
+  reembedChunkJob,
+} from "../api/embedding"
+import type {
+  DocumentEmbeddingJob,
+  EmbeddingPageResponse,
+  EmbeddingConflictError,
+} from "../api/embedding"
 import { uploadFile, type UploadedFile } from "../api/uploads"
 import { createLogger, getRingBuffer } from "../shared/logger"
 import { useAppStore } from "../stores/app"
@@ -57,6 +68,17 @@ const chunkPollGeneration = ref(0)
 const rechunkMaxTokens = ref(512)
 const rechunkMergePeers = ref(true)
 
+// ── 向量化状态 ──
+const currentEmbeddingJob = ref<DocumentEmbeddingJob | null>(null)
+const embeddingPage = ref<EmbeddingPageResponse | null>(null)
+const embeddingFeedback = ref<string | null>(null)
+const isLoadingEmbeddings = ref(false)
+const isReembedding = ref(false)
+const embeddingPollGeneration = ref(0)
+const embeddingStatusMode = ref<"initial" | "reembed">("initial")
+/** 从已加载分块中提取的 chunk job ID，确保 currentChunkJob 为 null 时仍可重新向量化。 */
+const currentChunkJobId = ref<string | null>(null)
+
 const ACTIVE_PARSE_STATUSES = new Set<DocumentParseJob["status"]>([
   "queued",
   "running",
@@ -70,6 +92,13 @@ const ACTIVE_CHUNK_STATUSES = new Set<DocumentChunkJob["status"]>([
 const CHUNK_STATUS_POLL_INTERVAL_MS = 1000
 const CHUNK_STATUS_MAX_POLLS = 60
 const CHUNK_PREVIEW_LIMIT = 20
+const ACTIVE_EMBEDDING_STATUSES = new Set<DocumentEmbeddingJob["status"]>([
+  "queued",
+  "running",
+])
+const EMBEDDING_STATUS_POLL_INTERVAL_MS = 1000
+const EMBEDDING_STATUS_MAX_POLLS = 120
+const VECTOR_PREVIEW_LIMIT = 5
 
 const canSend = computed(
   () =>
@@ -147,6 +176,58 @@ const rechunkConfig = computed(() => ({
   merge_peers: rechunkMergePeers.value,
 }))
 
+// ── 向量化计算属性 ──
+
+const hasEmbeddingPreview = computed(() => embeddingPage.value !== null && embeddingPage.value.items.length > 0)
+const isEmbeddingJobRunning = computed(
+  () =>
+    isReembedding.value ||
+    (currentEmbeddingJob.value !== null &&
+      ACTIVE_EMBEDDING_STATUSES.has(currentEmbeddingJob.value.status)),
+)
+const embeddingStatusText = computed(() => {
+  if (embeddingFeedback.value) return embeddingFeedback.value
+  if (isLoadingEmbeddings.value) return "向量化状态加载中"
+
+  const job = currentEmbeddingJob.value
+  if (job === null) {
+    return hasEmbeddingPreview.value ? "向量化完成" : null
+  }
+
+  if (job.status === "succeeded") return "向量化完成"
+
+  if (ACTIVE_EMBEDDING_STATUSES.has(job.status)) {
+    return embeddingStatusMode.value === "reembed" ? "重新向量化中" : "向量化中"
+  }
+
+  if (job.status === "failed") {
+    const reason = job.error_message ? `：${job.error_message}` : ""
+    return `${embeddingStatusMode.value === "reembed" ? "重新向量化失败" : "向量化失败"}${reason}`
+  }
+
+  if (job.status === "superseded") return "向量结果已被更新"
+
+  return null
+})
+const embeddingPanelVisible = computed(
+  () =>
+    currentEmbeddingJob.value !== null ||
+    hasEmbeddingPreview.value ||
+    embeddingFeedback.value !== null ||
+    isLoadingEmbeddings.value,
+)
+const embeddingModelInfo = computed(() => {
+  const job = currentEmbeddingJob.value
+  if (job && job.status === "succeeded") {
+    return `${job.model} / ${job.dimensions} 维`
+  }
+  if (hasEmbeddingPreview.value && embeddingPage.value!.items.length > 0) {
+    const first = embeddingPage.value!.items[0]
+    return `${first.model} / ${first.dimensions} 维`
+  }
+  return null
+})
+
 const resizeInput = async () => {
   await nextTick()
 
@@ -186,6 +267,7 @@ const removeSelectedFile = () => {
   parseFeedback.value = null
   canRetryParse.value = false
   resetChunkState()
+  resetEmbeddingState()
 
   if (fileInputRef.value) {
     fileInputRef.value.value = ""
@@ -204,11 +286,23 @@ const resetChunkState = () => {
   chunkPollGeneration.value += 1
   parsedDocumentInfo.value = null
   currentChunkJob.value = null
+  currentChunkJobId.value = null
   chunkPage.value = null
   chunkFeedback.value = null
   isLoadingChunks.value = false
   isRechunking.value = false
   chunkStatusMode.value = "initial"
+}
+
+const resetEmbeddingState = () => {
+  embeddingPollGeneration.value += 1
+  currentEmbeddingJob.value = null
+  currentChunkJobId.value = null
+  embeddingPage.value = null
+  embeddingFeedback.value = null
+  isLoadingEmbeddings.value = false
+  isReembedding.value = false
+  embeddingStatusMode.value = "initial"
 }
 
 const wait = (milliseconds: number) =>
@@ -306,6 +400,153 @@ const loadChunkPreview = async (parsedDocument: ParsedDocument) => {
   return page
 }
 
+// ── 向量化状态加载与轮询 ──
+
+const loadEmbeddingState = async (chunkJobId: string) => {
+  isLoadingEmbeddings.value = true
+  embeddingFeedback.value = null
+  embeddingStatusMode.value = "initial"
+
+  try {
+    const page = await getChunkJobEmbeddings(chunkJobId, { offset: 0, limit: 1 })
+    if (page.items.length > 0) {
+      embeddingPage.value = page
+      const jobId = page.items[0].embedding_job_id
+      try {
+        currentEmbeddingJob.value = await getDocumentEmbeddingJob(jobId)
+      } catch {
+        // 即使读取作业详情失败，有向量结果就展示成功状态
+        currentEmbeddingJob.value = null
+      }
+      return
+    }
+
+    // 无活跃向量结果 —— 查询最新向量化作业状态以展示进度/失败信息
+    try {
+      currentEmbeddingJob.value = await getChunkJobLatestEmbeddingJob(chunkJobId)
+      if (
+        currentEmbeddingJob.value !== null &&
+        ACTIVE_EMBEDDING_STATUSES.has(currentEmbeddingJob.value.status)
+      ) {
+        // 作业仍在运行中，启动轮询
+        startEmbeddingJobPolling(currentEmbeddingJob.value)
+      }
+    } catch (error) {
+      // 404: 无向量化作业记录，后端可能尚未创建 —— 正常情况
+      // 其他错误（5xx、网络错误等）：记录日志并设置反馈提示
+      if (!(error instanceof Error && error.message.includes("404"))) {
+        log().warn("无法获取向量化作业状态", error)
+        embeddingFeedback.value = getErrorText(error, "向量化状态查询异常")
+      }
+      currentEmbeddingJob.value = null
+    }
+    embeddingPage.value = null
+  } catch (error) {
+    // API 请求本身失败（网络错误、5xx 等），记录日志
+    log().warn("向量化状态加载失败", error)
+    embeddingFeedback.value = getErrorText(error, "向量化状态加载失败")
+  } finally {
+    isLoadingEmbeddings.value = false
+  }
+}
+
+const startEmbeddingJobPolling = (initialJob: DocumentEmbeddingJob) => {
+  const pollGeneration = embeddingPollGeneration.value
+  void pollEmbeddingJobUntilSettled(initialJob, pollGeneration)
+}
+
+const pollEmbeddingJobUntilSettled = async (
+  initialJob: DocumentEmbeddingJob,
+  pollGeneration: number,
+) => {
+  let job = initialJob
+
+  for (
+    let pollCount = 0;
+    ACTIVE_EMBEDDING_STATUSES.has(job.status) &&
+    pollCount < EMBEDDING_STATUS_MAX_POLLS;
+    pollCount += 1
+  ) {
+    try {
+      job = await getDocumentEmbeddingJob(job.id)
+    } catch (error) {
+      if (pollGeneration === embeddingPollGeneration.value) {
+        embeddingFeedback.value = getErrorText(error, "向量化状态读取失败")
+      }
+      return
+    }
+
+    if (pollGeneration !== embeddingPollGeneration.value) return
+
+    currentEmbeddingJob.value = job
+    if (ACTIVE_EMBEDDING_STATUSES.has(job.status)) {
+      await wait(EMBEDDING_STATUS_POLL_INTERVAL_MS)
+    }
+  }
+
+  if (pollGeneration !== embeddingPollGeneration.value) return
+
+  if (job.status === "succeeded") {
+    try {
+      const chunkJobId = job.chunk_job_id
+      embeddingPage.value = await getChunkJobEmbeddings(chunkJobId, { offset: 0, limit: 1 })
+    } catch (error) {
+      if (pollGeneration === embeddingPollGeneration.value) {
+        embeddingFeedback.value = getErrorText(error, "向量结果读取失败")
+      }
+    }
+  }
+}
+
+const handleReembed = async () => {
+  const chunkJobId = currentChunkJob.value?.id ?? currentChunkJobId.value
+  if (!chunkJobId || isEmbeddingJobRunning.value) return
+
+  embeddingPollGeneration.value += 1
+  isReembedding.value = true
+  embeddingStatusMode.value = "reembed"
+  embeddingFeedback.value = null
+
+  try {
+    const job = await reembedChunkJob(chunkJobId)
+    currentEmbeddingJob.value = job
+
+    if (job.status === "succeeded") {
+      embeddingPage.value = await getChunkJobEmbeddings(chunkJobId, { offset: 0, limit: 1 })
+    } else if (ACTIVE_EMBEDDING_STATUSES.has(job.status)) {
+      startEmbeddingJobPolling(job)
+    }
+  } catch (error: unknown) {
+    if (isEmbeddingConflictError(error)) {
+      currentEmbeddingJob.value = error.job
+      embeddingFeedback.value = error.detail
+    } else if (isEmbeddingShutdownError(error)) {
+      embeddingFeedback.value = "服务正在关闭，请稍后重试"
+    } else {
+      embeddingFeedback.value = getErrorText(error, "重新向量化失败")
+    }
+  } finally {
+    isReembedding.value = false
+  }
+}
+
+const isEmbeddingConflictError = (
+  error: unknown,
+): error is EmbeddingConflictError =>
+  typeof error === "object" &&
+  error !== null &&
+  "status" in error &&
+  (error as { status?: unknown }).status === 409 &&
+  "detail" in error &&
+  typeof (error as { detail?: unknown }).detail === "string" &&
+  "job" in error
+
+const isEmbeddingShutdownError = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  "status" in error &&
+  (error as { status?: unknown }).status === 503
+
 const pollChunkJobUntilSettled = async (
   initialJob: DocumentChunkJob,
   parsedDocument: ParsedDocument,
@@ -339,6 +580,7 @@ const pollChunkJobUntilSettled = async (
   if (pollGeneration !== chunkPollGeneration.value) return
 
   if (job.status === "succeeded") {
+    currentChunkJobId.value = job.id
     try {
       await loadChunkPreview(parsedDocument)
     } catch (error) {
@@ -346,6 +588,8 @@ const pollChunkJobUntilSettled = async (
         chunkFeedback.value = getErrorText(error, "分块状态读取失败")
       }
     }
+    // 自动加载向量化状态
+    void loadEmbeddingState(job.id)
   }
 }
 
@@ -366,15 +610,27 @@ const loadInitialChunkState = async (parsedDocument: ParsedDocument) => {
     const page = await loadChunkPreview(parsedDocument)
     if (page.items.length > 0) {
       currentChunkJob.value = null
+      currentChunkJobId.value = page.items[0].chunk_job_id
+      // 自动加载向量化状态
+      void loadEmbeddingState(page.items[0].chunk_job_id)
       return
     }
 
     await loadLatestChunkJob(parsedDocument.id, { allowMissing: true })
-    if (
-      currentChunkJob.value !== null &&
-      ACTIVE_CHUNK_STATUSES.has(currentChunkJob.value.status)
-    ) {
-      startChunkJobPolling(currentChunkJob.value, parsedDocument)
+    if (currentChunkJob.value !== null) {
+      currentChunkJobId.value = currentChunkJob.value.id
+      if (ACTIVE_CHUNK_STATUSES.has(currentChunkJob.value.status)) {
+        startChunkJobPolling(currentChunkJob.value, parsedDocument)
+      } else if (currentChunkJob.value.status === "succeeded") {
+        // 竞态：loadChunkPreview 返回空后分块在两次 API 调用之间完成
+        const freshPage = await loadChunkPreview(parsedDocument)
+        if (freshPage.items.length > 0) {
+          currentChunkJob.value = null
+          void loadEmbeddingState(freshPage.items[0].chunk_job_id)
+        } else {
+          chunkFeedback.value = "分块已完成，但无法加载分块内容"
+        }
+      }
     }
   } catch (error) {
     chunkFeedback.value = getErrorText(error, "分块状态读取失败")
@@ -401,6 +657,7 @@ const startParseForUpload = async (uploaded: UploadedFile) => {
   parseFeedback.value = null
   canRetryParse.value = false
   resetChunkState()
+  resetEmbeddingState()
 
   try {
     const job = await createDocumentParseJob(uploaded.id)
@@ -497,10 +754,13 @@ const handleRechunk = async () => {
       rechunkConfig.value,
     )
     currentChunkJob.value = job
+    currentChunkJobId.value = job.id
     await loadChunkJob(job.id)
 
     if (currentChunkJob.value?.status === "succeeded") {
       await loadChunkPreview(parsedDocumentInfo.value)
+      // 重新分块成功后重新加载向量化状态
+      void loadEmbeddingState(job.id)
     } else if (
       currentChunkJob.value !== null &&
       ACTIVE_CHUNK_STATUSES.has(currentChunkJob.value.status)
@@ -656,6 +916,63 @@ onMounted(() => {
           >
             暂无分块可预览
           </p>
+        </div>
+
+        <!-- 向量化状态面板 -->
+        <div
+          v-if="embeddingPanelVisible && hasChunkPreview"
+          data-testid="embedding-panel"
+          class="mt-5 border-t border-zinc-200 pt-4"
+        >
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p
+                v-if="embeddingStatusText"
+                data-testid="embedding-status"
+                class="text-sm font-medium text-zinc-700"
+              >
+                {{ embeddingStatusText }}
+              </p>
+              <p class="mt-1 text-sm text-zinc-500">
+                <template v-if="embeddingModelInfo">
+                  {{ embeddingModelInfo }}
+                </template>
+                <template v-else-if="hasEmbeddingPreview">
+                  向量化完成不等于可搜索或可问答。
+                </template>
+                <template v-else-if="isEmbeddingJobRunning">
+                  向量化处理中，请稍候...
+                </template>
+                <template v-else>
+                  暂未向量化。
+                </template>
+              </p>
+            </div>
+            <button
+              data-testid="reembed-button"
+              class="h-9 rounded-lg bg-zinc-950 px-3 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400"
+              type="button"
+              :disabled="(!currentChunkJob && !currentChunkJobId) || isEmbeddingJobRunning"
+              @click="handleReembed"
+            >
+              重新向量化
+            </button>
+          </div>
+
+          <!-- 向量预览 -->
+          <div
+            v-if="hasEmbeddingPreview && embeddingPage"
+            data-testid="embedding-preview"
+            class="mt-3 rounded-lg border border-zinc-200 bg-white p-3 shadow-sm"
+          >
+            <p class="text-xs font-medium text-zinc-500 mb-2">向量预览（前 {{ VECTOR_PREVIEW_LIMIT }} 维）</p>
+            <p class="text-xs text-zinc-700 font-mono break-all">
+              {{ embeddingPage.items[0].embedding_json.slice(0, VECTOR_PREVIEW_LIMIT).map(v => v.toFixed(6)).join(", ") }}...
+            </p>
+            <p class="mt-2 text-xs text-zinc-400">
+              {{ embeddingPage.items[0].model }} · {{ embeddingPage.items[0].dimensions }} 维 · {{ embeddingPage.items[0].token_count ?? "?" }} tokens
+            </p>
+          </div>
         </div>
       </section>
     </div>

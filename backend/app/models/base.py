@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel
 
 from app.models.document_chunking import DocumentChunk, DocumentChunkJob
+from app.models.document_embedding import DocumentEmbedding, DocumentEmbeddingJob
 from app.models.document_parsing import DocumentParseJob, DocumentSegment, ParsedDocument
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User
@@ -11,6 +12,8 @@ metadata = SQLModel.metadata
 __all__ = [
     "DocumentChunk",
     "DocumentChunkJob",
+    "DocumentEmbedding",
+    "DocumentEmbeddingJob",
     "DocumentParseJob",
     "DocumentSegment",
     "ParsedDocument",

@@ -243,8 +243,22 @@ class DoclingModelAdapter:
     def _has_model(self, root: Path, model: str) -> bool:
         paths = self._MODEL_PATHS.get(model)
         if paths is None:
-            return root.joinpath(model).exists()
-        return all(root.joinpath(path).exists() for path in paths)
+            return self._path_has_complete_model(root.joinpath(model))
+        return all(
+            self._path_has_complete_model(root.joinpath(path)) for path in paths
+        )
+
+    @staticmethod
+    def _path_has_complete_model(target: Path) -> bool:
+        """Return True if *target* exists and contains no incomplete-download markers."""
+        if not target.exists():
+            return False
+        # HuggingFace Hub / snapshot_download leaves *.incomplete files when a
+        # download is interrupted – treat those as missing so the bootstrap
+        # re-downloads rather than failing at pipeline-initialisation time.
+        if any(target.rglob("*.incomplete")):
+            return False
+        return True
 
 
 class TokenizerModelAdapter:

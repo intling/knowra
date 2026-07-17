@@ -135,14 +135,19 @@ class DocumentFormatPolicy:
 
     @staticmethod
     def _validate_text(path: Path) -> None:
-        try:
-            sample = path.read_bytes()[:8192]
-            sample.decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise UnsupportedDocumentFormatError("Text sample is not readable") from exc
-
+        sample = path.read_bytes()[:8192]
         if b"\x00" in sample:
             raise UnsupportedDocumentFormatError("Text sample contains binary data")
+        # Try UTF-8 first, then common system encodings so that .md / .txt
+        # files created on non-UTF-8 systems (e.g. GBK on Chinese Windows)
+        # are not falsely rejected before Docling can process them.
+        for encoding in ("utf-8", "utf-8-sig", "gbk", "gb2312", "gb18030", "latin-1"):
+            try:
+                sample.decode(encoding)
+                return
+            except (UnicodeDecodeError, LookupError):
+                continue
+        raise UnsupportedDocumentFormatError("Text sample is not readable")
 
 
 class DoclingParserAdapter:
@@ -167,8 +172,6 @@ class DoclingParserAdapter:
 
     def parse(self, path: str | Path, *, document_format: DocumentFormat) -> ParsedDocumentResult:
         file_path = Path(path)
-        if document_format in {DocumentFormat.TXT, DocumentFormat.MARKDOWN}:
-            return self._parse_text(file_path, document_format=document_format)
 
         converter = self.converter or self._create_converter()
         try:
@@ -177,40 +180,6 @@ class DoclingParserAdapter:
             raise DocumentParseError(str(exc)) from exc
 
         return self._normalize_docling_result(result)
-
-    def _parse_text(
-        self,
-        path: Path,
-        *,
-        document_format: DocumentFormat,
-    ) -> ParsedDocumentResult:
-        text = path.read_text(encoding="utf-8")
-        source_format = document_format.value
-        payload = ParsedDocumentPayload(
-            markdown=text,
-            text=text,
-            docling_json={
-                "source_format": source_format,
-                "content": text,
-            },
-            page_count=1,
-            metadata={"source_format": source_format},
-            segments=[
-                ParsedSegmentPayload(
-                    sequence_index=0,
-                    segment_type="paragraph",
-                    page_no=1,
-                    text=text,
-                    metadata={"source_format": source_format},
-                )
-            ],
-        )
-        ensure_parsed_payload_has_text_content(payload)
-        return ParsedDocumentResult(
-            persistent_payload=payload,
-            transient_docling_document=None,
-            transient_missing_reason="native_docling_document_unavailable",
-        )
 
     def _create_converter(self) -> object:
         return self._create_converter_instance(preload=False)

@@ -82,7 +82,7 @@ def create_document_parse_job(
     except UnsupportedDocumentFormatError as exc:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported document format",
+            detail=str(exc) if str(exc) else "Unsupported document format",
         ) from exc
     except DocumentParseTooLargeError as exc:
         raise HTTPException(

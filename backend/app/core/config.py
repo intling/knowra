@@ -68,6 +68,15 @@ class Settings(BaseSettings):
     document_chunk_repeat_table_header: bool = True
     document_chunk_inline_text_max_bytes: int = 2048
     document_chunk_artifact_storage_dir: str = "storage/chunks"
+    document_embedding_enabled: bool = True
+    document_embedding_api_base_url: str = "https://router.tumuer.me/v1"
+    document_embedding_api_key: str = ""
+    document_embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
+    document_embedding_dimensions: int = 1024
+    document_embedding_encoding_format: str = "float"
+    document_embedding_batch_size: int = 100
+    document_embedding_max_retries: int = 3
+    document_embedding_request_timeout: float = 60.0
     document_model_bootstrap_enabled: bool = True
     document_model_bootstrap_strategy: str = "download_missing"
     document_model_bootstrap_failure_policy: str = "degraded"

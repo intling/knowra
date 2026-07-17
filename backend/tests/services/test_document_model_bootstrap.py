@@ -191,6 +191,35 @@ def test_docling_model_adapter_recognizes_nested_tableformer_artifacts(tmp_path)
     assert result.missing_models == []
 
 
+# 测试 Docling adapter 检测到 .incomplete 文件时将模型标记为缺失。
+# 该测试保护 HuggingFace Hub 下载中断后不会误判模型已就绪。
+def test_docling_model_adapter_detects_incomplete_download(tmp_path) -> None:
+    module = get_bootstrap_module()
+    artifact_dir = tmp_path / "document-models" / "docling"
+    layout_dir = artifact_dir / "docling-project--docling-layout-heron"
+    layout_dir.mkdir(parents=True)
+    # Simulate an interrupted HuggingFace Hub download that left an
+    # .incomplete marker behind – the directory exists but the weights
+    # are missing.
+    incomplete_marker = (
+        layout_dir
+        / ".cache"
+        / "huggingface"
+        / "download"
+        / "abc123.incomplete"
+    )
+    incomplete_marker.parent.mkdir(parents=True)
+    incomplete_marker.write_text("")
+
+    result = module.DoclingModelAdapter().check(
+        artifact_dir=str(artifact_dir),
+        required_models=["layout", "tableformer"],
+    )
+
+    assert result.status == "unavailable"
+    assert "layout" in result.missing_models
+
+
 # 测试 fail_fast 在模型不可用时中止启动。
 # 该测试要求实现提供项目内异常，避免应用在必需模型缺失时继续服务。
 def test_document_model_bootstrap_fail_fast_raises_when_unavailable() -> None:
