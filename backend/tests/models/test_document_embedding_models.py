@@ -79,8 +79,8 @@ def test_document_embedding_job_has_correct_defaults() -> None:
         chunk_job_id=uuid4(),
         parsed_document_id=uuid4(),
         owner_user_id=uuid4(),
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
     )
 
     assert job.status == "queued"
@@ -111,8 +111,8 @@ def test_document_embedding_job_config_json_snapshot() -> None:
     models = import_module("app.models.document_embedding")
 
     config_json = {
-        "model": "Qwen/Qwen3-Embedding-0.6B",
-        "dimensions": 1024,
+        "model": "Qwen/Qwen3-Embedding-4B",
+        "dimensions": 2560,
         "batch_size": 100,
         "encoding_format": "float",
     }
@@ -121,14 +121,14 @@ def test_document_embedding_job_config_json_snapshot() -> None:
         chunk_job_id=uuid4(),
         parsed_document_id=uuid4(),
         owner_user_id=uuid4(),
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         config_json=config_json,
     )
 
     assert job.config_json == config_json
-    assert job.config_json["model"] == "Qwen/Qwen3-Embedding-0.6B"
-    assert job.config_json["dimensions"] == 1024
+    assert job.config_json["model"] == "Qwen/Qwen3-Embedding-4B"
+    assert job.config_json["dimensions"] == 2560
     assert job.config_json["batch_size"] == 100
     assert job.config_json["encoding_format"] == "float"
 
@@ -145,7 +145,7 @@ def test_document_embedding_job_status_enum_constraints() -> None:
             parsed_document_id=uuid4(),
             owner_user_id=uuid4(),
             model="test-model",
-            dimensions=1024,
+            dimensions=2560,
             status=status_value,
         )
         assert job.status == status_value
@@ -188,7 +188,7 @@ def test_document_embedding_creation_with_embedding_json() -> None:
         parsed_document_id=uuid4(),
         owner_user_id=uuid4(),
         sequence_index=0,
-        model="Qwen/Qwen3-Embedding-0.6B",
+        model="Qwen/Qwen3-Embedding-4B",
         dimensions=len(embedding_vector),
         embedding_json=embedding_vector,
         token_count=42,
@@ -198,7 +198,7 @@ def test_document_embedding_creation_with_embedding_json() -> None:
     assert len(embedding.embedding_json) == 4
     assert embedding.embedding_json[0] == 0.123
     assert embedding.embedding_json[1] == -0.456
-    assert embedding.model == "Qwen/Qwen3-Embedding-0.6B"
+    assert embedding.model == "Qwen/Qwen3-Embedding-4B"
     assert embedding.dimensions == 4
     assert embedding.token_count == 42
     assert embedding.sequence_index == 0

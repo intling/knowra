@@ -32,8 +32,8 @@ const EMBEDDING_JOB_RESPONSE = {
   owner_user_id: "00000000-0000-0000-0000-000000000001",
   status: "succeeded",
   embedder_name: "openai_compatible",
-  model: "Qwen/Qwen3-Embedding-0.6B",
-  dimensions: 1024,
+  model: "Qwen/Qwen3-Embedding-4B",
+  dimensions: 2560,
   embedding_count: 2,
   attempt_count: 1,
   started_at: "2026-06-12T00:00:02Z",
@@ -41,8 +41,8 @@ const EMBEDDING_JOB_RESPONSE = {
   error_code: null,
   error_message: null,
   config_json: {
-    model: "Qwen/Qwen3-Embedding-0.6B",
-    dimensions: 1024,
+    model: "Qwen/Qwen3-Embedding-4B",
+    dimensions: 2560,
     batch_size: 100,
     encoding_format: "float",
   },
@@ -55,8 +55,8 @@ const EMBEDDING_RESPONSE = {
   chunk_id: "66666666-6666-6666-6666-666666666666",
   embedding_job_id: EMBEDDING_JOB_RESPONSE.id,
   sequence_index: 0,
-  model: "Qwen/Qwen3-Embedding-0.6B",
-  dimensions: 1024,
+  model: "Qwen/Qwen3-Embedding-4B",
+  dimensions: 2560,
   embedding_json: [0.01234, -0.05678, 0.09123],
   token_count: 10,
   created_at: "2026-06-12T00:00:04Z",
@@ -203,8 +203,8 @@ describe("embedding api client", () => {
 
     await expect(
       reembedChunkJob(EMBEDDING_JOB_RESPONSE.chunk_job_id, {
-        model: "Qwen/Qwen3-Embedding-0.6B",
-        dimensions: 1024,
+        model: "Qwen/Qwen3-Embedding-4B",
+        dimensions: 2560,
       }),
     ).resolves.toMatchObject({
       id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
@@ -220,8 +220,8 @@ describe("embedding api client", () => {
           "Content-Type": "application/json",
         }),
         body: JSON.stringify({
-          model: "Qwen/Qwen3-Embedding-0.6B",
-          dimensions: 1024,
+          model: "Qwen/Qwen3-Embedding-4B",
+          dimensions: 2560,
         }),
       }),
     )

@@ -13,8 +13,8 @@ def test_document_embedding_default_settings_are_available() -> None:
     assert settings.document_embedding_enabled is True
     assert settings.document_embedding_api_base_url == "https://router.tumuer.me/v1"
     assert settings.document_embedding_api_key == ""
-    assert settings.document_embedding_model == "Qwen/Qwen3-Embedding-0.6B"
-    assert settings.document_embedding_dimensions == 1024
+    assert settings.document_embedding_model == "Qwen/Qwen3-Embedding-4B"
+    assert settings.document_embedding_dimensions == 2560
     assert settings.document_embedding_encoding_format == "float"
     assert settings.document_embedding_batch_size == 100
     assert settings.document_embedding_max_retries == 3

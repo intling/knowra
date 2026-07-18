@@ -2,7 +2,7 @@
 
 ## Purpose
 
-定义 knowra 文档向量化能力，在现有文档解析与分块基础上，将 chunk 文本通过云端 embedding API 转化为稠密向量并持久化，为后续向量存储和语义检索提供标准化的向量输入。首版采用 OpenAI 兼容的云端 API（tumuer.me `Qwen/Qwen3-Embedding-0.6B`），不写入 pgvector 向量索引列，不实现语义检索。
+定义 knowra 文档向量化能力，在现有文档解析与分块基础上，将 chunk 文本通过云端 embedding API 转化为稠密向量并持久化，为后续向量存储和语义检索提供标准化的向量输入。首版采用 OpenAI 兼容的云端 API（tumuer.me `Qwen/Qwen3-Embedding-4B`），不写入 pgvector 向量索引列，不实现语义检索。
 
 ## Requirements
 
@@ -301,8 +301,8 @@
 - **THEN** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_ENABLED`，默认值为 `true`
 - **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_API_BASE_URL`，默认值为 `https://router.tumuer.me/v1`
 - **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_API_KEY`
-- **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_MODEL`，默认值为 `Qwen/Qwen3-Embedding-0.6B`
-- **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_DIMENSIONS`，默认值为 `1024`
+- **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_MODEL`，默认值为 `Qwen/Qwen3-Embedding-4B`
+- **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_DIMENSIONS`，默认值为 `2560`
 - **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_ENCODING_FORMAT`，默认值为 `float`
 - **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_BATCH_SIZE`，默认值为 `100`
 - **AND** 系统 MUST 从配置中读取 `DOCUMENT_EMBEDDING_MAX_RETRIES`，默认值为 `3`

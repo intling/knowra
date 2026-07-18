@@ -71,8 +71,8 @@ class Settings(BaseSettings):
     document_embedding_enabled: bool = True
     document_embedding_api_base_url: str = "https://router.tumuer.me/v1"
     document_embedding_api_key: str = ""
-    document_embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
-    document_embedding_dimensions: int = 1024
+    document_embedding_model: str = "Qwen/Qwen3-Embedding-4B"
+    document_embedding_dimensions: int = 2560
     document_embedding_encoding_format: str = "float"
     document_embedding_batch_size: int = 100
     document_embedding_max_retries: int = 3

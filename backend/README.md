@@ -328,7 +328,7 @@ implement semantic retrieval.
   `sequence_index`
 - `GET /api/document-chunks/{chunk_id}/embedding` — read a single chunk's
   embedding vector detail (dimensions, model name, and first few dimension
-  values; not the full 1024-dimension array)
+  values; not the full 2560-dimension array)
 - `POST /api/document-chunk-jobs/{chunk_job_id}/re-embed` — create a new
   embedding job with `202 Accepted`; validates chunk job ownership and
   shutdown state, returns `409 Conflict` if a running job exists, `503 Service
@@ -349,9 +349,9 @@ Environment variables control embedding behavior:
 - `DOCUMENT_EMBEDDING_API_KEY`: API key for the embeddings service (sensitive;
   never commit real keys to version control)
 - `DOCUMENT_EMBEDDING_MODEL`: model name to request from the API, default
-  `Qwen/Qwen3-Embedding-0.6B`
+  `Qwen/Qwen3-Embedding-4B`
 - `DOCUMENT_EMBEDDING_DIMENSIONS`: expected output vector dimensions, default
-  `1024`
+  `2560`
 - `DOCUMENT_EMBEDDING_ENCODING_FORMAT`: encoding format sent to the API, default
   `float`
 - `DOCUMENT_EMBEDDING_BATCH_SIZE`: maximum texts per API call (larger inputs

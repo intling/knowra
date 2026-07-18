@@ -318,8 +318,8 @@ def test_embedding_config_from_settings_maps_all_fields():
     class FakeSettings:
         document_embedding_api_base_url = "https://api.example.com/v1"
         document_embedding_api_key = "sk-fake"
-        document_embedding_model = "Qwen/Qwen3-Embedding-0.6B"
-        document_embedding_dimensions = 1024
+        document_embedding_model = "Qwen/Qwen3-Embedding-4B"
+        document_embedding_dimensions = 2560
         document_embedding_encoding_format = "float"
         document_embedding_batch_size = 100
         document_embedding_max_retries = 3
@@ -329,8 +329,8 @@ def test_embedding_config_from_settings_maps_all_fields():
 
     assert config.api_base_url == "https://api.example.com/v1"
     assert config.api_key == "sk-fake"
-    assert config.model == "Qwen/Qwen3-Embedding-0.6B"
-    assert config.dimensions == 1024
+    assert config.model == "Qwen/Qwen3-Embedding-4B"
+    assert config.dimensions == 2560
     assert config.encoding_format == "float"
     assert config.batch_size == 100
     assert config.max_retries == 3

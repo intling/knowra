@@ -136,7 +136,7 @@ def _chunking_module():
     return import_module("app.models.document_chunking")
 
 
-def _make_embedding_vector(dimensions: int = 1024) -> list[float]:
+def _make_embedding_vector(dimensions: int = 2560) -> list[float]:
     """生成固定测试向量。"""
     return [0.1] * dimensions
 
@@ -203,12 +203,12 @@ def seed_successful_embedding_job(session: Session, tmp_path):
         owner_user_id=user.id,
         status="succeeded",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         embedding_count=2,
         config_json={
-            "model": "Qwen/Qwen3-Embedding-0.6B",
-            "dimensions": 1024,
+            "model": "Qwen/Qwen3-Embedding-4B",
+            "dimensions": 2560,
             "batch_size": 100,
             "encoding_format": "float",
         },
@@ -226,8 +226,8 @@ def seed_successful_embedding_job(session: Session, tmp_path):
             parsed_document_id=parsed.id,
             owner_user_id=user.id,
             sequence_index=chunk.sequence_index,
-            model="Qwen/Qwen3-Embedding-0.6B",
-            dimensions=1024,
+            model="Qwen/Qwen3-Embedding-4B",
+            dimensions=2560,
             embedding_json=_make_embedding_vector(),
             token_count=None,
         )
@@ -276,10 +276,10 @@ def seed_embedding_job_with_status(
         owner_user_id=user.id,
         status=status,
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         embedding_count=embedding_count,
-        config_json={"model": "Qwen/Qwen3-Embedding-0.6B", "dimensions": 1024},
+        config_json={"model": "Qwen/Qwen3-Embedding-4B", "dimensions": 2560},
     )
     session.add(embedding_job)
     session.commit()
@@ -310,12 +310,12 @@ def test_get_embedding_job_returns_owned_job(
     assert set(payload) == EMBEDDING_JOB_RESPONSE_FIELDS
     assert payload["id"] == str(embedding_job.id)
     assert payload["status"] == "succeeded"
-    assert payload["model"] == "Qwen/Qwen3-Embedding-0.6B"
-    assert payload["dimensions"] == 1024
+    assert payload["model"] == "Qwen/Qwen3-Embedding-4B"
+    assert payload["dimensions"] == 2560
     assert payload["embedding_count"] == 2
     assert payload["config_json"] == {
-        "model": "Qwen/Qwen3-Embedding-0.6B",
-        "dimensions": 1024,
+        "model": "Qwen/Qwen3-Embedding-4B",
+        "dimensions": 2560,
         "batch_size": 100,
         "encoding_format": "float",
     }
@@ -478,7 +478,7 @@ def test_get_embedding_job_rejects_foreign_job(
         status="failed",
         embedder_name="openai_compatible",
         model="test-model",
-        dimensions=1024,
+        dimensions=2560,
         error_code="api_error",
         error_message="private failure details",
         config_json={},
@@ -636,9 +636,9 @@ def test_get_chunk_embedding_returns_detail(
     assert set(payload) == EMBEDDING_RESPONSE_FIELDS
     assert payload["chunk_id"] == str(chunk_0.id)
     assert payload["sequence_index"] == 0
-    assert payload["model"] == "Qwen/Qwen3-Embedding-0.6B"
-    assert payload["dimensions"] == 1024
-    assert len(payload["embedding_json"]) == 1024
+    assert payload["model"] == "Qwen/Qwen3-Embedding-4B"
+    assert payload["dimensions"] == 2560
+    assert len(payload["embedding_json"]) == 2560
 
 
 def test_get_chunk_embedding_returns_404_when_chunk_not_found(
@@ -780,7 +780,7 @@ def test_reembed_returns_202_and_created_job(
 
     response = embedding_client.post(
         f"/api/document-chunk-jobs/{chunk_job.id}/re-embed",
-        json={"model": "Qwen/Qwen3-Embedding-0.6B", "dimensions": 1024},
+        json={"model": "Qwen/Qwen3-Embedding-4B", "dimensions": 2560},
     )
 
     assert response.status_code == 202
@@ -788,8 +788,8 @@ def test_reembed_returns_202_and_created_job(
     assert set(payload) == EMBEDDING_JOB_RESPONSE_FIELDS
     assert payload["chunk_job_id"] == str(chunk_job.id)
     assert payload["status"] == "queued"
-    assert payload["model"] == "Qwen/Qwen3-Embedding-0.6B"
-    assert payload["dimensions"] == 1024
+    assert payload["model"] == "Qwen/Qwen3-Embedding-4B"
+    assert payload["dimensions"] == 2560
 
 
 def test_reembed_uses_default_model_when_not_specified(
@@ -830,8 +830,8 @@ def test_reembed_uses_default_model_when_not_specified(
     assert response.status_code == 202
     payload = response.json()
     # 使用默认配置值
-    assert payload["model"] == "Qwen/Qwen3-Embedding-0.6B"
-    assert payload["dimensions"] == 1024
+    assert payload["model"] == "Qwen/Qwen3-Embedding-4B"
+    assert payload["dimensions"] == 2560
 
 
 def test_reembed_returns_404_when_chunk_job_not_found(
@@ -917,8 +917,8 @@ def test_reembed_returns_409_when_job_is_already_running(
         owner_user_id=user.id,
         status="running",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         config_json={},
     )
     session.add(running_job)
@@ -968,8 +968,8 @@ def test_reembed_returns_409_when_job_is_queued(
         owner_user_id=user.id,
         status="queued",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         config_json={},
     )
     session.add(queued_job)
@@ -1082,9 +1082,9 @@ def test_run_reembed_job_success(
         owner_user_id=user.id,
         status="queued",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
-        config_json={"model": "Qwen/Qwen3-Embedding-0.6B", "dimensions": 1024},
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
+        config_json={"model": "Qwen/Qwen3-Embedding-4B", "dimensions": 2560},
     )
     session.add(queued_job)
     session.commit()
@@ -1098,7 +1098,7 @@ def test_run_reembed_job_success(
     class FakeAdapter:
         def embed(self, texts):
             return [
-                adapter_mod.EmbeddingResult(index=i, embedding=[0.1] * 1024)
+                adapter_mod.EmbeddingResult(index=i, embedding=[0.1] * 2560)
                 for i in range(len(texts))
             ]
 
@@ -1132,7 +1132,7 @@ def test_run_reembed_job_success(
         )
     ).all()
     assert len(embeddings) == 2
-    assert embeddings[0].dimensions == 1024
+    assert embeddings[0].dimensions == 2560
 
 
 def test_run_reembed_job_failure_marks_job_failed(
@@ -1180,8 +1180,8 @@ def test_run_reembed_job_failure_marks_job_failed(
         owner_user_id=user.id,
         status="queued",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         config_json={},
     )
     session.add(queued_job)
@@ -1258,8 +1258,8 @@ def test_run_reembed_job_shutdown_fast_fail(
         owner_user_id=user.id,
         status="queued",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         config_json={},
     )
     session.add(queued_job)
@@ -1342,7 +1342,7 @@ def test_run_reembed_job_supersedes_old_jobs(
         status="succeeded",
         embedder_name="openai_compatible",
         model="old-model",
-        dimensions=1024,
+        dimensions=2560,
         embedding_count=2,
         config_json={"model": "old-model"},
     )
@@ -1358,7 +1358,7 @@ def test_run_reembed_job_supersedes_old_jobs(
         status="queued",
         embedder_name="openai_compatible",
         model="new-model",
-        dimensions=1024,
+        dimensions=2560,
         config_json={"model": "new-model"},
     )
     session.add(new_job)
@@ -1371,7 +1371,7 @@ def test_run_reembed_job_supersedes_old_jobs(
     class FakeAdapter:
         def embed(self, texts):
             return [
-                adapter_mod.EmbeddingResult(index=i, embedding=[0.2] * 1024)
+                adapter_mod.EmbeddingResult(index=i, embedding=[0.2] * 2560)
                 for i in range(len(texts))
             ]
 
@@ -1439,8 +1439,8 @@ def test_run_reembed_job_does_not_call_parser_or_chunker(
         owner_user_id=user.id,
         status="queued",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         config_json={},
     )
     session.add(queued_job)
@@ -1456,7 +1456,7 @@ def test_run_reembed_job_does_not_call_parser_or_chunker(
         def embed(self, texts):
             received_texts.extend(texts)
             return [
-                adapter_mod.EmbeddingResult(index=i, embedding=[0.1] * 1024)
+                adapter_mod.EmbeddingResult(index=i, embedding=[0.1] * 2560)
                 for i in range(len(texts))
             ]
 

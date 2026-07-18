@@ -30,15 +30,15 @@ def test_embedding_job_response_includes_all_expected_fields() -> None:
         owner_user_id=owner_id,
         status="succeeded",
         embedder_name="openai_compatible",
-        model="Qwen/Qwen3-Embedding-0.6B",
-        dimensions=1024,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
         embedding_count=50,
         attempt_count=1,
         started_at=now,
         finished_at=now,
         error_code=None,
         error_message=None,
-        config_json={"model": "Qwen/Qwen3-Embedding-0.6B", "dimensions": 1024},
+        config_json={"model": "Qwen/Qwen3-Embedding-4B", "dimensions": 2560},
         created_at=now,
         updated_at=now,
     )
@@ -50,13 +50,13 @@ def test_embedding_job_response_includes_all_expected_fields() -> None:
     assert data["owner_user_id"] == str(owner_id)
     assert data["status"] == "succeeded"
     assert data["embedder_name"] == "openai_compatible"
-    assert data["model"] == "Qwen/Qwen3-Embedding-0.6B"
-    assert data["dimensions"] == 1024
+    assert data["model"] == "Qwen/Qwen3-Embedding-4B"
+    assert data["dimensions"] == 2560
     assert data["embedding_count"] == 50
     assert data["attempt_count"] == 1
     assert data["error_code"] is None
     assert data["error_message"] is None
-    assert data["config_json"] == {"model": "Qwen/Qwen3-Embedding-0.6B", "dimensions": 1024}
+    assert data["config_json"] == {"model": "Qwen/Qwen3-Embedding-4B", "dimensions": 2560}
 
 
 # EmbeddingJobResponse 的 datetime 字段必须序列化为 ISO 8601 格式并以 Z 结尾。
@@ -71,7 +71,7 @@ def test_embedding_job_response_serializes_datetime_with_z_suffix() -> None:
         status="queued",
         embedder_name="openai_compatible",
         model="test-model",
-        dimensions=1024,
+        dimensions=2560,
         embedding_count=0,
         attempt_count=0,
         started_at=None,
@@ -105,7 +105,7 @@ def test_embedding_job_response_handles_naive_datetime_as_utc() -> None:
         status="running",
         embedder_name="openai_compatible",
         model="test-model",
-        dimensions=1024,
+        dimensions=2560,
         embedding_count=0,
         attempt_count=0,
         started_at=naive,
@@ -133,7 +133,7 @@ def test_embedding_response_includes_all_expected_fields() -> None:
         chunk_id=uuid4(),
         embedding_job_id=uuid4(),
         sequence_index=0,
-        model="Qwen/Qwen3-Embedding-0.6B",
+        model="Qwen/Qwen3-Embedding-4B",
         dimensions=len(embedding_vector),
         embedding_json=embedding_vector,
         token_count=42,
@@ -144,7 +144,7 @@ def test_embedding_response_includes_all_expected_fields() -> None:
     assert data["embedding_json"] == embedding_vector
     assert len(data["embedding_json"]) == 5
     assert data["dimensions"] == 5
-    assert data["model"] == "Qwen/Qwen3-Embedding-0.6B"
+    assert data["model"] == "Qwen/Qwen3-Embedding-4B"
     assert data["token_count"] == 42
     assert data["sequence_index"] == 0
     assert data["created_at"].endswith("Z")
@@ -160,7 +160,7 @@ def test_embedding_response_serializes_created_at_with_z_suffix() -> None:
         embedding_job_id=uuid4(),
         sequence_index=1,
         model="test-model",
-        dimensions=1024,
+        dimensions=2560,
         embedding_json=[0.0],
         token_count=1,
         created_at=now,
@@ -203,7 +203,7 @@ def test_embedding_page_response_structure() -> None:
             embedding_job_id=uuid4(),
             sequence_index=i,
             model="test-model",
-            dimensions=1024,
+            dimensions=2560,
             embedding_json=[0.1 * i],
             token_count=10,
             created_at=now,
@@ -250,7 +250,7 @@ def test_embedding_conflict_response_structure() -> None:
         status="running",
         embedder_name="openai_compatible",
         model="test-model",
-        dimensions=1024,
+        dimensions=2560,
         embedding_count=0,
         attempt_count=0,
         started_at=now,

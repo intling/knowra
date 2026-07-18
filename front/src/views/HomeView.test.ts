@@ -952,8 +952,8 @@ describe("HomeView", () => {
     owner_user_id: "00000000-0000-0000-0000-000000000001",
     status: "succeeded",
     embedder_name: "openai_compatible",
-    model: "Qwen/Qwen3-Embedding-0.6B",
-    dimensions: 1024,
+    model: "Qwen/Qwen3-Embedding-4B",
+    dimensions: 2560,
     embedding_count: 2,
     attempt_count: 1,
     started_at: "2026-06-12T00:00:02Z",
@@ -961,8 +961,8 @@ describe("HomeView", () => {
     error_code: null,
     error_message: null,
     config_json: {
-      model: "Qwen/Qwen3-Embedding-0.6B",
-      dimensions: 1024,
+      model: "Qwen/Qwen3-Embedding-4B",
+      dimensions: 2560,
       batch_size: 100,
       encoding_format: "float",
     },
@@ -975,8 +975,8 @@ describe("HomeView", () => {
     chunk_id: CHUNK_PAGE_RESPONSE.items[0].id,
     embedding_job_id: EMBEDDING_JOB_RESPONSE.id,
     sequence_index: 0,
-    model: "Qwen/Qwen3-Embedding-0.6B",
-    dimensions: 1024,
+    model: "Qwen/Qwen3-Embedding-4B",
+    dimensions: 2560,
     embedding_json: [0.01234, -0.05678, 0.09123, -0.00123, 0.04210],
     token_count: 10,
     created_at: "2026-06-12T00:00:04Z",
@@ -1029,7 +1029,7 @@ describe("HomeView", () => {
       "0.012340",
     )
     expect(wrapper.get('[data-testid="embedding-preview"]').text()).toContain(
-      "Qwen/Qwen3-Embedding-0.6B · 1024 维",
+      "Qwen/Qwen3-Embedding-4B · 2560 维",
     )
 
     const embeddingPanelText = wrapper
