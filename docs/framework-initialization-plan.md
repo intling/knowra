@@ -339,7 +339,7 @@ http://localhost:5173
 ```yaml
 services:
   postgres:
-    image: pgvector/pgvector:pg17
+    image: pgvector/pgvector:pg18
     environment:
       POSTGRES_DB: knowra
       POSTGRES_USER: knowra

@@ -37,6 +37,7 @@ backend/storage/chunks/
 # Logs
 backend/logs/**
 *.log
+konwra.log
 
 # Models
 backend/storage/**
