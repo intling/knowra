@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 向量存储方案（pgvector Native Storage）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5f6b7c;
+      --border: #dce3ec;
+      --accent: #1f6f8b;
+      --accent-soft: #e6f3f6;
+      --ok: #19764b;
+      --ok-soft: #e8f6ef;
+      --warn: #a86200;
+      --warn-soft: #fff4df;
+      --danger: #b42318;
+      --danger-soft: #fff0ed;
+      --code-bg: #101828;
+      --code-text: #eef4ff;
+      --purple: #6b4c9a;
+      --purple-soft: #f0eaf8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p { margin: 0 0 12px; }
+
+    ul, ol {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li { margin: 4px 0; }
+
+    a { color: var(--accent); }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #101828;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      margin: 14px 0 20px;
+      border-collapse: collapse;
+      background: var(--panel);
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+    }
+
+    .decision {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: #123d27;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+      color: #583800;
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+      color: #681f18;
+    }
+
+    .purple {
+      border-left-color: var(--purple);
+      background: var(--purple-soft);
+      color: #3a2560;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini h3 { margin-top: 0; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .flow-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .step {
+      min-height: 108px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    .diagram {
+      margin: 18px 0;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+      overflow-x: auto;
+    }
+
+    .diagram pre {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre;
+    }
+
+    @media (max-width: 920px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 28px;
+      }
+
+      .grid, .grid-3, .flow, .flow-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>knowra 向量存储方案（pgvector Native Storage）</h1>
+      <p>
+        本文定义将当前 JSON 浮点数组形式的文档向量<strong>迁移到 pgvector 原生 <code>vector(N)</code> 类型列</strong>的完整方案。
+        在已完成向量化（Cloud Embedding）的基础上，引入 pgvector 原生向量列和双写策略，
+        为后续向量索引和语义检索做好基础设施准备。<strong>本阶段不实现向量索引和语义搜索</strong>。
+      </p>
+      <div class="meta">
+        <span class="tag">阶段：方案设计</span>
+        <span class="tag">日期：2026-07-17</span>
+        <span class="tag">推荐变更：add-vector-storage</span>
+        <span class="tag">向量维度：2560</span>
+        <span class="tag">存储类型：pgvector vector(2560)</span>
+        <span class="tag">前置能力：document-embedding 已实现</span>
+        <span class="tag">后续规划：向量索引 &amp; 语义检索 &amp; 混合检索（独立变更）</span>
+      </div>
+    </header>
+
+    <!-- ── 1. 背景与产品意图 ── -->
+    <h2>1. 背景与产品意图</h2>
+    <div class="section">
+      <h3>1.1 当前状态</h3>
+      <p>
+        knowra 已完成文档向量化能力（<code>document-embedding</code>），chunk 文本通过
+        <code>Qwen/Qwen3-Embedding-4B</code> 云端 API 转化为 2560 维稠密向量，
+        并以 JSON 浮点数组形式存储在 <code>document_embeddings.embedding_json</code> 列中。
+      </p>
+      <div class="diagram">
+        <pre>
+  当前 document_embeddings 表结构
+  ════════════════════════════════════════════════════════════
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  id                  UUID (PK)                           │
+  │  embedding_job_id    UUID (FK → document_embedding_jobs) │
+  │  chunk_id            UUID (FK → document_chunks)         │
+  │  parsed_document_id  UUID (FK → parsed_documents)        │
+  │  owner_user_id       UUID (FK → users)                   │
+  │  sequence_index      INTEGER                             │
+  │  model               VARCHAR(128)                        │
+  │  dimensions          INTEGER                             │
+  │  <b>embedding_json       JSON         ← 向量存为 [0.12, -0.45, ...]</b> │
+  │  token_count         INTEGER (nullable)                  │
+  │  created_at          TIMESTAMPTZ                         │
+  └──────────────────────────────────────────────────────────┘
+
+  问题：
+  ❌ JSON 列无法利用 pgvector 的原生向量索引
+  ❌ 无法进行高效相似度计算（必须加载全部行做应用层计算）
+  ❌ pgvector 扩展虽已启用，但从未被使用</pre>
+      </div>
+
+      <h3>1.2 基础设施就绪度</h3>
+      <table>
+        <tr><th>组件</th><th>状态</th><th>说明</th></tr>
+        <tr>
+          <td>PostgreSQL 18 + pgvector</td>
+          <td>✅ 已运行</td>
+          <td><code>pgvector/pgvector:pg18</code> Docker 镜像，HNSW 索引已支持</td>
+        </tr>
+        <tr>
+          <td>pgvector 扩展</td>
+          <td>✅ 已启用</td>
+          <td>迁移 <code>20260514_0001</code> 已执行 <code>CREATE EXTENSION IF NOT EXISTS vector</code></td>
+        </tr>
+        <tr>
+          <td>pgvector Python 包</td>
+          <td>✅ 已安装</td>
+          <td><code>pyproject.toml</code> 中 <code>pgvector>=0.4.0</code></td>
+        </tr>
+        <tr>
+          <td>向量数据</td>
+          <td>✅ 已有</td>
+          <td><code>embedding_json</code> JSON 列存储 2560 维浮点数组</td>
+        </tr>
+        <tr>
+          <td>向量索引 (HNSW/IVFFlat)</td>
+          <td>⏳ 后续</td>
+          <td>本阶段仅建设存储基础设施，向量索引将在后续独立变更中实现</td>
+        </tr>
+        <tr>
+          <td>语义搜索</td>
+          <td>⏳ 后续</td>
+          <td>本阶段仅建设存储基础设施，不提供搜索 API</td>
+        </tr>
+      </table>
+
+      <h3>1.3 产品意图</h3>
+      <ul>
+        <li>将 JSON 向量数据迁移至 pgvector 原生 <code>vector(2560)</code> 类型，解锁数据库层级的向量操作。</li>
+        <li>采用双写策略（JSON + vector 列并存），保留 JSON 列作为人类可读参考和故障恢复备份。</li>
+        <li>对既有数据执行安全回填，确保新老数据统一纳入 pgvector 列。</li>
+        <li>不改变现有的 embedding API 接口和前端行为，变更完全限定在后端数据层。</li>
+        <li>为后续向量索引（HNSW/IVFFlat）和语义检索提供标准化的 pgvector 原生向量列。</li>
+      </ul>
+
+      <h3>1.4 范围边界</h3>
+      <div class="note decision">
+        <strong>本期范围</strong>
+        <ul style="margin-bottom:0;">
+          <li>✅ 在 <code>document_embeddings</code> 表新增 <code>embedding_vector vector(2560)</code> 列。</li>
+          <li>✅ 编写 Alembic 迁移（schema + 数据回填）。</li>
+          <li>✅ 更新 <code>DocumentEmbedding</code> 模型以包含新列。</li>
+          <li>✅ 更新 <code>_save_embeddings()</code> 实现双写（同时写入 JSON 和 vector 列）。</li>
+          <li>✅ 编写回填验证和双写正确性的测试。</li>
+        </ul>
+      </div>
+      <div class="note risk">
+        <strong>明确不在本期范围</strong>
+        <ul style="margin-bottom:0;">
+          <li>❌ <strong>不创建向量索引</strong>（不创建 HNSW 或 IVFFlat 索引，后续独立变更实现）。</li>
+          <li>❌ <strong>不实现语义搜索 API</strong>（不提供 <code>POST /api/search</code> 或相似度查询端点）。</li>
+          <li>❌ <strong>不实现混合检索</strong>（BM25 + 向量）。</li>
+          <li>❌ 不实现前端搜索界面。</li>
+          <li>❌ 不更改现有的查询 API 响应格式。</li>
+          <li>❌ 不修改 chunk 或 segment 模型。</li>
+          <li>❌ 不删除 <code>embedding_json</code> 列。</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ── 2. 向量数据库选型 ── -->
+    <h2>2. 向量数据库选型</h2>
+    <div class="section">
+      <h3>2.1 候选方案对比</h3>
+
+      <table>
+        <tr>
+          <th style="width:18%;">维度</th>
+          <th style="width:35%;">pgvector (PostgreSQL 扩展)</th>
+          <th style="width:27%;">Milvus / Qdrant</th>
+          <th style="width:20%;">Chroma</th>
+        </tr>
+        <tr>
+          <td>部署复杂度</td>
+          <td><strong>极低</strong> — 已运行中的 PostgreSQL 容器，一行 SQL 即可</td>
+          <td><strong>高</strong> — 需额外容器/服务，独立端口、存储、配置</td>
+          <td><strong>中</strong> — 可嵌入式但独立管理仍需要额外进程</td>
+        </tr>
+        <tr>
+          <td>运维成本</td>
+          <td><strong>极低</strong> — 与主数据库共用备份、监控、升级流程</td>
+          <td><strong>高</strong> — 独立的备份、监控、版本升级、安全补丁</td>
+          <td><strong>中</strong> — 嵌入式模式管理简单但无 SQL 生态</td>
+        </tr>
+        <tr>
+          <td>数据一致性</td>
+          <td><strong>强一致</strong> — 向量和元数据在同一事务中，JOIN 任意关联表</td>
+          <td>最终一致 — 数据同步需要双写或 CDC</td>
+          <td>最终一致 — 与主数据库分离</td>
+        </tr>
+        <tr>
+          <td>查询灵活性</td>
+          <td><strong>极高</strong> — 一条 SQL 完成：向量搜索 + 用户过滤 + JOIN 元数据 + 分页</td>
+          <td>中等 — 需要组合多次 API 调用或使用过滤表达式</td>
+          <td>低 — 过滤能力有限，无 SQL JOIN</td>
+        </tr>
+        <tr>
+          <td>规模上限</td>
+          <td>百万～千万级向量（HNSW 索引）</td>
+          <td>十亿级（分布式架构）</td>
+          <td>十万～百万级</td>
+        </tr>
+        <tr>
+          <td>技术栈匹配</td>
+          <td><strong>完美</strong> — 已在 pyproject.toml 中，扩展已启用</td>
+          <td>需新增依赖和基础设施</td>
+          <td>需新增依赖</td>
+        </tr>
+      </table>
+
+      <h3>2.2 决策：pgvector</h3>
+
+      <div class="note decision">
+        <strong>选择 pgvector 的理由</strong>
+
+        <div class="grid" style="margin-top:12px;">
+          <div class="mini">
+            <h3>🏗️ 零新增基础设施</h3>
+            <p style="margin-bottom:0;">
+              PostgreSQL 18 容器已运行，pgvector 扩展已启用（<code>CREATE EXTENSION vector</code>），
+              Python 包 <code>pgvector>=0.4.0</code> 已在依赖中。引入方案只需一个 Alembic 迁移即可上线。
+            </p>
+          </div>
+          <div class="mini">
+            <h3>⚡ 规模完全匹配</h3>
+            <p style="margin-bottom:0;">
+              knowra 是个人知识库工具，文档量级在千到万级，chunk 在万到十万级。
+              pgvector 的 HNSW 索引在此规模下可达到亚毫秒级 ANN 查询，远超需求。
+            </p>
+          </div>
+          <div class="mini">
+            <h3>🔄 事务内联查询</h3>
+            <p style="margin-bottom:0;">
+              向量搜索可与用户权限过滤（<code>WHERE owner_user_id = $1</code>）、文档元数据 JOIN、
+              时间排序等在一条 SQL 中完成。不需要跨服务协调两套查询结果。
+            </p>
+          </div>
+          <div class="mini">
+            <h3>🔧 运维简单</h3>
+            <p style="margin-bottom:0;">
+              个人项目不需要维护额外的 Milvus/Qdrant 容器。备份 PostgreSQL 就等于备份了向量数据。
+              Docker Compose 只需管理一个数据库服务。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin-top:14px;">
+        当未来数据量增长到亿级向量时，可考虑引入专门的向量数据库作为扩展层。
+        但 pgvector 作为起点已经足够覆盖从零到百万级的完整增长曲线。
+      </p>
+    </div>
+
+    <!-- ── 3. 向量索引规划（后续阶段） ── -->
+    <h2>3. 向量索引规划（后续阶段）</h2>
+    <div class="section">
+      <div class="note purple">
+        <strong>本阶段不实现向量索引</strong>
+        <p style="margin-bottom:0;">
+          向量索引（HNSW / IVFFlat）将在后续独立变更中实现。本节仅记录初步调研结论，供后续索引方案设计参考。
+        </p>
+      </div>
+
+      <h3>3.1 HNSW vs IVFFlat 对比</h3>
+
+      <table>
+        <tr>
+          <th style="width:15%;">对比维度</th>
+          <th style="width:42%;">HNSW</th>
+          <th style="width:43%;">IVFFlat</th>
+        </tr>
+        <tr>
+          <td>原理</td>
+          <td>分层可导航小世界图 — 构建多层图结构，搜索时从顶层粗粒度向底层细粒度导航</td>
+          <td>倒排文件 + k-means 聚类 — 将向量空间划分为 N 个聚类，搜索时只扫描最近的几个聚类</td>
+        </tr>
+        <tr>
+          <td>查询速度</td>
+          <td><strong>快</strong> — O(log N) 图遍历，适合实时查询</td>
+          <td>中等 — 依赖于探测的聚类数量（probes）</td>
+        </tr>
+        <tr>
+          <td>是否需要训练</td>
+          <td><strong>否</strong> — 不需要显式训练步骤</td>
+          <td><strong>是</strong> — 需要先有足够数据后执行 <code>lists</code> 参数调优</td>
+        </tr>
+        <tr>
+          <td>插入后索引状态</td>
+          <td><strong>立即可用</strong> — 新向量插入时就加入图结构</td>
+          <td>新向量落入已有聚类，但长期插入后聚类质量下降，需重建</td>
+        </tr>
+        <tr>
+          <td>适用场景</td>
+          <td>持续增量的动态数据集、实时查询</td>
+          <td>相对静态的数据集、批量导入场景</td>
+        </tr>
+      </table>
+
+      <div class="note decision">
+        <strong>初步倾向：HNSW</strong>
+        <p style="margin-bottom:0;">
+          knowra 作为知识库工具，文档持续上传、chunk 持续生成，是一个动态增长的数据集。
+          HNSW 不需要训练步骤、支持即时插入、查询速度快，是更适合的索引类型。
+          具体参数（m、ef_construction、距离度量）将在索引实现阶段确定。
+        </p>
+      </div>
+
+      <h3>3.2 本阶段与索引的关系</h3>
+
+      <p>
+        本阶段的 <code>embedding_vector vector(2560)</code> 列是实现向量索引的<strong>必要前提</strong>：
+      </p>
+      <ul>
+        <li>pgvector 索引（HNSW / IVFFlat）必须在 <code>vector(N)</code> 类型列上创建，JSON 列无法被索引。</li>
+        <li>双写策略确保索引创建时所有向量已就位，无需再次回填。</li>
+        <li>索引创建将是纯 DDL 操作（<code>CREATE INDEX ... USING hnsw</code>），不涉及数据迁移。</li>
+      </ul>
+    </div>
+
+    <!-- ── 4. Schema 演进 ── -->
+    <h2>4. Schema 演进设计</h2>
+    <div class="section">
+      <h3>4.1 目标表结构</h3>
+
+      <div class="diagram">
+        <pre>
+  document_embeddings 表（变更后）
+  ════════════════════════════════════════════════════════════
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  id                  UUID (PK)                           │
+  │  embedding_job_id    UUID (FK)                           │
+  │  chunk_id            UUID (FK)                           │
+  │  parsed_document_id  UUID (FK)                           │
+  │  owner_user_id       UUID (FK)                           │
+  │  sequence_index      INTEGER                             │
+  │  model               VARCHAR(128)                        │
+  │  dimensions          INTEGER                             │
+  │  <b>embedding_json       JSON             ← 保留（可读参考）</b>  │
+  │  <b>embedding_vector     vector(2560)     ← 新增（pgvector 原生）</b>│
+  │  token_count         INTEGER (nullable)                  │
+  │  created_at          TIMESTAMPTZ                         │
+  └──────────────────────────────────────────────────────────┘
+
+  说明：
+  • embedding_vector 列后续可用于创建 HNSW / IVFFlat 索引（独立变更）
+  • 当前阶段仅建立向量列，不建立索引</pre>
+      </div>
+
+      <div class="note decision">
+        <strong>设计决策：保留 embedding_json 列</strong>
+        <ul style="margin-bottom:0;">
+          <li><strong>人类可读性</strong> — JSON 列可以直接在数据库管理工具中查看向量值，便于调试。</li>
+          <li><strong>故障恢复</strong> — 如果 pgvector 操作出现问题，JSON 列可作为回退数据源。</li>
+          <li><strong>向后兼容</strong> — 现有 API 读取 <code>embedding_json</code> 的逻辑不受影响。</li>
+          <li><strong>存储开销可接受</strong> — 一个 2560 维向量约 20KB（JSON 文本格式），对于知识库的体量完全可承受。</li>
+        </ul>
+      </div>
+
+      <h3>4.2 双写策略</h3>
+
+      <div class="diagram">
+        <pre>
+  Embedding API 调用返回
+          │
+          ▼
+  ┌───────────────────────────────────────┐
+  │  EmbeddingAdapter.embed(texts)        │
+  │  → list[EmbeddingResult]              │
+  │    ├── result.index                   │
+  │    ├── result.embedding  ← 浮点列表    │
+  │    └── result.token_count             │
+  └───────────────────────────────────────┘
+          │
+          ▼
+  ┌───────────────────────────────────────┐
+  │  _save_embeddings()                   │
+  │                                       │
+  │  for each result:                     │
+  │    DocumentEmbedding(                 │
+  │      embedding_json  = result.embedding    ← 现有逻辑 │
+  │      embedding_vector = result.embedding   ← 新增写入 │
+  │    )                                  │
+  └───────────────────────────────────────┘
+          │
+          ▼
+  ┌───────────────────────────────────────┐
+  │  document_embeddings 表               │
+  │  ┌─────────────────────────────────┐  │
+  │  │ embedding_json  │ embedding_vec │  │
+  │  │ [0.12,-0.45,...]│ [0.12,-0.45..]│  │
+  │  │ JSON (可读)      │ vector(2560)  │  │
+  │  └─────────────────────────────────┘  │
+  └───────────────────────────────────────┘</pre>
+      </div>
+    </div>
+
+    <!-- ── 5. 数据回填方案 ── -->
+    <h2>5. 数据回填方案</h2>
+    <div class="section">
+      <h3>5.1 回填策略</h3>
+
+      <p>现有 <code>document_embeddings</code> 表中的 <code>embedding_json</code> 列已包含完整的 2560 维浮点数组。
+        回填策略是从 JSON 列转化写入到新的 <code>embedding_vector</code> 列，无需重新调用 embedding API。</p>
+
+      <div class="flow-4">
+        <div class="step">
+          <strong>① Schema 迁移</strong>
+          添加 <code>embedding_vector vector(2560)</code> 列（nullable）。
+        </div>
+        <div class="step">
+          <strong>② 数据回填</strong>
+          <code>UPDATE ... SET embedding_vector = embedding_json::vector</code>
+        </div>
+        <div class="step">
+          <strong>③ 验证回填</strong>
+          抽查行确认 <code>embedding_vector</code> 值与 <code>embedding_json</code> 一致。
+        </div>
+        <div class="step">
+          <strong>④ 添加约束</strong>
+          验证通过后可选添加 NOT NULL 约束。
+        </div>
+      </div>
+
+      <h3>5.2 回填安全性考量</h3>
+
+      <table>
+        <tr><th>风险</th><th>缓解措施</th></tr>
+        <tr>
+          <td>回填期间表锁导致写入阻塞</td>
+          <td>
+            使用批量 <code>UPDATE ... WHERE id IN (SELECT id ... LIMIT N)</code> 分批回填，
+            每批 500~1000 行，批次之间 <code>commit</code> 释放锁。<br>
+            pgvector 的 <code>::vector</code> 转换是纯 CPU 操作，不涉及 IO，
+            每批执行时间应在秒级。
+          </td>
+        </tr>
+        <tr>
+          <td>JSON 中存在非数值或维度错误的数据</td>
+          <td>
+            回填前执行验证查询：<br>
+            <code>SELECT id FROM document_embeddings WHERE jsonb_array_length(embedding_json) != 2560</code><br>
+            对异常行跳过并记录日志。
+          </td>
+        </tr>
+        <tr>
+          <td>回填后新旧列数据不一致</td>
+          <td>
+            回填完成后抽样验证：<br>
+            <code>SELECT COUNT(*) FROM document_embeddings WHERE embedding_vector IS DISTINCT FROM embedding_json::vector</code><br>
+            应为 0。
+          </td>
+        </tr>
+        <tr>
+          <td>长时间运行的回填被中断</td>
+          <td>
+            每批提交事务（而非一个大事务），中断后可从中断点附近继续。
+            支持幂等重跑：<code>WHERE embedding_vector IS NULL</code>。
+          </td>
+        </tr>
+      </table>
+
+      <h3>5.3 回填 SQL 设计</h3>
+
+      <pre>
+-- ===== 迁移文件中的回填逻辑 =====
+
+-- Step 1: 添加列（可空，允许渐进式回填）
+ALTER TABLE document_embeddings
+    ADD COLUMN embedding_vector vector(2560);
+
+-- Step 2: 验证数据完整性（可选的预检）
+SELECT COUNT(*)
+FROM document_embeddings
+WHERE jsonb_array_length(embedding_json::jsonb) != 2560;
+-- 期望结果: 0
+
+-- Step 3: 批量回填（在 Python 迁移函数中分批执行）
+-- 伪代码循环:
+-- WHILE EXISTS (SELECT 1 FROM document_embeddings WHERE embedding_vector IS NULL):
+--     UPDATE document_embeddings
+--     SET embedding_vector = embedding_json::vector
+--     WHERE id IN (
+--         SELECT id FROM document_embeddings
+--         WHERE embedding_vector IS NULL
+--         LIMIT 500
+--     );
+--     COMMIT;
+
+-- Step 4: 验证回填完整度
+SELECT COUNT(*) FROM document_embeddings WHERE embedding_vector IS NULL;
+-- 期望结果: 0
+
+-- Step 5: 添加 NOT NULL 约束（可选，取决于是否需要严格约束）
+-- ALTER TABLE document_embeddings
+--     ALTER COLUMN embedding_vector SET NOT NULL;</pre>
+    </div>
+
+    <!-- ── 6. 代码改动清单 ── -->
+    <h2>6. 代码改动清单</h2>
+    <div class="section">
+      <h3>6.1 模型层 (models)</h3>
+
+      <table>
+        <tr><th>文件</th><th>改动</th><th>说明</th></tr>
+        <tr>
+          <td><code>models/document_embedding.py</code></td>
+          <td>在 <code>DocumentEmbedding</code> 中新增 <code>embedding_vector</code> 字段</td>
+          <td>
+            使用 <code>pgvector.sqlalchemy.Vector</code> 类型：<br>
+            <code>embedding_vector: object = Field(sa_column=Column(Vector(2560), ...))</code><br>
+            与现有 <code>sa_column=Column(JSON)</code> 模式一致。
+          </td>
+        </tr>
+      </table>
+
+      <div class="note">
+        <strong>SQLModel + pgvector 使用要点</strong><br>
+        由于 SQLModel 无法直接类型化 pgvector 的 <code>Vector</code> 类型（与 <code>JSON</code> 列类似），
+        我们使用 <code>sa_column=Column(Vector(2560))</code> 绕过 SQLModel 的类型系统，
+        与现有 <code>embedding_json</code> 列的声明方式完全一致。运行时 pgvector 库会自动处理 Python list ↔ pgvector 的序列化。
+      </div>
+
+      <h3>6.2 服务层 (services)</h3>
+
+      <table>
+        <tr><th>文件</th><th>改动</th><th>说明</th></tr>
+        <tr>
+          <td><code>services/document_embedding.py</code></td>
+          <td>更新 <code>_save_embeddings()</code></td>
+          <td>
+            在创建 <code>DocumentEmbedding</code> 时增加 <code>embedding_vector=result.embedding</code>。
+            pgvector 库会自动将 <code>list[float]</code> 转化为 <code>vector(2560)</code>。
+          </td>
+        </tr>
+      </table>
+
+      <h3>6.3 迁移 (alembic/versions)</h3>
+
+      <table>
+        <tr><th>变更</th><th>说明</th></tr>
+        <tr>
+          <td>新建迁移文件</td>
+          <td>
+            包含：<br>
+            1. <code>ALTER TABLE ... ADD COLUMN embedding_vector vector(2560)</code><br>
+            2. Python 函数分批回填 <code>embedding_json → embedding_vector</code><br>
+            downgrade: 删除列。
+          </td>
+        </tr>
+      </table>
+
+      <h3>6.4 测试</h3>
+
+      <table>
+        <tr><th>测试类型</th><th>内容</th></tr>
+        <tr>
+          <td>迁移测试</td>
+          <td>
+            验证 <code>upgrade()</code> 正确添加列、回填数据；<br>
+            验证 <code>downgrade()</code> 正确删除列。
+          </td>
+        </tr>
+        <tr>
+          <td>双写测试</td>
+          <td>
+            向量化成功后，检查 <code>embedding_json</code> 和 <code>embedding_vector</code> 值一致。
+          </td>
+        </tr>
+        <tr>
+          <td>回填验证测试</td>
+          <td>
+            先写入仅含 <code>embedding_json</code> 的旧格式数据到测试 DB，<br>
+            运行回填后验证 <code>embedding_vector</code> 值正确。
+          </td>
+        </tr>
+        <tr>
+          <td>pgvector 类型验证测试</td>
+          <td>
+            验证 <code>embedding_vector</code> 列可写入 <code>list[float]</code> 并被正确序列化；<br>
+            验证列类型确为 <code>vector(2560)</code>。
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ── 7. 实现任务清单 ── -->
+    <h2>7. 实现任务清单</h2>
+    <div class="section">
+
+      <table>
+        <tr><th style="width:5%;">#</th><th>任务</th><th style="width:12%;">预计复杂度</th><th>关键产出物</th></tr>
+        <tr>
+          <td>1</td>
+          <td>
+            <strong>新增 Alembic 迁移</strong><br>
+            <span style="color:var(--muted);">
+              创建 <code>embedding_vector vector(2560)</code> 列、分批回填 JSON 数据。
+              downgrade 删除列。
+            </span>
+          </td>
+          <td>中等</td>
+          <td><code>alembic/versions/20260717_0001_add_embedding_vector_column.py</code></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>
+            <strong>更新 DocumentEmbedding 模型</strong><br>
+            <span style="color:var(--muted);">
+              新增 <code>embedding_vector</code> 字段，使用 <code>pgvector.sqlalchemy.Vector(2560)</code> 类型。
+            </span>
+          </td>
+          <td>简单</td>
+          <td><code>models/document_embedding.py</code></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>
+            <strong>更新 _save_embeddings() 双写</strong><br>
+            <span style="color:var(--muted);">
+              在创建 <code>DocumentEmbedding</code> 时同时写入 <code>embedding_json</code> 和 <code>embedding_vector</code>。
+            </span>
+          </td>
+          <td>简单</td>
+          <td><code>services/document_embedding.py</code></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>
+            <strong>迁移测试</strong><br>
+            <span style="color:var(--muted);">
+              验证 upgrade/downgrade 正确性，回填数据完整性（新旧列值一致），索引可用性。
+            </span>
+          </td>
+          <td>中等</td>
+          <td><code>tests/test_document_embedding_storage.py</code></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>
+            <strong>双写集成测试</strong><br>
+            <span style="color:var(--muted);">
+              端到端验证：上传 → 解析 → 分块 → 向量化 → 两个列都有正确值。
+            </span>
+          </td>
+          <td>中等</td>
+          <td><code>tests/test_document_embedding_storage.py</code></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>
+            <strong>更新 OpenSpec spec</strong><br>
+            <span style="color:var(--muted);">
+              创建 delta spec 或在现有 <code>document-embedding</code> spec 中补充向量存储的需求场景。
+            </span>
+          </td>
+          <td>简单</td>
+          <td><code>openspec/specs/document-embedding/spec.md</code> (delta)</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ── 8. 架构总览 ── -->
+    <h2>8. 架构总览</h2>
+    <div class="section">
+      <h3>8.1 变更前后对比</h3>
+
+      <div class="grid">
+        <div class="mini">
+          <h3>变更前</h3>
+          <div class="diagram" style="margin:8px 0; padding:12px;">
+            <pre style="font-size:12px;">
+POST /api/uploads/{id}/parse
+        │
+        ▼
+  ┌──────────┐
+  │  Parse   │
+  └────┬─────┘
+       │
+       ▼
+  ┌──────────┐
+  │  Chunk   │
+  └────┬─────┘
+       │
+       ▼
+  ┌──────────────────┐
+  │  Embed (Cloud)   │
+  └────┬─────────────┘
+       │
+       ▼
+  ┌──────────────────────┐
+  │ document_embeddings  │
+  │ ├── embedding_json   │ ← JSON only
+  │ │   [0.12, -0.45,..] │
+  │ └── (无原生向量列)    │
+  └──────────────────────┘
+        ❌ 无向量索引
+        ❌ 无法向量检索</pre>
+          </div>
+        </div>
+        <div class="mini">
+          <h3>变更后</h3>
+          <div class="diagram" style="margin:8px 0; padding:12px;">
+            <pre style="font-size:12px;">
+POST /api/uploads/{id}/parse
+        │
+        ▼
+  ┌──────────┐
+  │  Parse   │
+  └────┬─────┘
+       │
+       ▼
+  ┌──────────┐
+  │  Chunk   │
+  └────┬─────┘
+       │
+       ▼
+  ┌──────────────────┐
+  │  Embed (Cloud)   │
+  └────┬─────────────┘
+       │
+       ▼
+  ┌──────────────────────────┐
+  │ document_embeddings      │
+  │ ├── embedding_json       │ ← 保留
+  │ └── embedding_vector     │ ← 新增 (pgvector)
+  │     vector(2560)         │
+  └──────────────────────────┘
+        ✅ JSON + vector 双写
+        ✅ 向量原生类型
+        ⏳ 索引 & 搜索 (后续阶段)</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3>8.2 与后续阶段的衔接</h3>
+
+      <div class="diagram">
+        <pre>
+  当前阶段 (本次)              下一阶段                  下下阶段              后续阶段
+  ════════════════            ══════════              ══════════            ══════════
+  ┌──────────────┐           ┌──────────────┐        ┌──────────────┐       ┌──────────────┐
+  │ Vector       │──────────▶│ Vector       │───────▶│ Semantic     │──────▶│ Hybrid       │
+  │ Storage      │           │ Index        │        │ Search       │       │ Search       │
+  ├──────────────┤           ├──────────────┤        ├──────────────┤       ├──────────────┤
+  │ • vector 列  │           │ • HNSW 索引  │        │ • /api/search│       │ • BM25+向量  │
+  │ • 双写策略   │           │ • IVFFlat    │        │ • top_k 查询 │       │ • RRF 融合   │
+  │ • 数据回填   │           │ • 距离度量   │        │ • 相似度阈值  │       │ • RAG 问答   │
+  │              │           │ • 参数调优   │        │ • 用户过滤   │       │ • 引用溯源   │
+  └──────────────┘           └──────────────┘        └──────────────┘       └──────────────┘
+
+  本阶段为后续提供：
+  • pgvector 原生向量列 —— 索引和搜索的存储基础
+  • 双写验证 —— 搜索的数据正确性前提</pre>
+      </div>
+    </div>
+
+    <!-- ── 9. 风险与缓解 ── -->
+    <h2>9. 风险与缓解</h2>
+    <div class="section">
+      <table>
+        <tr><th style="width:20%;">风险</th><th style="width:12%;">影响</th><th style="width:12%;">概率</th><th>缓解措施</th></tr>
+        <tr>
+          <td>回填期间阻塞线上写入</td>
+          <td>中</td>
+          <td>低</td>
+          <td>
+            分批提交、每批 500 行；回填 WHERE embedding_vector IS NULL 支持幂等续跑；
+            如有关键写入可暂停回填、稍后继续。
+          </td>
+        </tr>
+        <tr>
+          <td>pgvector Python 版本与 DB 扩展版本不匹配</td>
+          <td>中</td>
+          <td>低</td>
+          <td>
+            使用 <code>pgvector/pgvector:pg18</code> 最新镜像 + <code>pgvector>=0.4.0</code>。
+            在 CI 中验证 <code>CREATE EXTENSION vector</code> + 建表 + 插入 + 查询。
+          </td>
+        </tr>
+        <tr>
+          <td>双写增加磁盘空间</td>
+          <td>低</td>
+          <td>高</td>
+          <td>
+            每个 2560 维向量约 20KB（JSON）+ 10KB（vector 二进制），
+            1 万个 embedding 约 300MB。对于知识库体量完全可接受。
+          </td>
+        </tr>
+        <tr>
+          <td>未来模型维度变更（如 2560→4096）</td>
+          <td>中</td>
+          <td>中</td>
+          <td>
+            pgvector 当前要求索引列维度固定。如果未来切换模型导致维度变化，
+            需要新建维度匹配的列和索引。方案设计时在 <code>dimensions</code> 列中记录维度以支持未来迁移。
+            此风险在后续重新向量化能力中已部分覆盖（通过 config_json 快照）。
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ── 10. 测试策略 ── -->
+    <h2>10. 测试策略</h2>
+    <div class="section">
+      <div class="grid-3">
+        <div class="mini">
+          <h3>🧪 单元测试</h3>
+          <ul style="margin-bottom:0; padding-left:1.2rem;">
+            <li><code>_save_embeddings()</code> 双写验证：创建 mock result，断言两个列值相等。</li>
+            <li><code>DocumentEmbedding</code> 模型构建：验证 <code>embedding_vector</code> 字段能正确接受 <code>list[float]</code>。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>🗄️ 迁移测试</h3>
+          <ul style="margin-bottom:0; padding-left:1.2rem;">
+            <li>upgrade() → 验证列存在、值正确。</li>
+            <li>downgrade() → 验证列被删除。</li>
+            <li>回填数据验证 → JSON 值与 vector 值逐行抽样比对。</li>
+            <li>重复 upgrade/downgrade 幂等性。</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h3>🔗 集成测试</h3>
+          <ul style="margin-bottom:0; padding-left:1.2rem;">
+            <li>端到端：上传文件 → 解析 → 分块 → 向量化 → 验证两个列都有数据且一致。</li>
+            <li>重新向量化后双写仍然正确。</li>
+            <li>验证 <code>embedding_vector</code> 列接受 pgvector <code><=></code> 算子查询。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <footer style="margin-top:48px; padding-top:16px; border-top:1px solid var(--border); color:var(--muted); font-size:14px;">
+      <p>
+        knowra 向量存储方案 · 2026-07-17 · 基于 pgvector vector(2560) 原生列 · 为向量索引和语义检索做好基础设施准备
+      </p>
+    </footer>
+  </main>
+</body>
+</html>
