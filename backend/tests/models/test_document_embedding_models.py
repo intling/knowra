@@ -1,5 +1,9 @@
 # 本文件验证文档向量化 SQLModel 的数据库契约。
 # 重点覆盖模型注册、字段集合、作业状态枚举、默认值、外键关系和查询索引，防止持久化结构漂移。
+#
+# 本文件在 ``add-vector-storage`` 变更中扩展：
+# - ``EXPECTED_EMBEDDING_COLUMNS`` 新增 ``embedding_vector``
+# - 新增 ``Vector(2560)`` 类型验证和字段行为测试
 
 from importlib import import_module
 from uuid import uuid4
@@ -36,6 +40,7 @@ EXPECTED_EMBEDDING_COLUMNS = {
     "model",
     "dimensions",
     "embedding_json",
+    "embedding_vector",
     "token_count",
     "created_at",
 }
@@ -217,3 +222,78 @@ def test_document_embedding_required_foreign_key_fields_are_not_nullable() -> No
     assert not columns["model"].nullable
     assert not columns["dimensions"].nullable
     assert not columns["embedding_json"].nullable
+    assert not columns["embedding_vector"].nullable
+
+
+# ── embedding_vector 字段测试 ────────────────────────────────────────
+
+
+# embedding_vector 字段必须使用 pgvector.sqlalchemy.Vector(2560) 类型，
+# 并通过 sa_column=Column(Vector(2560), nullable=False) 声明为非空列，
+# 回填完成后在数据库层强制完整性。
+def test_embedding_vector_field_type_is_vector_2560() -> None:
+    models = import_module("app.models.document_embedding")
+    columns = models.DocumentEmbedding.__table__.columns
+
+    assert "embedding_vector" in columns
+    embedding_vector_col = columns["embedding_vector"]
+    # 列类型必须是 pgvector 的 Vector 类型
+    assert str(embedding_vector_col.type).upper() == "VECTOR(2560)"
+    # 列必须为 NOT NULL（回填后强制完整性）
+    assert embedding_vector_col.nullable is False
+
+
+# embedding_vector 字段必须能接受 list[float] 并正确映射到 Vector(2560) 类型，
+# pgvector 库在运行时会自动处理 Python list ↔ pgvector vector 的序列化。
+def test_embedding_vector_accepts_list_of_float() -> None:
+    models = import_module("app.models.document_embedding")
+
+    embedding_vector = [0.1 * i for i in range(2560)]
+    embedding = models.DocumentEmbedding(
+        embedding_job_id=uuid4(),
+        chunk_id=uuid4(),
+        parsed_document_id=uuid4(),
+        owner_user_id=uuid4(),
+        sequence_index=0,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
+        embedding_json=embedding_vector,
+        embedding_vector=embedding_vector,
+        token_count=100,
+    )
+
+    assert embedding.embedding_vector == embedding_vector
+    assert len(embedding.embedding_vector) == 2560
+    assert embedding.embedding_vector[0] == 0.0
+    assert embedding.embedding_vector[2559] == 255.9
+    # embedding_json 和 embedding_vector 值一致
+    assert embedding.embedding_json == embedding.embedding_vector
+
+
+# embedding_vector 为必填字段，NOT NULL 约束在数据库层强制完整性。
+def test_embedding_vector_is_required_not_nullable() -> None:
+    models = import_module("app.models.document_embedding")
+    columns = models.DocumentEmbedding.__table__.columns
+
+    # embedding_vector 必须在列级别声明为 NOT NULL
+    assert not columns["embedding_vector"].nullable, (
+        "embedding_vector must be NOT NULL to enforce data integrity"
+    )
+
+    # embedding_vector 字段无 default 值，必须显式提供
+    embedding_vector = [0.1] * 2560
+    embedding = models.DocumentEmbedding(
+        embedding_job_id=uuid4(),
+        chunk_id=uuid4(),
+        parsed_document_id=uuid4(),
+        owner_user_id=uuid4(),
+        sequence_index=0,
+        model="Qwen/Qwen3-Embedding-4B",
+        dimensions=2560,
+        embedding_json=embedding_vector,
+        embedding_vector=embedding_vector,
+        token_count=100,
+    )
+
+    assert embedding.embedding_vector == embedding_vector
+    assert len(embedding.embedding_vector) == 2560

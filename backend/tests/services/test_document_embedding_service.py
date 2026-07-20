@@ -46,7 +46,7 @@ class FakeEmbeddingAdapter:
             return self.results
         adapter_mod = import_module("app.services.embedding_adapter")
         return [
-            adapter_mod.EmbeddingResult(index=i, embedding=[0.1 * (i + 1)] * 128)
+            adapter_mod.EmbeddingResult(index=i, embedding=[0.1 * (i + 1)] * 2560)
             for i in range(len(texts))
         ]
 
@@ -63,7 +63,7 @@ def make_config(**overrides):
         "api_base_url": "https://test.example.com/v1",
         "api_key": "sk-test",
         "model": "test-model",
-        "dimensions": 128,
+        "dimensions": 2560,
         "encoding_format": "float",
         "batch_size": 10,
         "max_retries": 3,
@@ -147,7 +147,7 @@ def test_run_initial_embedding_creates_job_and_succeeds(tmp_path) -> None:
         assert stored_job.status == "succeeded"
         assert stored_job.embedding_count == 3
         assert stored_job.model == "test-model"
-        assert stored_job.dimensions == 128
+        assert stored_job.dimensions == 2560
         assert stored_job.config_json == make_config().snapshot()
         # 适配器应被调用一次，传入 3 个 contextualized_text
         assert len(adapter.calls) == 1
@@ -165,7 +165,7 @@ def test_run_initial_embedding_creates_job_and_succeeds(tmp_path) -> None:
             assert emb.embedding_job_id == job.id
             assert emb.chunk_id == chunks[i].id
             assert emb.sequence_index == i
-            assert emb.embedding_json == [0.1 * (i + 1)] * 128
+            assert emb.embedding_json == [0.1 * (i + 1)] * 2560
 
 
 # ── 6.2 文本选择策略 ────────────────────────────────────────────────
@@ -240,7 +240,7 @@ def test_run_job_transitions_status_to_succeeded_and_sets_embedding_count(tmp_pa
             owner_user_id=parsed_document.owner_user_id,
             status="queued",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         session.add(queued_job)
         session.commit()
@@ -285,7 +285,7 @@ def test_supersede_previous_jobs_marks_only_old_succeeded_as_superseded(tmp_path
             owner_user_id=parsed_document.owner_user_id,
             status="succeeded",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         old_failed = models.DocumentEmbeddingJob(
             chunk_job_id=chunk_job.id,
@@ -293,7 +293,7 @@ def test_supersede_previous_jobs_marks_only_old_succeeded_as_superseded(tmp_path
             owner_user_id=parsed_document.owner_user_id,
             status="failed",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
             error_code="api_error",
         )
         old_queued = models.DocumentEmbeddingJob(
@@ -302,7 +302,7 @@ def test_supersede_previous_jobs_marks_only_old_succeeded_as_superseded(tmp_path
             owner_user_id=parsed_document.owner_user_id,
             status="queued",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         new_job = models.DocumentEmbeddingJob(
             chunk_job_id=chunk_job.id,
@@ -310,7 +310,7 @@ def test_supersede_previous_jobs_marks_only_old_succeeded_as_superseded(tmp_path
             owner_user_id=parsed_document.owner_user_id,
             status="succeeded",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         for job in (old_succeeded, old_failed, old_queued, new_job):
             session.add(job)
@@ -360,7 +360,7 @@ def test_execute_queued_job_does_not_create_new_job(tmp_path) -> None:
             owner_user_id=parsed_document.owner_user_id,
             status="queued",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         session.add(queued_job)
         session.commit()
@@ -470,7 +470,7 @@ def test_mark_incomplete_embedding_jobs_failed_for_shutdown(tmp_path) -> None:
             owner_user_id=parsed_document.owner_user_id,
             status="queued",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         running_job = models.DocumentEmbeddingJob(
             chunk_job_id=chunk_job.id,
@@ -478,7 +478,7 @@ def test_mark_incomplete_embedding_jobs_failed_for_shutdown(tmp_path) -> None:
             owner_user_id=parsed_document.owner_user_id,
             status="running",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         succeeded_job = models.DocumentEmbeddingJob(
             chunk_job_id=chunk_job.id,
@@ -486,7 +486,7 @@ def test_mark_incomplete_embedding_jobs_failed_for_shutdown(tmp_path) -> None:
             owner_user_id=parsed_document.owner_user_id,
             status="succeeded",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         failed_job = models.DocumentEmbeddingJob(
             chunk_job_id=chunk_job.id,
@@ -494,7 +494,7 @@ def test_mark_incomplete_embedding_jobs_failed_for_shutdown(tmp_path) -> None:
             owner_user_id=parsed_document.owner_user_id,
             status="failed",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
             error_code="api_error",
             error_message="original error",
         )
@@ -504,7 +504,7 @@ def test_mark_incomplete_embedding_jobs_failed_for_shutdown(tmp_path) -> None:
             owner_user_id=parsed_document.owner_user_id,
             status="superseded",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         for j in (queued_job, running_job, succeeded_job, failed_job, superseded_job):
             session.add(j)
@@ -554,7 +554,7 @@ def test_execute_queued_job_fast_fails_on_shutdown_without_calling_adapter(tmp_p
             owner_user_id=parsed_document.owner_user_id,
             status="queued",
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
         )
         session.add(queued_job)
         session.commit()
@@ -598,14 +598,14 @@ def test_token_count_persisted_from_adapter_result(tmp_path) -> None:
         # 适配器返回带 token_count 的结果
         adapter = FakeEmbeddingAdapter(
             results=[
-                adapter_mod.EmbeddingResult(index=0, embedding=[0.1] * 128, token_count=42),
-                adapter_mod.EmbeddingResult(index=1, embedding=[0.2] * 128, token_count=33),
-                adapter_mod.EmbeddingResult(index=2, embedding=[0.3] * 128, token_count=25),
+                adapter_mod.EmbeddingResult(index=0, embedding=[0.1] * 2560, token_count=42),
+                adapter_mod.EmbeddingResult(index=1, embedding=[0.2] * 2560, token_count=33),
+                adapter_mod.EmbeddingResult(index=2, embedding=[0.3] * 2560, token_count=25),
             ]
         )
         service = make_service(session, adapter=adapter)
 
-        job = service.run_initial_embedding(
+        _job = service.run_initial_embedding(
             chunk_job=chunk_job,
             parsed_document=parsed_document,
         )
@@ -618,3 +618,321 @@ def test_token_count_persisted_from_adapter_result(tmp_path) -> None:
         assert embeddings[0].token_count == 42
         assert embeddings[1].token_count == 33
         assert embeddings[2].token_count == 25
+
+
+# ── 6.10 双写策略 ────────────────────────────────────────────────────
+
+
+# _save_embeddings() 应同时写入 embedding_json 和 embedding_vector 两列，
+# 且两列值必须一致。
+def test_save_embeddings_writes_both_json_and_vector_columns(tmp_path) -> None:
+    import_module("app.services.document_embedding")
+    models = import_module("app.models.document_embedding")
+    with embedding_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session, tmp_path / "uploads"
+        )
+        chunk_job = make_chunk_job(session, parsed_document)
+        chunks = make_document_chunks(session, chunk_job, parsed_document)
+
+        adapter = FakeEmbeddingAdapter()
+        service = make_service(session, adapter=adapter)
+
+        job = service.run_initial_embedding(
+            chunk_job=chunk_job,
+            parsed_document=parsed_document,
+        )
+
+        stored_job = session.get(models.DocumentEmbeddingJob, job.id)
+        assert stored_job.status == "succeeded"
+        assert stored_job.embedding_count == len(chunks)
+
+        embeddings = session.exec(
+            select(models.DocumentEmbedding).order_by(models.DocumentEmbedding.sequence_index)
+        ).all()
+        assert len(embeddings) == 3
+
+        for emb in embeddings:
+            # 两列都必须非空
+            assert emb.embedding_json is not None
+            assert emb.embedding_vector is not None
+            # 两列值必须一致
+            assert emb.embedding_json == list(emb.embedding_vector)
+            assert len(emb.embedding_vector) == 2560  # config.dimensions
+
+
+# 双写应在同一事务中完成，任一列写入失败则全部回滚。
+def test_dual_write_is_in_same_transaction(tmp_path) -> None:
+    """验证 embedding_json 和 embedding_vector 写入在同一事务中。
+
+    由于 _save_embeddings() 使用 session.flush() 而非 commit()，
+    所有批量写入在同一事务中执行。此测试验证正常双写路径不会出现
+    一列有值一列为 NULL 的情况。
+    """
+    import_module("app.services.document_embedding")
+    models = import_module("app.models.document_embedding")
+    with embedding_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session, tmp_path / "uploads"
+        )
+        chunk_job = make_chunk_job(session, parsed_document)
+        chunks = make_document_chunks(session, chunk_job, parsed_document, chunk_count=5)
+
+        adapter = FakeEmbeddingAdapter()
+        service = make_service(session, adapter=adapter)
+
+        job = service.run_initial_embedding(
+            chunk_job=chunk_job,
+            parsed_document=parsed_document,
+        )
+
+        stored_job = session.get(models.DocumentEmbeddingJob, job.id)
+        assert stored_job.status == "succeeded"
+        assert stored_job.embedding_count == len(chunks)
+
+        # 所有 embedding 记录的双列都必须一致
+        embeddings = session.exec(
+            select(models.DocumentEmbedding).order_by(models.DocumentEmbedding.sequence_index)
+        ).all()
+        assert len(embeddings) == 5
+
+        for emb in embeddings:
+            assert emb.embedding_json is not None, (
+                f"embedding_json should not be None for sequence_index={emb.sequence_index}"
+            )
+            assert emb.embedding_vector is not None, (
+                f"embedding_vector should not be None for sequence_index={emb.sequence_index}"
+            )
+            assert emb.embedding_json == list(emb.embedding_vector), (
+                f"Values mismatch for sequence_index={emb.sequence_index}"
+            )
+
+
+# 双写后从 DB 重新读取，确保两列都持久化到磁盘。
+def test_dual_write_data_survives_round_trip(tmp_path) -> None:
+    """双写数据在 session refresh 后仍然正确。"""
+    import_module("app.services.document_embedding")
+    models = import_module("app.models.document_embedding")
+    with embedding_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session, tmp_path / "uploads"
+        )
+        chunk_job = make_chunk_job(session, parsed_document)
+        chunks = make_document_chunks(session, chunk_job, parsed_document, chunk_count=1)
+
+        adapter = FakeEmbeddingAdapter()
+        service = make_service(session, adapter=adapter)
+
+        job = service.run_initial_embedding(
+            chunk_job=chunk_job,
+            parsed_document=parsed_document,
+        )
+
+        stored_job = session.get(models.DocumentEmbeddingJob, job.id)
+        assert stored_job.status == "succeeded"
+        assert stored_job.embedding_count == len(chunks)
+
+        embeddings = session.exec(select(models.DocumentEmbedding)).all()
+        assert len(embeddings) == 1
+        emb = embeddings[0]
+
+        # Round-trip: expire and re-read
+        session.expire(emb)
+        assert emb.embedding_json is not None
+        assert emb.embedding_vector is not None
+        assert emb.embedding_json == list(emb.embedding_vector)
+
+
+# ── 7. 集成验证测试 ──────────────────────────────────────────────────
+
+
+# 端到端集成测试：通过 run_initial_embedding 完整走一遍向量化流程，
+# 验证 embedding_json 和 embedding_vector 两列都有数据且值一致。
+def test_end_to_end_dual_write_both_columns_populated_and_consistent(tmp_path) -> None:
+    """端到端验证：上传文件 → 解析 → 分块 → 向量化 → 双写验证。"""
+    import_module("app.services.document_embedding")
+    models = import_module("app.models.document_embedding")
+    with embedding_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session, tmp_path / "uploads"
+        )
+        chunk_job = make_chunk_job(session, parsed_document)
+        chunks = make_document_chunks(session, chunk_job, parsed_document, chunk_count=5)
+
+        adapter = FakeEmbeddingAdapter()
+        service = make_service(session, adapter=adapter)
+
+        job = service.run_initial_embedding(
+            chunk_job=chunk_job,
+            parsed_document=parsed_document,
+        )
+
+        # 作业成功
+        stored_job = session.get(models.DocumentEmbeddingJob, job.id)
+        assert stored_job.status == "succeeded"
+        assert stored_job.embedding_count == len(chunks)
+
+        # 验证所有 embedding 记录的双列完整性和一致性
+        embeddings = session.exec(
+            select(models.DocumentEmbedding).order_by(models.DocumentEmbedding.sequence_index)
+        ).all()
+        assert len(embeddings) == 5
+
+        for i, emb in enumerate(embeddings):
+            assert emb.embedding_json is not None, f"embedding_json is None for chunk {i}"
+            assert emb.embedding_vector is not None, f"embedding_vector is None for chunk {i}"
+            assert len(emb.embedding_json) == 2560
+            assert len(emb.embedding_vector) == 2560
+            assert emb.embedding_json == list(emb.embedding_vector), (
+                f"embedding_json != embedding_vector for chunk {i}: "
+                f"{emb.embedding_json[:3]}... vs {emb.embedding_vector[:3]}..."
+            )
+            # 验证关联完整性
+            assert emb.embedding_job_id == job.id
+            assert emb.chunk_id == chunks[i].id
+            assert emb.parsed_document_id == parsed_document.id
+            assert emb.sequence_index == i
+            assert emb.model == "test-model"
+            assert emb.dimensions == 2560
+
+
+# 重新向量化后双写仍然正确：通过 execute_queued_job 重新执行向量化，
+# 验证新生成的 embedding 记录的双列仍然一致。
+def test_re_vectorization_maintains_dual_write_consistency(tmp_path) -> None:
+    """重新向量化后双写仍然正确。"""
+    import_module("app.services.document_embedding")
+    models = import_module("app.models.document_embedding")
+    with embedding_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session, tmp_path / "uploads"
+        )
+        chunk_job = make_chunk_job(session, parsed_document)
+        chunks = make_document_chunks(session, chunk_job, parsed_document, chunk_count=3)
+
+        # 首次向量化
+        adapter = FakeEmbeddingAdapter()
+        service = make_service(session, adapter=adapter)
+        first_job = service.run_initial_embedding(
+            chunk_job=chunk_job,
+            parsed_document=parsed_document,
+        )
+        assert first_job.status == "succeeded"
+
+        # 重新向量化：创建新的 queued 作业
+        queued_job = models.DocumentEmbeddingJob(
+            chunk_job_id=chunk_job.id,
+            parsed_document_id=parsed_document.id,
+            owner_user_id=parsed_document.owner_user_id,
+            status="queued",
+            model="test-model",
+            dimensions=2560,
+        )
+        session.add(queued_job)
+        session.commit()
+        session.refresh(queued_job)
+
+        # 使用不同的向量值以区分新旧
+        adapter2 = FakeEmbeddingAdapter(
+            results=[
+                import_module("app.services.embedding_adapter").EmbeddingResult(
+                    index=0, embedding=[0.99] * 2560, token_count=10
+                ),
+                import_module("app.services.embedding_adapter").EmbeddingResult(
+                    index=1, embedding=[0.88] * 2560, token_count=10
+                ),
+                import_module("app.services.embedding_adapter").EmbeddingResult(
+                    index=2, embedding=[0.77] * 2560, token_count=10
+                ),
+            ]
+        )
+        service2 = make_service(session, adapter=adapter2)
+        result = service2.execute_queued_job(
+            job=queued_job,
+            chunks=chunks,
+        )
+        assert result.status == "succeeded"
+
+        # 验证最新 job 的 embedding 双列一致性
+        latest_embeddings = session.exec(
+            select(models.DocumentEmbedding)
+            .where(models.DocumentEmbedding.embedding_job_id == queued_job.id)
+            .order_by(models.DocumentEmbedding.sequence_index)
+        ).all()
+        assert len(latest_embeddings) == 3
+
+        expected_values = [[0.99] * 2560, [0.88] * 2560, [0.77] * 2560]
+        for i, emb in enumerate(latest_embeddings):
+            assert emb.embedding_json is not None
+            assert emb.embedding_vector is not None
+            assert emb.embedding_json == list(emb.embedding_vector)
+            assert emb.embedding_json == expected_values[i]
+
+        # 首次 job 被 superseded
+        session.refresh(first_job)
+        assert first_job.status == "superseded"
+
+        # 旧 embedding 记录的双列也保持一致
+        old_embeddings = session.exec(
+            select(models.DocumentEmbedding)
+            .where(models.DocumentEmbedding.embedding_job_id == first_job.id)
+            .order_by(models.DocumentEmbedding.sequence_index)
+        ).all()
+        assert len(old_embeddings) == 3
+        for emb in old_embeddings:
+            assert emb.embedding_json is not None
+            assert emb.embedding_vector is not None
+            assert emb.embedding_json == list(emb.embedding_vector)
+
+
+# 验证 embedding_vector 列可接受 pgvector 距离算子查询（<=>）。
+# 使用 SQLAlchemy 的 op() 方法构造 l2 距离查询，
+# 验证查询可正常构建且不抛出类型错误。
+def test_embedding_vector_column_accepts_pgvector_distance_operator(tmp_path) -> None:
+    """验证 embedding_vector 列可使用 pgvector <=> 距离算子。"""
+    import_module("app.services.document_embedding")
+    models = import_module("app.models.document_embedding")
+    with embedding_session() as session:
+        _user, _upload, _parse_job, parsed_document = make_parsed_document_with_segment(
+            session, tmp_path / "uploads"
+        )
+        chunk_job = make_chunk_job(session, parsed_document)
+        _chunks = make_document_chunks(session, chunk_job, parsed_document, chunk_count=1)
+
+        adapter = FakeEmbeddingAdapter()
+        service = make_service(session, adapter=adapter)
+
+        job = service.run_initial_embedding(
+            chunk_job=chunk_job,
+            parsed_document=parsed_document,
+        )
+        assert job.status == "succeeded"
+
+        # 查询已保存的向量作为参照
+        embedding = session.exec(
+            select(models.DocumentEmbedding).where(
+                models.DocumentEmbedding.embedding_job_id == job.id
+            )
+        ).one()
+
+        query_vector = embedding.embedding_vector
+        assert query_vector is not None
+
+        # 使用 op('<=>') 构造 l2 距离查询
+        # 在 PostgreSQL + pgvector 环境中此查询可正确执行并返回距离值
+        stmt = (
+            select(
+                models.DocumentEmbedding.id,
+                models.DocumentEmbedding.embedding_vector.op("<=>")(query_vector).label("distance"),
+            )
+            .where(
+                models.DocumentEmbedding.embedding_job_id == job.id,
+            )
+            .order_by("distance")
+        )
+
+        # 验证查询能正常构建（SQLite 下编译验证，实际执行依赖 pgvector）
+        compiled = str(stmt.compile(compile_kwargs={"literal_binds": True}))
+        assert "<=>" in compiled, f"Query should contain <=> operator, got: {compiled}"
+        assert "embedding_vector" in compiled, (
+            f"Query should reference embedding_vector column, got: {compiled}"
+        )

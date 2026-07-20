@@ -201,13 +201,7 @@ def test_docling_model_adapter_detects_incomplete_download(tmp_path) -> None:
     # Simulate an interrupted HuggingFace Hub download that left an
     # .incomplete marker behind – the directory exists but the weights
     # are missing.
-    incomplete_marker = (
-        layout_dir
-        / ".cache"
-        / "huggingface"
-        / "download"
-        / "abc123.incomplete"
-    )
+    incomplete_marker = layout_dir / ".cache" / "huggingface" / "download" / "abc123.incomplete"
     incomplete_marker.parent.mkdir(parents=True)
     incomplete_marker.write_text("")
 

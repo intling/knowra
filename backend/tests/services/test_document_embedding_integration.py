@@ -114,7 +114,7 @@ class IntegrationChunkingService:
 class IntegrationEmbeddingAdapter:
     """可控的 fake embedding 适配器 —— 返回固定向量或抛出异常。"""
 
-    def __init__(self, *, error=None, dimensions=128):
+    def __init__(self, *, error=None, dimensions=2560):
         self.error = error
         self.dimensions = dimensions
         self.calls: list[list[str]] = []
@@ -138,7 +138,7 @@ def make_embedding_service(session, adapter, *, shutdown_state=None):
         api_base_url="https://test.example.com/v1",
         api_key="sk-test",
         model="test-model",
-        dimensions=128,
+        dimensions=2560,
         encoding_format="float",
         batch_size=10,
         max_retries=3,
@@ -183,7 +183,7 @@ def test_full_auto_pipeline_parse_chunk_embed_succeeds(session, tmp_path):
     models, job, _user = make_parse_job(session, tmp_path)
     emb_models = import_module("app.models.document_embedding")
 
-    fake_adapter = IntegrationEmbeddingAdapter(dimensions=128)
+    fake_adapter = IntegrationEmbeddingAdapter(dimensions=2560)
     embedding_service = make_embedding_service(session, fake_adapter)
     chunking_service = IntegrationChunkingService(session)
 
@@ -213,7 +213,7 @@ def test_full_auto_pipeline_parse_chunk_embed_succeeds(session, tmp_path):
     assert emb_job.status == "succeeded"
     assert emb_job.embedding_count == 3
     assert emb_job.model == "test-model"
-    assert emb_job.dimensions == 128
+    assert emb_job.dimensions == 2560
 
     # 适配器应收到 3 个 contextualized_text
     assert len(fake_adapter.calls) == 1
@@ -230,8 +230,8 @@ def test_full_auto_pipeline_parse_chunk_embed_succeeds(session, tmp_path):
     assert len(embeddings) == 3
     for i, emb in enumerate(embeddings):
         assert emb.sequence_index == i
-        assert emb.dimensions == 128
-        assert emb.embedding_json == [0.1 * (i + 1)] * 128
+        assert emb.dimensions == 2560
+        assert emb.embedding_json == [0.1 * (i + 1)] * 2560
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -375,7 +375,7 @@ def test_shutdown_marks_incomplete_embedding_jobs_failed(session, tmp_path):
             owner_user_id=_user.id,
             status=status,
             model="test-model",
-            dimensions=128,
+            dimensions=2560,
             error_code="api_error" if status == "failed" else None,
             error_message="original error" if status == "failed" else None,
             config_json={},
@@ -463,7 +463,7 @@ def test_reembed_end_to_end_flow(session, tmp_path):
         owner_user_id=_user.id,
         status="succeeded",
         model="old-model",
-        dimensions=128,
+        dimensions=2560,
         embedding_count=2,
         config_json={"model": "old-model"},
     )
@@ -478,7 +478,7 @@ def test_reembed_end_to_end_flow(session, tmp_path):
         owner_user_id=_user.id,
         status="queued",
         model="new-model",
-        dimensions=128,
+        dimensions=2560,
         config_json={"model": "new-model"},
     )
     session.add(new_job)
@@ -492,7 +492,7 @@ def test_reembed_end_to_end_flow(session, tmp_path):
     class ReembedAdapter:
         def embed(self, texts):
             return [
-                adapter_mod.EmbeddingResult(index=i, embedding=[0.5] * 128)
+                adapter_mod.EmbeddingResult(index=i, embedding=[0.5] * 2560)
                 for i in range(len(texts))
             ]
 
@@ -525,5 +525,5 @@ def test_reembed_end_to_end_flow(session, tmp_path):
     assert len(embeddings) == 2
     assert embeddings[0].sequence_index == 0
     assert embeddings[1].sequence_index == 1
-    assert embeddings[0].embedding_json == [0.5] * 128
+    assert embeddings[0].embedding_json == [0.5] * 2560
     assert embeddings[0].model == "new-model"

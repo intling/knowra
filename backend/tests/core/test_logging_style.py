@@ -7,7 +7,8 @@ LOGGER_METHODS = {"debug", "info", "warning", "error", "exception", "critical"}
 def test_app_logger_calls_use_structured_keyword_fields() -> None:
     violations: list[str] = []
     for path in sorted(Path("app").rglob("*.py")):
-        violations.extend(_collect_logging_style_violations(path.read_text(), filename=str(path)))
+        source = path.read_text(encoding="utf-8")
+        violations.extend(_collect_logging_style_violations(source, filename=str(path)))
 
     assert violations == []
 

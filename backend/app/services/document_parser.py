@@ -145,7 +145,7 @@ class DocumentFormatPolicy:
             try:
                 sample.decode(encoding)
                 return
-            except (UnicodeDecodeError, LookupError):
+            except UnicodeDecodeError, LookupError:
                 continue
         raise UnsupportedDocumentFormatError("Text sample is not readable")
 

@@ -295,6 +295,7 @@ class DocumentEmbeddingService:
                     model=job.model,
                     dimensions=job.dimensions,
                     embedding_json=result.embedding,
+                    embedding_vector=result.embedding,
                     token_count=result.token_count,
                 )
             )
@@ -303,6 +304,7 @@ class DocumentEmbeddingService:
             "Embedding records persisted",
             job_id=str(job.id),
             count=len(results),
+            dual_write=True,
         )
 
     def _supersede_previous_jobs(

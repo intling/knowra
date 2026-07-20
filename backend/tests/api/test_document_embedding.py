@@ -219,6 +219,7 @@ def seed_successful_embedding_job(session: Session, tmp_path):
 
     # 创建向量结果
     embeddings = []
+    embedding_vector = _make_embedding_vector()
     for chunk in chunks:
         emb = emb_models.DocumentEmbedding(
             embedding_job_id=embedding_job.id,
@@ -228,7 +229,8 @@ def seed_successful_embedding_job(session: Session, tmp_path):
             sequence_index=chunk.sequence_index,
             model="Qwen/Qwen3-Embedding-4B",
             dimensions=2560,
-            embedding_json=_make_embedding_vector(),
+            embedding_json=embedding_vector,
+            embedding_vector=embedding_vector,
             token_count=None,
         )
         session.add(emb)
@@ -350,9 +352,7 @@ def test_get_chunk_job_latest_embedding_job_returns_job(
         session, tmp_path, status="failed", embedding_count=0
     )
 
-    response = embedding_client.get(
-        f"/api/document-chunk-jobs/{chunk_job.id}/embedding-job"
-    )
+    response = embedding_client.get(f"/api/document-chunk-jobs/{chunk_job.id}/embedding-job")
 
     assert response.status_code == 200
     payload = response.json()
@@ -385,9 +385,7 @@ def test_get_chunk_job_latest_embedding_job_returns_404_when_no_job(
     session.commit()
     session.refresh(chunk_job)
 
-    response = embedding_client.get(
-        f"/api/document-chunk-jobs/{chunk_job.id}/embedding-job"
-    )
+    response = embedding_client.get(f"/api/document-chunk-jobs/{chunk_job.id}/embedding-job")
 
     assert response.status_code == 404
     assert "No embedding job found" in response.text
@@ -572,7 +570,7 @@ def test_get_chunk_job_embeddings_uses_only_active_job(
     session.add(embedding_job)
     session.commit()
 
-    # 创建新的 succeeded 作业
+    # 创建新的 succeeded 作业（使用与列定义一致的 2560 维）
     new_job = emb_models.DocumentEmbeddingJob(
         chunk_job_id=chunk_job.id,
         parsed_document_id=parsed.id,
@@ -580,9 +578,9 @@ def test_get_chunk_job_embeddings_uses_only_active_job(
         status="succeeded",
         embedder_name="openai_compatible",
         model="newer-model",
-        dimensions=2048,
+        dimensions=2560,
         embedding_count=2,
-        config_json={"model": "newer-model", "dimensions": 2048},
+        config_json={"model": "newer-model", "dimensions": 2560},
     )
     session.add(new_job)
     session.commit()
@@ -597,8 +595,9 @@ def test_get_chunk_job_embeddings_uses_only_active_job(
                 owner_user_id=user.id,
                 sequence_index=chunk.sequence_index,
                 model="newer-model",
-                dimensions=2048,
-                embedding_json=[0.2] * 2048,
+                dimensions=2560,
+                embedding_json=[0.2] * 2560,
+                embedding_vector=[0.2] * 2560,
             )
         )
     session.commit()
@@ -610,7 +609,7 @@ def test_get_chunk_job_embeddings_uses_only_active_job(
     assert payload["total"] == 2
     # 应返回新模型的结果
     assert payload["items"][0]["model"] == "newer-model"
-    assert payload["items"][0]["dimensions"] == 2048
+    assert payload["items"][0]["dimensions"] == 2560
 
 
 # ═══════════════════════════════════════════════════════════════════════

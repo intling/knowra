@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String
 from sqlmodel import Field, SQLModel
 
@@ -107,6 +108,9 @@ class DocumentEmbedding(SQLModel, table=True):
     )
     embedding_json: list[float] = Field(
         sa_column=Column(JSON, nullable=False),
+    )
+    embedding_vector: list[float] = Field(
+        sa_column=Column(Vector(2560), nullable=False),
     )
     token_count: int | None = Field(default=None, sa_column=Column(Integer, nullable=True))
     created_at: datetime = Field(

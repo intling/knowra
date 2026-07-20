@@ -447,9 +447,7 @@ def test_validate_response_without_usage_returns_none_token_count():
     module = get_adapter_module()
     config = make_config(dimensions=2)
 
-    response = make_fake_response(
-        [make_fake_embedding_item(0, [1.0, 2.0])]
-    )
+    response = make_fake_response([make_fake_embedding_item(0, [1.0, 2.0])])
     # Ensure response has no usage attribute
     assert not hasattr(response, "usage")
 
