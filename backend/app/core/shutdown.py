@@ -11,6 +11,7 @@ from app.core.logging import get_logger
 from app.db.session import engine
 from app.models.user import utc_now
 from app.services.document_chunking import mark_incomplete_chunk_jobs_failed_for_shutdown
+from app.services.document_embedding import mark_incomplete_embedding_jobs_failed_for_shutdown
 from app.services.document_parse_dispatcher import mark_incomplete_parse_jobs_failed_for_shutdown
 
 logger = get_logger(__name__)
@@ -71,6 +72,7 @@ class ApplicationShutdownCoordinator:
 
         parse_jobs = 0
         chunk_jobs = 0
+        embedding_jobs = 0
         try:
             with self.session_factory() as session:
                 parse_jobs = mark_incomplete_parse_jobs_failed_for_shutdown(
@@ -78,6 +80,10 @@ class ApplicationShutdownCoordinator:
                     reason=str(self.shutdown_state.reason or reason),
                 )
                 chunk_jobs = mark_incomplete_chunk_jobs_failed_for_shutdown(
+                    session=session,
+                    reason=str(self.shutdown_state.reason or reason),
+                )
+                embedding_jobs = mark_incomplete_embedding_jobs_failed_for_shutdown(
                     session=session,
                     reason=str(self.shutdown_state.reason or reason),
                 )
@@ -95,4 +101,5 @@ class ApplicationShutdownCoordinator:
             reason=self.shutdown_state.reason,
             parse_jobs=parse_jobs,
             chunk_jobs=chunk_jobs,
+            embedding_jobs=embedding_jobs,
         )

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Generator
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from pathlib import Path
 from uuid import UUID
 
@@ -49,6 +51,8 @@ def run_parse_job(
     artifact_storage_root: str | Path | None = None,
     document_chunking_enabled: bool | None = None,
     chunking_service: object | None = None,
+    document_embedding_enabled: bool | None = None,
+    embedding_service: object | None = None,
     model_readiness: object | None = None,
     shutdown_state: object | None = None,
 ) -> None:
@@ -115,7 +119,6 @@ def run_parse_job(
                     artifact_storage_root or settings.document_parse_artifact_dir
                 ),
             )
-            mark_parse_job_succeeded(session=session, job=job)
             logger.info(
                 "Parse succeeded",
                 job_id=str(job.id),
@@ -128,7 +131,7 @@ def run_parse_job(
                 else document_chunking_enabled
             )
             if should_chunk:
-                with suppress(Exception):
+                try:
                     logger.info("Auto-chunking started", parse_job_id=str(job.id))
                     service = chunking_service or make_document_chunking_service(
                         session=session,
@@ -145,6 +148,43 @@ def run_parse_job(
                         chunk_job_id=str(chunk_job.id),
                         chunks=chunk_job.chunk_count or 0,
                     )
+                    should_embed = (
+                        settings.document_embedding_enabled
+                        if document_embedding_enabled is None
+                        else document_embedding_enabled
+                    )
+                    if should_embed:
+                        logger.info(
+                            "Auto-embedding started",
+                            parse_job_id=str(job.id),
+                            chunk_job_id=str(chunk_job.id),
+                        )
+                        emb_service = embedding_service or make_document_embedding_service(
+                            session=session,
+                            settings=settings,
+                            shutdown_state=shutdown_state,
+                        )
+                        emb_job = emb_service.run_initial_embedding(
+                            chunk_job=chunk_job,
+                            parsed_document=parsed_document,
+                        )
+                        logger.info(
+                            "Auto-embedding succeeded",
+                            parse_job_id=str(job.id),
+                            chunk_job_id=str(chunk_job.id),
+                            embedding_job_id=str(emb_job.id),
+                            embeddings=emb_job.embedding_count or 0,
+                        )
+                except Exception as exc:
+                    logger.error(
+                        "Auto-chunking or auto-embedding failed",
+                        parse_job_id=str(job.id),
+                        error=str(exc),
+                        exc_info=True,
+                    )
+            # Mark parse job succeeded AFTER chunking/embedding so the frontend
+            # sees a consistent state where all downstream data is ready.
+            mark_parse_job_succeeded(session=session, job=job)
         except DocumentModelUnavailableError as exc:
             logger.error(
                 "Parse failed",
@@ -285,8 +325,6 @@ def ensure_docling_models_ready(
     document_format: DocumentFormat,
     model_readiness: object | None,
 ) -> None:
-    if document_format in {DocumentFormat.TXT, DocumentFormat.MARKDOWN}:
-        return
     docling = getattr(model_readiness, "docling", None)
     if docling is None or getattr(docling, "status", "ready") == "ready":
         return
@@ -336,6 +374,34 @@ def make_document_chunking_service(
         artifact_storage=ChunkArtifactStorage(settings.document_chunk_artifact_storage_dir),
         config=config,
         model_readiness=model_readiness,
+    )
+
+
+def make_document_embedding_service(
+    *,
+    session: Session,
+    settings,
+    shutdown_state: object | None = None,
+) -> DocumentEmbeddingService:  # noqa: F821
+    from app.services.document_embedding import DocumentEmbeddingService
+    from app.services.embedding_adapter import EmbeddingAdapter
+    from app.services.embedding_config import EmbeddingConfig
+
+    config = EmbeddingConfig(
+        api_base_url=settings.document_embedding_api_base_url,
+        api_key=settings.document_embedding_api_key,
+        model=settings.document_embedding_model,
+        dimensions=settings.document_embedding_dimensions,
+        encoding_format=settings.document_embedding_encoding_format,
+        batch_size=settings.document_embedding_batch_size,
+        max_retries=settings.document_embedding_max_retries,
+        request_timeout=settings.document_embedding_request_timeout,
+    )
+    return DocumentEmbeddingService(
+        session=session,
+        adapter=EmbeddingAdapter(config=config),
+        config=config,
+        shutdown_state=shutdown_state,
     )
 
 

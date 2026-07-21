@@ -1,7 +1,8 @@
-from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field
+
+from app.schemas.common import UtcDateTime
 
 
 class DocumentChunkJobRead(BaseModel):
@@ -14,22 +15,12 @@ class DocumentChunkJobRead(BaseModel):
     chunk_config_json: dict | None
     chunk_count: int
     attempt_count: int
-    started_at: datetime | None
-    finished_at: datetime | None
+    started_at: UtcDateTime | None
+    finished_at: UtcDateTime | None
     error_code: str | None
     error_message: str | None
-    created_at: datetime
-    updated_at: datetime
-
-    @field_serializer("started_at", "finished_at", "created_at", "updated_at")
-    def serialize_datetime(self, value: datetime | None) -> str | None:
-        if value is None:
-            return None
-
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=UTC)
-
-        return value.isoformat().replace("+00:00", "Z")
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
 
 
 class DocumentChunkRead(BaseModel):
@@ -46,14 +37,7 @@ class DocumentChunkRead(BaseModel):
     chunk_type: str | None
     source_segment_indices: list[int] | None
     metadata: dict | None
-    created_at: datetime
-
-    @field_serializer("created_at")
-    def serialize_datetime(self, value: datetime) -> str:
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=UTC)
-
-        return value.isoformat().replace("+00:00", "Z")
+    created_at: UtcDateTime
 
 
 class DocumentChunkPageRead(BaseModel):

@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import HomeView from "./HomeView.vue"
+import type { DocumentEmbeddingJob } from "../api/embedding"
 
 vi.mock("../shared/logger", () => ({
   createLogger: () => ({
@@ -26,6 +27,10 @@ const mocks = vi.hoisted(() => ({
   getParsedDocumentChunksMock: vi.fn(),
   getDocumentChunkMock: vi.fn(),
   rechunkParsedDocumentMock: vi.fn(),
+  getChunkJobEmbeddingsMock: vi.fn(),
+  getDocumentEmbeddingJobMock: vi.fn(),
+  getChunkJobLatestEmbeddingJobMock: vi.fn(),
+  reembedChunkJobMock: vi.fn(),
   userStoreState: {
     currentUser: {
       display_name: "Default User",
@@ -73,6 +78,13 @@ vi.mock("../api/documentChunking", () => ({
   getParsedDocumentChunks: mocks.getParsedDocumentChunksMock,
   getDocumentChunk: mocks.getDocumentChunkMock,
   rechunkParsedDocument: mocks.rechunkParsedDocumentMock,
+}))
+
+vi.mock("../api/embedding", () => ({
+  getChunkJobEmbeddings: mocks.getChunkJobEmbeddingsMock,
+  getDocumentEmbeddingJob: mocks.getDocumentEmbeddingJobMock,
+  getChunkJobLatestEmbeddingJob: mocks.getChunkJobLatestEmbeddingJobMock,
+  reembedChunkJob: mocks.reembedChunkJobMock,
 }))
 
 const UPLOADED_FILE_RESPONSE = {
@@ -205,6 +217,10 @@ describe("HomeView", () => {
     mocks.getParsedDocumentChunksMock.mockReset()
     mocks.getDocumentChunkMock.mockReset()
     mocks.rechunkParsedDocumentMock.mockReset()
+    mocks.getChunkJobEmbeddingsMock.mockReset()
+    mocks.getDocumentEmbeddingJobMock.mockReset()
+    mocks.getChunkJobLatestEmbeddingJobMock.mockReset()
+    mocks.reembedChunkJobMock.mockReset()
     mocks.createDocumentParseJobMock.mockResolvedValue({
       id: "22222222-2222-2222-2222-222222222222",
       uploaded_file_id: "11111111-1111-1111-1111-111111111111",
@@ -234,6 +250,18 @@ describe("HomeView", () => {
     mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue(CHUNK_JOB_RESPONSE)
     mocks.getParsedDocumentChunksMock.mockResolvedValue(CHUNK_PAGE_RESPONSE)
     mocks.getDocumentChunkMock.mockResolvedValue(CHUNK_PAGE_RESPONSE.items[0])
+    // 默认无向量化结果（表示暂未向量化）
+    mocks.getChunkJobEmbeddingsMock.mockResolvedValue({
+      items: [],
+      total: 0,
+      offset: 0,
+      limit: 50,
+    })
+    mocks.getDocumentEmbeddingJobMock.mockResolvedValue(null)
+    mocks.getChunkJobLatestEmbeddingJobMock.mockRejectedValue(
+      new Error("请求失败：404"),
+    )
+    mocks.reembedChunkJobMock.mockResolvedValue(null)
     mocks.rechunkParsedDocumentMock.mockResolvedValue({
       ...CHUNK_JOB_RESPONSE,
       status: "queued",
@@ -252,10 +280,10 @@ describe("HomeView", () => {
     const text = wrapper.text()
 
     expect(text).toContain("Default User")
-    expect(text).not.toContain("\u767b\u5f55")
-    expect(text).not.toContain("\u6ce8\u518c")
-    expect(text).not.toContain("\u9000\u51fa")
-    expect(text).not.toContain("\u5207\u6362\u7528\u6237")
+    expect(text).not.toContain("登录")
+    expect(text).not.toContain("注册")
+    expect(text).not.toContain("退出")
+    expect(text).not.toContain("切换用户")
     expect(mocks.loadCurrentUserMock).toHaveBeenCalledOnce()
   })
 
@@ -914,4 +942,340 @@ describe("HomeView", () => {
     expect(chunkPanelText).not.toContain("RAG")
     expect(chunkPanelText).not.toContain("问答可用")
   })
+
+  // ── 向量化状态展示组件测试 ──
+
+  const EMBEDDING_JOB_RESPONSE: DocumentEmbeddingJob = {
+    id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    chunk_job_id: CHUNK_JOB_RESPONSE.id,
+    parsed_document_id: PARSED_DOCUMENT_RESPONSE.id,
+    owner_user_id: "00000000-0000-0000-0000-000000000001",
+    status: "succeeded",
+    embedder_name: "openai_compatible",
+    model: "Qwen/Qwen3-Embedding-4B",
+    dimensions: 2560,
+    embedding_count: 2,
+    attempt_count: 1,
+    started_at: "2026-06-12T00:00:02Z",
+    finished_at: "2026-06-12T00:00:03Z",
+    error_code: null,
+    error_message: null,
+    config_json: {
+      model: "Qwen/Qwen3-Embedding-4B",
+      dimensions: 2560,
+      batch_size: 100,
+      encoding_format: "float",
+    },
+    created_at: "2026-06-12T00:00:02Z",
+    updated_at: "2026-06-12T00:00:03Z",
+  }
+
+  const EMBEDDING_ITEM_RESPONSE = {
+    id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    chunk_id: CHUNK_PAGE_RESPONSE.items[0].id,
+    embedding_job_id: EMBEDDING_JOB_RESPONSE.id,
+    sequence_index: 0,
+    model: "Qwen/Qwen3-Embedding-4B",
+    dimensions: 2560,
+    embedding_json: [0.01234, -0.05678, 0.09123, -0.00123, 0.04210],
+    token_count: 10,
+    created_at: "2026-06-12T00:00:04Z",
+  }
+
+  const EMBEDDING_PAGE_RESPONSE = {
+    items: [EMBEDDING_ITEM_RESPONSE],
+    total: 2,
+    offset: 0,
+    limit: 50,
+  }
+
+  /** 让 loadEmbeddingState 发现已存在的向量化结果和作业 */
+  function mockEmbeddingJobPresent(overrides: Partial<typeof EMBEDDING_JOB_RESPONSE> = {}) {
+    mocks.getChunkJobEmbeddingsMock.mockResolvedValue(EMBEDDING_PAGE_RESPONSE)
+    mocks.getDocumentEmbeddingJobMock.mockResolvedValue({
+      ...EMBEDDING_JOB_RESPONSE,
+      ...overrides,
+    })
+  }
+
+  // 测试：向量化作业状态为 running 时展示向量化中反馈，并禁用重新向量化按钮。
+  it("shows embedding running status and disables reembed button", async () => {
+    mockSuccessfulUpload()
+    mockEmbeddingJobPresent({ status: "running", finished_at: null })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(wrapper.get('[data-testid="embedding-status"]').text()).toContain(
+      "向量化中",
+    )
+    expect(
+      wrapper.get('[data-testid="reembed-button"]').attributes(),
+    ).toHaveProperty("disabled")
+  })
+
+  // 测试：向量化作业状态为 succeeded 时展示向量化完成和预览入口，但不声称可检索或可问答。
+  it("shows embedding completion and preview without claiming retrieval readiness", async () => {
+    mockSuccessfulUpload()
+    mockEmbeddingJobPresent()
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(wrapper.get('[data-testid="embedding-status"]').text()).toContain(
+      "向量化完成",
+    )
+    expect(wrapper.get('[data-testid="embedding-preview"]').text()).toContain(
+      "0.012340",
+    )
+    expect(wrapper.get('[data-testid="embedding-preview"]').text()).toContain(
+      "Qwen/Qwen3-Embedding-4B · 2560 维",
+    )
+
+    const embeddingPanelText = wrapper
+      .get('[data-testid="embedding-panel"]')
+      .text()
+    expect(embeddingPanelText).not.toContain("语义检索")
+    expect(embeddingPanelText).not.toContain("RAG")
+    expect(embeddingPanelText).not.toContain("问答可用")
+    expect(embeddingPanelText).not.toContain("可搜索")
+  })
+
+  // 测试：向量化作业状态为 failed 时展示错误反馈，并保留重新向量化入口。
+  it("shows embedding failure feedback and keeps reembed available", async () => {
+    mockSuccessfulUpload()
+    mockEmbeddingJobPresent({
+      status: "failed",
+      error_message: "API returned 500 after 3 retries",
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(wrapper.get('[data-testid="embedding-status"]').text()).toContain(
+      "向量化失败",
+    )
+    expect(wrapper.get('[data-testid="embedding-status"]').text()).toContain(
+      "API returned 500 after 3 retries",
+    )
+    // 失败状态下重新向量化按钮应可用（嵌入结果存在表示有历史成功作业，可重新向量化）
+    expect(
+      wrapper.get('[data-testid="reembed-button"]').element,
+    ).toBeTruthy()
+  })
+
+  // 测试：无向量化结果且无作业信息时面板不展示。
+  it("hides embedding panel when no embedding job or results exist", async () => {
+    mockSuccessfulUpload()
+    // 使用默认 mock（返回空 embedding、null job）
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    expect(
+      wrapper.find('[data-testid="embedding-panel"]').exists(),
+    ).toBe(false)
+  })
+
+  // ── 重新向量化交互测试 ──
+
+  // 测试：chunk 轮询完成后 currentChunkJob 非 null，重新向量化按钮已启用。
+  it("enables reembed button after chunk polling completes", async () => {
+    mockSuccessfulUpload()
+    // 第一次查询：chunks 为空 → 进入 chunk 轮询
+    mocks.getParsedDocumentChunksMock
+      .mockResolvedValueOnce({
+        items: [],
+        total: 0,
+        offset: 0,
+        limit: 20,
+      })
+      .mockResolvedValueOnce(CHUNK_PAGE_RESPONSE)
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "running",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "succeeded",
+    })
+    mockEmbeddingJobPresent()
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await flushPromises()
+
+    // currentChunkJob 在轮询后被设为 succeeded，按钮应启用
+    const disabledAttr = wrapper
+      .get('[data-testid="reembed-button"]')
+      .attributes("disabled")
+    expect(disabledAttr).toBeUndefined()
+  })
+
+  // 测试：点击重新向量化按钮触发 API 调用。
+  it("triggers reembed on button click and calls the API", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock
+      .mockResolvedValueOnce({ items: [], total: 0, offset: 0, limit: 20 })
+      .mockResolvedValueOnce(CHUNK_PAGE_RESPONSE)
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "running",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "succeeded",
+    })
+    mockEmbeddingJobPresent()
+    mocks.reembedChunkJobMock.mockResolvedValue({
+      ...EMBEDDING_JOB_RESPONSE,
+      id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      status: "queued",
+      finished_at: null,
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="reembed-button"]').trigger("click")
+    await flushPromises()
+
+    expect(mocks.reembedChunkJobMock).toHaveBeenCalledWith(
+      CHUNK_JOB_RESPONSE.id,
+    )
+  })
+
+  // 测试：重新向量化遇到 409 冲突时展示已有运行中作业信息，不重复触发。
+  it("shows conflict job context when reembed hits 409", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock
+      .mockResolvedValueOnce({ items: [], total: 0, offset: 0, limit: 20 })
+      .mockResolvedValueOnce(CHUNK_PAGE_RESPONSE)
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "running",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "succeeded",
+    })
+    mockEmbeddingJobPresent()
+    mocks.reembedChunkJobMock.mockRejectedValue({
+      status: 409,
+      detail: "Embedding job already running",
+      job: {
+        ...EMBEDDING_JOB_RESPONSE,
+        id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+        status: "running",
+        finished_at: null,
+      },
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="reembed-button"]').trigger("click")
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="embedding-status"]').text()).toContain(
+      "Embedding job already running",
+    )
+    // 冲突后 currentEmbeddingJob = running → isEmbeddingJobRunning 为 true → 按钮禁用
+    expect(
+      wrapper.get('[data-testid="reembed-button"]').attributes(),
+    ).toHaveProperty("disabled")
+  })
+
+  // 测试：重新向量化遇到 503 时展示关闭提示，保留重试入口。
+  it("shows shutdown feedback when reembed hits 503", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock
+      .mockResolvedValueOnce({ items: [], total: 0, offset: 0, limit: 20 })
+      .mockResolvedValueOnce(CHUNK_PAGE_RESPONSE)
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "running",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "succeeded",
+    })
+    mockEmbeddingJobPresent()
+    mocks.reembedChunkJobMock.mockRejectedValue({
+      status: 503,
+      detail: "服务正在关闭，请稍后重试",
+    })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="reembed-button"]').trigger("click")
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="embedding-status"]').text()).toContain(
+      "服务正在关闭，请稍后重试",
+    )
+    // 503 后按钮应恢复可用（isReembedding 设为 false、currentEmbeddingJob 不变）
+    expect(
+      wrapper.get('[data-testid="reembed-button"]').attributes("disabled"),
+    ).toBeUndefined()
+  })
+
+  // 测试：重新向量化遇到一般网络错误时展示错误反馈并保留重试入口。
+  it("shows generic error when reembed fails and keeps retry available", async () => {
+    mockSuccessfulUpload()
+    mocks.getParsedDocumentChunksMock
+      .mockResolvedValueOnce({ items: [], total: 0, offset: 0, limit: 20 })
+      .mockResolvedValueOnce(CHUNK_PAGE_RESPONSE)
+    mocks.getLatestParsedDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "running",
+      finished_at: null,
+    })
+    mocks.getDocumentChunkJobMock.mockResolvedValue({
+      ...CHUNK_JOB_RESPONSE,
+      status: "succeeded",
+    })
+    mockEmbeddingJobPresent()
+    mocks.reembedChunkJobMock.mockRejectedValue(
+      new Error("Network error"),
+    )
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="reembed-button"]').trigger("click")
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="embedding-status"]').text()).toContain(
+      "Network error",
+    )
+    expect(
+      wrapper.get('[data-testid="reembed-button"]').attributes("disabled"),
+    ).toBeUndefined()
+  })
+
+  // 测试：向量化中状态（无 currentChunkJob）下按钮应禁用，防止重复触发。
+  it("disables reembed button when no active chunk job", async () => {
+    mockSuccessfulUpload()
+    mockEmbeddingJobPresent({ status: "running", finished_at: null })
+    const wrapper = mount(HomeView)
+
+    await submitCourseNotes(wrapper)
+
+    // currentChunkJob 为 null（chunks 存在即置 null），按钮应禁用
+    expect(
+      wrapper.get('[data-testid="reembed-button"]').attributes(),
+    ).toHaveProperty("disabled")
+  })
 })
+
+

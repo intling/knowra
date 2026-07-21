@@ -65,7 +65,7 @@ class TestGetLogger:
         logger.info("hello-world")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["trace_id"] == "01JFZ8KJ4X2Q3M5N"
         assert parsed["event"] == "hello-world"
@@ -87,7 +87,7 @@ class TestGetLogger:
         logger.info("no-context")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["trace_id"] == "-"
 
@@ -119,7 +119,7 @@ class TestGetLogger:
         logger.info("upload done", file_name="notes.pdf", byte_size=2048)
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["file_name"] == "notes.pdf"
         assert parsed["byte_size"] == 2048
@@ -221,7 +221,7 @@ class TestConsoleMode:
         logger.info("测试消息")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["trace_id"] == "01JFZ8AAAAAA"
 
@@ -241,7 +241,7 @@ class TestConsoleMode:
         logger.info("测试消息")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["logger"] == "app.service"
 
@@ -261,7 +261,7 @@ class TestConsoleMode:
         logger.info("文件上传完成")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["event"] == "文件上传完成"
 
@@ -282,7 +282,7 @@ class TestConsoleMode:
         logger.info("上传完成", file_name="notes.pdf", byte_size=2048)
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["file_name"] == "notes.pdf"
         assert parsed["byte_size"] == 2048
@@ -313,7 +313,7 @@ class TestJsonMode:
         logger.info("文件上传完成")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         lines = [line for line in content.split("\n") if line.strip()]
         assert len(lines) == 1
 
@@ -334,7 +334,7 @@ class TestJsonMode:
         logger.info("测试")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert isinstance(parsed, dict)
 
@@ -355,7 +355,7 @@ class TestJsonMode:
         logger.info("文件上传完成")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert "timestamp" in parsed
         assert parsed["level"] == "info"
@@ -380,7 +380,7 @@ class TestJsonMode:
         logger.info("上传完成", file_name="notes.pdf", byte_size=2048)
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["file_name"] == "notes.pdf"
         assert parsed["byte_size"] == 2048
@@ -411,7 +411,7 @@ class TestFileLoggingHandler:
         logger.info("test message")
         _close_all_handlers()
 
-        content = log_path.read_text()
+        content = log_path.read_text(encoding="utf-8")
         assert "test message" in content
 
     def test_file_rotation_triggers_at_max_size(self, tmp_path):
@@ -511,7 +511,7 @@ class TestAutoFormatSelection:
         logger.info("auto format test")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["event"] == "auto format test"
 
@@ -542,7 +542,7 @@ class TestTraceFilterPreserved:
         std_logger.info("raw log message")
         _close_all_handlers()
 
-        content = log_path.read_text().strip()
+        content = log_path.read_text(encoding="utf-8").strip()
         parsed = json.loads(content)
         assert parsed["trace_id"] == "filter-test-123"
 
@@ -565,4 +565,4 @@ class TestHttpAccessLogLevel:
         logging.getLogger("uvicorn.access").info('127.0.0.1:64500 - "GET /api/health HTTP/1.1" 200')
         _close_all_handlers()
 
-        assert log_path.read_text() == ""
+        assert log_path.read_text(encoding="utf-8") == ""

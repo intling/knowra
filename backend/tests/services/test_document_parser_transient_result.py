@@ -58,9 +58,9 @@ def test_docling_parser_adapter_returns_persistent_payload_and_transient_documen
     assert result.transient_docling_document is converter.document
 
 
-# TXT 兜底解析没有原生 DoclingDocument。
-# 测试确认它仍返回文本 payload，并用明确原因标识 transient 文档不可用。
-def test_txt_parser_result_has_clear_missing_transient_docling_document_semantics(tmp_path) -> None:
+# TXT 解析现在通过 docling converter，应有原生 DoclingDocument。
+# 测试确认它同时返回可落盘 payload 和 transient DoclingDocument。
+def test_txt_parser_result_provides_transient_docling_document(tmp_path) -> None:
     parser = import_module("app.services.document_parser")
     path = write_text_fixture(tmp_path / "fixture.txt", "Fallback text\n")
     adapter = parser.DoclingParserAdapter(
@@ -71,9 +71,9 @@ def test_txt_parser_result_has_clear_missing_transient_docling_document_semantic
 
     result = adapter.parse(path, document_format=parser.DocumentFormat.TXT)
 
-    assert result.persistent_payload.text == "Fallback text\n"
-    assert result.transient_docling_document is None
-    assert result.transient_missing_reason == "native_docling_document_unavailable"
+    assert "Fallback text" in result.persistent_payload.text
+    assert result.transient_docling_document is not None
+    assert result.transient_missing_reason is None
 
 
 # 保存解析结果时只能持久化 payload。

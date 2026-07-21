@@ -103,8 +103,9 @@ def test_document_format_policy_rejects_spoofed_or_unreadable_files(
         policy.validate(path, original_filename=filename, content_type=content_type)
 
 
-# 测试 TXT 在 Docling 不稳定支持时仍由同一适配器 facade 生成统一产物契约。
-def test_docling_parser_adapter_generates_txt_fallback_payload(tmp_path) -> None:
+# TXT 文件现在通过 docling converter 统一处理，确保同时提供可落盘 payload
+# 和内存 DoclingDocument 供后续原生分块使用。
+def test_docling_parser_adapter_provides_docling_document_for_txt(tmp_path) -> None:
     parser = get_parser_module()
     path = write_text_fixture(tmp_path / "notes.txt", "Line one\nLine two\n")
     adapter = parser.DoclingParserAdapter(
@@ -115,12 +116,13 @@ def test_docling_parser_adapter_generates_txt_fallback_payload(tmp_path) -> None
 
     payload = adapter.parse(path, document_format=parser.DocumentFormat.TXT)
 
-    assert payload.markdown == "Line one\nLine two\n"
-    assert payload.text == "Line one\nLine two\n"
-    assert payload.docling_json["source_format"] == "txt"
-    assert payload.page_count == 1
-    assert payload.segments[0].sequence_index == 0
-    assert payload.segments[0].text == "Line one\nLine two\n"
+    assert "Line one" in payload.markdown
+    assert "Line two" in payload.markdown
+    assert "Line one" in payload.text
+    assert payload.page_count is not None
+    assert payload.segments
+    # TXT 经过 converter 后应提供 transient DoclingDocument 供分块使用
+    assert payload.transient_docling_document is not None
 
 
 # 测试适配器把第三方转换异常转成项目内可诊断错误。

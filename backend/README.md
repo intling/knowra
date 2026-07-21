@@ -309,6 +309,83 @@ chunk jobs are marked `failed` with `error_code=process_shutdown` so they do not
 remain stuck. Production deployments should still migrate to an external worker
 queue when available, especially for multi-process or multi-replica execution.
 
+## Document embedding
+
+When document chunking succeeds and `DOCUMENT_EMBEDDING_ENABLED=true`, the
+backend automatically creates a vector embedding job. The embedding service
+takes each chunk's `contextualized_text` (or `text` as fallback) and converts it
+into a dense floating-point vector by calling a cloud embedding API
+(OpenAI-compatible interface). Embeddings are stored as JSON float arrays in
+`document_embeddings`; this version does **not** write pgvector index columns or
+implement semantic retrieval.
+
+### API endpoints
+
+- `GET /api/document-embedding-jobs/{job_id}` — query embedding job status,
+  configuration snapshot, embedding count, and failure details
+- `GET /api/document-chunk-jobs/{chunk_job_id}/embeddings` — paginate through
+  the latest active embedding results for a chunk job, ordered by
+  `sequence_index`
+- `GET /api/document-chunks/{chunk_id}/embedding` — read a single chunk's
+  embedding vector detail (dimensions, model name, and first few dimension
+  values; not the full 2560-dimension array)
+- `POST /api/document-chunk-jobs/{chunk_job_id}/re-embed` — create a new
+  embedding job with `202 Accepted`; validates chunk job ownership and
+  shutdown state, returns `409 Conflict` if a running job exists, `503 Service
+  Unavailable` during graceful shutdown
+
+`POST /re-embed` does **not** re-parse or re-chunk; it reuses existing chunks
+and only re-calls the embedding API. On success the new job becomes the active
+result and the previous `succeeded` job is marked `superseded`.
+
+### Embedding configuration
+
+Environment variables control embedding behavior:
+
+- `DOCUMENT_EMBEDDING_ENABLED`: enable automatic embedding after chunk success,
+  default `true`
+- `DOCUMENT_EMBEDDING_API_BASE_URL`: OpenAI-compatible embeddings API base URL
+  (required)
+- `DOCUMENT_EMBEDDING_API_KEY`: API key for the embeddings service (sensitive;
+  never commit real keys to version control)
+- `DOCUMENT_EMBEDDING_MODEL`: model name to request from the API, default
+  `Qwen/Qwen3-Embedding-4B`
+- `DOCUMENT_EMBEDDING_DIMENSIONS`: expected output vector dimensions, default
+  `2560`
+- `DOCUMENT_EMBEDDING_ENCODING_FORMAT`: encoding format sent to the API, default
+  `float`
+- `DOCUMENT_EMBEDDING_BATCH_SIZE`: maximum texts per API call (larger inputs
+  are automatically split across multiple calls), default `100`
+- `DOCUMENT_EMBEDDING_MAX_RETRIES`: maximum retry attempts with exponential
+  backoff for transient failures (network timeout, 5xx), default `3`
+- `DOCUMENT_EMBEDDING_REQUEST_TIMEOUT`: per-request timeout in seconds, default
+  `60.0`
+
+The adapter does **not** retry on 4xx errors (e.g., authentication failure)
+— those fail immediately and the job is marked `failed` with
+`error_code=api_error`.
+
+### Error handling and shutdown
+
+If the embedding API call fails after all retries, or the response validation
+fails (data length mismatch, dimension mismatch), the embedding job is marked
+`failed` with an appropriate `error_code` (`api_error` or `invalid_response`).
+The parse and chunk jobs remain `succeeded` — embedding failure never rolls
+back upstream results.
+
+During graceful shutdown, `queued` and `running` embedding jobs are marked
+`failed` with `error_code=process_shutdown`. Already completed jobs are
+left unchanged. The embedding service checks shutdown state at key boundaries
+(before API call, before persisting results) to fail fast and avoid blocking
+the shutdown sequence.
+
+### Limitations
+
+This version stores embeddings as JSON float arrays. It does not support
+pgvector indexing, semantic search, RAG question answering, or any retrieval
+workflow. Embedding vectors are persisted for future semantic features but are
+not queryable beyond the REST endpoints listed above.
+
 ## Quality gates
 
 ```bash

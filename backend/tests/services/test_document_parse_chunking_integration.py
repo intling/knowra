@@ -75,7 +75,8 @@ class CapturingChunkingService:
 
 class InspectingChunkingService:
     # 在自动分块开始时重新读取 parse job。
-    # 用于验证前端轮询能在分块耗时或网络阻塞前看到解析已成功。
+    # 用于验证 parse job 在分块期间保持 running 状态，
+    # 仅在分块完成后才被标记为 succeeded。
     def __init__(self, session, parse_job_id) -> None:
         self.session = session
         self.parse_job_id = parse_job_id
@@ -88,6 +89,10 @@ class InspectingChunkingService:
         stored_job = self.session.get(models.DocumentParseJob, self.parse_job_id)
         self.seen_status = stored_job.status
         self.seen_finished_at = stored_job.finished_at
+        # 返回轻量 mock chunk job，让 dispatcher 能继续执行后续日志和状态更新
+        from types import SimpleNamespace
+
+        return SimpleNamespace(id="fake-chunk-job-id", chunk_count=0)
 
 
 # 种下 queued parse job 及其上传文件。
@@ -136,7 +141,8 @@ def test_run_parse_job_passes_same_transient_docling_document_to_chunking_servic
 
 
 # 自动分块可能因为 tokenizer 下载等网络因素变慢。
-# 解析结果持久化后，parse job 应先变为 succeeded，让前端切换到分块阶段。
+# parse job 在分块期间保持 running 状态，仅在分块全部完成后才标记为 succeeded。
+# 这样前端在分块期间可以区分"解析完成等待分块"与"全部就绪"。
 def test_run_parse_job_marks_parse_succeeded_before_auto_chunking_starts(
     session,
     tmp_path,
@@ -152,12 +158,14 @@ def test_run_parse_job_marks_parse_succeeded_before_auto_chunking_starts(
         upload_storage_root=tmp_path / "uploads",
         artifact_storage_root=tmp_path / "parsed",
         document_chunking_enabled=True,
+        document_embedding_enabled=False,
         chunking_service=chunking_service,
     )
 
     stored_job = session.get(models.DocumentParseJob, job.id)
-    assert chunking_service.seen_status == "succeeded"
-    assert chunking_service.seen_finished_at is not None
+    # 分块期间 parse job 仍为 running，分块完成后才标记为 succeeded
+    assert chunking_service.seen_status == "running"
+    assert chunking_service.seen_finished_at is None
     assert stored_job.status == "succeeded"
 
 

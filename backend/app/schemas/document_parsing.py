@@ -1,7 +1,8 @@
-from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel
+
+from app.schemas.common import UtcDateTime
 
 
 class UploadedFileParseInfo(BaseModel):
@@ -20,22 +21,12 @@ class DocumentParseJobRead(BaseModel):
     parser_name: str
     parser_version: str | None
     attempt_count: int
-    started_at: datetime | None
-    finished_at: datetime | None
+    started_at: UtcDateTime | None
+    finished_at: UtcDateTime | None
     error_code: str | None
     error_message: str | None
-    created_at: datetime
-    updated_at: datetime
-
-    @field_serializer("started_at", "finished_at", "created_at", "updated_at")
-    def serialize_datetime(self, value: datetime | None) -> str | None:
-        if value is None:
-            return None
-
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=UTC)
-
-        return value.isoformat().replace("+00:00", "Z")
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
 
 
 class DocumentParseConflictRead(BaseModel):
@@ -57,14 +48,7 @@ class ParsedDocumentRead(BaseModel):
     page_count: int | None
     metadata: dict | None
     segment_count: int
-    created_at: datetime
-
-    @field_serializer("created_at")
-    def serialize_datetime(self, value: datetime) -> str:
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=UTC)
-
-        return value.isoformat().replace("+00:00", "Z")
+    created_at: UtcDateTime
 
 
 class DocumentSegmentRead(BaseModel):
@@ -77,14 +61,7 @@ class DocumentSegmentRead(BaseModel):
     heading_path: list[str] | None
     text: str
     metadata: dict | None
-    created_at: datetime
-
-    @field_serializer("created_at")
-    def serialize_datetime(self, value: datetime) -> str:
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=UTC)
-
-        return value.isoformat().replace("+00:00", "Z")
+    created_at: UtcDateTime
 
 
 class DocumentSegmentPageRead(BaseModel):
