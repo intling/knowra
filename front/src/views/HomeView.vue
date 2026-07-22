@@ -435,7 +435,7 @@ const loadEmbeddingState = async (chunkJobId: string) => {
       // 404: 无向量化作业记录，后端可能尚未创建 —— 正常情况
       // 其他错误（5xx、网络错误等）：记录日志并设置反馈提示
       if (!(error instanceof Error && error.message.includes("404"))) {
-        log().warn("无法获取向量化作业状态", error)
+        log().warn("无法获取向量化作业状态", { error: String(error) })
         embeddingFeedback.value = getErrorText(error, "向量化状态查询异常")
       }
       currentEmbeddingJob.value = null
@@ -443,7 +443,7 @@ const loadEmbeddingState = async (chunkJobId: string) => {
     embeddingPage.value = null
   } catch (error) {
     // API 请求本身失败（网络错误、5xx 等），记录日志
-    log().warn("向量化状态加载失败", error)
+    log().warn("向量化状态加载失败", { error: String(error) })
     embeddingFeedback.value = getErrorText(error, "向量化状态加载失败")
   } finally {
     isLoadingEmbeddings.value = false
@@ -820,10 +820,18 @@ onMounted(() => {
             knowra
           </h1>
         </div>
-        <div
-          class="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 shadow-sm"
-        >
-          {{ userLabel }}
+        <div class="flex items-center gap-3">
+          <router-link
+            to="/verify"
+            class="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 shadow-sm transition hover:border-zinc-400 hover:text-zinc-900"
+          >
+            流水线验证
+          </router-link>
+          <div
+            class="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 shadow-sm"
+          >
+            {{ userLabel }}
+          </div>
         </div>
       </div>
 

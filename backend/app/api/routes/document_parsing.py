@@ -155,6 +155,33 @@ def read_uploaded_file_parsed_document(
 
 
 @router.get(
+    "/parsed-documents",
+    response_model=list[ParsedDocumentRead],
+)
+def list_parsed_documents(
+    session: SessionDep,
+) -> list[ParsedDocumentRead]:
+    """列出当前用户的所有已解析文档，按创建时间降序排列。"""
+    current_user = require_current_user(session)
+    statement = (
+        select(ParsedDocument)
+        .where(ParsedDocument.owner_user_id == current_user.id)
+        .order_by(ParsedDocument.created_at.desc())
+    )
+    documents = session.exec(statement).all()
+
+    result: list[ParsedDocumentRead] = []
+    for doc in documents:
+        segment_count = session.exec(
+            select(func.count(DocumentSegment.id)).where(
+                DocumentSegment.parsed_document_id == doc.id
+            )
+        ).one()
+        result.append(to_parsed_document_read(doc, segment_count=segment_count))
+    return result
+
+
+@router.get(
     "/parsed-documents/{parsed_document_id}/segments",
     response_model=DocumentSegmentPageRead,
 )
