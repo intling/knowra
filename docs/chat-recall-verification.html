@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对话召回验证 — 方案设计</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #e5e5e5;
+    --text: #18181b;
+    --text-secondary: #52525b;
+    --text-tertiary: #a1a1aa;
+    --accent: #18181b;
+    --accent-text: #ffffff;
+    --amber: #d97706;
+    --amber-bg: #fffbeb;
+    --emerald: #059669;
+    --emerald-bg: #ecfdf5;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --blue: #2563eb;
+    --blue-bg: #eff6ff;
+    --purple: #7c3aed;
+    --purple-bg: #f5f3ff;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    padding: 3rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.5rem;
+  }
+  header .badge {
+    display: inline-block;
+    background: var(--amber-bg);
+    color: var(--amber);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+  header .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.5rem;
+    color: var(--text-secondary);
+  }
+  p { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+  ul, ol { margin: 0.5rem 0 1rem 1.25rem; font-size: 0.9rem; color: var(--text-secondary); }
+  li { margin-bottom: 0.35rem; }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+  th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--text); background: #fafafa; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { color: var(--text-secondary); }
+  tr:last-child td { border-bottom: none; }
+
+  pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    margin: 0.75rem 0 1.25rem;
+  }
+  code {
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.82rem;
+  }
+  :not(pre) > code {
+    background: #f4f4f5;
+    color: var(--text);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  .diagram {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.72rem;
+    line-height: 1.55;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--text);
+  }
+
+  .decision-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .decision-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    background: #fafafa;
+  }
+  .decision-card .label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    margin-bottom: 0.25rem;
+  }
+  .decision-card .value {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .decision-card .why {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-top: 0.35rem;
+  }
+
+  .api-block {
+    border-left: 3px solid var(--accent);
+    padding-left: 1rem;
+    margin: 1rem 0;
+  }
+  .api-block .method {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 0.8rem;
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+  }
+  .api-block .path {
+    font-family: "Cascadia Code", "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .tag-new  { background: var(--emerald-bg); color: var(--emerald); }
+  .tag-mod  { background: var(--amber-bg);  color: var(--amber); }
+  .tag-ref  { background: var(--blue-bg);   color: var(--blue); }
+
+  .file-tree {
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin: 0.75rem 0;
+  }
+  .file-tree .new { color: var(--emerald); }
+  .file-tree .mod { color: var(--amber); }
+
+  .wireframe {
+    background: #fafafa;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.7rem;
+    line-height: 1.6;
+    white-space: pre;
+    color: var(--text-tertiary);
+    overflow-x: auto;
+  }
+
+  .token-budget {
+    background: var(--purple-bg);
+    border: 1px solid var(--purple);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    font-size: 0.82rem;
+    color: var(--purple);
+  }
+  .token-budget strong { color: var(--purple); }
+
+  .rationale-box {
+    background: var(--blue-bg);
+    border: 1px solid var(--blue);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+    color: var(--blue);
+  }
+  .rationale-box strong { color: var(--blue); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="badge">Design Document · v3</div>
+  <h1>对话召回验证</h1>
+  <p class="subtitle">
+    基于 pgvector 的语义搜索试验台 — 输入问题 → 向量化 → 跨文档相似度检索 → LLM 生成回答 → 展示召回结果与提示词
+  </p>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>1. 背景与目标</h2>
+
+  <h3>当前状态</h3>
+  <p>
+    向量化转译分块流程已经验证成功（7 项完整性检查）。知识库已完成
+    <strong>上传 → 解析 → 分块 → 向量化</strong> 全链路，
+    <code>document_embeddings.embedding_vector</code>（pgvector <code>Vector(2560)</code>）
+    列存储了大量向量数据。但目前 <strong>没有任何搜索/召回代码</strong>，向量处于"只存不查"状态。
+  </p>
+
+  <div class="diagram">
+  Upload ──▶ Parse ──▶ Chunk ──▶ Embedding ──▶ <strong style="color:#d97706">??? SEARCH ???</strong>
+  PDF/MD    Docling   Token 512  Qwen3-Emb-4B      ↑
+  TXT/PPTX  → Markdown + context  2560d pgvector  <strong style="color:#d97706">WE ARE HERE</strong>
+  </div>
+
+  <h3>目标</h3>
+  <ol>
+    <li>搭建一个<strong>可对话的页面</strong>，输入自然语言问题，无需手动选择文档</li>
+    <li>调用后端语义搜索端点，<strong>跨所有已向量化的文档</strong>召回相关分块</li>
+    <li>调用 LLM <strong>生成带来源引用的答案</strong>，验证端到端 RAG 质量</li>
+    <li>展示<strong>召回结果与 AI 回答并列</strong>：分块文本、相似度分数、来源文档、LLM 回答</li>
+    <li>支持<strong>双模式切换</strong>：仅检索 / 检索+生成（默认后者）</li>
+    <li>支持<strong>可选的文档范围过滤</strong></li>
+    <li>展示<strong>实际发送给 LLM 的提示词</strong>（可折叠，用于调试和 prompt 迭代）</li>
+  </ol>
+
+  <div class="rationale-box">
+    <strong>💡 设计决策：为何本期接入 LLM 而非后续再补？</strong><br><br>
+    <strong>1. RAG 的检索质量只能通过答案质量来验证。</strong>余弦距离是代理指标——高分块可能缺少前置上下文导致 LLM 编造，多文档信息冲突时 LLM 随机选择，上下文过长时 LLM 忽略关键信息。这些场景在"只看分块文本"时完全不可见。<br><br>
+    <strong>2. OpenAI SDK 已在项目中（用于文档向量化）。</strong>从 <code>client.embeddings.create</code> 到 <code>client.chat.completions.create</code> 是同一個 SDK 实例的同一个方法族，不是"新增一个系统"，而是新增一个 ~60 行的 Adapter。<br><br>
+    <strong>3. 行业最佳实践是先跑通端到端基线，再逐组件优化。</strong>RAG 组件间紧耦合：检索策略变了 prompt 也要调，分块大小变了 LLM 上下文窗口也要调。分步构建意味着每个阶段推倒重来。<br><br>
+    <strong>4. LLM 本身就是最好的验证工具。</strong>看 10 条 AI 回答就知道检索质量（答案是否引用上下文？是否标注来源？），而纯检索需要人工逐条检查 50 个分块。<br><br>
+    <strong>5. 双模式设计保留灵活性。</strong>可随时切回"仅检索"模式做独立验证或节省成本。
+  </div>
+
+  <h3>明确不做（本期范围外）</h3>
+  <ul>
+    <li>不做混合搜索（BM25 + 向量）— 先用纯语义搜索作为基线</li>
+    <li>不做 Reranker — 先用 pgvector cosine distance 原始排序</li>
+    <li>不做多轮对话 — 先聚焦单轮问答验证。<strong>详见下方「多轮对话 & 流式输出决策」分析</strong></li>
+    <li>不做分页 — 单次返回 top_k ≤ 50 条结果</li>
+    <li>不做流式输出 — LLM 回答一次性返回，简化前端实现。<strong>详见下方「多轮对话 & 流式输出决策」分析</strong></li>
+  </ul>
+  <p style="margin-top:0.75rem; font-size:0.85rem; color: var(--text-tertiary);">
+    以上 5 项均已列入 <a href="#follow-up" style="color: var(--blue);">第 14 节「后续规划」</a>，将在后续 Phase 2–5 中逐阶段落实。本阶段聚焦单轮 RAG 端到端基线验证。
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>2. 多轮对话 & 流式输出决策分析</h2>
+
+  <div class="rationale-box">
+    <strong>📋 决策摘要：本阶段两者均不做，但流式输出做好架构预留。</strong>
+  </div>
+
+  <h3>2.1 多轮对话 — 强烈建议延后</h3>
+
+  <table>
+    <thead><tr><th>维度</th><th>分析</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>当前阶段目标</strong></td>
+        <td>验证 RAG 端到端质量（检索 → 生成 → 引用准确性），单轮足以覆盖所有验证场景</td>
+      </tr>
+      <tr>
+        <td><strong>复杂度增量</strong></td>
+        <td>需要对话历史存储、上下文窗口管理、追问 vs 新话题判断、prompt 策略分层。预估新增 300–500 行后端代码</td>
+      </tr>
+      <tr>
+        <td><strong>依赖关系</strong></td>
+        <td>多轮对话<strong>依赖</strong>单轮 RAG 先跑通——检索质量不过关，多轮毫无意义。分块策略、prompt 模板、召回精度都需要单轮验证稳定后再进入多轮</td>
+      </tr>
+      <tr>
+        <td><strong>行业实践</strong></td>
+        <td>几乎所有 RAG 项目都是先跑通单轮基线，再叠加对话历史。LangChain、LlamaIndex 的 quickstart 均为单轮优先。过早引入多轮会导致调试复杂度指数增长</td>
+      </tr>
+      <tr>
+        <td><strong>风险</strong></td>
+        <td>如果本阶段强行加入多轮：(1) 问题定位困难——答案不好时无法判断是检索问题还是历史污染；(2) prompt 调试困难——上下文窗口混入历史消息后难以隔离变量</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><strong>结论：</strong>严格延后至 Phase 2。当前设计文档“后续规划”中的 Phase 2 定位完全正确。先在本阶段验证单轮 RAG 基线的检索质量和 LLM 引用准确性，再考虑历史管理。</p>
+
+  <h3>2.2 流式输出 — 建议延后，做好架构预留</h3>
+
+  <table>
+    <thead><tr><th>维度</th><th>分析</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>对验证目标的价值</strong></td>
+        <td>零——流式输出不改变答案内容，只改变答案的<strong>呈现方式</strong>（逐 token 展示 vs 一次性返回）</td>
+      </tr>
+      <tr>
+        <td><strong>实现成本</strong></td>
+        <td>后端 ~50 行（SSE endpoint）+ 前端 ~100 行（流式消费 ReadableStream），总成本可控但不低</td>
+      </tr>
+      <tr>
+        <td><strong>OpenAI SDK 支持</strong></td>
+        <td><code>stream=True</code> 一行启用，SDK 原生支持。ChatAdapter.generate() 加一个参数即可</td>
+      </tr>
+      <tr>
+        <td><strong>调试友好性</strong></td>
+        <td>对于验证/调试工具，<strong>非流式更优</strong>——可以一次性观察完整 prompt 和完整 response，方便对比检索结果与 AI 回答。流式输出需要在 Network 面板拼接 chunks</td>
+      </tr>
+      <tr>
+        <td><strong>行业实践</strong></td>
+        <td>流式输出已成为 chat UI 标配（ChatGPT、Claude、Kimi 均为流式），但这是面向最终用户的体验优化，非验证工具所需</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 架构预留方案</h3>
+
+  <p>虽然本阶段不做流式输出，但在 ChatAdapter 设计上做出最小预留，确保后续零破坏性添加：</p>
+
+  <pre>class ChatAdapter:
+    def generate(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        stream: bool = False,  # 预留：本阶段固定 False
+    ) -> ChatResult:
+        """..."""
+        if stream:
+            return self._generate_stream(messages)  # 后续实现
+        # ... 现有同步逻辑 ...
+
+    def _generate_stream(self, messages):
+        """后续 Phase 2 实现：yield token chunks"""
+        raise NotImplementedError("Streaming will be implemented in Phase 2")</pre>
+
+  <p>这样后续开启流式时：(1) 调用方加一个 <code>stream=True</code> 参数；(2) 前端换用 ReadableStream 消费 SSE；(3) 不影响任何现有调用方。</p>
+
+  <p><strong>结论：</strong>本阶段不做流式输出，但在 ChatAdapter 接口层保留 <code>stream</code> 参数位，返回类型用 <code>ChatResult</code> 统一封装。流式输出对验证目标无增益，一次性返回更利于调试。</p>
+
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>3. 关键决策</h2>
+
+  <div class="decision-grid">
+    <div class="decision-card">
+      <div class="label">LLM 集成</div>
+      <div class="value">极简接入 + 双模式</div>
+      <div class="why">复用现有 OpenAI SDK 和 EmbeddingAdapter 模式，新增 ~60 行 ChatAdapter。默认"检索+生成"，可切换到"仅检索"模式</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">对话模型</div>
+      <div class="value">qwen3.5-plus（OpenAI 兼容）</div>
+      <div class="why">使用独立中转站，与向量化 API 分离部署。模型可通过配置随时切换</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">多轮对话</div>
+      <div class="value">本阶段不做，后续 Phase 2</div>
+      <div class="why"><strong>分析：</strong>① 多轮依赖单轮 RAG 先跑通——检索质量不过关，多轮毫无意义。② 需要对话历史存储、上下文窗口管理、追问 vs 新话题判断，复杂度高。③ 行业最佳实践均为单轮优先。结论：先验证检索质量和引用准确性</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">流式输出</div>
+      <div class="value">本阶段不做，架构预留</div>
+      <div class="why"><strong>分析：</strong>① 流式输出对验证目标无帮助——不改变答案内容，只改变呈现方式。② OpenAI SDK 原生支持（stream=True），后续零破坏性添加。③ 对于验证/调试工具，一次性返回更利于观察完整 prompt 和 response</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">搜索范围</div>
+      <div class="value">跨文档搜索（默认全部）</div>
+      <div class="why">符合真实 RAG 场景——用户提问时不知道答案在哪个文档里。提供可选 document_ids 过滤器</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">文档选择</div>
+      <div class="value">可选过滤器，非前置条件</div>
+      <div class="why">降低使用门槛：打开页面即可搜索+问答。高级用户可通过多选下拉框限定范围</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">回答温度</div>
+      <div class="value">0.1（低温度）</div>
+      <div class="why">知识问答需要确定性引用，不是创意写作。低温确保相同 prompt 得到一致的带引用答案</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">方案文档</div>
+      <div class="value">HTML 放 docs/</div>
+      <div class="why">独立展示，便于评审和归档</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">对话页面</div>
+      <div class="value">新增 Vue 路由 /chat</div>
+      <div class="why">与现有 /verify 页面并列，复用现有 API 客户端和组件风格</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">相似度度量</div>
+      <div class="value">pgvector &lt;-&gt; (cosine distance)</div>
+      <div class="why">pgvector 原生支持，计算在数据库层完成，无需应用层后处理</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">查询向量化</div>
+      <div class="value">复用 EmbeddingAdapter</div>
+      <div class="why">与文档向量化使用同一模型和配置，确保语义空间一致</div>
+    </div>
+    <div class="decision-card">
+      <div class="label">结果归属</div>
+      <div class="value">每条结果标注来源文档</div>
+      <div class="why">跨文档搜索必须让用户知道每个分块来自哪个文档，LLM 回答也需要引用文档名</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>4. 系统架构</h2>
+
+  <div class="diagram">
+                                  knowra — RECALL VERIFICATION (v3: RAG End-to-End)
+  ═══════════════════════════════════════════════════════════════════════════════════════
+
+     BROWSER (Vue /chat)                       BACKEND (FastAPI)                  DATABASE
+     ──────────────────                        ──────────────────                  ────────
+
+  ┌──────────────────────┐              ┌──────────────────────┐
+  │  DocumentFilter       │  GET /api/  │  listParsedDocuments  │
+  │  (可选多选下拉)         │◀───────────│  (已有端点)            │
+  └──────────┬───────────┘              └──────────────────────┘
+             │
+  ┌──────────▼───────────┐              ┌──────────────────────┐
+  │  ModeToggle           │              │  EmbeddingAdapter     │
+  │  ○ 仅检索             │              │  (已有, 复用)          │
+  │  ● 检索 + 生成 (默认)  │              └──────────┬───────────┘
+  └──────────┬───────────┘                          │
+             │                                      │ embed_single()
+  ┌──────────▼───────────┐              ┌──────────▼───────────┐
+  │  ChatInput            │  POST       │  SearchService        │
+  │  "认证流程是怎样..."    │──────────▶ │                       │
+  │  无需先选文档!          │  /api/     │  1. embed_single()    │
+  └──────────┬───────────┘  search      │     → query_vector    │
+             │                           │                       │
+             │                           │  2. pgvector query    │
+             │                           │     <-> operator      │
+  ┌──────────▼───────────┐              │     (跨所有文档)       │
+  │  AnswerPanel           │◀───────────│                       │
+  │  (LLM 生成结果)         │              │  3. JOIN chunks       │
+  │  ┌─────────────────┐  │              │     + parsed_docs     │
+  │  │ 🤖 AI 回答       │  │              │                       │
+  │  │ 认证流程包括:     │  │              │  4. ChatAdapter       │
+  │  │ 1. 用户登录...    │  │              │     .generate()       │
+  │  │ 2. Token 签发...  │  │              │     (if generate=True)│
+  │  │                   │  │              │                       │
+  │  │ 📊 引用 3/3 分块  │  │              │  5. Return results   │
+  │  └─────────────────┘  │              │     + answer           │
+  ├────────────────────────┤              └──────────────────────┘
+  │  ResultsPanel (折叠)    │
+  │  ┌─────────────────┐  │
+  │  │ 📄 auth-doc.pdf  │  │
+  │  │ #1 score:0.87   │  │
+  │  │ 认证流程包括...   │  │
+  │  ├─────────────────┤  │
+  │  │ 📄 security.pdf │  │
+  │  │ #2 score:0.72   │  │
+  │  └─────────────────┘  │
+  ├────────────────────────┤
+  │  PromptPreview (折叠)   │
+  │  ┌─────────────────┐  │
+  │  │ 实际发送给 LLM 的  │  │
+  │  │ 完整 messages 数组  │  │
+  │  └─────────────────┘  │
+  └──────────────────────┘
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>5. OpenAI SDK 使用现状</h2>
+
+  <p>项目中 <code>openai>=1.0.0</code> 已在以下位置使用：</p>
+
+  <table>
+    <thead><tr><th>位置</th><th>用途</th><th>关键代码</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>backend/pyproject.toml:12</code></td>
+        <td>依赖声明</td>
+        <td><code>"openai>=1.0.0"</code></td>
+      </tr>
+      <tr>
+        <td><code>backend/app/services/embedding_adapter.py:4</code></td>
+        <td>SDK 导入</td>
+        <td><code>from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI</code></td>
+      </tr>
+      <tr>
+        <td><code>backend/app/services/embedding_adapter.py:65</code></td>
+        <td>Client 实例化</td>
+        <td><code>self._client = OpenAI(base_url=..., api_key=..., timeout=...)</code></td>
+      </tr>
+      <tr>
+        <td><code>backend/app/services/embedding_adapter.py:114</code></td>
+        <td>Embedding API 调用</td>
+        <td><code>self._client.embeddings.create(model=..., input=..., dimensions=..., encoding_format=...)</code></td>
+      </tr>
+      <tr>
+        <td><code>backend/app/services/embedding_config.py</code></td>
+        <td>Embedding 配置</td>
+        <td><code>EmbeddingConfig</code> frozen dataclass，从 <code>Settings</code> 构建</td>
+      </tr>
+      <tr>
+        <td><code>backend/app/core/config.py:71-79</code></td>
+        <td>Settings 定义</td>
+        <td><code>document_embedding_api_base_url</code>、<code>document_embedding_api_key</code> 等 9 个字段</td>
+      </tr>
+      <tr>
+        <td><code>backend/app/models/document_embedding.py:44</code></td>
+        <td>默认值常量</td>
+        <td><code>embedder_name: str = "openai_compatible"</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:1rem;">
+    <strong>关键事实：</strong>OpenAI SDK 当前<strong>仅用于 embeddings API</strong>（<code>client.embeddings.create</code>），
+    从未调用过 <code>client.chat.completions.create</code>。但我们已有的基础设施——Client 实例化、配置管理、重试逻辑、错误封装——可以直接复用到 ChatAdapter 中。
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>6. 文件改动清单</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>状态</th>
+        <th>层</th>
+        <th>文件</th>
+        <th>说明</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag tag-new">新增</span></td>
+        <td>Config</td>
+        <td><code>backend/app/services/chat_config.py</code></td>
+        <td>ChatConfig frozen dataclass，与 EmbeddingConfig 同模式，从 Settings 构建</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-new">新增</span></td>
+        <td>Adapter</td>
+        <td><code>backend/app/services/chat_adapter.py</code></td>
+        <td>ChatAdapter：封装 chat.completions.create，复用 OpenAI client，含重试和错误处理</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-mod">修改</span></td>
+        <td>Config</td>
+        <td><code>backend/app/core/config.py</code></td>
+        <td>新增 7 个 LLM 配置字段：chat_api_base_url、chat_api_key、chat_model、chat_temperature、chat_max_tokens 等</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-new">新增</span></td>
+        <td>Schema</td>
+        <td><code>backend/app/schemas/search.py</code></td>
+        <td>SearchRequest / SearchResult / SearchResponse Pydantic 模型（含 answer 等新字段）</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-new">新增</span></td>
+        <td>Service</td>
+        <td><code>backend/app/services/search.py</code></td>
+        <td>SearchService：向量化查询 + 跨文档 pgvector 检索 + ChatAdapter 生成</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-new">新增</span></td>
+        <td>Route</td>
+        <td><code>backend/app/api/routes/search.py</code></td>
+        <td>POST /api/search 端点（跨文档搜索 + 可选 LLM 生成）</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-mod">修改</span></td>
+        <td>Route</td>
+        <td><code>backend/app/api/router.py</code></td>
+        <td>注册 search router</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-new">新增</span></td>
+        <td>API Client</td>
+        <td><code>front/src/api/search.ts</code></td>
+        <td>searchChunks() 函数 + TypeScript 类型定义（含 answer 字段）</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-new">新增</span></td>
+        <td>Page</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>对话召回验证页面（双模式、LLM 回答展示）</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-mod">修改</span></td>
+        <td>Router</td>
+        <td><code>front/src/router/index.ts</code></td>
+        <td>新增 /chat 路由</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-mod">修改</span></td>
+        <td>Doc</td>
+        <td><code>docs/chat-recall-verification.html</code></td>
+        <td>本文档（v3 更新）</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>7. LLM 配置与 ChatAdapter 设计</h2>
+
+  <h3>7.1 新增 Settings 字段 (<code>backend/app/core/config.py</code>)</h3>
+  <pre># ── Chat / LLM 配置（新增）──────────────────────────────
+# ChatAdapter 使用独立的中转站，与 EmbeddingAdapter 分离。
+# 当 chat_model 为空字符串时，LLM 生成功能禁用。
+chat_api_key: str = ""
+chat_model: str = "qwen3.5-plus"
+chat_temperature: float = 0.1
+chat_max_tokens: int = 1024
+chat_request_timeout: float = 60.0
+chat_max_retries: int = 2</pre>
+
+  <h3>7.2 ChatConfig (<code>backend/app/services/chat_config.py</code>，新增)</h3>
+  <pre>from dataclasses import dataclass
+from typing import Any
+
+from app.core.config import get_settings
+
+
+@dataclass(frozen=True)
+class ChatConfig:
+    """Immutable configuration for the LLM chat adapter.
+
+    Mirrors EmbeddingConfig pattern — all connection parameters,
+    model selection, and generation knobs captured in one place.
+    """
+
+    api_base_url: str
+    api_key: str
+    model: str
+    temperature: float
+    max_tokens: int
+    request_timeout: float
+    max_retries: int
+
+    @classmethod
+    def from_settings(cls, settings=None) -> "ChatConfig":
+        if settings is None:
+            settings = get_settings()
+        return cls(
+            api_base_url=settings.chat_api_base_url,
+            api_key=settings.chat_api_key,
+            model=settings.chat_model,
+            temperature=settings.chat_temperature,
+            max_tokens=settings.chat_max_tokens,
+            request_timeout=settings.chat_request_timeout,
+            max_retries=settings.chat_max_retries,
+        )
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "api_base_url": self.api_base_url,
+            "model": self.model,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+        }</pre>
+
+  <h3>7.3 ChatAdapter (<code>backend/app/services/chat_adapter.py</code>，新增)</h3>
+  <pre>import time
+from dataclasses import dataclass
+
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
+
+from app.services.chat_config import ChatConfig
+
+
+class ChatError(Exception):
+    """Base exception for all chat operations."""
+    pass
+
+
+class ChatAPIError(ChatError):
+    """Raised when the chat API call fails after all retries."""
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
+@dataclass(frozen=True)
+class ChatResult:
+    """A single chat completion result.
+
+    Attributes:
+        content: The generated text.
+        total_tokens: Total tokens consumed (prompt + completion).
+        prompt_tokens: Tokens consumed by the input messages.
+        completion_tokens: Tokens generated in the response.
+    """
+
+    content: str
+    total_tokens: int
+    prompt_tokens: int
+    completion_tokens: int
+
+
+class ChatAdapter:
+    """Encapsulates an OpenAI-compatible ``POST /v1/chat/completions`` endpoint.
+
+    Follows the same pattern as EmbeddingAdapter: config injection,
+    retry with exponential backoff, no SDK types leaked to callers.
+    """
+
+    def __init__(
+        self,
+        *,
+        config: ChatConfig,
+        client: object | None = None,
+    ) -> None:
+        self.config = config
+        if client is not None:
+            self._client = client
+        else:
+            self._client = OpenAI(
+                base_url=config.api_base_url,
+                api_key=config.api_key,
+                timeout=config.request_timeout,
+            )
+
+    def generate(self, messages: list[dict[str, str]]) -> ChatResult:
+        """Send *messages* to the chat API and return the completion.
+
+        Retries on transient errors (timeout, 5xx, connection) with
+        exponential backoff.  Non-retryable errors (4xx) fail fast.
+        """
+        last_exception: Exception | None = None
+
+        for attempt in range(self.config.max_retries + 1):
+            try:
+                response = self._client.chat.completions.create(
+                    model=self.config.model,
+                    messages=messages,
+                    temperature=self.config.temperature,
+                    max_tokens=self.config.max_tokens,
+                )
+                choice = response.choices[0]
+                usage = response.usage
+                return ChatResult(
+                    content=choice.message.content or "",
+                    total_tokens=usage.total_tokens if usage else 0,
+                    prompt_tokens=usage.prompt_tokens if usage else 0,
+                    completion_tokens=usage.completion_tokens if usage else 0,
+                )
+            except Exception as exc:
+                last_exception = exc
+                if not self._should_retry(exc, attempt):
+                    break
+                if attempt < self.config.max_retries:
+                    time.sleep(2 ** attempt)
+
+        raise self._wrap_error(last_exception)
+
+    def _should_retry(self, exception: Exception, attempt: int) -> bool:
+        if attempt >= self.config.max_retries:
+            return False
+        if isinstance(exception, APITimeoutError):
+            return True
+        if isinstance(exception, APIStatusError):
+            return 500 <= exception.status_code < 600
+        return isinstance(exception, APIConnectionError)
+
+    @staticmethod
+    def _wrap_error(exception: Exception | None) -> ChatError:
+        if exception is None:
+            return ChatAPIError("Unknown chat API error")
+        if isinstance(exception, APIStatusError):
+            return ChatAPIError(str(exception), status_code=exception.status_code)
+        return ChatAPIError(str(exception))</pre>
+
+  <h3>7.4 EmbeddingAdapter 与 ChatAdapter 独立部署策略</h3>
+  <p>EmbeddingAdapter 和 ChatAdapter 使用<strong>不同的中转站</strong>：</p>
+  <table>
+    <thead><tr><th>Adapter</th><th>中转站</th><th>模型</th></tr></thead>
+    <tbody>
+      <tr><td><code>EmbeddingAdapter</code></td><td><code>router.tumuer.me</code></td><td>Qwen3-Embedding-4B</td></tr>
+      <tr><td><code>ChatAdapter</code></td><td><code>×××××</code></td><td>qwen3.5-plus</td></tr>
+    </tbody>
+  </table>
+  <p>两者各自创建独立的 <code>OpenAI</code> 实例，使用各自的 <code>api_base_url</code> 和 <code>api_key</code>，互不干扰。如果后续需要共享连接池，可以在路由层创建单例 <code>OpenAI</code> client 并分别注入两个 Adapter 的 <code>client</code> 参数。本期不做此优化——两个 Adapter 独立实例化，保持简单。</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>8. API 契约</h2>
+
+  <h3>8.1 搜索端点</h3>
+  <div class="api-block">
+    <span class="method">POST</span>
+    <span class="path">/api/search</span>
+  </div>
+
+  <h3>Request Body</h3>
+  <pre>{
+  "query": "认证流程是怎样的？",
+  "top_k": 5,
+  "document_ids": ["550e8400-...", "660e8400-..."],   // 可选
+  "generate": true                                      // 新增：默认 true
+}</pre>
+
+  <table>
+    <thead><tr><th>字段</th><th>类型</th><th>必需</th><th>默认值</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>query</code></td><td>string</td><td>✅</td><td>—</td><td>自然语言查询文本，最小 1 字符，最大 2000 字符</td></tr>
+      <tr><td><code>top_k</code></td><td>int</td><td></td><td>5</td><td>返回前 K 个最相似分块，范围 1–50</td></tr>
+      <tr><td><code>document_ids</code></td><td>UUID[]</td><td></td><td>null</td><td>限定搜索的文档 ID 列表。不传或为空 = 搜索全部已向量化文档</td></tr>
+      <tr><td><code>generate</code></td><td>bool</td><td></td><td>true</td><td><strong>新增：</strong>是否调用 LLM 生成回答。false = 仅检索</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Response (200) — generate=true（默认）</h3>
+  <pre>{
+  "query": "认证流程是怎样的？",
+  "query_embedding_preview": [0.012345, -0.023456, 0.034567, 0.045678, -0.056789],
+  "embedding_model": "Qwen/Qwen3-Embedding-4B",
+  "embedding_dimensions": 2560,
+  "top_k": 5,
+  "total_searched": 156,
+  "searched_document_count": 3,
+  "search_time_ms": 42.3,
+  "generate": true,
+  "answer": "根据提供的文档内容，认证流程包括以下步骤：\n\n1. **用户登录**（auth-doc.pdf 第3页）——用户提交凭证后系统验证身份\n2. **Token 签发**（auth-doc.pdf 第7页）——验证通过后签发 JWT Token\n3. **权限校验**（auth-doc.pdf 第3页）——根据 Token 中的角色信息进行权限验证",
+  "answer_tokens": {
+    "prompt": 850,
+    "completion": 120,
+    "total": 970
+  },
+  "chat_model": "qwen3.5-plus",
+  "results": [
+    {
+      "rank": 1,
+      "score": 0.1342,
+      "chunk_id": "660e8400-...",
+      "parsed_document_id": "550e8400-...",
+      "document_name": "auth-doc.pdf",
+      "sequence_index": 3,
+      "text": "认证流程包括用户登录、Token 签发和权限校验三个步骤...",
+      "contextualized_text": "## 认证流程\n\n认证流程包括用户登录...",
+      "token_count": 310,
+      "heading_path": ["认证", "流程概述"],
+      "page_numbers": [3, 4]
+    }
+  ]
+}</pre>
+
+  <table>
+    <thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>query</code></td><td>string</td><td>原始查询文本，回显</td></tr>
+      <tr><td><code>query_embedding_preview</code></td><td>float[]</td><td>查询向量的前 5 维（调试用）</td></tr>
+      <tr><td><code>embedding_model</code></td><td>string</td><td>使用的嵌入模型</td></tr>
+      <tr><td><code>embedding_dimensions</code></td><td>int</td><td>向量维度</td></tr>
+      <tr><td><code>top_k</code></td><td>int</td><td>请求的 top_k</td></tr>
+      <tr><td><code>total_searched</code></td><td>int</td><td>被搜索的总向量数（跨所有文档）</td></tr>
+      <tr><td><code>searched_document_count</code></td><td>int</td><td>涉及多少个文档</td></tr>
+      <tr><td><code>search_time_ms</code></td><td>float</td><td>搜索耗时（毫秒），用于性能观测</td></tr>
+      <tr><td><code>generate</code></td><td>bool</td><td><strong>新增：</strong>回显请求的 generate 参数</td></tr>
+      <tr><td><code>answer</code></td><td>string | null</td><td><strong>新增：</strong>LLM 生成的回答（generate=false 时为 null）</td></tr>
+      <tr><td><code>answer_tokens</code></td><td>object | null</td><td><strong>新增：</strong>LLM token 用量（prompt / completion / total），generate=false 时为 null</td></tr>
+      <tr><td><code>chat_model</code></td><td>string | null</td><td><strong>新增：</strong>使用的对话模型（generate=false 时为 null）</td></tr>
+      <tr><td><code>results[]</code></td><td>SearchResult[]</td><td>按相似度升序排列（分数越小越相似）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>SearchResult 字段（不变）</h3>
+  <table>
+    <thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>rank</code></td><td>int</td><td>全局排名 (1-based)</td></tr>
+      <tr><td><code>score</code></td><td>float</td><td>cosine distance（0 = 完全相同，2 = 完全相反）</td></tr>
+      <tr><td><code>chunk_id</code></td><td>UUID</td><td>分块 ID</td></tr>
+      <tr><td><code>parsed_document_id</code></td><td>UUID</td><td>来源文档 ID</td></tr>
+      <tr><td><code>document_name</code></td><td>string</td><td>来源文档名称</td></tr>
+      <tr><td><code>sequence_index</code></td><td>int</td><td>分块在文档内的序号</td></tr>
+      <tr><td><code>text</code></td><td>string | null</td><td>分块文本内容（截断至 300 字符）</td></tr>
+      <tr><td><code>contextualized_text</code></td><td>string | null</td><td>上下文增强文本（截断至 300 字符）</td></tr>
+      <tr><td><code>token_count</code></td><td>int | null</td><td>分块 token 数</td></tr>
+      <tr><td><code>heading_path</code></td><td>string[] | null</td><td>标题路径</td></tr>
+      <tr><td><code>page_numbers</code></td><td>int[] | null</td><td>页码</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Error Responses</h3>
+  <table>
+    <thead><tr><th>状态码</th><th>detail</th><th>场景</th></tr></thead>
+    <tbody>
+      <tr><td>404</td><td>No embeddings found in the system</td><td>系统中没有任何向量化数据</td></tr>
+      <tr><td>404</td><td>Specified document(s) not found or not vectorized</td><td>指定的文档不存在或未向量化</td></tr>
+      <tr><td>422</td><td>(validation error)</td><td>query 为空或 top_k 超出范围</td></tr>
+      <tr><td>502</td><td>Failed to embed query</td><td>Embedding API 调用失败</td></tr>
+      <tr><td>502</td><td>Failed to generate answer</td><td><strong>新增：</strong>LLM 调用失败</td></tr>
+      <tr><td>503</td><td>Current user is unavailable</td><td>用户不可用</td></tr>
+      <tr><td>503</td><td>Chat generation is disabled</td><td><strong>新增：</strong>chat_enabled=false 但 generate=true</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>9. 后端 SearchService 设计</h2>
+
+  <h3>9.1 SearchService (<code>backend/app/services/search.py</code>)</h3>
+  <pre>class SearchService:
+    """跨文档语义搜索 + RAG 生成服务。
+
+    构造函数（依赖注入）：
+    - session: 数据库会话
+    - embedding_adapter: 复用现有 EmbeddingAdapter（查询向量化）
+    - chat_adapter: ChatAdapter（LLM 生成，新增）
+    - chat_config: ChatConfig（判断是否启用生成，新增）
+    """
+
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        document_ids: list[UUID] | None = None,
+        generate: bool = True,
+        owner_user_id: UUID | None = None,
+    ) -> SearchResponse:
+        """执行跨文档语义搜索 + 可选 LLM 生成。
+
+        1. embed_single(query) → query_vector
+        2. pgvector 跨文档检索 → 召回 top_k chunks
+        3. if generate:
+             a. 组装 prompt（system + context + question）
+             b. ChatAdapter.generate(messages) → answer
+        4. 组装 SearchResponse（含 answer + token 统计）
+        """</pre>
+
+  <h3>9.2 提示词模板（后端组装）</h3>
+  <pre>messages = [
+    {
+        "role": "system",
+        "content": (
+            "你是一个专业的文档问答助手。请根据以下上下文信息回答用户的问题。\n\n"
+            "**回答规则：**\n"
+            "1. 仅根据提供的上下文信息回答，不要编造信息\n"
+            "2. 如果上下文信息不足以回答，请明确说明"根据现有资料无法回答"\n"
+            "3. 引用上下文时注明来源（文档名、页码、章节）\n"
+            "4. 使用结构化的格式组织回答"
+        ),
+    },
+    {
+        "role": "user",
+        "content": (
+            "## 上下文信息\n\n"
+            "来源 1 (auth-doc.pdf · 第 3 页 · 认证 > 流程概述)\n"
+            "认证流程包括用户登录、Token 签发和权限校验三个步骤...\n\n"
+            "来源 2 (security-guide.pdf · 第 5 页 · 认证 > OAuth 2.0)\n"
+            "OAuth 2.0 提供了授权码模式、隐式模式...\n\n"
+            "---\n\n"
+            "## 用户问题\n\n"
+            "认证流程是怎样的？"
+        ),
+    },
+]</pre>
+
+  <h3>9.3 prompt 中传入完整文本</h3>
+  <p>
+    与 API 响应中的截断不同，组装 LLM prompt 时使用分块的<strong>完整文本</strong>（通过
+    <code>dc.text</code> 或从文件存储中读取），而非截断至 300 字符的版本。
+    这确保 LLM 获得足够的上下文来生成准确答案。
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>10. 前端实现设计</h2>
+
+  <h3>10.1 新增路由 <code>/chat</code></h3>
+  <p>在 <code>front/src/router/index.ts</code> 中新增 ChatView 路由，与 HomeView、VerificationView 并列。导航栏新增"对话验证"入口。</p>
+
+  <h3>10.2 ChatView 组件结构</h3>
+
+  <pre>ChatView.vue
+├── ModeToggle (新增)
+│   ├── ○ 仅检索 — 不调 LLM，只展示分块和 prompt 预览
+│   └── ● 检索 + 生成 — 调 LLM 生成回答（默认）
+│
+├── DocumentFilter (可选组件，非前置条件)
+│   ├── 加载已解析文档列表 (listParsedDocuments)
+│   ├── 多选下拉框，默认"全部文档"
+│   └── 清空选择 = 搜索全部
+│
+├── ChatArea (主体区域)
+│   ├── 对话历史列表 (query + answer + results pairs)
+│   │   ├── 每条对话可独立展开/折叠
+│   │   └── 空状态引导："无需选文档，直接输入问题即可获取 AI 回答"
+│   └── 新消息输入区（底部固定）
+│
+├── ChatInput
+│   ├── 文本输入框 (Enter 发送，Shift+Enter 换行)
+│   ├── Top-K 滑块 (1–50，默认 5)
+│   └── 发送按钮 + 加载状态（"搜索中..." → "生成回答中..."）
+│
+├── AnswerPanel (新增，generate=true 时显示)
+│   ├── 🤖 AI 回答（Markdown 渲染）
+│   ├── 引用统计：引用 N/M 分块 · 来自 K 个文档
+│   ├── Token 用量：prompt N + completion M = total T
+│   └── 复制回答按钮
+│
+├── ResultsPanel (可折叠，默认折叠)
+│   ├── 摘要栏：搜索 N 个文档 · M 个向量 · 耗时 T ms
+│   ├── 结果列表 (按文档分组)：
+│   │   ├── 文档分组头：📄 document_name (含结果数)
+│   │   ├── 排名 + 分数条 (可视化相似度)
+│   │   ├── 分块文本 (前 300 字符，可展开完整内容)
+│   │   ├── 元数据：页码、标题路径、Token 数
+│   │   └── 分数分布迷你柱状图
+│   └── 空结果提示
+│
+└── PromptPreview (可折叠，默认折叠)
+    ├── 实际发送给 LLM 的 messages 数组
+    ├── 每个 message 的 role + content
+    ├── Token 统计
+    └── 复制按钮</pre>
+
+  <h3>10.3 页面线框图（v3：含 LLM 回答）</h3>
+
+  <div class="wireframe">
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  knowra                          [流水线验证] [对话验证] [用户]   │
+  ├──────────────────────────────────────────────────────────────────┤
+  │                                                                    │
+  │  ┌─ 对话召回验证 ─────────────────────────────────────────────┐  │
+  │  │                                                              │  │
+  │  │  ┌─ 模式 ───────────────────────────────────────────────┐  │  │
+  │  │  │  ● 检索 + 生成 (默认)    ○ 仅检索                     │  │  │
+  │  │  └──────────────────────────────────────────────────────┘  │  │
+  │  │                                                              │  │
+  │  │  ┌─ 文档过滤器（可选）──────────────────────────────────┐  │  │
+  │  │  │  限定范围: [全部文档 (3个) ▼]  共 156 vectors · 3 docs│  │  │
+  │  │  └──────────────────────────────────────────────────────┘  │  │
+  │  │                                                              │  │
+  │  │  ┌─ 对话区域 ───────────────────────────────────────────┐  │  │
+  │  │  │                                                        │  │  │
+  │  │  │  Q: 认证流程是怎样的？                                  │  │  │
+  │  │  │                                                        │  │  │
+  │  │  │  ┌─ 🤖 AI 回答 ───────────────────────────────────┐  │  │  │
+  │  │  │  │                                                  │  │  │  │
+  │  │  │  │  根据文档内容，认证流程包括以下步骤：              │  │  │  │
+  │  │  │  │                                                  │  │  │  │
+  │  │  │  │  1. **用户登录**（auth-doc.pdf 第3页）           │  │  │  │
+  │  │  │  │     ——用户提交凭证后系统验证身份                  │  │  │  │
+  │  │  │  │  2. **Token 签发**（auth-doc.pdf 第7页）         │  │  │  │
+  │  │  │  │     ——验证通过后签发 JWT Token                   │  │  │  │
+  │  │  │  │  3. **权限校验**（auth-doc.pdf 第3页）           │  │  │  │
+  │  │  │  │     ——根据 Token 中的角色信息进行权限验证        │  │  │  │
+  │  │  │  │                                                  │  │  │  │
+  │  │  │  │  📊 引用 3/3 分块 · 来自 2 个文档                │  │  │  │
+  │  │  │  │  🪙 Token: 850 prompt + 120 completion = 970      │  │  │  │
+  │  │  │  └──────────────────────────────────────────────────┘  │  │  │
+  │  │  │                                                        │  │  │
+  │  │  │  ┌─ 检索结果 ──────────────── [展开/折叠] ─────────┐  │  │  │
+  │  │  │  │ 搜索了 3 个文档 · 156 个向量 · 42.3ms            │  │  │  │
+  │  │  │  │ 📄 auth-doc.pdf                                   │  │  │  │
+  │  │  │  │   #1 ████████████████████ 0.134                    │  │  │  │
+  │  │  │  │      认证流程包括用户登录、Token 签发...           │  │  │  │
+  │  │  │  │      📄 第3页 · 认证 > 流程概述 · 310 tokens       │  │  │  │
+  │  │  │  │ 📄 security-guide.pdf                             │  │  │  │
+  │  │  │  │   #2 ██████████████░░░░░░ 0.216                    │  │  │  │
+  │  │  │  │      OAuth 2.0 提供了授权码模式...                 │  │  │  │
+  │  │  │  │      📄 第5页 · 认证 > OAuth 2.0 · 280 tokens      │  │  │  │
+  │  │  │  └──────────────────────────────────────────────────┘  │  │  │
+  │  │  │                                                        │  │  │
+  │  │  │  ┌─ 提示词 ──────────────────── [展开/折叠] ───────┐  │  │  │
+  │  │  │  │  System: 你是一个专业的文档问答助手...           │  │  │  │
+  │  │  │  │  User: ## 上下文信息\n来源 1 (auth-doc.pdf)...   │  │  │  │
+  │  │  │  │  (实际发送给 LLM 的完整 messages)                 │  │  │  │
+  │  │  │  └──────────────────────────────────────────────────┘  │  │  │
+  │  │  │                                                        │  │  │
+  │  │  │  Q: Token 有哪些类型？                                  │  │  │
+  │  │  │  ...                                                    │  │  │
+  │  │  └──────────────────────────────────────────────────────┘  │  │
+  │  └──────────────────────────────────────────────────────────────┘  │
+  │                                                                    │
+  │  ┌──────────────────────────────────────────────────────────────┐  │
+  │  │  输入你的问题... (无需先选文档)         [Top-K: 5 ▼] [发送]  │  │
+  │  └──────────────────────────────────────────────────────────────┘  │
+  └──────────────────────────────────────────────────────────────────┘
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>11. 前端 API Client</h2>
+
+  <h3><code>front/src/api/search.ts</code></h3>
+
+  <pre>// ── Request ────────────────────────────────────────────
+export interface SearchRequest {
+  query: string
+  top_k?: number           // default 5, range 1–50
+  document_ids?: string[]  // 可选；不传 = 搜索全部
+  generate?: boolean       // 默认 true；false = 仅检索
+}
+
+// ── Response types ─────────────────────────────────────
+export interface AnswerTokens {
+  prompt: number
+  completion: number
+  total: number
+}
+
+export interface SearchResultItem {
+  rank: number
+  score: number
+  chunk_id: string
+  parsed_document_id: string
+  document_name: string
+  sequence_index: number
+  text: string | null
+  contextualized_text: string | null
+  token_count: number | null
+  heading_path: string[] | null
+  page_numbers: number[] | null
+}
+
+export interface SearchResponse {
+  query: string
+  query_embedding_preview: number[]
+  embedding_model: string
+  embedding_dimensions: number
+  top_k: number
+  total_searched: number
+  searched_document_count: number
+  search_time_ms: number
+  generate: boolean                     // 新增
+  answer: string | null                 // 新增：LLM 回答
+  answer_tokens: AnswerTokens | null    // 新增：token 用量
+  chat_model: string | null             // 新增：对话模型
+  results: SearchResultItem[]
+}
+
+// ── API function ───────────────────────────────────────
+/**
+ * 跨文档语义搜索 + 可选 LLM 生成。
+ * 默认搜索所有已向量化文档并生成 AI 回答。
+ *
+ * @param request - { query, top_k?, document_ids?, generate? }
+ * @returns 搜索结果 + LLM 回答（如果 generate=true）
+ */
+export async function searchChunks(
+  request: SearchRequest,
+): Promise&lt;SearchResponse&gt; {
+  const response = await fetch(
+    buildApiUrl("/search"),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...commonHeaders() },
+      body: JSON.stringify(request),
+    },
+  )
+  if (!response.ok) {
+    const detail = await getErrorMessage(response)
+    throw new SearchApiError(response.status, detail)
+  }
+  return response.json()
+}</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>12. 实现任务清单</h2>
+
+  <div class="token-budget">
+    <strong>🪙 Token 预算约束：</strong>每个子任务完成后产生的代码变更量控制在 <strong>200K tokens 以内</strong>。大任务已拆分为独立可验证的子步骤。
+  </div>
+
+  <h3>Phase 1 — 后端 LLM 基础设施（3 个子任务，新增）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1a</td>
+        <td>创建 ChatConfig frozen dataclass（与 EmbeddingConfig 同模式）+ Settings 新增 5 个 LLM 配置字段</td>
+        <td><code>backend/app/services/chat_config.py</code><br><code>backend/app/core/config.py</code></td>
+        <td>~60 行</td>
+      </tr>
+      <tr>
+        <td>1b</td>
+        <td>实现 ChatAdapter：封装 chat.completions.create，含重试、错误处理、ChatResult dataclass</td>
+        <td><code>backend/app/services/chat_adapter.py</code></td>
+        <td>~80 行</td>
+      </tr>
+      <tr>
+        <td>1c</td>
+        <td>ChatAdapter 单元测试：mock OpenAI client，验证 generate() 正常/重试/错误场景</td>
+        <td><code>backend/tests/services/test_chat_adapter.py</code></td>
+        <td>~100 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 2 — 后端 Schema & SearchService（3 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>2a</td>
+        <td>创建 SearchRequest / SearchResponse / SearchResult Pydantic Schema（含 answer、answer_tokens、generate 等新字段）</td>
+        <td><code>backend/app/schemas/search.py</code></td>
+        <td>~90 行</td>
+      </tr>
+      <tr>
+        <td>2b</td>
+        <td>实现 SearchService 骨架 + 跨文档 pgvector 检索：类结构、DI、JOIN 查询、结果组装、文本截断</td>
+        <td><code>backend/app/services/search.py</code></td>
+        <td>~80 行</td>
+      </tr>
+      <tr>
+        <td>2c</td>
+        <td>实现 SearchService LLM 生成部分：prompt 组装、ChatAdapter.generate()、token 统计、generate=false 分支</td>
+        <td><code>backend/app/services/search.py</code></td>
+        <td>~70 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 3 — 后端路由 & 注册（2 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>3a</td>
+        <td>创建 POST /api/search 路由：请求验证、调用 SearchService、错误码映射（含 502 chat 错误）</td>
+        <td><code>backend/app/api/routes/search.py</code></td>
+        <td>~80 行</td>
+      </tr>
+      <tr>
+        <td>3b</td>
+        <td>在 api_router 中注册 search router</td>
+        <td><code>backend/app/api/router.py</code></td>
+        <td>~5 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 4 — 后端测试（3 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>4a</td>
+        <td>SearchService 单元测试（检索）：mock EmbeddingAdapter，验证全部文档 / 限定文档 / 空结果</td>
+        <td><code>backend/tests/test_search_service.py</code></td>
+        <td>~100 行</td>
+      </tr>
+      <tr>
+        <td>4b</td>
+        <td>SearchService 单元测试（生成）：mock ChatAdapter，验证 prompt 组装 / generate=true/false / answer 字段</td>
+        <td><code>backend/tests/test_search_service.py</code></td>
+        <td>~80 行</td>
+      </tr>
+      <tr>
+        <td>4c</td>
+        <td>Search API 集成测试：200 / 404 / 422 / 502（embedding+chat）场景</td>
+        <td><code>backend/tests/test_search_api.py</code></td>
+        <td>~100 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 5 — 前端 API Client（1 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>5</td>
+        <td>创建 search.ts：TypeScript 类型（含 answer/answer_tokens）+ searchChunks() + 错误处理</td>
+        <td><code>front/src/api/search.ts</code></td>
+        <td>~80 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 6 — 前端 ChatView 页面（8 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>6a</td>
+        <td>创建 ChatView.vue 骨架：页面布局、组件划分、空状态提示</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~100 行</td>
+      </tr>
+      <tr>
+        <td>6b</td>
+        <td>实现 ModeToggle + DocumentFilter：双模式切换、多选下拉、文档列表加载</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~80 行</td>
+      </tr>
+      <tr>
+        <td>6c</td>
+        <td>实现 ChatInput：文本输入框、Enter 发送、Top-K 滑块、发送按钮 + 分段加载状态</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~90 行</td>
+      </tr>
+      <tr>
+        <td>6d</td>
+        <td>实现 AnswerPanel：Markdown 渲染 LLM 回答、引用统计、token 用量展示、复制按钮</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~100 行</td>
+      </tr>
+      <tr>
+        <td>6e</td>
+        <td>实现 ResultsPanel：按文档分组展示、排名+分数条、分块文本(截断+展开)、元数据行</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~120 行</td>
+      </tr>
+      <tr>
+        <td>6f</td>
+        <td>实现 PromptPreview：可折叠面板、messages 数组展示、复制按钮</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~70 行</td>
+      </tr>
+      <tr>
+        <td>6g</td>
+        <td>连接 API 与状态管理：调用 searchChunks()、对话历史、generate 参数、错误处理、加载状态</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~70 行</td>
+      </tr>
+      <tr>
+        <td>6h</td>
+        <td>分数分布迷你柱状图 + 搜索摘要栏</td>
+        <td><code>front/src/views/ChatView.vue</code></td>
+        <td>~60 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 7 — 路由注册 & 导航（1 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>7</td>
+        <td>新增 /chat 路由 + 导航栏"对话验证"入口</td>
+        <td><code>front/src/router/index.ts</code></td>
+        <td>~15 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 8 — 前端组件测试（2 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>8a</td>
+        <td>ChatView 核心交互测试：发送查询 → 显示回答+结果 → 模式切换 → 文档过滤</td>
+        <td><code>front/src/views/__tests__/ChatView.spec.ts</code></td>
+        <td>~120 行</td>
+      </tr>
+      <tr>
+        <td>8b</td>
+        <td>边界情况测试：generate=false、空结果、API 错误、chat 禁用、特殊字符查询</td>
+        <td><code>front/src/views/__tests__/ChatView.spec.ts</code></td>
+        <td>~80 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 9 — 端到端验证（1 个子任务）</h3>
+  <table>
+    <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>9</td>
+        <td>E2E 手动验证：上传 2+ 份文档 → 向量化 → 跨文档搜索 → 验证 LLM 回答引用准确性</td>
+        <td>手动</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>任务统计</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>子任务数</th><th>总代码行估算</th></tr></thead>
+    <tbody>
+      <tr><td>Phase 1 — LLM 基础设施</td><td>3</td><td>~240 行</td></tr>
+      <tr><td>Phase 2 — Schema & Service</td><td>3</td><td>~240 行</td></tr>
+      <tr><td>Phase 3 — 路由 & 注册</td><td>2</td><td>~85 行</td></tr>
+      <tr><td>Phase 4 — 后端测试</td><td>3</td><td>~280 行</td></tr>
+      <tr><td>Phase 5 — 前端 API Client</td><td>1</td><td>~80 行</td></tr>
+      <tr><td>Phase 6 — ChatView 页面</td><td>8</td><td>~690 行</td></tr>
+      <tr><td>Phase 7 — 路由 & 导航</td><td>1</td><td>~15 行</td></tr>
+      <tr><td>Phase 8 — 前端测试</td><td>2</td><td>~200 行</td></tr>
+      <tr><td>Phase 9 — E2E 验证</td><td>1</td><td>—</td></tr>
+      <tr style="font-weight:600; border-top:2px solid var(--text);">
+        <td>合计</td><td>24</td><td>~1,830 行</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:1rem;">
+    每个子任务的代码产出均 <strong>远低于 200K tokens</strong>。最大的子任务（6e: ResultsPanel ~120 行）仅占 200K tokens 的极小比例。
+    新增的 LLM 相关任务（Phase 1 + Phase 2c + Phase 4b）合计约 430 行，全部独立可验证。
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>13. 验证标准</h2>
+
+  <h3>13.1 主观验证（手动测试）</h3>
+  <ul>
+    <li>上传 2–3 份内容明确但主题不同的文档</li>
+    <li>输入与某文档特定段落高度相关的问题</li>
+    <li><strong>验证 LLM 回答引用准确性：</strong>答案中的文档名、页码是否与检索结果一致</li>
+    <li><strong>验证幻觉检测：</strong>问一个文档中没有的内容，检查 LLM 是否正确回复"根据现有资料无法回答"</li>
+    <li><strong>验证跨文档综合：</strong>当答案需要多个文档的信息时，LLM 是否正确引用每个来源</li>
+    <li>切换到"仅检索"模式，验证与"检索+生成"模式的结果一致性</li>
+  </ul>
+
+  <h3>13.2 客观检查项</h3>
+  <table>
+    <thead><tr><th>项目</th><th>预期</th></tr></thead>
+    <tbody>
+      <tr><td>分数单调性</td><td>rank 与 score 严格单调递增</td></tr>
+      <tr><td>文本完整性</td><td>所有结果 text 不为 null 或空</td></tr>
+      <tr><td>去重</td><td>chunk_id 不重复</td></tr>
+      <tr><td>查询向量维度</td><td>与 embedding_dimensions 一致</td></tr>
+      <tr><td>模型一致性</td><td>查询与文档使用同一 embedding_model</td></tr>
+      <tr><td>top_k 生效</td><td>结果数 ≤ top_k</td></tr>
+      <tr><td>search_time_ms</td><td>存在且为正值</td></tr>
+      <tr><td>searched_document_count</td><td>与实际搜索的文档数一致</td></tr>
+      <tr><td>answer 非空</td><td>generate=true 时 answer 不为 null</td></tr>
+      <tr><td>answer_tokens</td><td>generate=true 时 prompt + completion = total</td></tr>
+      <tr><td>answer = null</td><td>generate=false 时 answer 和 answer_tokens 均为 null</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.3 边界情况</h3>
+  <ul>
+    <li>系统无任何向量化数据 → 404 "No embeddings found in the system"</li>
+    <li>指定的 document_ids 全部无效 → 404</li>
+    <li>top_k 大于总分块数 → 返回全部</li>
+    <li>查询包含特殊字符 / emoji → 向量化正常进行</li>
+    <li>非常短的查询（1–2 个词）→ 返回余弦距离最近的分块</li>
+    <li>document_ids 为空数组 → 等同于不传，搜索全部</li>
+    <li>chat_enabled=false 但 generate=true → 503 "Chat generation is disabled"</li>
+    <li>LLM API 超时 → 502 "Failed to generate answer"</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 id="follow-up">14. 后续规划（本期不做）</h2>
+
+  <table>
+    <thead><tr><th>阶段</th><th>内容</th><th>依赖</th></tr></thead>
+    <tbody>
+      <tr><td>Phase 2</td><td>多轮对话上下文（带历史的 RAG 问答）</td><td>本期通过</td></tr>
+      <tr><td>Phase 2</td><td>流式输出（SSE / Streaming）</td><td>本期通过</td></tr>
+      <tr><td>Phase 3</td><td>混合搜索（BM25 + 向量）+ 结果融合</td><td>全文索引</td></tr>
+      <tr><td>Phase 3</td><td>搜索结果分页（offset/limit）</td><td>本期通过</td></tr>
+      <tr><td>Phase 4</td><td>Reranker 重排序</td><td>Phase 2 完成</td></tr>
+      <tr><td>Phase 4</td><td>Answer 自动评估（引用覆盖率 / 幻觉检测）</td><td>Phase 2 完成</td></tr>
+      <tr><td>Phase 4</td><td>按文档权重/时效性调整相似度</td><td>Phase 3 完成</td></tr>
+      <tr><td>Phase 5</td><td>引用高亮（答案中点击引用跳转到原文）</td><td>Phase 2 完成</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<footer style="text-align:center; padding:2rem 0; color:var(--text-tertiary); font-size:0.8rem;">
+  knowra — 对话召回验证方案 v3 · 2026-07-22
+</footer>
+
+</div>
+</body>
+</html>
