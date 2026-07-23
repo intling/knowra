@@ -245,7 +245,7 @@
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <header>
-  <div class="badge">Design Document · v3</div>
+  <!-- <div class="badge">Design Document · v3</div> -->
   <h1>对话召回验证</h1>
   <p class="subtitle">
     基于 pgvector 的语义搜索试验台 — 输入问题 → 向量化 → 跨文档相似度检索 → LLM 生成回答 → 展示召回结果与提示词
@@ -276,8 +276,6 @@
     <li>调用后端语义搜索端点，<strong>跨所有已向量化的文档</strong>召回相关分块</li>
     <li>调用 LLM <strong>生成带来源引用的答案</strong>，验证端到端 RAG 质量</li>
     <li>展示<strong>召回结果与 AI 回答并列</strong>：分块文本、相似度分数、来源文档、LLM 回答</li>
-    <li>支持<strong>双模式切换</strong>：仅检索 / 检索+生成（默认后者）</li>
-    <li>支持<strong>可选的文档范围过滤</strong></li>
     <li>展示<strong>实际发送给 LLM 的提示词</strong>（可折叠，用于调试和 prompt 迭代）</li>
   </ol>
 
@@ -286,8 +284,7 @@
     <strong>1. RAG 的检索质量只能通过答案质量来验证。</strong>余弦距离是代理指标——高分块可能缺少前置上下文导致 LLM 编造，多文档信息冲突时 LLM 随机选择，上下文过长时 LLM 忽略关键信息。这些场景在"只看分块文本"时完全不可见。<br><br>
     <strong>2. OpenAI SDK 已在项目中（用于文档向量化）。</strong>从 <code>client.embeddings.create</code> 到 <code>client.chat.completions.create</code> 是同一個 SDK 实例的同一个方法族，不是"新增一个系统"，而是新增一个 ~60 行的 Adapter。<br><br>
     <strong>3. 行业最佳实践是先跑通端到端基线，再逐组件优化。</strong>RAG 组件间紧耦合：检索策略变了 prompt 也要调，分块大小变了 LLM 上下文窗口也要调。分步构建意味着每个阶段推倒重来。<br><br>
-    <strong>4. LLM 本身就是最好的验证工具。</strong>看 10 条 AI 回答就知道检索质量（答案是否引用上下文？是否标注来源？），而纯检索需要人工逐条检查 50 个分块。<br><br>
-    <strong>5. 双模式设计保留灵活性。</strong>可随时切回"仅检索"模式做独立验证或节省成本。
+    <strong>4. LLM 本身就是最好的验证工具。</strong>看 10 条 AI 回答就知道检索质量（答案是否引用上下文？是否标注来源？），而纯检索需要人工逐条检查 50 个分块。
   </div>
 
   <h3>明确不做（本期范围外）</h3>
@@ -402,8 +399,8 @@
   <div class="decision-grid">
     <div class="decision-card">
       <div class="label">LLM 集成</div>
-      <div class="value">极简接入 + 双模式</div>
-      <div class="why">复用现有 OpenAI SDK 和 EmbeddingAdapter 模式，新增 ~60 行 ChatAdapter。默认"检索+生成"，可切换到"仅检索"模式</div>
+      <div class="value">极简接入</div>
+      <div class="why">复用现有 OpenAI SDK 和 EmbeddingAdapter 模式，新增 ~60 行 ChatAdapter，始终调用 LLM 生成带引用答案</div>
     </div>
     <div class="decision-card">
       <div class="label">对话模型</div>
@@ -423,12 +420,7 @@
     <div class="decision-card">
       <div class="label">搜索范围</div>
       <div class="value">跨文档搜索（默认全部）</div>
-      <div class="why">符合真实 RAG 场景——用户提问时不知道答案在哪个文档里。提供可选 document_ids 过滤器</div>
-    </div>
-    <div class="decision-card">
-      <div class="label">文档选择</div>
-      <div class="value">可选过滤器，非前置条件</div>
-      <div class="why">降低使用门槛：打开页面即可搜索+问答。高级用户可通过多选下拉框限定范围</div>
+      <div class="why">符合真实 RAG 场景——用户提问时不知道答案在哪个文档里，跨文档搜索是唯一合理的默认行为</div>
     </div>
     <div class="decision-card">
       <div class="label">回答温度</div>
@@ -475,36 +467,32 @@
      ──────────────────                        ──────────────────                  ────────
 
   ┌──────────────────────┐              ┌──────────────────────┐
-  │  DocumentFilter       │  GET /api/  │  listParsedDocuments  │
-  │  (可选多选下拉)         │◀───────────│  (已有端点)            │
-  └──────────┬───────────┘              └──────────────────────┘
-             │
-  ┌──────────▼───────────┐              ┌──────────────────────┐
-  │  ModeToggle           │              │  EmbeddingAdapter     │
-  │  ○ 仅检索             │              │  (已有, 复用)          │
-  │  ● 检索 + 生成 (默认)  │              └──────────┬───────────┘
-  └──────────┬───────────┘                          │
+  │  ChatInput            │              │  EmbeddingAdapter     │
+  │  "认证流程是怎样..."    │              │  (已有, 复用)          │
+  └──────────┬───────────┘              └──────────┬───────────┘
              │                                      │ embed_single()
-  ┌──────────▼───────────┐              ┌──────────▼───────────┐
-  │  ChatInput            │  POST       │  SearchService        │
-  │  "认证流程是怎样..."    │──────────▶ │                       │
-  │  无需先选文档!          │  /api/     │  1. embed_single()    │
-  └──────────┬───────────┘  search      │     → query_vector    │
-             │                           │                       │
-             │                           │  2. pgvector query    │
-             │                           │     <-> operator      │
-  ┌──────────▼───────────┐              │     (跨所有文档)       │
-  │  AnswerPanel           │◀───────────│                       │
-  │  (LLM 生成结果)         │              │  3. JOIN chunks       │
-  │  ┌─────────────────┐  │              │     + parsed_docs     │
-  │  │ 🤖 AI 回答       │  │              │                       │
-  │  │ 认证流程包括:     │  │              │  4. ChatAdapter       │
-  │  │ 1. 用户登录...    │  │              │     .generate()       │
-  │  │ 2. Token 签发...  │  │              │     (if generate=True)│
-  │  │                   │  │              │                       │
-  │  │ 📊 引用 3/3 分块  │  │              │  5. Return results   │
-  │  └─────────────────┘  │              │     + answer           │
-  ├────────────────────────┤              └──────────────────────┘
+             │  POST /api/search      ┌─────────────▼───────────┐
+             └──────────────────────▶│  SearchService        │
+                                     │                       │
+                                     │  1. embed_single()    │
+                                     │     → query_vector    │
+                                     │                       │
+                                     │  2. pgvector query    │
+                                     │     <-> operator      │
+                                     │     (跨所有文档)       │
+                                     │                       │
+  ┌──────────────────────┐            │  3. JOIN chunks       │
+  │  AnswerPanel           │◀───────────│     + parsed_docs     │
+  │  (LLM 生成结果)         │            │                       │
+  │  ┌─────────────────┐  │            │  4. ChatAdapter       │
+  │  │ 🤖 AI 回答       │  │            │     .generate()       │
+  │  │ 认证流程包括:     │  │            │                       │
+  │  │ 1. 用户登录...    │  │            │  5. Return results   │
+  │  │ 2. Token 签发...  │  │            │     + answer           │
+  │  │                   │  │            └──────────────────────┘
+  │  │ 📊 引用 3/3 分块  │  │
+  │  └─────────────────┘  │
+  ├────────────────────────┤
   │  ResultsPanel (折叠)    │
   │  ┌─────────────────┐  │
   │  │ 📄 auth-doc.pdf  │  │
@@ -643,7 +631,7 @@
         <td><span class="tag tag-new">新增</span></td>
         <td>Page</td>
         <td><code>front/src/views/ChatView.vue</code></td>
-        <td>对话召回验证页面（双模式、LLM 回答展示）</td>
+        <td>对话召回验证页面（LLM 回答展示）</td>
       </tr>
       <tr>
         <td><span class="tag tag-mod">修改</span></td>
@@ -858,9 +846,7 @@ class ChatAdapter:
   <h3>Request Body</h3>
   <pre>{
   "query": "认证流程是怎样的？",
-  "top_k": 5,
-  "document_ids": ["550e8400-...", "660e8400-..."],   // 可选
-  "generate": true                                      // 新增：默认 true
+  "top_k": 5
 }</pre>
 
   <table>
@@ -868,12 +854,10 @@ class ChatAdapter:
     <tbody>
       <tr><td><code>query</code></td><td>string</td><td>✅</td><td>—</td><td>自然语言查询文本，最小 1 字符，最大 2000 字符</td></tr>
       <tr><td><code>top_k</code></td><td>int</td><td></td><td>5</td><td>返回前 K 个最相似分块，范围 1–50</td></tr>
-      <tr><td><code>document_ids</code></td><td>UUID[]</td><td></td><td>null</td><td>限定搜索的文档 ID 列表。不传或为空 = 搜索全部已向量化文档</td></tr>
-      <tr><td><code>generate</code></td><td>bool</td><td></td><td>true</td><td><strong>新增：</strong>是否调用 LLM 生成回答。false = 仅检索</td></tr>
     </tbody>
   </table>
 
-  <h3>Response (200) — generate=true（默认）</h3>
+  <h3>Response (200)</h3>
   <pre>{
   "query": "认证流程是怎样的？",
   "query_embedding_preview": [0.012345, -0.023456, 0.034567, 0.045678, -0.056789],
@@ -883,7 +867,6 @@ class ChatAdapter:
   "total_searched": 156,
   "searched_document_count": 3,
   "search_time_ms": 42.3,
-  "generate": true,
   "answer": "根据提供的文档内容，认证流程包括以下步骤：\n\n1. **用户登录**（auth-doc.pdf 第3页）——用户提交凭证后系统验证身份\n2. **Token 签发**（auth-doc.pdf 第7页）——验证通过后签发 JWT Token\n3. **权限校验**（auth-doc.pdf 第3页）——根据 Token 中的角色信息进行权限验证",
   "answer_tokens": {
     "prompt": 850,
@@ -919,10 +902,9 @@ class ChatAdapter:
       <tr><td><code>total_searched</code></td><td>int</td><td>被搜索的总向量数（跨所有文档）</td></tr>
       <tr><td><code>searched_document_count</code></td><td>int</td><td>涉及多少个文档</td></tr>
       <tr><td><code>search_time_ms</code></td><td>float</td><td>搜索耗时（毫秒），用于性能观测</td></tr>
-      <tr><td><code>generate</code></td><td>bool</td><td><strong>新增：</strong>回显请求的 generate 参数</td></tr>
-      <tr><td><code>answer</code></td><td>string | null</td><td><strong>新增：</strong>LLM 生成的回答（generate=false 时为 null）</td></tr>
-      <tr><td><code>answer_tokens</code></td><td>object | null</td><td><strong>新增：</strong>LLM token 用量（prompt / completion / total），generate=false 时为 null</td></tr>
-      <tr><td><code>chat_model</code></td><td>string | null</td><td><strong>新增：</strong>使用的对话模型（generate=false 时为 null）</td></tr>
+      <tr><td><code>answer</code></td><td>string</td><td>LLM 生成的回答</td></tr>
+      <tr><td><code>answer_tokens</code></td><td>object</td><td>LLM token 用量（prompt / completion / total）</td></tr>
+      <tr><td><code>chat_model</code></td><td>string</td><td>使用的对话模型</td></tr>
       <tr><td><code>results[]</code></td><td>SearchResult[]</td><td>按相似度升序排列（分数越小越相似）</td></tr>
     </tbody>
   </table>
@@ -950,12 +932,11 @@ class ChatAdapter:
     <thead><tr><th>状态码</th><th>detail</th><th>场景</th></tr></thead>
     <tbody>
       <tr><td>404</td><td>No embeddings found in the system</td><td>系统中没有任何向量化数据</td></tr>
-      <tr><td>404</td><td>Specified document(s) not found or not vectorized</td><td>指定的文档不存在或未向量化</td></tr>
       <tr><td>422</td><td>(validation error)</td><td>query 为空或 top_k 超出范围</td></tr>
       <tr><td>502</td><td>Failed to embed query</td><td>Embedding API 调用失败</td></tr>
-      <tr><td>502</td><td>Failed to generate answer</td><td><strong>新增：</strong>LLM 调用失败</td></tr>
+      <tr><td>502</td><td>Failed to generate answer</td><td>LLM 调用失败</td></tr>
       <tr><td>503</td><td>Current user is unavailable</td><td>用户不可用</td></tr>
-      <tr><td>503</td><td>Chat generation is disabled</td><td><strong>新增：</strong>chat_enabled=false 但 generate=true</td></tr>
+      <tr><td>503</td><td>Chat generation is disabled</td><td>chat 未配置（chat_model 为空）</td></tr>
     </tbody>
   </table>
 </section>
@@ -972,25 +953,22 @@ class ChatAdapter:
     - session: 数据库会话
     - embedding_adapter: 复用现有 EmbeddingAdapter（查询向量化）
     - chat_adapter: ChatAdapter（LLM 生成，新增）
-    - chat_config: ChatConfig（判断是否启用生成，新增）
+    - chat_config: ChatConfig（新增）
     """
 
     def search(
         self,
         query: str,
         top_k: int = 5,
-        document_ids: list[UUID] | None = None,
-        generate: bool = True,
         owner_user_id: UUID | None = None,
     ) -> SearchResponse:
-        """执行跨文档语义搜索 + 可选 LLM 生成。
+        """执行跨文档语义搜索 + LLM 生成。
 
         1. embed_single(query) → query_vector
         2. pgvector 跨文档检索 → 召回 top_k chunks
-        3. if generate:
-             a. 组装 prompt（system + context + question）
-             b. ChatAdapter.generate(messages) → answer
-        4. 组装 SearchResponse（含 answer + token 统计）
+        3. 组装 prompt（system + context + question）
+        4. ChatAdapter.generate(messages) → answer
+        5. 组装 SearchResponse（含 answer + token 统计）
         """</pre>
 
   <h3>9.2 提示词模板（后端组装）</h3>
@@ -1039,19 +1017,10 @@ class ChatAdapter:
   <h3>10.2 ChatView 组件结构</h3>
 
   <pre>ChatView.vue
-├── ModeToggle (新增)
-│   ├── ○ 仅检索 — 不调 LLM，只展示分块和 prompt 预览
-│   └── ● 检索 + 生成 — 调 LLM 生成回答（默认）
-│
-├── DocumentFilter (可选组件，非前置条件)
-│   ├── 加载已解析文档列表 (listParsedDocuments)
-│   ├── 多选下拉框，默认"全部文档"
-│   └── 清空选择 = 搜索全部
-│
 ├── ChatArea (主体区域)
 │   ├── 对话历史列表 (query + answer + results pairs)
 │   │   ├── 每条对话可独立展开/折叠
-│   │   └── 空状态引导："无需选文档，直接输入问题即可获取 AI 回答"
+│   │   └── 空状态引导："直接输入问题即可获取 AI 回答"
 │   └── 新消息输入区（底部固定）
 │
 ├── ChatInput
@@ -1059,7 +1028,7 @@ class ChatAdapter:
 │   ├── Top-K 滑块 (1–50，默认 5)
 │   └── 发送按钮 + 加载状态（"搜索中..." → "生成回答中..."）
 │
-├── AnswerPanel (新增，generate=true 时显示)
+├── AnswerPanel
 │   ├── 🤖 AI 回答（Markdown 渲染）
 │   ├── 引用统计：引用 N/M 分块 · 来自 K 个文档
 │   ├── Token 用量：prompt N + completion M = total T
@@ -1072,7 +1041,7 @@ class ChatAdapter:
 │   │   ├── 排名 + 分数条 (可视化相似度)
 │   │   ├── 分块文本 (前 300 字符，可展开完整内容)
 │   │   ├── 元数据：页码、标题路径、Token 数
-│   │   └── 分数分布迷你柱状图
+│   │   │   └── 分数分布迷你柱状图
 │   └── 空结果提示
 │
 └── PromptPreview (可折叠，默认折叠)
@@ -1089,14 +1058,6 @@ class ChatAdapter:
   ├──────────────────────────────────────────────────────────────────┤
   │                                                                    │
   │  ┌─ 对话召回验证 ─────────────────────────────────────────────┐  │
-  │  │                                                              │  │
-  │  │  ┌─ 模式 ───────────────────────────────────────────────┐  │  │
-  │  │  │  ● 检索 + 生成 (默认)    ○ 仅检索                     │  │  │
-  │  │  └──────────────────────────────────────────────────────┘  │  │
-  │  │                                                              │  │
-  │  │  ┌─ 文档过滤器（可选）──────────────────────────────────┐  │  │
-  │  │  │  限定范围: [全部文档 (3个) ▼]  共 156 vectors · 3 docs│  │  │
-  │  │  └──────────────────────────────────────────────────────┘  │  │
   │  │                                                              │  │
   │  │  ┌─ 对话区域 ───────────────────────────────────────────┐  │  │
   │  │  │                                                        │  │  │
@@ -1141,7 +1102,7 @@ class ChatAdapter:
   │  └──────────────────────────────────────────────────────────────┘  │
   │                                                                    │
   │  ┌──────────────────────────────────────────────────────────────┐  │
-  │  │  输入你的问题... (无需先选文档)         [Top-K: 5 ▼] [发送]  │  │
+  │  │  输入你的问题...                       [Top-K: 5 ▼] [发送]  │  │
   │  └──────────────────────────────────────────────────────────────┘  │
   └──────────────────────────────────────────────────────────────────┘
   </div>
@@ -1157,8 +1118,6 @@ class ChatAdapter:
 export interface SearchRequest {
   query: string
   top_k?: number           // default 5, range 1–50
-  document_ids?: string[]  // 可选；不传 = 搜索全部
-  generate?: boolean       // 默认 true；false = 仅检索
 }
 
 // ── Response types ─────────────────────────────────────
@@ -1191,20 +1150,19 @@ export interface SearchResponse {
   total_searched: number
   searched_document_count: number
   search_time_ms: number
-  generate: boolean                     // 新增
-  answer: string | null                 // 新增：LLM 回答
-  answer_tokens: AnswerTokens | null    // 新增：token 用量
-  chat_model: string | null             // 新增：对话模型
+  answer: string
+  answer_tokens: AnswerTokens
+  chat_model: string
   results: SearchResultItem[]
 }
 
 // ── API function ───────────────────────────────────────
 /**
- * 跨文档语义搜索 + 可选 LLM 生成。
- * 默认搜索所有已向量化文档并生成 AI 回答。
+ * 跨文档语义搜索 + LLM 生成。
+ * 搜索所有已向量化文档并生成 AI 回答。
  *
- * @param request - { query, top_k?, document_ids?, generate? }
- * @returns 搜索结果 + LLM 回答（如果 generate=true）
+ * @param request - { query, top_k? }
+ * @returns 搜索结果 + LLM 回答
  */
 export async function searchChunks(
   request: SearchRequest,
@@ -1264,7 +1222,7 @@ export async function searchChunks(
     <tbody>
       <tr>
         <td>2a</td>
-        <td>创建 SearchRequest / SearchResponse / SearchResult Pydantic Schema（含 answer、answer_tokens、generate 等新字段）</td>
+        <td>创建 SearchRequest / SearchResponse / SearchResult Pydantic Schema（含 answer、answer_tokens 等字段）</td>
         <td><code>backend/app/schemas/search.py</code></td>
         <td>~90 行</td>
       </tr>
@@ -1276,7 +1234,7 @@ export async function searchChunks(
       </tr>
       <tr>
         <td>2c</td>
-        <td>实现 SearchService LLM 生成部分：prompt 组装、ChatAdapter.generate()、token 统计、generate=false 分支</td>
+        <td>实现 SearchService LLM 生成部分：prompt 组装、ChatAdapter.generate()、token 统计</td>
         <td><code>backend/app/services/search.py</code></td>
         <td>~70 行</td>
       </tr>
@@ -1308,13 +1266,13 @@ export async function searchChunks(
     <tbody>
       <tr>
         <td>4a</td>
-        <td>SearchService 单元测试（检索）：mock EmbeddingAdapter，验证全部文档 / 限定文档 / 空结果</td>
+        <td>SearchService 单元测试（检索）：mock EmbeddingAdapter，验证全部文档 / 空结果</td>
         <td><code>backend/tests/test_search_service.py</code></td>
         <td>~100 行</td>
       </tr>
       <tr>
         <td>4b</td>
-        <td>SearchService 单元测试（生成）：mock ChatAdapter，验证 prompt 组装 / generate=true/false / answer 字段</td>
+        <td>SearchService 单元测试（生成）：mock ChatAdapter，验证 prompt 组装 / answer 字段</td>
         <td><code>backend/tests/test_search_service.py</code></td>
         <td>~80 行</td>
       </tr>
@@ -1340,7 +1298,7 @@ export async function searchChunks(
     </tbody>
   </table>
 
-  <h3>Phase 6 — 前端 ChatView 页面（8 个子任务）</h3>
+  <h3>Phase 6 — 前端 ChatView 页面（7 个子任务）</h3>
   <table>
     <thead><tr><th>#</th><th>任务</th><th>文件</th><th>产出规模</th></tr></thead>
     <tbody>
@@ -1352,42 +1310,36 @@ export async function searchChunks(
       </tr>
       <tr>
         <td>6b</td>
-        <td>实现 ModeToggle + DocumentFilter：双模式切换、多选下拉、文档列表加载</td>
-        <td><code>front/src/views/ChatView.vue</code></td>
-        <td>~80 行</td>
-      </tr>
-      <tr>
-        <td>6c</td>
         <td>实现 ChatInput：文本输入框、Enter 发送、Top-K 滑块、发送按钮 + 分段加载状态</td>
         <td><code>front/src/views/ChatView.vue</code></td>
         <td>~90 行</td>
       </tr>
       <tr>
-        <td>6d</td>
+        <td>6c</td>
         <td>实现 AnswerPanel：Markdown 渲染 LLM 回答、引用统计、token 用量展示、复制按钮</td>
         <td><code>front/src/views/ChatView.vue</code></td>
         <td>~100 行</td>
       </tr>
       <tr>
-        <td>6e</td>
+        <td>6d</td>
         <td>实现 ResultsPanel：按文档分组展示、排名+分数条、分块文本(截断+展开)、元数据行</td>
         <td><code>front/src/views/ChatView.vue</code></td>
         <td>~120 行</td>
       </tr>
       <tr>
-        <td>6f</td>
+        <td>6e</td>
         <td>实现 PromptPreview：可折叠面板、messages 数组展示、复制按钮</td>
         <td><code>front/src/views/ChatView.vue</code></td>
         <td>~70 行</td>
       </tr>
       <tr>
-        <td>6g</td>
-        <td>连接 API 与状态管理：调用 searchChunks()、对话历史、generate 参数、错误处理、加载状态</td>
+        <td>6f</td>
+        <td>连接 API 与状态管理：调用 searchChunks()、对话历史、错误处理、加载状态</td>
         <td><code>front/src/views/ChatView.vue</code></td>
         <td>~70 行</td>
       </tr>
       <tr>
-        <td>6h</td>
+        <td>6g</td>
         <td>分数分布迷你柱状图 + 搜索摘要栏</td>
         <td><code>front/src/views/ChatView.vue</code></td>
         <td>~60 行</td>
@@ -1414,13 +1366,13 @@ export async function searchChunks(
     <tbody>
       <tr>
         <td>8a</td>
-        <td>ChatView 核心交互测试：发送查询 → 显示回答+结果 → 模式切换 → 文档过滤</td>
+        <td>ChatView 核心交互测试：发送查询 → 显示回答+结果</td>
         <td><code>front/src/views/__tests__/ChatView.spec.ts</code></td>
         <td>~120 行</td>
       </tr>
       <tr>
         <td>8b</td>
-        <td>边界情况测试：generate=false、空结果、API 错误、chat 禁用、特殊字符查询</td>
+        <td>边界情况测试：空结果、API 错误、chat 禁用、特殊字符查询</td>
         <td><code>front/src/views/__tests__/ChatView.spec.ts</code></td>
         <td>~80 行</td>
       </tr>
@@ -1449,18 +1401,18 @@ export async function searchChunks(
       <tr><td>Phase 3 — 路由 & 注册</td><td>2</td><td>~85 行</td></tr>
       <tr><td>Phase 4 — 后端测试</td><td>3</td><td>~280 行</td></tr>
       <tr><td>Phase 5 — 前端 API Client</td><td>1</td><td>~80 行</td></tr>
-      <tr><td>Phase 6 — ChatView 页面</td><td>8</td><td>~690 行</td></tr>
+      <tr><td>Phase 6 — ChatView 页面</td><td>7</td><td>~610 行</td></tr>
       <tr><td>Phase 7 — 路由 & 导航</td><td>1</td><td>~15 行</td></tr>
       <tr><td>Phase 8 — 前端测试</td><td>2</td><td>~200 行</td></tr>
       <tr><td>Phase 9 — E2E 验证</td><td>1</td><td>—</td></tr>
       <tr style="font-weight:600; border-top:2px solid var(--text);">
-        <td>合计</td><td>24</td><td>~1,830 行</td>
+        <td>合计</td><td>23</td><td>~1,750 行</td>
       </tr>
     </tbody>
   </table>
 
   <p style="margin-top:1rem;">
-    每个子任务的代码产出均 <strong>远低于 200K tokens</strong>。最大的子任务（6e: ResultsPanel ~120 行）仅占 200K tokens 的极小比例。
+    每个子任务的代码产出均 <strong>远低于 200K tokens</strong>。最大的子任务（6d: ResultsPanel ~120 行）仅占 200K tokens 的极小比例。
     新增的 LLM 相关任务（Phase 1 + Phase 2c + Phase 4b）合计约 430 行，全部独立可验证。
   </p>
 </section>
@@ -1476,7 +1428,6 @@ export async function searchChunks(
     <li><strong>验证 LLM 回答引用准确性：</strong>答案中的文档名、页码是否与检索结果一致</li>
     <li><strong>验证幻觉检测：</strong>问一个文档中没有的内容，检查 LLM 是否正确回复"根据现有资料无法回答"</li>
     <li><strong>验证跨文档综合：</strong>当答案需要多个文档的信息时，LLM 是否正确引用每个来源</li>
-    <li>切换到"仅检索"模式，验证与"检索+生成"模式的结果一致性</li>
   </ul>
 
   <h3>13.2 客观检查项</h3>
@@ -1491,21 +1442,18 @@ export async function searchChunks(
       <tr><td>top_k 生效</td><td>结果数 ≤ top_k</td></tr>
       <tr><td>search_time_ms</td><td>存在且为正值</td></tr>
       <tr><td>searched_document_count</td><td>与实际搜索的文档数一致</td></tr>
-      <tr><td>answer 非空</td><td>generate=true 时 answer 不为 null</td></tr>
-      <tr><td>answer_tokens</td><td>generate=true 时 prompt + completion = total</td></tr>
-      <tr><td>answer = null</td><td>generate=false 时 answer 和 answer_tokens 均为 null</td></tr>
+      <tr><td>answer 非空</td><td>answer 不为 null</td></tr>
+      <tr><td>answer_tokens</td><td>prompt + completion = total</td></tr>
     </tbody>
   </table>
 
   <h3>13.3 边界情况</h3>
   <ul>
     <li>系统无任何向量化数据 → 404 "No embeddings found in the system"</li>
-    <li>指定的 document_ids 全部无效 → 404</li>
     <li>top_k 大于总分块数 → 返回全部</li>
     <li>查询包含特殊字符 / emoji → 向量化正常进行</li>
     <li>非常短的查询（1–2 个词）→ 返回余弦距离最近的分块</li>
-    <li>document_ids 为空数组 → 等同于不传，搜索全部</li>
-    <li>chat_enabled=false 但 generate=true → 503 "Chat generation is disabled"</li>
+    <li>chat 未配置 → 503 "Chat generation is disabled"</li>
     <li>LLM API 超时 → 502 "Failed to generate answer"</li>
   </ul>
 </section>
