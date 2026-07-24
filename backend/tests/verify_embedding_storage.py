@@ -18,24 +18,30 @@ backend_dir = Path(__file__).resolve().parent / "backend"
 os.chdir(str(backend_dir))
 sys.path.insert(0, str(backend_dir))
 
-from app.core.config import get_settings
+from sqlmodel import Session, func, select, text  # noqa: E402
+
+from app.core.config import get_settings  # noqa: E402
+from app.db.session import engine  # noqa: E402
+from app.models.document_embedding import (  # noqa: E402
+    DocumentEmbedding,
+    DocumentEmbeddingJob,
+    DocumentEmbeddingJobStatus,
+)
 
 _settings = get_settings()
 _parts = _settings.database_url.split("@")
-_db_display = _parts[0].split("://")[0] + "://***@" + _parts[-1] if len(_parts) >= 2 else _settings.database_url
+if len(_parts) >= 2:
+    _scheme = _parts[0].split("://")[0]
+    _db_display = f"{_scheme}://***@{_parts[-1]}"
+else:
+    _db_display = _settings.database_url
 print(f"Database: {_db_display}")
-
-from sqlmodel import Session, select, func, text
-from app.db.session import engine
-from app.models.document_embedding import DocumentEmbedding, DocumentEmbeddingJob, DocumentEmbeddingJobStatus
 
 
 def verify() -> bool:
     with Session(engine) as session:
         # --- 1. Embedding job statistics ---
-        total_jobs = session.exec(
-            select(func.count(DocumentEmbeddingJob.id))
-        ).one()
+        total_jobs = session.exec(select(func.count(DocumentEmbeddingJob.id))).one()
         succeeded_jobs = session.exec(
             select(func.count(DocumentEmbeddingJob.id)).where(
                 DocumentEmbeddingJob.status == DocumentEmbeddingJobStatus.SUCCEEDED.value
@@ -86,9 +92,7 @@ def verify() -> bool:
         print()
 
         # --- 3. Count embedding records ---
-        total_embeddings = session.exec(
-            select(func.count(DocumentEmbedding.id))
-        ).one()
+        total_embeddings = session.exec(select(func.count(DocumentEmbedding.id))).one()
         job_embeddings = session.exec(
             select(func.count(DocumentEmbedding.id)).where(
                 DocumentEmbedding.embedding_job_id == latest_job.id
@@ -104,9 +108,9 @@ def verify() -> bool:
 
         # --- 4. Sample a single embedding record ---
         sample = session.exec(
-            select(DocumentEmbedding).where(
-                DocumentEmbedding.embedding_job_id == latest_job.id
-            ).limit(1)
+            select(DocumentEmbedding)
+            .where(DocumentEmbedding.embedding_job_id == latest_job.id)
+            .limit(1)
         ).first()
 
         if sample is None:

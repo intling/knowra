@@ -1,5 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+// Mock the logger module so client.ts can import it without needing initLogger().
+vi.mock("../shared/logger", () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+  getRingBuffer: () => ({
+    push: vi.fn(),
+    size: 0,
+    getAll: () => [],
+  }) as unknown as ReturnType<typeof import("../shared/logger").getRingBuffer>,
+}))
+
+// Mock the traceManager to return a stable trace ID.
+vi.mock("../shared/logger/trace-context", () => ({
+  traceManager: {
+    getTraceId: () => "01JFZ8TEST-TRACE-ID-000000000000",
+  },
+}))
+
 const CHUNK_JOB_RESPONSE = {
   id: "55555555-5555-5555-5555-555555555555",
   parsed_document_id: "33333333-3333-3333-3333-333333333333",

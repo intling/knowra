@@ -139,6 +139,10 @@ export function getParsedDocumentForUpload(uploadId: string): Promise<ParsedDocu
   return apiGet<ParsedDocument>(`/uploads/${uploadId}/parsed-document`)
 }
 
+export function listParsedDocuments(): Promise<ParsedDocument[]> {
+  return apiGet<ParsedDocument[]>("/parsed-documents")
+}
+
 export function getParsedDocumentSegments(
   parsedDocumentId: string,
   { offset = 0, limit = 20 }: { offset?: number; limit?: number } = {},

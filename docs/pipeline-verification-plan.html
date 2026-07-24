@@ -1,0 +1,1493 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>knowra 流水线存取验证方案（向量检索与分块还原）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #5f6b7c;
+      --border: #dce3ec;
+      --accent: #1f6f8b;
+      --accent-soft: #e6f3f6;
+      --ok: #19764b;
+      --ok-soft: #e8f6ef;
+      --warn: #a86200;
+      --warn-soft: #fff4df;
+      --danger: #b42318;
+      --danger-soft: #fff0ed;
+      --code-bg: #101828;
+      --code-text: #eef4ff;
+      --purple: #6b4c9a;
+      --purple-soft: #f0eaf8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p { margin: 0 0 12px; }
+
+    ul, ol {
+      margin: 0 0 14px;
+      padding-left: 1.35rem;
+    }
+
+    li { margin: 4px 0; }
+
+    a { color: var(--accent); }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #101828;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      margin: 14px 0 20px;
+      border-collapse: collapse;
+      background: var(--panel);
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #183b63;
+    }
+
+    .decision {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: #123d27;
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+      color: #583800;
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+      color: #681f18;
+    }
+
+    .purple {
+      border-left-color: var(--purple);
+      background: var(--purple-soft);
+      color: #3a2560;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .mini h3 { margin-top: 0; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .flow-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .flow-item {
+      padding: 14px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      text-align: center;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .flow-item.ok {
+      background: var(--ok-soft);
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    .flow-item.accent {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--muted);
+      min-width: 30px;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .diagram {
+      margin: 16px 0;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fafbfc;
+    }
+
+    .check-pass {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--ok);
+      margin-right: 6px;
+    }
+
+    .check-fail {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--danger);
+      margin-right: 6px;
+    }
+
+    .check-warn {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--warn);
+      margin-right: 6px;
+    }
+
+    .task-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .task-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f2f5;
+    }
+
+    .task-list li:last-child {
+      border-bottom: none;
+    }
+
+    .summary-stat {
+      text-align: center;
+      padding: 16px 8px;
+    }
+
+    .summary-stat .val {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .summary-stat .lbl {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    @media (max-width: 760px) {
+      .grid, .grid-3 { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .flow-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>🧪 流水线存取验证方案</h1>
+  <p style="font-size:17px; color:var(--muted); margin-top:6px;">
+    向量检索与分块还原 —— 验证「上传 → 解析 → 分块 → 向量化 → 存储 → 取出 → 还原」全链路数据完整性
+  </p>
+  <div class="meta">
+    <span class="tag">📅 2026-07-22</span>
+    <span class="tag">📌 阶段：存取验证</span>
+    <span class="tag">🏷️ pipeline-verification</span>
+    <span class="tag">⚙️ 后端 API</span>
+    <span class="tag">🖥️ 前端验证页</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 1. 问题陈述 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>1. 背景与问题陈述</h2>
+
+<div class="section">
+
+  <h3>1.1 当前状态</h3>
+
+  <p>
+    knowra 已完成「写入侧」全部模块的单独测试：
+  </p>
+  <div class="flow-row">
+    <div class="flow-item ok">✅<br>用户体系</div>
+    <div class="arrow">→</div>
+    <div class="flow-item ok">✅<br>文件上传</div>
+    <div class="arrow">→</div>
+    <div class="flow-item ok">✅<br>文件解析<br><small>Docling</small></div>
+    <div class="arrow">→</div>
+    <div class="flow-item ok">✅<br>文件分块<br><small>HybridChunker</small></div>
+    <div class="arrow">→</div>
+    <div class="flow-item ok">✅<br>向量化<br><small>Qwen3-Embedding-4B</small></div>
+    <div class="arrow">→</div>
+    <div class="flow-item ok">✅<br>pgvector 存储<br><small>Vector(2560)</small></div>
+  </div>
+
+  <div class="note">
+    <strong>每个模块已单独测试通过，但端到端存取验证尚未进行。</strong><br>
+    关键缺失：我们写入了向量，但从未验证能否把向量<em>取出来</em>并<em>还原为原始分块内容</em>。
+  </div>
+
+  <h3>1.2 核心问题</h3>
+
+  <div class="grid">
+    <div class="mini">
+      <h3>🔍 数据完整性未知</h3>
+      <p style="margin-bottom:0;">
+        <code>document_embeddings</code> 表中存有向量，<code>document_chunks</code> 表中存有分块文本，
+        但没有人验证过二者之间的关联是否完整、一致、可还原。
+      </p>
+    </div>
+    <div class="mini">
+      <h3>🔗 关联链路未验证</h3>
+      <p style="margin-bottom:0;">
+        embedding → chunk (via <code>chunk_id</code>) → text → document 的完整还原链路
+        从未被端到端验证过。如果某个环节断裂（如孤儿向量、缺失文本），当前系统无法发现。
+      </p>
+    </div>
+    <div class="mini">
+      <h3>📊 无可视化确认</h3>
+      <p style="margin-bottom:0;">
+        开发者无法直观看到「存进去的 2560 维向量」对应的是「哪段中文/英文文本」。
+        这为后续检索和 RAG 阶段的调试埋下隐患。
+      </p>
+    </div>
+    <div class="mini">
+      <h3>🛡️ 无回归防护</h3>
+      <p style="margin-bottom:0;">
+        未来修改分块策略、换用嵌入模型、或调整 pipeline 时，没有自动化验证来确保
+        「向量 ↔ 分块内容」的映射关系没有被破坏。
+      </p>
+    </div>
+  </div>
+
+  <h3>1.3 本阶段目标</h3>
+
+  <div class="decision">
+    <strong>🎯 目标：</strong>实现一条<strong>只读验证链路</strong>——
+    从 pgvector 中取出已存储的向量，通过 JOIN 还原为原始分块文本，
+    并以结构化方式展示全链路数据，确认存取一致。<br>
+    <strong>明确 NOT 本阶段：</strong>用户输入查询、语义搜索、RAG 问答、向量索引优化。
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 2. 数据模型回顾 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>2. 数据模型回顾 —— 还原链路涉及的表</h2>
+
+<div class="section">
+
+  <p>存取验证跨越四张核心表，它们通过外键形成一条清晰的 JOIN 链路：</p>
+
+  <div class="diagram">
+    <pre style="font-size:13px;">
+┌──────────────────────────┐
+│  document_embeddings     │  ← ← ← 起点：pgvector 中的向量
+│  ├── id                  │
+│  ├── chunk_id ──────────────FK──┐
+│  ├── embedding_job_id           │
+│  ├── sequence_index             │
+│  ├── embedding_json (JSON)      │      ┌──────────────────────────┐
+│  ├── embedding_vector (VECTOR)  │      │  document_chunks         │  ← 还原目标：分块文本
+│  ├── model                     │      │  ├── id                  │
+│  ├── dimensions                │      │  ├── chunk_job_id ───────FK──┐
+│  ├── token_count               │      │  ├── sequence_index         │
+│  └── created_at                │      │  ├── text (内联 或 NULL)    │
+└────────────────────────────────┘      │  ├── text_storage_key       │  ← 大文本从文件系统读取
+                                        │  ├── contextualized_text    │
+         ┌────────────────────────┐      │  ├── token_count           │
+         │  document_chunk_jobs   │      │  ├── heading_path          │
+         │  ├── id ◀──────────────┼──────┤  ├── page_numbers          │
+         │  ├── parsed_document_id│      │  └── created_at            │
+         │  ├── status            │      └────────────────────────────┘
+         │  └── chunk_count       │                  │
+         └────────┬───────────────┘                  │ (chunk_job_id 隐含 parsed_document_id)
+                  │                                  │
+                  ▼                                  ▼
+         ┌──────────────────────────┐    ┌──────────────────────────┐
+         │  parsed_documents        │    │  uploaded_files           │
+         │  ├── id ◀────────────────┼────│  ├── id                   │
+         │  ├── uploaded_file_id ──FK───▶│  ├── original_filename    │
+         │  ├── title               │    │  ├── content_type         │
+         │  ├── markdown_storage_key│    │  └── byte_size            │
+         │  └── text_storage_key    │    └──────────────────────────┘
+         └──────────────────────────┘</pre>
+  </div>
+
+  <h3>关键 JOIN 路径</h3>
+
+  <table>
+    <thead>
+      <tr><th>步骤</th><th>JOIN 条件</th><th>目的</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>① 向量 → 分块</td>
+        <td><code>document_embeddings.chunk_id = document_chunks.id</code></td>
+        <td>通过 chunk_id 找到对应的分块文本</td>
+      </tr>
+      <tr>
+        <td>② 限定作业</td>
+        <td><code>document_embeddings.embedding_job_id = latest_succeeded_job.id</code></td>
+        <td>只取最新成功向量化作业的结果（跳过 superseded）</td>
+      </tr>
+      <tr>
+        <td>③ 文档溯源</td>
+        <td><code>document_chunks.parsed_document_id = parsed_documents.id</code></td>
+        <td>获取文档元信息（标题、文件名等）</td>
+      </tr>
+      <tr>
+        <td>④ 文件溯源</td>
+        <td><code>parsed_documents.uploaded_file_id = uploaded_files.id</code></td>
+        <td>获取原始上传文件名和格式</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 3. 方案设计 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>3. 方案总览</h2>
+
+<div class="section">
+
+  <h3>3.1 架构全景</h3>
+
+  <div class="diagram">
+    <pre style="font-size:13px;">
+                          knowra 存取验证架构
+══════════════════════════════════════════════════════════════════════════════
+
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                           FRONTEND (Vue 3)                           │
+  │                                                                      │
+  │   ┌──────────────────────────────────────────────────────────────┐  │
+  │   │  VerificationView (/verify)                                   │  │
+  │   │                                                               │  │
+  │   │  ┌─────────────┐  ┌─────────────────┐  ┌─────────────────┐   │  │
+  │   │  │ 文档选择器   │  │  验证摘要面板    │  │  完整性检查列表  │   │  │
+  │   │  │ (下拉列表)   │  │  (统计卡片)     │  │  (通过/失败)    │   │  │
+  │   │  └─────────────┘  └─────────────────┘  └─────────────────┘   │  │
+  │   │                                                               │  │
+  │   │  ┌──────────────────────────────────────────────────────────┐ │  │
+  │   │  │  分块-向量对照表 (Chunk-Embedding Pair Table)              │ │  │
+  │   │  │  seq │ chunk 文本 (前200字) │ token │ 向量预览 (前5维)    │ │  │
+  │   │  │  ────┼─────────────────────┼───────┼────────────────── │ │  │
+  │   │  │   0  │ "第一章 绪论..."     │  512  │ [0.0123, -0.0456..│ │  │
+  │   │  │   1  │ "在人工智能领域..."   │  498  │ [0.0234, 0.0678..│ │  │
+  │   │  │  ... │ ...                 │  ...  │ ...               │ │  │
+  │   │  └──────────────────────────────────────────────────────────┘ │  │
+  │  └──────────────────────────────────────────────────────────────┘  │
+  └────────────────────────────────┬─────────────────────────────────────┘
+                                   │
+                    GET /api/parsed-documents/{id}/pipeline-verification
+                                   │
+  ┌────────────────────────────────┼─────────────────────────────────────┐
+  │                           BACKEND (FastAPI)                          │
+  │                                 │                                     │
+  │  ┌──────────────────────────────┼──────────────────────────────────┐ │
+  │  │  api/routes/pipeline_verification.py                            │ │
+  │  │  ├── GET .../{id}/pipeline-verification                         │ │
+  │  │  │   → PipelineVerificationService.verify(parsed_document_id)   │ │
+  │  └──────────────────────────────┼──────────────────────────────────┘ │
+  │                                 │                                     │
+  │  ┌──────────────────────────────┼──────────────────────────────────┐ │
+  │  │  services/pipeline_verification.py                              │ │
+  │  │  ┌────────────────────────────────────────────────────────────┐ │ │
+  │  │  │  PipelineVerificationService                                │ │ │
+  │  │  │                                                            │ │ │
+  │  │  │  verify(parsed_document_id) → PipelineVerificationResult    │ │ │
+  │  │  │    │                                                       │ │ │
+  │  │  │    ├── _load_document_chain()     查询文档链                │ │ │
+  │  │  │    ├── _load_chunk_embedding_pairs()  JOIN chunks↔embeddings│ │ │
+  │  │  │    ├── _resolve_chunk_texts()      从DB或文件系统读取文本   │ │ │
+  │  │  │    ├── _run_integrity_checks()     执行完整性检查            │ │ │
+  │  │  │    └── _build_result()             组装返回结果              │ │ │
+  │  │  └────────────────────────────────────────────────────────────┘ │ │
+  │  └──────────────────────────────────────────────────────────────────┘ │
+  └────────────────────────────────┬─────────────────────────────────────┘
+                                   │
+                    ┌──────────────┼──────────────┐
+                    │              │              │
+                    ▼              ▼              ▼
+          ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+          │  PostgreSQL  │ │  File System │ │  外部 API    │
+          │  + pgvector  │ │  (storage/)  │ │  (本次不涉及) │
+          │              │ │              │ │              │
+          │ SELECT de.*  │ │ chunks/{uid}/ │ │              │
+          │   , dc.*     │ │   {doc_id}/  │ │              │
+          │ FROM de      │ │   {job_id}/  │ │              │
+          │ JOIN dc      │ │   000000_*.txt│ │              │
+          │   ON de.     │ │              │ │              │
+          │   chunk_id   │ │ (文本溢出文件)│ │              │
+          │   = dc.id    │ │              │ │
+          │ WHERE ...    │ │              │ │
+          └──────────────┘ └──────────────┘ └──────────────┘</pre>
+  </div>
+
+  <h3>3.2 设计原则</h3>
+
+  <div class="grid-3">
+    <div class="mini">
+      <h3>🔒 只读验证</h3>
+      <p style="margin-bottom:0;">
+        验证端点不修改任何数据库记录，不触发任何写入操作。纯 <code>SELECT</code> + 文件读取。
+        安全、幂等、可随时调用。
+      </p>
+    </div>
+    <div class="mini">
+      <h3>🔄 复用现有基础设施</h3>
+      <p style="margin-bottom:0;">
+        复用 <code>ChunkArtifactStorage</code> 读取大文本文件；
+        复用 <code>get_current_user()</code> 做权限校验；
+        复用 <code>get_latest_active_embedding_job()</code> 查找活跃作业。
+      </p>
+    </div>
+    <div class="mini">
+      <h3>📐 标准项目模式</h3>
+      <p style="margin-bottom:0;">
+        遵循项目既有的 Service → Route → Schema 分层架构；
+        使用 SQLModel session 管理；
+        使用 structlog 结构化日志。
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 4. API 设计 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>4. API 设计</h2>
+
+<div class="section">
+
+  <h3>4.1 端点定义</h3>
+
+  <table>
+    <thead>
+      <tr><th>方法</th><th>路径</th><th>描述</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/parsed-documents/{parsed_document_id}/pipeline-verification</code></td>
+        <td>对指定文档执行完整的存取验证，返回分块-向量对照结果</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 请求参数</h3>
+
+  <table>
+    <thead>
+      <tr><th>参数</th><th>类型</th><th>必需</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>parsed_document_id</code></td><td>UUID (path)</td><td>✅</td><td>已解析文档的 ID</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 响应结构</h3>
+
+  <div class="diagram">
+    <pre style="font-size:13px;">{
+  "document": {
+    "parsed_document_id": "550e8400-...",
+    "title": "人工智能导论讲义",
+    "original_filename": "AI-Intro-Lecture1.pdf",
+    "content_type": "application/pdf",
+    "byte_size": 2456789
+  },
+  "pipeline": {
+    "parse_job": {
+      "id": "...", "status": "succeeded", "parser_name": "docling",
+      "started_at": "2026-07-21T10:00:00Z", "finished_at": "2026-07-21T10:00:12Z"
+    },
+    "chunk_job": {
+      "id": "...", "status": "succeeded", "chunker_name": "docling_hybrid",
+      "chunk_count": 48, "started_at": "...", "finished_at": "..."
+    },
+    "embedding_job": {
+      "id": "...", "status": "succeeded", "model": "Qwen/Qwen3-Embedding-4B",
+      "dimensions": 2560, "embedding_count": 48,
+      "started_at": "...", "finished_at": "..."
+    }
+  },
+  "verification": {
+    "passed": true,
+    "total_checks": 7,
+    "passed_checks": 7,
+    "checks": [
+      {
+        "name": "chunk_embedding_pairing",
+        "passed": true,
+        "message": "48/48 分块与向量一一对应，无孤儿记录"
+      },
+      {
+        "name": "dimension_consistency",
+        "passed": true,
+        "message": "所有 48 条向量维度均为 2560"
+      },
+      {
+        "name": "sequence_continuity",
+        "passed": true,
+        "message": "sequence_index 从 0 到 47 连续，无缺失无重复"
+      },
+      {
+        "name": "chunk_text_availability",
+        "passed": true,
+        "message": "48/48 分块文本可读取（45 内联 + 3 文件存储）"
+      },
+      {
+        "name": "contextualized_text_availability",
+        "passed": true,
+        "message": "48/48 contextualized_text 可读取"
+      },
+      {
+        "name": "token_count_consistency",
+        "passed": true,
+        "message": "48/48 token_count 非空且 > 0"
+      },
+      {
+        "name": "model_consistency",
+        "passed": true,
+        "message": "所有向量使用同一模型 Qwen/Qwen3-Embedding-4B"
+      }
+    ]
+  },
+  "pairs": [
+    {
+      "sequence_index": 0,
+      "chunk": {
+        "id": "uuid",
+        "text": "第一章 绪论\n人工智能（Artificial Intelligence，简称 AI）...",
+        "contextualized_text": "人工智能导论讲义\n第一章 绪论\n人工智能...",
+        "text_source": "inline",
+        "token_count": 512,
+        "heading_path": ["第一章 绪论"],
+        "page_numbers": [1]
+      },
+      "embedding": {
+        "id": "uuid",
+        "model": "Qwen/Qwen3-Embedding-4B",
+        "dimensions": 2560,
+        "vector_preview": [0.0123, -0.0456, 0.0789, -0.0012, 0.0345],
+        "token_count": 512
+      }
+    }
+    // ... 更多 pairs
+  ],
+  "stats": {
+    "total_pairs": 48,
+    "total_chunk_tokens": 24576,
+    "total_embedding_tokens": 24576,
+    "inline_text_count": 45,
+    "file_storage_text_count": 3,
+    "embedding_dimensions": 2560,
+    "embedding_model": "Qwen/Qwen3-Embedding-4B"
+  }
+}</pre>
+  </div>
+
+  <h3>4.4 错误状态</h3>
+
+  <table>
+    <thead>
+      <tr><th>HTTP 状态码</th><th>场景</th><th>响应体 detail</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>404</code></td><td>parsed_document 不存在或不属于当前用户</td><td><code>"Parsed document not found"</code></td></tr>
+      <tr><td><code>404</code></td><td>文档存在但无成功的分块作业</td><td><code>"No succeeded chunk job found for this document"</code></td></tr>
+      <tr><td><code>404</code></td><td>分块作业存在但无成功的向量化作业</td><td><code>"No succeeded embedding job found for this document"</code></td></tr>
+      <tr><td><code>503</code></td><td>当前用户不可用</td><td><code>"Current user is unavailable"</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>设计决策：</strong>当某阶段作业不存在时返回 404 而非空结果。
+    因为这代表 pipeline 不完整，开发者需要明确知道<em>哪个环节</em>断了，
+    而非看到一个"0 条结果"的假成功响应。
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 5. 完整性检查矩阵 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>5. 数据完整性检查矩阵</h2>
+
+<div class="section">
+
+  <p>以下 7 项检查覆盖了「向量 ↔ 分块」映射关系中所有可能的数据异常。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:25px;">#</th>
+        <th>检查项</th>
+        <th>检查逻辑</th>
+        <th>失败意味着</th>
+        <th>严重度</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>chunk_embedding_pairing</strong><br>分块-向量对应关系</td>
+        <td>对每个 embedding JOIN chunk，确认所有 chunk 都有 embedding，所有 embedding 都能找到 chunk。
+            检测孤儿 embedding（有 embedding 但 chunk 被删除）和孤儿 chunk（有 chunk 但没有 embedding）。</td>
+        <td>
+          • 孤儿 embedding：向量化后 chunk 被意外删除<br>
+          • 孤儿 chunk：向量化作业不完整，部分 chunk 未成功向量化
+        </td>
+        <td><span style="color:var(--danger);">🔴 严重</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>dimension_consistency</strong><br>向量维度一致性</td>
+        <td>验证每条 embedding 的 <code>dimensions</code> 字段与 job 声明的维度一致，
+            且 <code>embedding_vector</code> 实际长度与声明维度匹配。</td>
+        <td>可能同一文档中混用了不同维度的嵌入模型，后续检索时余弦相似度计算会出错。</td>
+        <td><span style="color:var(--danger);">🔴 严重</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>sequence_continuity</strong><br>序号连续性</td>
+        <td>验证 <code>sequence_index</code> 从 0 开始连续递增至 N-1（N=chunk_count），
+            无重复、无跳号。</td>
+        <td>序列断裂意味着分块过程中可能丢失或重复了某些块，
+            后续按顺序溯源时会出现错位。</td>
+        <td><span style="color:var(--warn);">🟡 警告</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>chunk_text_availability</strong><br>分块文本可读性</td>
+        <td>遍历所有 chunk，如果 <code>text</code> 非空则直接使用；
+            如果为 NULL 则通过 <code>text_storage_key</code> 从文件系统读取。
+            确认所有 chunk 的文本最终都能成功获取。</td>
+        <td>文件系统存储的 chunk 文本文件被删除、移动或损坏。</td>
+        <td><span style="color:var(--danger);">🔴 严重</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>contextualized_text_availability</strong><br>上下文增强文本可读性</td>
+        <td>同检查 4，但针对 <code>contextualized_text</code> 字段。
+            验证所有 chunk 的上下文增强文本均可成功获取。</td>
+        <td>contextualized_text 文件丢失但普通 text 可能仍在，
+            影响后续 RAG 检索质量但不影响基础功能。</td>
+        <td><span style="color:var(--warn);">🟡 警告</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>token_count_consistency</strong><br>Token 数有效性</td>
+        <td>验证所有 chunk 和 embedding 的 <code>token_count</code> 非 NULL 且 &gt; 0。
+            检查 chunk.token_count 和 embedding.token_count 的一致性
+            （允许少量差异，因为分块 tokenizer ≠ embedding tokenizer）。</td>
+        <td>token_count 为 NULL 或 0 意味着分词过程异常，
+            但不影响向量质量和检索能力。</td>
+        <td><span style="color:var(--muted);">ℹ️ 信息</span></td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><strong>model_consistency</strong><br>嵌入模型一致性</td>
+        <td>验证所有 embedding 记录使用相同的 <code>model</code> 字段值。
+            同一文档的所有向量应来自同一个嵌入模型。</td>
+        <td>混用模型可能导致向量空间不一致，跨 chunk 的相似度比较失去意义。</td>
+        <td><span style="color:var(--danger);">🔴 严重</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>检查结果语义：</strong>单条检查<code>passed: false</code> 并不使 HTTP 响应变为 4xx/5xx。
+    验证端点始终返回 200，将检查结果内嵌在 <code>verification.checks[]</code> 中。
+    这允许前端同时展示所有检查项的状态（通过/失败/警告），
+    而非在第一个失败处就中断。
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 6. 服务层设计 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>6. 服务层设计</h2>
+
+<div class="section">
+
+  <h3>6.1 PipelineVerificationService</h3>
+
+  <div class="diagram">
+    <pre style="font-size:13px;"># backend/app/services/pipeline_verification.py
+
+from dataclasses import dataclass
+from uuid import UUID
+from sqlmodel import Session
+
+@dataclass
+class PipelineVerificationResult:
+    """存取验证的完整结果。"""
+    document: DocumentChainInfo
+    pipeline: PipelineStageInfo
+    verification: VerificationSummary
+    pairs: list[ChunkEmbeddingPair]
+    stats: VerificationStats
+
+class PipelineVerificationService:
+    """流水线存取验证服务。
+
+    职责：给定 parsed_document_id，沿 JOIN 链路取出所有分块-向量 pairs，
+    解析文件系统中的溢出文本，执行完整性检查，返回结构化验证结果。
+    """
+
+    def __init__(
+        self,
+        *,
+        session: Session,
+        chunk_storage: ChunkArtifactStorage,
+        config: EmbeddingConfig,
+    ) -> None: ...
+
+    def verify(self, parsed_document_id: UUID) -> PipelineVerificationResult:
+        """执行完整的存取验证流程。"""
+        # 1. 加载文档链路信息
+        doc_chain = self._load_document_chain(parsed_document_id)
+        # 2. 确认 pipeline 每阶段均成功
+        self._validate_pipeline_complete(doc_chain)
+        # 3. JOIN chunks ↔ embeddings
+        pairs = self._load_chunk_embedding_pairs(doc_chain)
+        # 4. 解析文件系统文本
+        self._resolve_chunk_texts(pairs)
+        # 5. 执行完整性检查
+        checks = self._run_integrity_checks(pairs, doc_chain)
+        # 6. 组装结果
+        return self._build_result(doc_chain, pairs, checks)</pre>
+  </div>
+
+  <h3>6.2 核心查询：chunks ↔ embeddings JOIN</h3>
+
+  <div class="diagram">
+    <pre style="font-size:13px;">def _load_chunk_embedding_pairs(self, doc_chain) -> list[ChunkEmbeddingPair]:
+    """通过 chunk_id JOIN 两张表，按 sequence_index 排序。
+
+    使用 SQLModel/SQLAlchemy 的 ORM 关系加载，
+    避免 N+1 查询 —— 使用 joinedload 或子查询预加载。
+    """
+
+    # 单次查询获取所有分块
+    chunks = self.session.exec(
+        select(DocumentChunk)
+        .where(DocumentChunk.chunk_job_id == doc_chain.chunk_job.id)
+        .order_by(DocumentChunk.sequence_index)
+    ).all()
+
+    # 单次查询获取所有向量
+    embeddings = self.session.exec(
+        select(DocumentEmbedding)
+        .where(DocumentEmbedding.embedding_job_id == doc_chain.embedding_job.id)
+        .order_by(DocumentEmbedding.sequence_index)
+    ).all()
+
+    # 以 chunk_id 为 key 构建映射
+    embedding_by_chunk = {e.chunk_id: e for e in embeddings}
+
+    # 组装 pairs
+    pairs = []
+    for chunk in chunks:
+        emb = embedding_by_chunk.get(chunk.id)
+        pairs.append(ChunkEmbeddingPair(
+            sequence_index=chunk.sequence_index,
+            chunk=chunk,
+            embedding=emb,          # None 时触发"孤儿 chunk"检查
+        ))
+
+    # 反向检查：有无 orphan embedding
+    chunk_ids = {c.id for c in chunks}
+    for emb in embeddings:
+        if emb.chunk_id not in chunk_ids:
+            pairs.append(ChunkEmbeddingPair(
+                sequence_index=emb.sequence_index,
+                chunk=None,         # ← orphan embedding
+                embedding=emb,
+            ))
+
+    return sorted(pairs, key=lambda p: p.sequence_index)</pre>
+  </div>
+
+  <h3>6.3 文件系统文本解析</h3>
+
+  <div class="note">
+    <strong>复用现有组件：</strong>直接使用 <code>ChunkArtifactStorage.path_for()</code> 方法
+    将 <code>text_storage_key</code> 和 <code>contextualized_text_storage_key</code>
+    转换为文件系统路径，然后读取文件内容。
+  </div>
+
+  <div class="diagram">
+    <pre style="font-size:13px;">def _resolve_chunk_texts(self, pairs: list[ChunkEmbeddingPair]) -> None:
+    """解析文件系统中的大文本。
+
+    对于每个 pair：
+    - 如果 chunk.text 非空 → text_source = "inline"
+    - 如果 chunk.text 为 NULL 且有 text_storage_key → 从文件系统读取
+    - 对 contextualized_text 做同样处理
+    """
+    for pair in pairs:
+        if pair.chunk is None:
+            continue
+
+        # 解析普通文本
+        if pair.chunk.text is not None:
+            pair.resolved_text = pair.chunk.text
+            pair.text_source = "inline"
+        elif pair.chunk.text_storage_key is not None:
+            path = self.chunk_storage.path_for(pair.chunk.text_storage_key)
+            pair.resolved_text = path.read_text(encoding="utf-8")
+            pair.text_source = "file"
+
+        # 解析上下文增强文本
+        if pair.chunk.contextualized_text is not None:
+            pair.resolved_contextualized_text = pair.chunk.contextualized_text
+            pair.contextualized_text_source = "inline"
+        elif pair.chunk.contextualized_text_storage_key is not None:
+            path = self.chunk_storage.path_for(
+                pair.chunk.contextualized_text_storage_key
+            )
+            pair.resolved_contextualized_text = path.read_text(encoding="utf-8")
+            pair.contextualized_text_source = "file"</pre>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 7. 前端验证页设计 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>7. 前端验证页设计</h2>
+
+<div class="section">
+
+  <h3>7.1 页面路由</h3>
+
+  <table>
+    <thead>
+      <tr><th>路由</th><th>组件</th><th>描述</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>/verify</code></td><td><code>VerificationView.vue</code></td><td>存取验证页面入口</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 页面布局</h3>
+
+  <div class="diagram">
+    <pre style="font-size:13px;">
+┌──────────────────────────────────────────────────────────────────────┐
+│  🧪 流水线存取验证                                                    │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  选择文档：[下拉列表：已解析文档 ▾]          [执行验证]       │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  📋 文档信息                                                  │   │
+│  │  ┌──────────┐ ┌──────────────┐ ┌────────────┐ ┌───────────┐  │   │
+│  │  │ 文件名    │ │ 原始格式     │ │ 文件大小    │ │ 标题      │  │   │
+│  │  │ AI-...pdf │ │ PDF          │ │ 2.3 MB     │ │ 人工智能..│  │   │
+│  │  └──────────┘ └──────────────┘ └────────────┘ └───────────┘  │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  🔗 Pipeline 链路                                             │   │
+│  │                                                                │   │
+│  │  解析 ✅ ──→ 分块 ✅ ──→ 向量化 ✅                            │   │
+│  │  docling     48 chunks    Qwen3-Embedding-4B / 2560维         │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  📊 验证摘要                                                  │   │
+│  │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐     │   │
+│  │  │ 总体  │ │Pairs │ │维度  │ │文本  │ │Token │ │模型  │     │   │
+│  │  │  ✅   │ │ ✅   │ │ ✅   │ │ ✅   │ │ ✅   │ │ ✅   │     │   │
+│  │  │ 7/7  │ │48/48 │ │2560  │ │可读  │ │一致  │ │一致  │     │   │
+│  │  └──────┘ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘     │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  📝 分块-向量对照表                          共 48 条         │   │
+│  │                                                                │   │
+│  │  #  │ 分块文本 (前 150 字)        │ Token │ 向量预览 (前5维)  │   │
+│  │  ───┼────────────────────────────┼───────┼────────────────── │   │
+│  │  0  │ 第一章 绪论                 │  512  │ [0.0123,-0.0456, │   │
+│  │     │ 人工智能（Artificial       │       │  0.0789,-0.0012, │   │
+│  │     │ Intelligence，简称 AI）...  │       │  0.0345]         │   │
+│  │  ───┼────────────────────────────┼───────┼────────────────── │   │
+│  │  1  │ 在人工智能的发展历程中，    │  498  │ [0.0234, 0.0678, │   │
+│  │     │ 经历了三次浪潮...           │       │ -0.0123, 0.0456, │   │
+│  │     │                            │       │  0.0890]         │   │
+│  │  ───┼────────────────────────────┼───────┼────────────────── │   │
+│  │ ... │ ...                        │ ...   │ ...              │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  [展开全部向量值]  [复制 JSON]  [导出 CSV]                           │
+└──────────────────────────────────────────────────────────────────────┘</pre>
+  </div>
+
+  <h3>7.3 交互流程</h3>
+
+  <ol>
+    <li><strong>页面加载</strong> → 调用 <code>GET /api/uploads/.../parsed-document</code> 获取当前用户的所有已解析文档列表，填充下拉选择器</li>
+    <li><strong>用户选择文档</strong> → 点击「执行验证」</li>
+    <li><strong>加载状态</strong> → 显示骨架屏 + "正在查询数据库并解析文件系统文本…"</li>
+    <li><strong>结果展示</strong> → 渲染文档信息、Pipeline 链路、验证摘要、分块-向量对照表</li>
+    <li><strong>空状态</strong> → 若选中文档无完成的分块/向量化，显示具体哪个阶段缺失</li>
+    <li><strong>错误状态</strong> → 若 API 返回 4xx/5xx，显示错误详情并建议下一步操作</li>
+  </ol>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 8. 文件清单 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>8. 文件清单与变更范围</h2>
+
+<div class="section">
+
+  <table>
+    <thead>
+      <tr><th>文件</th><th>操作</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="3"><strong>后端新增</strong></td>
+      </tr>
+      <tr>
+        <td><code>backend/app/services/pipeline_verification.py</code></td>
+        <td>✅ 新建</td>
+        <td>
+          <code>PipelineVerificationService</code> 核心服务类<br>
+          包含：文档链加载、chunk-embedding JOIN、文本解析、完整性检查、结果组装
+        </td>
+      </tr>
+      <tr>
+        <td><code>backend/app/api/routes/pipeline_verification.py</code></td>
+        <td>✅ 新建</td>
+        <td>
+          <code>GET /api/parsed-documents/{id}/pipeline-verification</code><br>
+          路由处理函数、权限校验、错误映射
+        </td>
+      </tr>
+      <tr>
+        <td><code>backend/app/schemas/pipeline_verification.py</code></td>
+        <td>✅ 新建</td>
+        <td>
+          Pydantic response models：<br>
+          <code>PipelineVerificationResponse</code>、
+          <code>DocumentChainInfo</code>、
+          <code>PipelineStageInfo</code>、
+          <code>VerificationSummary</code>、
+          <code>ChunkEmbeddingPairResponse</code>、
+          <code>VerificationStats</code>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3"><strong>后端修改</strong></td>
+      </tr>
+      <tr>
+        <td><code>backend/app/api/router.py</code></td>
+        <td>🔧 修改</td>
+        <td>注册 <code>pipeline_verification.router</code></td>
+      </tr>
+      <tr>
+        <td colspan="3"><strong>前端新增</strong></td>
+      </tr>
+      <tr>
+        <td><code>front/src/api/pipelineVerification.ts</code></td>
+        <td>✅ 新建</td>
+        <td>API 客户端：<code>fetchPipelineVerification(parsedDocumentId)</code></td>
+      </tr>
+      <tr>
+        <td><code>front/src/views/VerificationView.vue</code></td>
+        <td>✅ 新建</td>
+        <td>验证页面组件，包含文档选择器、摘要面板、检查列表、对照表</td>
+      </tr>
+      <tr>
+        <td colspan="3"><strong>前端修改</strong></td>
+      </tr>
+      <tr>
+        <td><code>front/src/router/index.ts</code></td>
+        <td>🔧 修改</td>
+        <td>添加 <code>/verify</code> 路由</td>
+      </tr>
+      <tr>
+        <td colspan="3"><strong>测试文件</strong></td>
+      </tr>
+      <tr>
+        <td><code>backend/tests/test_pipeline_verification.py</code></td>
+        <td>✅ 新建</td>
+        <td>后端单元测试 + 集成测试</td>
+      </tr>
+      <tr>
+        <td><code>front/src/views/__tests__/VerificationView.spec.ts</code></td>
+        <td>✅ 新建</td>
+        <td>前端组件测试</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>不涉及：</strong>数据库 migration（纯 SELECT 操作）、Docker 配置、环境变量、模型文件。
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 9. 测试策略 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>9. 测试策略</h2>
+
+<div class="section">
+
+  <h3>9.1 后端测试</h3>
+
+  <table>
+    <thead>
+      <tr><th>测试类别</th><th>测试内容</th><th>验证点</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>正常路径</strong></td>
+        <td>完整 pipeline 文档的验证请求</td>
+        <td>200, 所有检查 passed, pairs 数量 = chunk_count</td>
+      </tr>
+      <tr>
+        <td><strong>边界情况</strong></td>
+        <td>文档仅有一个 chunk</td>
+        <td>sequence_index 仅含 0，连续性检查通过</td>
+      </tr>
+      <tr>
+        <td><strong>边界情况</strong></td>
+        <td>chunk 文本在文件系统中（text=NULL, text_storage_key 有效）</td>
+        <td>文件正确读取，resolved_text 非空，text_source="file"</td>
+      </tr>
+      <tr>
+        <td><strong>边界情况</strong></td>
+        <td>分块数量超过单页限制</td>
+        <td>全量返回，不做分页（pairs 可包含数百条）</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>parsed_document 不存在</td>
+        <td>404 "Parsed document not found"</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>存在 parsed_document 但无 chunk_job</td>
+        <td>404 "No succeeded chunk job found"</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>有 chunk_job 但无 embedding_job</td>
+        <td>404 "No succeeded embedding job found"</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>chunk_job 存在但状态为 failed</td>
+        <td>404 "No succeeded chunk job found"</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>文件系统中的 chunk 文本文件被删除</td>
+        <td>200 但 chunk_text_availability 检查 failed，明确报告缺失文件</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>存在孤儿 embedding（chunk 已删除）</td>
+        <td>200 但 chunk_embedding_pairing 检查 failed</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>存在孤儿 chunk（没有 embedding）</td>
+        <td>200 但 chunk_embedding_pairing 检查 failed</td>
+      </tr>
+      <tr>
+        <td><strong>异常处理</strong></td>
+        <td>sequence_index 不连续（跳号）</td>
+        <td>200 但 sequence_continuity 检查 failed，报告缺失序号</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>9.2 前端测试</h3>
+
+  <table>
+    <thead>
+      <tr><th>测试类别</th><th>测试内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>渲染</td><td>文档选择器正确渲染、验证按钮存在</td></tr>
+      <tr><td>加载状态</td><td>点击验证后显示加载指示器</td></tr>
+      <tr><td>成功状态</td><td>API 返回后正确渲染摘要卡片和对照表格</td></tr>
+      <tr><td>空状态</td><td>无文档时显示空状态提示</td></tr>
+      <tr><td>错误状态</td><td>API 404 时显示具体缺失阶段</td></tr>
+      <tr><td>检查状态</td><td>passed/failed/warning 三种状态有不同视觉呈现</td></tr>
+    </tbody>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 10. 与后续阶段的衔接 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>10. 与后续阶段的衔接</h2>
+
+<div class="section">
+
+  <div class="diagram">
+    <pre style="font-size:13px;">
+  当前阶段 (本次)              下一阶段                  下下阶段              后续阶段
+  ════════════════            ══════════════            ════════════          ══════════════
+  ┌──────────────┐           ┌──────────────┐          ┌──────────────┐       ┌──────────────┐
+  │ Pipeline     │──────────▶│  Semantic    │─────────▶│  RAG Q&A     │──────▶│  Knowledge   │
+  │ Verification │           │  Search      │          │  Pipeline    │       │  Graph       │
+  ├──────────────┤           ├──────────────┤          ├──────────────┤       ├──────────────┤
+  │ • 向量取出   │           │ • 用户查询   │          │ • LLM 生成   │       │ • 实体抽取   │
+  │ • 分块还原   │           │ • 查询向量化 │          │ • 引用标注   │       │ • 关系推理   │
+  │ • 完整性检查 │           │ • pgvector   │          │ • 溯源展示   │       │ • 图谱检索   │
+  │ • 可视化验证 │           │   ANN 检索   │          │ • 对话历史   │       │ • 混合检索   │
+  └──────────────┘           └──────────────┘          └──────────────┘       └──────────────┘
+       │                          │                         │
+       │                          │                         │
+       ▼                          ▼                         ▼
+  验证存取链路              使用本阶段的                   使用本阶段的
+  无 bug 后进入             PipelineVerificationService    PipelineVerificationService
+  语义搜索开发              作为回归测试工具               作为数据质量监控</pre>
+  </div>
+
+  <div class="decision">
+    <strong>核心价值：</strong><code>PipelineVerificationService</code> 不仅是当前阶段的验证工具，
+    更是后续语义搜索、RAG 阶段的<strong>回归测试基础设施</strong>。
+    每次修改分块策略、换用嵌入模型、或调整 pipeline 后，
+    都可以重新运行验证来确保「向量 ↔ 分块内容」映射未被破坏。
+  </div>
+
+  <h3>直接复用场景</h3>
+
+  <ul>
+    <li><strong>语义搜索 debug：</strong>搜索返回 chunk_id 后，用本服务的 JOIN 逻辑快速还原文本内容，确认搜索结果的文本确实是用户问题相关的</li>
+    <li><strong>RAG 溯源：</strong>生成回答时，用本服务的分块-向量对照逻辑构建引用来源</li>
+    <li><strong>换模型验证：</strong>切换到新的 embedding 模型后，用本服务确认所有向量维度一致、pairing 完整</li>
+    <li><strong>数据迁移验证：</strong>pgvector schema 变更后，用本服务做 smoke test</li>
+  </ul>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 11. 实现任务 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>11. 实现任务（建议拆分）</h2>
+
+<div class="section">
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>任务</th><th>范围</th><th>验证命令</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>创建 Schema 层</strong><br>
+          定义 <code>PipelineVerificationResponse</code> 及其嵌套模型</td>
+        <td><code>backend/app/schemas/pipeline_verification.py</code></td>
+        <td><code>uv run ruff check .</code></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>创建 Service 层</strong><br>
+          实现 <code>PipelineVerificationService</code>：<br>
+          · 文档链加载<br>
+          · chunk-embedding JOIN<br>
+          · 文件系统文本解析<br>
+          · 完整性检查<br>
+          · 结果组装</td>
+        <td><code>backend/app/services/pipeline_verification.py</code></td>
+        <td><code>uv run pytest tests/test_pipeline_verification.py</code></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>创建 Route 层</strong><br>
+          实现 <code>GET /api/parsed-documents/{id}/pipeline-verification</code></td>
+        <td><code>backend/app/api/routes/pipeline_verification.py</code><br>
+          <code>backend/app/api/router.py</code></td>
+        <td><code>uv run pytest -k "pipeline_verification"</code></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>编写后端测试</strong>（TDD：先红后绿）<br>
+          覆盖正常路径、所有边界情况、所有异常分支</td>
+        <td><code>backend/tests/test_pipeline_verification.py</code></td>
+        <td>RED: <code>uv run pytest</code> → FAIL<br>GREEN: 实现后 → PASS</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>创建前端 API 客户端</strong></td>
+        <td><code>front/src/api/pipelineVerification.ts</code></td>
+        <td><code>npm run lint</code></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>创建 VerificationView 页面</strong><br>
+          包含文档选择器、验证摘要、检查列表、对照表</td>
+        <td><code>front/src/views/VerificationView.vue</code><br>
+          <code>front/src/router/index.ts</code></td>
+        <td><code>npm run lint && npm run build</code></td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><strong>编写前端测试</strong></td>
+        <td><code>front/src/views/__tests__/VerificationView.spec.ts</code></td>
+        <td><code>npm run test</code></td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td><strong>端到端验证</strong><br>
+          上传真实文档 → 等待 pipeline 完成 → 调用验证 API → 确认全部通过</td>
+        <td>浏览器 / curl</td>
+        <td>手动 smoke test</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>TDD 提醒：</strong>任务 2-4 应遵循项目 TDD 规范 —— 先写红测试（仅输出测试代码并停在评审点），
+    用户确认后进入绿测试阶段编写最小实现，最后重构。
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 12. 风险与注意事项 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>12. 风险与注意事项</h2>
+
+<div class="section">
+
+  <div class="grid">
+    <div class="risk">
+      <strong>⚠️ 大文档性能</strong><br>
+      数百个 chunk 的文档会导致 pairs 数组较大（每个 pair 包含文本 + 向量预览）。
+      建议对向量预览只返回前 5 维而非全部 2560 维。完整向量值可通过点击单条展开查看。
+    </div>
+    <div class="risk">
+      <strong>⚠️ 文件系统依赖</strong><br>
+      验证服务依赖 <code>ChunkArtifactStorage</code> 读取文件系统。
+      如果 <code>storage/chunks/</code> 目录被手动清理或迁移后路径变化，
+      文本解析会失败。应确保 <code>STORAGE_DIR</code> 配置正确。
+    </div>
+    <div class="note">
+      <strong>💡 纯只读操作</strong><br>
+      本服务不修改任何数据。当发现完整性检查失败时，
+      服务不会自动修复 —— 它只报告问题。修复应通过重新触发 pipeline 流程完成。
+    </div>
+    <div class="note">
+      <strong>💡 可扩展性</strong><br>
+      如果未来需要验证多个文档，可以在前端循环调用验证 API。
+      不建议在后端实现批量验证（N+1 查询问题），除非明确需要。
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- Footer -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div style="margin-top:40px; padding-top:20px; border-top:1px solid var(--border); color:var(--muted); font-size:14px;">
+  <p>
+    <strong>方案状态：</strong>草稿 · 待评审<br>
+    <strong>下一步：</strong>用户确认方案后，通过 <code>/openspec-propose</code> 创建正式变更提案，进入实现阶段。
+  </p>
+  <p style="margin-bottom:0;">
+    本方案遵循 knowra 项目章程（AGENTS.md）和 OpenSpec spec-driven 开发治理规范。
+  </p>
+</div>
+
+</main>
+</body>
+</html>
