@@ -6,6 +6,7 @@ from app.api.routes import (
     document_parsing,
     health,
     pipeline_verification,
+    search,
     uploads,
     users,
 )
@@ -18,3 +19,4 @@ api_router.include_router(document_chunking.router)
 api_router.include_router(document_embedding.router)
 api_router.include_router(pipeline_verification.router)
 api_router.include_router(users.router)
+api_router.include_router(search.router)

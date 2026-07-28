@@ -77,6 +77,25 @@ class Settings(BaseSettings):
     document_embedding_batch_size: int = 100
     document_embedding_max_retries: int = 3
     document_embedding_request_timeout: float = 60.0
+    chat_api_base_url: str = "https://newapi.bytcloud.org/v1"
+    chat_api_key: str = ""
+    chat_model: str = "qwen3.5-plus"
+    chat_temperature: float = 0.1
+    chat_max_tokens: int = 1024
+    chat_request_timeout: float = 60.0
+    chat_max_retries: int = 3
+    # 语义搜索相似度阈值（余弦距离，0-2。0=完全相同，2=完全相反）
+    # 仅当分块与查询的余弦距离 <= 此阈值时才纳入检索结果。
+    # 设 0 表示禁用过滤。推荐值 0.4-0.6（取决于嵌入模型）。
+    # 较低的值 = 更严格 = 更少幻觉，但可能漏掉部分相关内容。
+    search_similarity_threshold: float = 0.5
+
+    # 语义搜索最低分数阈值（余弦距离，0-2）。
+    # 检索结果中最优分块（最低余弦距离）必须 <= 此阈值，否则视为"无相关结果"，
+    # 返回空结果且不调用 LLM。这是防止 LLM 基于弱相关内容产生幻觉的第二道防线。
+    # 应设置得比 search_similarity_threshold 更严格（值更小）。
+    # 设 0 表示禁用此检查。
+    search_min_score_threshold: float = 0.4
     document_model_bootstrap_enabled: bool = True
     document_model_bootstrap_strategy: str = "download_missing"
     document_model_bootstrap_failure_policy: str = "degraded"

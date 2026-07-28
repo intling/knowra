@@ -825,7 +825,13 @@ onMounted(() => {
             to="/verify"
             class="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 shadow-sm transition hover:border-zinc-400 hover:text-zinc-900"
           >
-            流水线验证
+            流程验证
+          </router-link>
+          <router-link
+            to="/chat"
+            class="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 shadow-sm transition hover:border-zinc-400 hover:text-zinc-900"
+          >
+            对话验证
           </router-link>
           <div
             class="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 shadow-sm"

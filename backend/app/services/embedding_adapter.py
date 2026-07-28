@@ -1,3 +1,4 @@
+import random
 import time
 from dataclasses import dataclass
 
@@ -127,7 +128,7 @@ class EmbeddingAdapter:
                 if not self._should_retry(exc, attempt):
                     break
                 if attempt < self.config.max_retries:
-                    delay = 2**attempt  # 1s, 2s, 4s, …
+                    delay = self._compute_delay(exc, attempt)
                     time.sleep(delay)
 
         raise self._wrap_error(last_exception)
@@ -141,13 +142,55 @@ class EmbeddingAdapter:
         if isinstance(exception, APITimeoutError):
             return True
 
-        # Server errors (5xx) — retry.
-        if isinstance(exception, APIStatusError):
-            return 500 <= exception.status_code < 600
-
         # Connection errors (DNS, TCP, TLS) — retry.
-        # Client errors (4xx) and everything else — fail fast.
-        return isinstance(exception, APIConnectionError)
+        if isinstance(exception, APIConnectionError):
+            return True
+
+        if isinstance(exception, APIStatusError):
+            # 429 Rate Limit and 5xx — temporary, retry.
+            # Other 4xx — permanent, fail fast.
+            return exception.status_code == 429 or 500 <= exception.status_code < 600
+
+        # Unknown errors — fail fast (don't retry what we don't understand).
+        return False
+
+    def _compute_delay(self, exception: Exception, attempt: int) -> float:
+        """Compute the backoff delay for *attempt*, with jitter and upper cap.
+
+        For 429 responses that include a ``Retry-After`` header, the server's
+        suggested wait is used (clamped to [0.5, 60] seconds).  Otherwise an
+        exponential backoff with full jitter is applied::
+
+            delay = random.uniform(0, min(2 ** attempt, 60))
+
+        The 60-second upper cap prevents pathological wait times when
+        ``max_retries`` is configured to a large value.
+        """
+        if isinstance(exception, APIStatusError) and exception.status_code == 429:
+            retry_after = self._parse_retry_after(exception)
+            if retry_after is not None:
+                return max(0.5, min(retry_after, 60.0))
+
+        # Full jitter — avoids thundering herd when multiple clients retry
+        # simultaneously (ref: AWS Architecture Blog — "Exponential Backoff
+        # and Jitter").
+        return random.uniform(0, min(2**attempt, 60.0))
+
+    @staticmethod
+    def _parse_retry_after(exception: APIStatusError, /) -> float | None:
+        """Extract ``Retry-After`` seconds from the response headers.
+
+        Returns ``None`` when the header is absent or unparseable.
+        """
+        headers: dict = getattr(exception.response, "headers", {}) or {}
+        value = headers.get("Retry-After") or headers.get("retry-after")
+        if value is None:
+            return None
+        # Prefer integer seconds (RFC 7231 §7.1.3).
+        try:
+            return float(value)
+        except ValueError, TypeError:
+            return None
 
     def _validate_response(self, response: object, *, expected_count: int) -> list[EmbeddingResult]:
         """Inspect the API response and raise if the payload is inconsistent."""
