@@ -10,6 +10,9 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app.core.config import Settings
 from app.main import create_app
+from app.models.document_parsing import DocumentParseJob
+from app.models.uploaded_file import UploadedFile
+from app.models.user import User
 from app.services.document_model_bootstrap import DocumentModelBootstrapError
 
 
@@ -169,3 +172,48 @@ def test_app_lifespan_logs_graceful_shutdown_events(monkeypatch) -> None:
     messages = [event for event, _fields in logger.events]
     assert "Application graceful shutdown started" in messages
     assert "Application graceful shutdown completed" in messages
+
+
+# 测试进程被 kill -9 / OOM 等非正常终止后残留的 queued/running 解析作业，
+# 会在下一次应用启动时（lifespan 收尾阶段）被标记为 failed。
+# 该测试防止孤儿作业永久卡住 rechunk/re-embed 的 409 冲突检查。
+def test_app_lifespan_reconciles_orphaned_running_job_left_by_ungraceful_shutdown() -> None:
+    app = create_app(Settings(_env_file=None))
+    app.state.document_model_bootstrap_service_factory = lambda: FakeBootstrapService()
+    app.state.document_model_runtime_factory = lambda readiness: FakeRuntime()
+    install_isolated_shutdown_session_factory(app)
+
+    with app.state.application_shutdown_session_factory() as session:
+        user = User(display_name="Orphan Owner", status="active")
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+        upload = UploadedFile(
+            owner_user_id=user.id,
+            original_filename="notes.pdf",
+            content_type="application/pdf",
+            byte_size=10,
+            storage_key=f"uploads/{user.id}/orphan/original.pdf",
+            status="stored",
+        )
+        session.add(upload)
+        session.commit()
+        session.refresh(upload)
+
+        stuck_job = DocumentParseJob(
+            uploaded_file_id=upload.id,
+            owner_user_id=user.id,
+            status="running",
+        )
+        session.add(stuck_job)
+        session.commit()
+        session.refresh(stuck_job)
+        stuck_job_id = stuck_job.id
+
+    # 收尾发生在 lifespan 启动阶段（yield 之前），此处尚未发出任何请求。
+    with TestClient(app), app.state.application_shutdown_session_factory() as session:
+        reconciled = session.get(DocumentParseJob, stuck_job_id)
+        assert reconciled.status == "failed"
+        assert reconciled.error_code == "process_shutdown"
+        assert reconciled.finished_at is not None

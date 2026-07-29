@@ -31,6 +31,7 @@ from app.core.shutdown import (  # noqa: E402
     ApplicationShutdownCoordinator,
     ApplicationShutdownState,
     default_shutdown_session_factory,  # noqa: E402
+    reconcile_stale_jobs_at_startup,
 )
 from app.middleware.trace import TraceMiddleware  # noqa: E402
 from app.services.document_model_bootstrap import DocumentModelBootstrapService  # noqa: E402
@@ -58,6 +59,14 @@ async def lifespan(app: FastAPI):
     ):
         app.state.application_shutdown_state = ApplicationShutdownState()
         app.state.application_shutdown_coordinator = None
+
+    if not getattr(app.state, "startup_job_reconciliation_done", False):
+        # 修复上一个进程非优雅退出（kill -9 / OOM 等）遗留的 queued/running 任务，
+        # 否则它们会永久卡住后续 rechunk/re-embed 的 409 冲突检查。
+        reconcile_stale_jobs_at_startup(
+            session_factory=app.state.application_shutdown_session_factory
+        )
+        app.state.startup_job_reconciliation_done = True
 
     if not hasattr(app.state, "document_model_readiness"):
         bootstrap_factory = app.state.document_model_bootstrap_service_factory

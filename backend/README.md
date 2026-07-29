@@ -297,9 +297,9 @@ are written under `DOCUMENT_CHUNK_ARTIFACT_STORAGE_DIR`, and the database stores
 the corresponding storage key. Chunking never modifies existing
 `document_segments`.
 
-This version only produces durable, previewable chunks. It does not create
-embeddings, write pgvector chunk indexes, enable semantic retrieval, run RAG
-question answering, or generate final citations.
+This version produces durable, previewable chunks that feed directly into
+embedding and semantic search (see below). Chunking itself does not create
+embeddings or run retrieval — that happens in the next two pipeline stages.
 
 ### Dispatcher limitations
 
@@ -315,9 +315,10 @@ When document chunking succeeds and `DOCUMENT_EMBEDDING_ENABLED=true`, the
 backend automatically creates a vector embedding job. The embedding service
 takes each chunk's `contextualized_text` (or `text` as fallback) and converts it
 into a dense floating-point vector by calling a cloud embedding API
-(OpenAI-compatible interface). Embeddings are stored as JSON float arrays in
-`document_embeddings`; this version does **not** write pgvector index columns or
-implement semantic retrieval.
+(OpenAI-compatible interface). Embeddings are stored both as JSON float arrays
+and in a pgvector `embedding_vector` column on `document_embeddings`, which
+`POST /api/search` (see "Semantic search & RAG generation" below) queries
+directly via cosine distance.
 
 ### API endpoints
 
@@ -381,10 +382,57 @@ the shutdown sequence.
 
 ### Limitations
 
-This version stores embeddings as JSON float arrays. It does not support
-pgvector indexing, semantic search, RAG question answering, or any retrieval
-workflow. Embedding vectors are persisted for future semantic features but are
-not queryable beyond the REST endpoints listed above.
+Embeddings are stored both as JSON float arrays (`embedding_json`, queryable via
+the REST endpoints above) and as a pgvector `embedding_vector` column used by
+semantic search. There is no ANN index (ivfflat/hnsw) on that column yet —
+`POST /api/search` runs an exact cosine-distance scan, which is fine at current
+data volumes but will need an index as the corpus grows.
+
+## Semantic search & RAG generation
+
+`POST /api/search` is the retrieval + generation entry point of the RAG
+pipeline: it embeds the natural-language query, runs a pgvector cosine-distance
+search across **all** vectorised chunks, assembles a source-annotated prompt
+from the top matches, and calls the chat LLM to produce a Markdown answer with
+citations back to document name / heading path / page numbers.
+
+### API endpoint
+
+- `POST /api/search` — body: `query` (1–2000 chars), `top_k` (1–50, default 5).
+  Returns the ranked chunks, the generated `answer`, token usage
+  (`answer_tokens`), the exact `prompt_messages` sent to the LLM (for
+  debugging/preview), and `generation_error` when generation degraded instead
+  of failing outright.
+  - `404` — no vectorised documents exist yet
+  - `502` — query embedding call failed
+  - `503` — chat model or API key not configured
+
+### Search configuration
+
+- `CHAT_API_BASE_URL`, `CHAT_API_KEY`, `CHAT_MODEL`, `CHAT_TEMPERATURE`,
+  `CHAT_MAX_TOKENS`, `CHAT_REQUEST_TIMEOUT`, `CHAT_MAX_RETRIES`: OpenAI-compatible
+  chat completion endpoint used to generate the answer
+- `SEARCH_SIMILARITY_THRESHOLD`: max cosine distance (0–2) for a chunk to be
+  considered relevant; `0` disables the filter, default `0.5`
+- `SEARCH_MIN_SCORE_THRESHOLD`: the best-ranked chunk must be at or below this
+  cosine distance or the whole result set is treated as "no match" and the LLM
+  is not called; `0` disables the check, default `0.4`
+
+When no chunk passes the thresholds, or no embeddings exist at all, the backend
+returns a fixed refusal phrase without calling the LLM — this is a deliberate
+anti-hallucination guard, not an error.
+
+### Limitations
+
+- Search runs across **all** vectorised documents in the database with no
+  per-owner filtering, even though `document_embeddings.owner_user_id` exists
+  and is indexed. This is harmless today because the backend only has a single
+  bootstrap user (see "Current user" above), but it must be scoped by owner
+  before real multi-user/team support ships.
+- Streaming responses are not implemented (`ChatAdapter.generate(stream=True)`
+  raises `NotImplementedError`); the endpoint always returns a complete answer.
+- No query rewriting, HyDE, or reranking — the raw query embedding is matched
+  directly against chunk embeddings.
 
 ## Quality gates
 
