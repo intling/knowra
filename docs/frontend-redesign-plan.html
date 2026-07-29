@@ -334,12 +334,11 @@
 <div class="grid-2">
   <div class="card">
     <h3>🎯 设计目标</h3>
-    <p>将现有三页面（首页文件上传、对话验证、流程验证）重构为<strong>以对话为中心</strong>的两页面结构，新增侧边栏提供对话历史与知识库信息展示。</p>
+    <p>将现有三页面（首页文件上传、对话验证、流程验证）重构为<strong>以对话为中心</strong>的两页面结构，新增侧边栏提供对话历史展示。</p>
     <ul style="padding-left:20px;color:var(--zinc-600);">
       <li>对话与文件上传一体化（内嵌附件上传）</li>
-      <li>新增左侧边栏：新建对话、知识库信息、历史对话</li>
+      <li>新增左侧边栏：新建对话、历史对话</li>
       <li>流程验证保留独立页面，统一新视觉风格</li>
-      <li>知识库暂展示基本信息（文件数），批量管理后续扩展</li>
     </ul>
   </div>
   <div class="card">
@@ -370,7 +369,7 @@
         <td><code>ChatLayout.vue</code></td>
         <td>
           左右分栏布局。<br>
-          左侧边栏：新建对话、知识库信息展示、历史对话列表。<br>
+          左侧边栏：新建对话、历史对话列表。<br>
           右侧对话区：对话消息流 + 内嵌文件上传 + 对话召回验证（AnswerPanel / ResultsPanel / PromptPreview）。
         </td>
       </tr>
@@ -408,10 +407,7 @@
 │  │ + 新建对话│ │   │                                                  │  │
 │  └──────────┘ │   │  空状态：欢迎语 + 提示词建议                       │  │
 │               │   │                                                  │  │
-│  ─── 知识库 ──│   └──────────────────────────────────────────────────┘  │
-│  📂 文档 (12) │                                                          │
-│               │   ┌──────────────────────────────────────────────────┐  │
-│  ─── 对话 ─── │   │  👤 用户问题                                      │  │
+│  ─── 对话 ─── │   └──────────────────────────────────────────────────┘  │
 │  ├ 对话 1     │   │                                                  │  │
 │  ├ 对话 2     │   │  🤖 AI 回答 (AnswerPanel)                        │  │
 │  └ 对话 3     │   │  📊 检索结果 (ResultsPanel, 可折叠)               │  │
@@ -467,7 +463,6 @@
 │   │   ├── <span class="new">SidebarHeader.vue</span> <span class="new">[新增：Logo + 新建对话按钮]</span>
 │   │   ├── <span class="new">ConversationList.vue</span> <span class="new">[新增：历史对话列表]</span>
 │   │   │   └── <span class="new">ConversationItem.vue</span> <span class="new">[新增：单条对话条目]</span>
-│   │   └── <span class="new">KnowledgeInfo.vue</span> <span class="new">[新增：知识库信息展示]</span>
 │   └── <span class="new">MainPanel.vue</span> <span class="new">[新增：右侧主区域容器]</span>
 │       ├── <span class="new">ChatArea.vue</span> <span class="new">[新增：对话消息流]</span>
 │       │   ├── <span class="new">WelcomeView.vue</span> <span class="new">[新增：空状态欢迎页]</span>
@@ -491,8 +486,8 @@
   <tbody>
     <tr>
       <td><span class="badge badge-new">新增</span></td>
-      <td>10</td>
-      <td>ChatLayout, AppSidebar, SidebarHeader, ConversationList, ConversationItem, KnowledgeInfo, MainPanel, ChatArea, WelcomeView, UserMessage</td>
+      <td>9</td>
+      <td>ChatLayout, AppSidebar, SidebarHeader, ConversationList, ConversationItem, MainPanel, ChatArea, WelcomeView, UserMessage</td>
     </tr>
     <tr>
       <td><span class="badge badge-keep">保留</span></td>
@@ -532,12 +527,6 @@
 │  │  + 新建对话   │  │     全宽按钮，品牌色
 │  └──────────────┘  │
 │                    │
-│  ─── 知识库 ───── │   ← 分区标题
-│                    │
-│  ┌──────────────┐  │
-│  │ 📂 文档  12   │  │   ← 知识库信息展示
-│  └──────────────┘  │
-│                    │
 │  ─── 对话历史 ──── │   ← 分区标题
 │                    │
 │  ┌──────────────┐  │
@@ -566,17 +555,6 @@
 </pre>
 </div>
 
-<h3>5.2 知识库信息展示</h3>
-
-<div class="card">
-  <h3>📂 知识库</h3>
-  <p>侧边栏中展示知识库基本信息（文件数），<strong>暂不提供单独的批量上传/删除管理页面</strong>，后续再扩展。</p>
-  <div class="callout info">
-    <strong>当前范围：</strong>仅在侧边栏展示知识库中文档数量等概要信息。对话历史使用 <code>localStorage</code> 本地存储。
-  </div>
-</div>
-
-
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- 6. 对话区详细设计 -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
@@ -592,7 +570,6 @@
       <li>居中欢迎语："今天想了解什么？"</li>
       <li>副标题引导使用</li>
       <li>可选：显示 3-4 个推荐问题</li>
-      <li>可选：知识库为空时显示上传引导</li>
     </ul>
   </div>
   <div class="card">
@@ -650,7 +627,7 @@
 </table>
 
 <div class="callout">
-  <strong>设计要点：</strong>对话区的文件上传是"轻量快捷上传"，适用于对话中临时引用资料。知识库信息的详细管理功能后续再扩展。
+  <strong>设计要点：</strong>对话区的文件上传是"轻量快捷上传"，适用于对话中临时引用资料。
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
@@ -815,7 +792,7 @@
     </tr>
     <tr>
       <td><strong>新增：</strong>activeView</td>
-      <td>主面板当前视图（chat | knowledge）</td>
+      <td>主面板当前视图（chat）</td>
     </tr>
     <tr>
       <td rowspan="3"><code>useUserStore</code> <span class="badge badge-keep">保留</span></td>
@@ -851,20 +828,6 @@
       <td>renameConversation(id, title)</td>
       <td>重命名对话</td>
     </tr>
-    <tr>
-      <td rowspan="2"><code>useKnowledgeStore</code> <span class="badge badge-new">新增</span></td>
-      <td>files: KnowledgeFile[]</td>
-      <td>知识库文件列表</td>
-    </tr>
-    <tr>
-      <td>selectedFileIds: Set&lt;string&gt;</td>
-    </tr>
-    <tr>
-    </tr>
-    <tr>
-      <td>fetchFiles()</td>
-      <td>获取知识库文件列表</td>
-    </tr>
   </tbody>
 </table>
 
@@ -881,17 +844,6 @@
   </thead>
   <tbody>
     <tr>
-      <td rowspan="2"><code>api/knowledge.ts</code> <span class="badge badge-new">新增</span></td>
-      <td><code>/api/knowledge/files</code></td>
-      <td>GET</td>
-      <td>获取知识库文件列表（分页、搜索）</td>
-    </tr>
-    <tr>
-      <td><code>/api/knowledge/stats</code></td>
-      <td>GET</td>
-      <td>知识库统计（文件数）</td>
-    </tr>
-    <tr>
       <td rowspan="2"><code>api/conversations.ts</code> <span class="badge badge-new">新增</span></td>
       <td><code>/api/conversations</code></td>
       <td>GET/POST</td>
@@ -906,7 +858,7 @@
 </table>
 
 <div class="callout warn">
-  <strong>注意：</strong>对话管理初期使用 Pinia + localStorage 本地存储，后续根据需要迁移到后端 API。知识库批量上传/删除等管理功能暂不实现，后续再扩展。
+  <strong>注意：</strong>对话管理初期使用 Pinia + localStorage 本地存储，后续根据需要迁移到后端 API。
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
@@ -926,7 +878,6 @@
 │   ├── <span class="file-keep">embedding.ts</span>            <span class="file-keep">[保留]</span>
 │   ├── <span class="file-keep">search.ts</span>               <span class="file-keep">[保留]</span>
 │   ├── <span class="file-keep">pipelineVerification.ts</span>  <span class="file-keep">[保留]</span>
-│   ├── <span class="file-new">knowledge.ts</span>            <span class="file-new">[新增] 知识库查询</span>
 │   └── <span class="file-new">conversations.ts</span>        <span class="file-new">[新增] 对话管理</span>
 │
 ├── <span class="dir">components/</span>
@@ -943,7 +894,6 @@
 │   │   ├── <span class="file-new">SidebarHeader.vue</span>   <span class="file-new">[新增] Logo + 新建按钮</span>
 │   │   ├── <span class="file-new">ConversationList.vue</span><span class="file-new">[新增] 历史对话列表</span>
 │   │   ├── <span class="file-new">ConversationItem.vue</span><span class="file-new">[新增] 单条对话条目</span>
-│   │   └── <span class="file-new">KnowledgeInfo.vue</span><span class="file-new">[新增] 知识库信息展示</span>
 │   ├── <span class="dir">chat/</span>                        <span class="file-new">[新增目录]</span>
 │   │   ├── <span class="file-new">WelcomeView.vue</span>     <span class="file-new">[新增] 空状态欢迎页</span>
 │   │   └── <span class="file-new">UserMessage.vue</span>     <span class="file-new">[新增] 用户消息气泡</span>
@@ -958,7 +908,6 @@
 │   ├── <span class="file-keep">app.ts</span>                  <span class="file-keep">[保留+扩展]</span>
 │   ├── <span class="file-keep">user.ts</span>                 <span class="file-keep">[保留]</span>
 │   ├── <span class="file-new">chat.ts</span>                  <span class="file-new">[新增] 对话状态管理</span>
-│   └── <span class="file-new">knowledge.ts</span>            <span class="file-new">[新增] 知识库状态管理</span>
 │
 ├── <span class="dir">router/</span>
 │   └── <span class="file-refactor">index.ts</span>           <span class="file-refactor">[重构] 精简路由</span>
@@ -1007,14 +956,12 @@
       <td>
         1. ConversationList + ConversationItem<br>
         2. useChatStore（对话状态管理）<br>
-        3. KnowledgeInfo（知识库信息展示）<br>
-        4. 新建对话、切换对话、删除对话功能（localStorage 存储）
+        3. 新建对话、切换对话、删除对话功能（localStorage 存储）
       </td>
       <td>
         <code>ConversationList.vue</code><br>
         <code>ConversationItem.vue</code><br>
-        <code>KnowledgeInfo.vue</code><br>
-        <code>stores/chat.ts</code><br>\n        <code>stores/knowledge.ts</code>
+        <code>stores/chat.ts</code>
       </td>
     </tr>
     <tr>
@@ -1051,7 +998,6 @@
     <h3>⚠️ 待确认</h3>
     <ul style="padding-left:18px;color:var(--zinc-600);">
       <li><strong>对话持久化：</strong>对话历史暂用 localStorage 存储，后续根据需要迁移到后端。</li>
-      <li><strong>知识库统计 API：</strong>现有的哪些端点可以获取文件数？是否需要新增聚合端点？</li>
       <li><strong>对话命名规则：</strong>自动命名（取第一条消息的前N字）vs 手动命名？</li>
     </ul>
   </div>
@@ -1093,11 +1039,7 @@
       </tr>
       <tr>
         <td>🧩 组件</td>
-        <td>新增 10 个，保留 4 个，重构 4 个，删除 1 个（HomeView）</td>
-      </tr>
-      <tr>
-        <td>📂 知识库</td>
-        <td>侧边栏展示知识库基本信息（文件数），批量管理功能后续扩展</td>
+        <td>新增 9 个，保留 4 个，重构 4 个，删除 2 个（HomeView, KnowledgeInfo）</td>
       </tr>
       <tr>
         <td>💬 对话</td>
