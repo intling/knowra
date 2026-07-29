@@ -16,6 +16,7 @@ interface AppState {
   isHealthLoading: boolean
   healthError: string | null
   lastHealthCheckedAt: Date | null
+  sidebarCollapsed: boolean
 }
 
 export const useAppStore = defineStore("app", {
@@ -25,6 +26,7 @@ export const useAppStore = defineStore("app", {
     isHealthLoading: false,
     healthError: null,
     lastHealthCheckedAt: null,
+    sidebarCollapsed: false,
   }),
   actions: {
     async refreshHealth() {
@@ -44,6 +46,11 @@ export const useAppStore = defineStore("app", {
       } finally {
         this.isHealthLoading = false
       }
+    },
+
+    /** 切换侧边栏折叠状态 */
+    toggleSidebar() {
+      this.sidebarCollapsed = !this.sidebarCollapsed
     },
   },
 })

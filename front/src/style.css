@@ -1,25 +1,403 @@
 @import "tailwindcss";
 
+/* ── Design Tokens ─────────────────────────────────────────────────────────
+   knowra 品牌设计系统  v2.0 — 「精密仪器」
+
+   设计方向：冷调学术蓝 + 衬线标题 + 精确克制
+   面向：大学生 / 职场人 / 研究人
+   气质：专业、可靠、高效
+
+   色彩基调：冷石板灰白底 + 深邃学术蓝强调
+   排版签名：Newsreader 衬线展示 + Inter 无衬线正文 + JetBrains Mono 代码
+   圆角规范：卡片 10px / 按钮 6px / 输入框 10px / 消息气泡 10px + 右下 6px
+   阴影规范：极克制 — 仅卡片 shadow-sm / 输入框微弱 shadow
+   ─────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── 学术蓝品牌色 — 比 #2563eb 更深沉，有学术分量 ── */
+  --color-brand-50: #eef2f8;
+  --color-brand-100: #d9e2f2;
+  --color-brand-200: #b3c6e5;
+  --color-brand-300: #8caad8;
+  --color-brand-400: #668ecb;
+  --color-brand-500: #4072be;
+  --color-brand-600: #2e5ea6;
+  --color-brand-700: #1e3a7a;
+  --color-brand-800: #15295a;
+  --color-brand-900: #0c1b3f;
+  --color-brand-950: #060e24;
+
+  /* ── 冷石板中性色（微蓝底调，精确感）── */
+  --color-neutral-50: #f6f8fa;
+  --color-neutral-100: #edf1f5;
+  --color-neutral-200: #dfe4eb;
+  --color-neutral-300: #cdd3dc;
+  --color-neutral-400: #9da5b2;
+  --color-neutral-500: #6b7485;
+  --color-neutral-600: #4e5565;
+  --color-neutral-700: #363c4a;
+  --color-neutral-800: #1e2430;
+  --color-neutral-850: #161c28;
+  --color-neutral-900: #131a2c;
+  --color-neutral-950: #0a0f1a;
+
+  /* ── 圆角设计令牌（收紧，更利落）── */
+  --radius-card: 0.625rem;       /* 10px — 卡片 */
+  --radius-button: 0.375rem;     /* 6px  — 按钮 */
+  --radius-input: 0.625rem;      /* 10px — 输入框 */
+  --radius-bubble: 0.625rem;     /* 10px — 消息气泡 */
+  --radius-bubble-tail: 0.25rem; /* 4px  — 气泡尾巴角 */
+
+  /* ── 阴影（极克制）── */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+
+  /* ── 排版 ── */
+  --font-family-display: Newsreader, Georgia, "Times New Roman", serif;
+  --font-family-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-family-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
 @layer base {
   :root {
-    font-family:
-      Inter,
-      ui-sans-serif,
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    /* ── 品牌色 CSS 变量（供非 Tailwind 上下文使用）── */
+    --brand-blue: #1e3a7a;
+    --brand-blue-hover: #15295a;
+    --brand-blue-light: #eef2f8;
+    --brand-blue-soft: #d9e2f2;
+
+    /* ── 冷石板色（非纯灰，带微蓝底调，精确感）── */
+    --neutral-50: #f6f8fa;
+    --neutral-100: #edf1f5;
+    --neutral-200: #dfe4eb;
+    --neutral-300: #cdd3dc;
+    --neutral-400: #9da5b2;
+    --neutral-500: #6b7485;
+    --neutral-600: #4e5565;
+    --neutral-700: #363c4a;
+    --neutral-800: #1e2430;
+    --neutral-850: #161c28;
+    --neutral-900: #131a2c;
+    --neutral-950: #0a0f1a;
+
+    /* ── 危险色 ── */
+    --danger-bg: #fef2f2;
+    --danger-text: #dc2626;
+    --danger-border: #fecaca;
+
+    /* ── 成功色 ── */
+    --success-bg: #ecfdf5;
+    --success-text: #059669;
+    --success-border: #a7f3d0;
+
+    /* ── 警告色 ── */
+    --warning-bg: #fffbeb;
+    --warning-text: #d97706;
+    --warning-border: #fde68a;
+
+    /* ── 全局排版 ── */
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* ── 排版微调 ── */
+    --letter-spacing-heading: -0.02em;
+    --letter-spacing-body: -0.01em;
+    --line-height-heading: 1.2;
+    --line-height-body: 1.65;
   }
 
   body {
     margin: 0;
     min-width: 320px;
-    background: #fafafa;
+    background: #f6f8fa;
+    color: #131a2c;
+    letter-spacing: var(--letter-spacing-body);
+    line-height: var(--line-height-body);
+  }
+
+  /* ── 标题：使用 Newsreader 衬线体 —— 学术分量 ── */
+  h1, h2, h3, h4 {
+    font-family: Newsreader, Georgia, "Times New Roman", serif;
+    letter-spacing: var(--letter-spacing-heading);
+    line-height: var(--line-height-heading);
   }
 
   button {
     font: inherit;
+    cursor: pointer;
   }
+
+  /* ── 焦点可见性 ── */
+  :focus-visible {
+    outline: 2px solid var(--brand-blue);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* ── 选择文本颜色 ── */
+  ::selection {
+    background: #b3c6e5;
+    color: #0c1b3f;
+  }
+}
+
+/* ── 工具类 ─────────────────────────────────────────────────────────── */
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #dfe4eb transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #dfe4eb;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #cdd3dc;
+  }
+}
+
+/* ── 品牌渐变（用于 Logo 标记等装饰性元素）── */
+@utility brand-gradient {
+  background: linear-gradient(135deg, #1e3a7a 0%, #15295a 50%, #0c1b3f 100%);
+}
+
+@utility brand-gradient-subtle {
+  background: linear-gradient(135deg, #eef2f8 0%, #d9e2f2 50%, #b3c6e5 100%);
+}
+
+/* ── Prose 覆写（AI 回答内容的排版）── */
+@utility prose-knowra {
+  --tw-prose-body: #363c4a;
+  --tw-prose-headings: #131a2c;
+  --tw-prose-links: #1e3a7a;
+  --tw-prose-bold: #131a2c;
+  --tw-prose-counters: #6b7485;
+  --tw-prose-bullets: #9da5b2;
+  --tw-prose-hr: #dfe4eb;
+  --tw-prose-quotes: #131a2c;
+  --tw-prose-quote-borders: #1e3a7a;
+  --tw-prose-captions: #6b7485;
+  --tw-prose-code: #0c1b3f;
+  --tw-prose-pre-code: #363c4a;
+  --tw-prose-pre-bg: #edf1f5;
+  --tw-prose-th-borders: #cdd3dc;
+  --tw-prose-td-borders: #dfe4eb;
+
+  max-width: none;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+
+  h1, h2, h3, h4 {
+    font-family: Newsreader, Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    letter-spacing: var(--letter-spacing-heading);
+  }
+
+  h1 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; }
+  h2 { font-size: 1.25rem; margin-top: 1.75rem; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.125rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+
+  /* ── 段落与列表项：统一 16px 间距，内容呼吸感 ── */
+  p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  ul, ol {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  li > p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-weight: 500;
+  }
+
+  a:hover {
+    color: #15295a;
+  }
+
+  code {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    font-weight: 400;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    background: #edf1f5;
+    border: 1px solid #dfe4eb;
+  }
+
+  /* ── 代码块：深色背景 #282c34 + 浅色文字 + 8px 圆角 + 充裕内边距 ── */
+  pre {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    background: #282c34;
+    border: none;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+  }
+
+  pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: #abb2bf;
+  }
+
+  blockquote {
+    font-style: normal;
+    font-weight: 400;
+    border-left-width: 3px;
+    border-left-color: #1e3a7a;
+    padding-left: 1rem;
+    color: #4e5565;
+  }
+
+  strong {
+    font-weight: 600;
+    color: #131a2c;
+  }
+
+  ul > li::marker {
+    color: #9da5b2;
+  }
+
+  ol > li::marker {
+    color: #6b7485;
+    font-weight: 500;
+    font-size: 0.875em;
+  }
+
+  table {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  thead {
+    border-bottom: 2px solid #cdd3dc;
+  }
+
+  th {
+    font-weight: 600;
+    color: #4e5565;
+    padding: 0.75rem 1rem;
+  }
+
+  td {
+    padding: 0.625rem 1rem;
+  }
+}
+
+/* ── Code block enhancements ────────────────────────────────────────────── */
+
+/* Wrapper for positioning the copy button */
+.code-block-wrapper {
+  position: relative;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: flow-root;
+}
+
+.code-block-wrapper pre {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Copy button — semi-transparent, fully visible on hover */
+.code-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.375rem;
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255 / 0.45);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Show on pre hover, and keep visible when the button itself is hovered */
+.code-block-wrapper:hover .code-copy-btn,
+.code-copy-btn:hover,
+.code-copy-btn:focus-visible {
+  opacity: 1;
+}
+
+.code-copy-btn:hover {
+  background: rgb(255 255 255 / 0.16);
+  color: rgb(255 255 255 / 0.85);
+}
+
+.code-copy-btn:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.6);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+/* Copied feedback state */
+.code-copy-btn.copied {
+  opacity: 1;
+  border-color: rgb(52 211 153 / 0.35);
+  background: rgb(52 211 153 / 0.15);
+  color: rgb(52 211 153 / 0.9);
+}
+
+.code-copy-btn.copied .code-copy-icon {
+  color: rgb(52 211 153 / 0.9);
+}
+
+/* ── Code block scrollbar ───────────────────────────────────────────────── */
+.code-block-wrapper pre {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.12) transparent;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar {
+  height: 4px;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar-thumb {
+  background-color: rgb(255 255 255 / 0.12);
+  border-radius: 2px;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(255 255 255 / 0.25);
 }

@@ -97,36 +97,55 @@ TBD - created by archiving change add-file-upload-storage. Update Purpose after 
 - **AND** 上传服务 MUST 使用该配置决定是否接受受限类型文件
 
 ### Requirement: 前端上传体验
-前端 SHALL 基于当前附件选择入口提交上传请求，并向用户展示上传状态和错误反馈。
+前端 SHALL 在对话输入框中提供内嵌附件上传入口，基于附件按钮选择文件、在输入框区域展示文件 chips 并支持多文件选择和独立删除，上传状态在 chip 上反馈。
 
 #### Scenario: 选择文件后显示待上传文件
-- **WHEN** 用户通过附件按钮选择文件
-- **THEN** 前端 MUST 显示被选中文件的名称
-- **AND** 前端 MUST 允许用户移除该待上传文件
+- **WHEN** 用户通过对话输入框中的附件按钮选择文件
+- **THEN** 前端 MUST 在输入框上方或内部显示被选中文件的 chips，每个 chip 包含文件名和删除按钮
+- **AND** 前端 MUST 允许用户逐个移除待上传文件
+
+#### Scenario: 多文件选择
+- **WHEN** 用户通过附件按钮选择多个文件
+- **THEN** 前端 MUST 为每个文件显示独立的 chip
+- **AND** 每个 chip 有独立的删除按钮和上传状态指示
 
 #### Scenario: 提交文件上传
 - **WHEN** 当前用户加载成功
-- **AND** 用户选择了文件并触发提交
+- **AND** 用户选择了文件并触发上传
 - **THEN** 前端 MUST 调用上传 API
 - **AND** 前端 MUST NOT 在请求中提交 `owner_user_id`
 
 #### Scenario: 上传过程中展示加载状态
 - **WHEN** 上传请求尚未完成
-- **THEN** 前端 MUST 展示上传中状态
+- **THEN** 对应文件 chip MUST 展示上传中状态（如 spinner 动画）
 - **AND** 前端 MUST 防止同一文件被重复提交
 
-#### Scenario: 上传成功后清理本地选择
+#### Scenario: 上传成功后更新 chip 状态
 - **WHEN** 上传 API 返回成功上传记录
-- **THEN** 前端 MUST 清空当前选中文件
-- **AND** 前端 MUST 展示上传成功反馈
+- **THEN** 对应文件 chip MUST 变更为已上传完成状态（如显示 ✓ 标记）
+- **AND** 文件 chip 保留在输入区上方，作为已附加文件引用
 
 #### Scenario: 上传失败后展示错误
 - **WHEN** 上传 API 返回错误或请求失败
-- **THEN** 前端 MUST 展示用户可理解的错误反馈
-- **AND** 前端 MUST 保留用户重新尝试上传的可能性
+- **THEN** 对应文件 chip MUST 展示用户可理解的错误反馈
+- **AND** 前端 MUST 保留用户移除该 chip 或重新尝试上传的可能性
 
 #### Scenario: 当前用户不可用时禁用上传
 - **WHEN** 前端当前用户加载失败
 - **THEN** 依赖用户归属的上传操作 MUST 不可提交
+- **AND** 附件按钮 MUST 处于禁用状态
 - **AND** 前端 MUST 展示当前用户不可用反馈
+
+### Requirement: 发送消息携带已上传文件
+前端 SHALL 在用户发送消息时携带已上传成功的文件引用，确保后端能将提问与相关文件关联。
+
+#### Scenario: 发送时携带文件引用
+- **WHEN** 用户输入文本并已上传文件
+- **AND** 用户点击发送
+- **THEN** 前端 MUST 在搜索请求中包含已上传文件的 ID 列表
+
+#### Scenario: 仅上传文件无文本时
+- **WHEN** 用户已上传文件但输入框为空
+- **THEN** 发送按钮 MUST 可用
+- **AND** 前端发送请求时 query 默认为"总结归纳文档的关键信息"，携带文件引用
 

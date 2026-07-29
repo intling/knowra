@@ -48,16 +48,16 @@ function roleLabel(role: unknown): string {
 }
 
 function roleBadgeClass(role: unknown): string {
-  if (typeof role !== "string") return "bg-zinc-100 text-zinc-600"
+  if (typeof role !== "string") return "bg-neutral-100 text-neutral-600"
   switch (role) {
     case "system":
-      return "bg-blue-100 text-blue-700"
+      return "bg-brand-100 text-brand-700"
     case "user":
       return "bg-emerald-100 text-emerald-700"
     case "assistant":
       return "bg-purple-100 text-purple-700"
     default:
-      return "bg-zinc-100 text-zinc-600"
+      return "bg-neutral-100 text-neutral-600"
   }
 }
 
@@ -86,21 +86,21 @@ function totalChars(): number {
 </script>
 
 <template>
-  <div class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+  <div>
     <!-- Toggle header -->
     <button
       data-testid="prompt-toggle"
-      class="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-zinc-50"
+      class="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-neutral-50"
       type="button"
       @click="toggleExpand"
     >
       <div class="flex items-center gap-2">
-        <h3 class="text-sm font-semibold text-zinc-700">
+        <h3 class="font-display text-sm font-semibold text-neutral-700">
           <span class="mr-1.5" aria-hidden="true">💬</span>提示词预览
         </h3>
         <span
           v-if="messages.length > 0"
-          class="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
+          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
         >
           {{ messages.length }} messages · {{ totalChars().toLocaleString() }} 字符
         </span>
@@ -109,14 +109,14 @@ function totalChars(): number {
         <button
           v-if="isExpanded && messages.length > 0"
           data-testid="copy-prompt-button"
-          class="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs text-zinc-500 transition hover:border-zinc-400 hover:text-zinc-700"
+          class="rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 transition hover:border-neutral-400 hover:text-neutral-700"
           type="button"
           @click.stop="handleCopy"
         >
           {{ copyLabel }}
         </button>
         <svg
-          class="size-4 text-zinc-400 transition-transform"
+          class="size-4 text-neutral-400 transition-transform"
           :class="{ 'rotate-180': isExpanded }"
           viewBox="0 0 24 24"
           fill="none"
@@ -131,15 +131,15 @@ function totalChars(): number {
     </button>
 
     <!-- Expanded content -->
-    <div v-if="isExpanded" class="border-t border-zinc-100">
+    <div v-if="isExpanded" class="border-t border-neutral-100">
       <div
         v-if="messages.length === 0"
         class="px-5 py-10 text-center"
       >
-        <p class="text-sm text-zinc-400">暂无提示词数据</p>
+        <p class="text-sm text-neutral-400">暂无提示词数据</p>
       </div>
 
-      <div v-else class="divide-y divide-zinc-100">
+      <div v-else class="divide-y divide-neutral-100">
         <div
           v-for="(msg, i) in messages"
           :key="i"
@@ -153,14 +153,14 @@ function totalChars(): number {
             >
               {{ roleLabel(msg.role) }}
             </span>
-            <span class="text-[10px] text-zinc-400">
+            <span class="text-[10px] text-neutral-400">
               {{ messageContent(msg).length.toLocaleString() }} 字符
             </span>
           </div>
 
           <!-- Content -->
           <pre
-            class="overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-zinc-700 font-sans"
+            class="overflow-x-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 text-neutral-700"
           >{{ messageContent(msg) }}</pre>
         </div>
       </div>
