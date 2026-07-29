@@ -85,7 +85,7 @@ function scoreBarColor(score: number): string {
   const ratio = maxScore.value > 0 ? score / maxScore.value : 1
   if (ratio < 0.33) return "bg-emerald-500"
   if (ratio < 0.66) return "bg-amber-500"
-  return "bg-zinc-400"
+  return "bg-neutral-400"
 }
 
 // ── Score distribution bins (task 6.7) ──
@@ -118,27 +118,27 @@ const scoreBins = computed(() => {
 </script>
 
 <template>
-  <div class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+  <div>
     <!-- Toggle header -->
     <button
       data-testid="results-toggle"
-      class="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-zinc-50"
+      class="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-neutral-50"
       type="button"
       @click="toggleExpand"
     >
       <div class="flex items-center gap-2">
-        <h3 class="text-sm font-semibold text-zinc-700">
+        <h3 class="font-display text-sm font-semibold text-neutral-700">
           <span class="mr-1.5" aria-hidden="true">📊</span>检索结果
         </h3>
         <span
           v-if="results.length > 0"
-          class="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
+          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
         >
           {{ results.length }} 条
         </span>
       </div>
       <svg
-        class="size-4 text-zinc-400 transition-transform"
+        class="size-4 text-neutral-400 transition-transform"
         :class="{ 'rotate-180': isExpanded }"
         viewBox="0 0 24 24"
         fill="none"
@@ -152,10 +152,10 @@ const scoreBins = computed(() => {
     </button>
 
     <!-- Expanded content -->
-    <div v-if="isExpanded" class="border-t border-zinc-100">
+    <div v-if="isExpanded" class="border-t border-neutral-100">
       <!-- Search summary bar -->
       <div
-        class="flex flex-wrap items-center gap-x-5 gap-y-1 px-5 py-3 text-xs text-zinc-500"
+        class="flex flex-wrap items-center gap-x-5 gap-y-1 px-5 py-3 text-xs text-neutral-500"
       >
         <span data-testid="search-summary" class="inline-flex items-center gap-1">
           <svg
@@ -178,9 +178,9 @@ const scoreBins = computed(() => {
       <div
         v-if="scoreBins.length > 0"
         data-testid="score-distribution"
-        class="border-t border-zinc-100 px-5 py-3"
+        class="border-t border-neutral-100 px-5 py-3"
       >
-        <p class="mb-2 text-xs font-medium text-zinc-500">分数分布（余弦距离）</p>
+        <p class="mb-2 text-xs font-medium text-neutral-500">分数分布（余弦距离）</p>
         <div class="flex items-end gap-1" style="height: 48px">
           <div
             v-for="(bin, i) in scoreBins"
@@ -189,18 +189,18 @@ const scoreBins = computed(() => {
             :title="`${bin.label} – ${bin.count} 条`"
           >
             <div
-              class="w-full rounded-t-sm bg-zinc-400 transition-colors group-hover:bg-zinc-600"
+              class="w-full rounded-t-sm bg-neutral-400 transition-colors group-hover:bg-neutral-600"
               :style="{ height: Math.max(4, bin.heightPct * 0.48) + 'px' }"
             />
             <span
               v-if="scoreBins.length <= 6"
-              class="mt-1 text-[10px] leading-none text-zinc-400"
+              class="mt-1 text-[10px] leading-none text-neutral-400"
             >
               {{ bin.label }}
             </span>
           </div>
         </div>
-        <div class="mt-2 flex justify-between text-[10px] text-zinc-400">
+        <div class="mt-2 flex justify-between text-[10px] text-neutral-400">
           <span>更相似 →</span>
           <span>← 更不相似</span>
         </div>
@@ -210,22 +210,22 @@ const scoreBins = computed(() => {
       <div
         v-if="results.length === 0"
         data-testid="results-empty"
-        class="border-t border-zinc-100 px-5 py-10 text-center"
+        class="border-t border-neutral-100 px-5 py-10 text-center"
       >
-        <p class="text-sm text-zinc-400">未找到相关结果</p>
+        <p class="text-sm text-neutral-400">未找到相关结果</p>
       </div>
 
       <!-- Results list grouped by document -->
-      <div v-else class="border-t border-zinc-100">
+      <div v-else class="border-t border-neutral-100">
         <div
           v-for="group in docGroups"
           :key="group.documentName"
-          class="[&+&]:border-t border-zinc-100"
+          class="[&+&]:border-t border-neutral-100"
         >
           <!-- Document group header -->
-          <div class="flex items-center gap-2 bg-zinc-50 px-5 py-2">
+          <div class="flex items-center gap-2 bg-neutral-50 px-5 py-2">
             <svg
-              class="size-3.5 text-zinc-400"
+              class="size-3.5 text-neutral-400"
               aria-hidden="true"
               viewBox="0 0 24 24"
               fill="none"
@@ -239,10 +239,10 @@ const scoreBins = computed(() => {
               />
               <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-            <span class="text-xs font-medium text-zinc-600">
+            <span class="text-xs font-medium text-neutral-600">
               {{ group.documentName }}
             </span>
-            <span class="rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] text-zinc-500">
+            <span class="rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] text-neutral-500">
               {{ group.results.length }} 条
             </span>
           </div>
@@ -253,24 +253,24 @@ const scoreBins = computed(() => {
               v-for="{ item, globalIndex } in group.results"
               :key="item.chunk_id"
               data-testid="result-item"
-              class="border-t border-zinc-50 px-5 py-3"
+              class="border-t border-neutral-50 px-5 py-3"
             >
               <!-- Rank + score bar -->
               <div class="flex items-center gap-3">
                 <span
-                  class="flex size-5 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[10px] font-semibold text-zinc-500"
+                  class="flex size-5 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-[10px] font-semibold text-neutral-500"
                 >
                   {{ item.rank }}
                 </span>
                 <div class="flex min-w-0 flex-1 items-center gap-2">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-neutral-100">
                     <div
                       :class="scoreBarColor(item.score)"
                       class="h-full rounded-full transition-all"
                       :style="{ width: scoreBarWidth(item.score) }"
                     />
                   </div>
-                  <span class="shrink-0 text-xs tabular-nums text-zinc-400">
+                  <span class="shrink-0 text-xs tabular-nums text-neutral-400">
                     {{ item.score.toFixed(4) }}
                   </span>
                 </div>
@@ -279,14 +279,14 @@ const scoreBins = computed(() => {
               <!-- Chunk text (truncated + expand) -->
               <div class="mt-2">
                 <p
-                  class="text-sm leading-6 text-zinc-700"
+                  class="text-sm leading-6 text-neutral-700"
                   :class="{ 'line-clamp-3': !isTextExpanded(globalIndex) }"
                 >
                   {{ item.text || "（无文本内容）" }}
                 </p>
                 <button
                   v-if="item.text && item.text.length > 150"
-                  class="mt-1 text-xs text-zinc-400 transition hover:text-zinc-600"
+                  class="mt-1 text-xs text-neutral-400 transition hover:text-neutral-600"
                   type="button"
                   @click="toggleTextExpand(globalIndex)"
                 >
@@ -296,7 +296,7 @@ const scoreBins = computed(() => {
 
               <!-- Metadata row -->
               <div
-                class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-400"
+                class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-neutral-400"
               >
                 <span
                   v-if="item.page_numbers && item.page_numbers.length > 0"

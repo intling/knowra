@@ -5,11 +5,13 @@
 ## Requirements
 
 ### Requirement: 对话召回验证页面路由
-系统 SHALL 在 `/chat` 路径提供对话召回验证页面，与现有流水线验证页面（`/verify`）并列，导航栏新增"对话验证"入口。
+系统 SHALL 将对话召回验证功能内嵌至主页面 `/` 的 ChatArea 中，不再作为独立 `/chat` 路由页面。
 
 #### Scenario: 页面可访问
-- **WHEN** 用户导航至 `/chat`
-- **THEN** 页面渲染 ChatView 组件，显示对话召回验证界面
+- **WHEN** 用户导航至 `/`
+- **AND** 用户在对话区发送问题
+- **THEN** AI 回答（AnswerPanel）、检索结果（ResultsPanel）、提示词预览（PromptPreview）在对话流中内嵌展示
+- **AND** 不再通过 `/chat` 路由访问独立对话页
 
 ### Requirement: 文本输入与发送
 页面 SHALL 提供文本输入框，支持 Enter 换行、Ctrl+Enter 或点击按钮发送，禁止发送空文本（仅含空白字符也视为空文本），以及 Top-K 滑块（1–50，默认 5）。
@@ -32,14 +34,15 @@
 - **THEN** 下一条搜索请求中 top_k=10
 
 ### Requirement: AI 回答展示
-页面 SHALL 显示 AI 回答面板，包含 Markdown 渲染的回答内容、引用统计（引用 N/M 分块 · 来自 K 个文档）、Token 用量（prompt + completion = total）、复制回答按钮。
+页面 SHALL 在对话消息流中显示 AI 回答面板，包含 Markdown 渲染的回答内容、引用统计（引用 N/M 分块 · 来自 K 个文档）、Token 用量（prompt + completion = total）、复制回答按钮。AnswerPanel 作为 ChatArea 内嵌组件，位于用户问题消息下方，默认展开。
 
 #### Scenario: 显示回答
 - **WHEN** 搜索成功
-- **THEN** 页面显示 AI 回答面板，包含 Markdown 渲染的回答文本、引用统计和 Token 用量
+- **THEN** 对话流中用户问题下方显示 AI 回答面板，包含 Markdown 渲染的回答文本、引用统计和 Token 用量
+- **AND** 面板默认展开
 
 ### Requirement: 检索结果面板
-页面 SHALL 显示可折叠的检索结果面板（默认折叠），包含搜索摘要栏（搜索 N 个文档 · M 个向量 · 耗时 T ms）和按文档分组的结果列表，每条结果展示排名、可视化分数条、分块文本（前 300 字符可展开）、元数据（页码、标题路径、Token 数）。
+页面 SHALL 在 AI 回答下方显示可折叠的检索结果面板（默认折叠），包含搜索摘要栏（搜索 N 个文档 · M 个向量 · 耗时 T ms）和按文档分组的结果列表，每条结果展示排名、可视化分数条、分块文本（前 300 字符可展开）、元数据（页码、标题路径、Token 数）。ResultsPanel 作为 ChatArea 内嵌组件。
 
 #### Scenario: 结果按文档分组
 - **WHEN** 搜索结果来自多个文档
@@ -53,12 +56,20 @@
 - **WHEN** 搜索返回 0 条结果
 - **THEN** 结果显示区域显示空结果提示
 
+#### Scenario: 默认折叠状态
+- **WHEN** AI 回答展示完成后
+- **THEN** ResultsPanel 默认处于折叠状态，用户需手动点击展开
+
 ### Requirement: 提示词预览
-页面 SHALL 显示可折叠的提示词预览面板（默认折叠），展示实际发送给 LLM 的完整 messages 数组（每个 message 的 role + content）和复制按钮。
+页面 SHALL 在检索结果下方显示可折叠的提示词预览面板（默认折叠），展示实际发送给 LLM 的完整 messages 数组（每个 message 的 role + content）和复制按钮。PromptPreview 作为 ChatArea 内嵌组件。
 
 #### Scenario: 提示词面板内容
 - **WHEN** 用户展开提示词预览
 - **THEN** 显示完整的 system message 和 user message 内容
+
+#### Scenario: 默认折叠状态
+- **WHEN** AI 回答展示完成后
+- **THEN** PromptPreview 默认处于折叠状态，用户需手动点击展开
 
 ### Requirement: 加载状态反馈
 页面 SHALL 在搜索过程中显示分段加载状态："搜索中..." → "生成回答中..." → 完成。
@@ -83,15 +94,20 @@
 - **THEN** 页面显示网络错误提示，用户可重试
 
 ### Requirement: 对话历史
-页面 SHALL 维护当前会话的对话历史列表，每条对话包含 query + answer + results 组合，可独立展开/折叠。首次加载时显示空状态引导："向知寻提问"。
+页面 SHALL 维护当前会话的对话历史列表，每条对话包含 query + answer + results 组合。对话历史受侧边栏的 useChatStore 管理，支持跨对话切换时保留各自的消息历史。首次加载时显示空状态引导（WelcomeView 欢迎页）。
 
 #### Scenario: 对话历史累积
-- **WHEN** 用户连续发送多条查询
-- **THEN** 页面上方显示历史对话列表，最新对话在最下方
+- **WHEN** 用户在当前对话中连续发送多条查询
+- **THEN** 对话区显示完整消息历史，最新消息在最下方
+
+#### Scenario: 切换对话后消息历史独立
+- **WHEN** 用户从对话 A 切换到对话 B
+- **THEN** 对话区显示对话 B 的消息历史
+- **AND** 切换回对话 A 时消息历史完整保留
 
 #### Scenario: 空状态引导
 - **WHEN** 页面首次加载且无对话历史
-- **THEN** 聊天区域显示空状态引导文字
+- **THEN** 对话区显示 WelcomeView 欢迎页
 
 ### Requirement: 分数分布展示
 页面 SHALL 显示召回结果的分数分布迷你柱状图，直观展示各分块相似度差异。

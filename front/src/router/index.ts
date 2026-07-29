@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router"
 
-import HomeView from "../views/HomeView.vue"
+import ChatLayout from "../components/layout/ChatLayout.vue"
 import VerificationView from "../views/VerificationView.vue"
-import ChatView from "../views/ChatView.vue"
 
 const router = createRouter({
   history: createWebHistory(),
@@ -10,7 +9,7 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: HomeView,
+      component: ChatLayout,
     },
     {
       path: "/verify",
@@ -18,9 +17,12 @@ const router = createRouter({
       component: VerificationView,
     },
     {
+      path: "/home",
+      redirect: "/",
+    },
+    {
       path: "/chat",
-      name: "chat",
-      component: ChatView,
+      redirect: "/",
     },
   ],
 })

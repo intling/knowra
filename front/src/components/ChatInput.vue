@@ -1,18 +1,32 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue"
 
+// ── Types ────────────────────────────────────────────────────────────────────
+
+export interface AttachedFile {
+  id: string
+  name: string
+  size: number
+  status: "pending" | "uploading" | "uploaded" | "error"
+  error?: string
+}
+
+// ── Props ────────────────────────────────────────────────────────────────────
+
 const props = withDefaults(
   defineProps<{
     modelValue?: string
     topK?: number
     loading?: boolean
     loadingStage?: "searching" | "generating" | null
+    files?: AttachedFile[]
   }>(),
   {
     modelValue: "",
     topK: 5,
     loading: false,
     loadingStage: null,
+    files: () => [],
   },
 )
 
@@ -20,6 +34,8 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: string): void
   (e: "update:topK", value: number): void
   (e: "send"): void
+  (e: "add-files"): void
+  (e: "remove-file", id: string): void
 }>()
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
@@ -35,7 +51,16 @@ const localTopK = computed({
 })
 
 const trimmedQuery = computed(() => localQuery.value.trim())
-const cannotSend = computed(() => trimmedQuery.value.length === 0 || props.loading)
+
+const hasUploadedFile = computed(() =>
+  props.files.some((f) => f.status === "uploaded"),
+)
+
+const cannotSend = computed(
+  () =>
+    (trimmedQuery.value.length === 0 && !hasUploadedFile.value) ||
+    props.loading,
+)
 
 const loadingLabel = computed(() => {
   if (!props.loading) return null
@@ -49,12 +74,32 @@ const buttonLabel = computed(() => {
   return "发送"
 })
 
-// Auto-resize textarea
+// ── File helpers ─────────────────────────────────────────────────────────────
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+}
+
+function handleAttachClick() {
+  emit("add-files")
+}
+
+function handleRemoveFile(id: string) {
+  emit("remove-file", id)
+}
+
+// ── Auto-resize textarea ─────────────────────────────────────────────────────
+
 watch(localQuery, () => {
   if (!textareaRef.value) return
   textareaRef.value.style.height = "auto"
   textareaRef.value.style.height = `${textareaRef.value.scrollHeight}px`
 })
+
+// ── Keyboard handling ────────────────────────────────────────────────────────
 
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
@@ -86,18 +131,146 @@ function handleSend() {
 
 <template>
   <div
-    class="fixed bottom-0 left-0 right-0 z-20 border-t border-zinc-200/70 bg-zinc-50/90 px-3 py-3 backdrop-blur sm:px-4 sm:py-5"
+    class="flex w-full flex-col gap-3 rounded-2xl border border-[#e5e7eb] bg-white p-3 sm:p-4"
+    style="box-shadow: 0 4px 20px rgba(0,0,0,0.05)"
   >
-    <div
-      class="mx-auto flex w-full max-w-3xl flex-col gap-3 rounded-2xl bg-white p-3 shadow-[0_10px_35px_rgba(15,23,42,0.12)] ring-1 ring-zinc-200 sm:p-4"
-    >
+      <!-- File chips area -->
+      <div
+        v-if="files.length > 0"
+        data-testid="file-chips-area"
+        class="flex flex-wrap gap-2 px-1"
+      >
+        <div
+          v-for="file in files"
+          :key="file.id"
+          data-testid="file-chip"
+          class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition"
+          :class="{
+            'border-neutral-200 bg-neutral-50 text-neutral-700': file.status === 'pending',
+            'border-brand-200 bg-brand-50 text-brand-700': file.status === 'uploading',
+            'border-emerald-200 bg-emerald-50 text-emerald-700': file.status === 'uploaded',
+            'border-red-200 bg-red-50 text-red-700': file.status === 'error',
+          }"
+        >
+          <!-- File icon -->
+          <svg
+            class="size-3.5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+
+          <!-- File name -->
+          <span class="max-w-40 truncate">{{ file.name }}</span>
+
+          <!-- File size -->
+          <span class="shrink-0 opacity-60">{{ formatFileSize(file.size) }}</span>
+
+          <!-- Uploading spinner -->
+          <svg
+            v-if="file.status === 'uploading'"
+            data-testid="file-chip-spinner"
+            class="size-3.5 shrink-0 animate-spin"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+
+          <!-- Uploaded checkmark -->
+          <svg
+            v-if="file.status === 'uploaded'"
+            data-testid="file-chip-success"
+            class="size-3.5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+
+          <!-- Error indicator -->
+          <svg
+            v-if="file.status === 'error'"
+            data-testid="file-chip-error"
+            class="size-3.5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+
+          <!-- Error message tooltip -->
+          <span
+            v-if="file.status === 'error' && file.error"
+            class="max-w-32 truncate text-red-600"
+          >
+            {{ file.error }}
+          </span>
+
+          <!-- Remove button -->
+          <button
+            data-testid="file-chip-remove-btn"
+            class="ml-0.5 shrink-0 rounded p-0.5 opacity-60 transition hover:opacity-100"
+            type="button"
+            aria-label="移除文件"
+            @click="handleRemoveFile(file.id)"
+          >
+            <svg
+              class="size-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Top-K slider row -->
       <div class="flex items-center gap-3 px-1">
         <label
           for="topk-slider"
-          class="shrink-0 text-xs font-medium text-zinc-500"
+          class="shrink-0 text-xs font-medium text-neutral-500"
         >
-          Top-K: <span class="text-zinc-900">{{ localTopK }}</span>
+          Top-K: <span class="tabular-nums text-neutral-800">{{ localTopK }}</span>
         </label>
         <input
           id="topk-slider"
@@ -106,10 +279,10 @@ function handleSend() {
           min="1"
           max="50"
           step="1"
-          class="h-1.5 w-24 cursor-pointer appearance-none rounded-full bg-zinc-200 accent-zinc-950 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-zinc-950"
+          class="h-1.5 w-24 cursor-pointer appearance-none rounded-full bg-neutral-200 accent-brand-700 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand-700 [&::-webkit-slider-thumb]:shadow-sm"
           :disabled="loading"
         />
-        <span class="text-xs text-zinc-400">1–50</span>
+        <span class="text-xs text-neutral-400">1–50</span>
       </div>
 
       <!-- Input area -->
@@ -118,19 +291,41 @@ function handleSend() {
           ref="textareaRef"
           v-model="localQuery"
           data-testid="chat-input"
-          class="max-h-48 min-h-12 flex-1 resize-none rounded-xl border-0 bg-transparent px-3 py-3 text-base leading-6 text-zinc-950 outline-none placeholder:text-zinc-400 focus:ring-0 sm:min-h-14"
+          class="max-h-48 min-h-12 flex-1 resize-none rounded-lg border-0 bg-transparent px-3 py-3 text-[15px] leading-relaxed text-neutral-800 outline-none placeholder:text-neutral-400 focus:ring-0 sm:min-h-14"
           placeholder="向知寻提问"
           rows="1"
           :disabled="loading"
           @keydown="handleKeydown"
         />
+        <!-- Attach button -->
+        <button
+          data-testid="attach-button"
+          class="flex h-12 shrink-0 items-center justify-center rounded-lg px-3 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600 sm:h-14"
+          type="button"
+          aria-label="添加附件"
+          :disabled="loading"
+          @click="handleAttachClick"
+        >
+          <svg
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          </svg>
+        </button>
         <button
           data-testid="send-button"
-          class="flex h-12 shrink-0 items-center justify-center rounded-xl px-5 text-sm font-semibold transition sm:h-14"
+          class="flex h-12 shrink-0 items-center justify-center rounded-lg px-5 text-sm font-semibold transition sm:h-14"
           :class="
             cannotSend
-              ? 'cursor-not-allowed bg-zinc-200 text-zinc-400'
-              : 'bg-zinc-950 text-white shadow-sm hover:bg-zinc-800'
+              ? 'cursor-not-allowed bg-neutral-200 text-neutral-400'
+              : 'bg-brand-700 text-white shadow-sm transition-colors hover:bg-brand-800 active:bg-brand-900'
           "
           type="button"
           :disabled="cannotSend"
@@ -164,5 +359,4 @@ function handleSend() {
         </button>
       </div>
     </div>
-  </div>
-</template>
+  </template>

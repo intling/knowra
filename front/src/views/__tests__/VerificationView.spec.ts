@@ -694,4 +694,177 @@ describe("VerificationView", () => {
       expect(row.text()).toContain("孤儿 chunk")
     })
   })
+
+  // ── 4.7 重构 RED 测试：顶部导航栏 ───────────────────────────────────
+
+  describe("顶部导航栏（视觉重构）", () => {
+    it("渲染顶部导航栏容器", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      const navbar = wrapper.find('[data-testid="verify-navbar"]')
+      expect(navbar.exists()).toBe(true)
+    })
+
+    it("顶部导航栏包含 knowra Logo（链接至 /）", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      const logo = wrapper.find('[data-testid="verify-nav-logo"]')
+      expect(logo.exists()).toBe(true)
+      expect(logo.text()).toContain("knowra")
+    })
+
+    it("顶部导航栏包含「流程验证」页面标题", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      const navbar = wrapper.find('[data-testid="verify-navbar"]')
+      expect(navbar.text()).toContain("流程验证")
+    })
+
+    it("顶部导航栏包含返回首页链接", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      const backLink = wrapper.find('[data-testid="verify-nav-back"]')
+      expect(backLink.exists()).toBe(true)
+      expect(backLink.text()).toContain("返回首页")
+    })
+  })
+
+  // ── 4.7 重构 RED 测试：品牌蓝按钮 ──────────────────────────────────
+
+  describe("品牌蓝按钮样式（视觉重构）", () => {
+    it("「执行验证」按钮使用品牌蓝配色", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      // 选择文档使按钮可用
+      await wrapper.find('[data-testid="document-select"]').setValue("pd-001")
+
+      const button = wrapper.find('[data-testid="verify-button"]')
+      // 品牌蓝样式：应包含 bg-brand-700 类
+      expect(button.classes()).toContain("bg-brand-700")
+    })
+
+    it("「执行验证」按钮 hover 时变深蓝", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      await wrapper.find('[data-testid="document-select"]').setValue("pd-001")
+
+      const button = wrapper.find('[data-testid="verify-button"]')
+      // hover 状态应包含 hover:bg-brand-800
+      expect(button.classes()).toContain("hover:bg-brand-800")
+    })
+
+    it("禁用按钮使用灰色样式", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      // 未选择文档时按钮禁用
+      const button = wrapper.find('[data-testid="verify-button"]')
+      expect(button.attributes("disabled")).toBeDefined()
+      expect(button.classes()).toContain("disabled:bg-neutral-200")
+    })
+  })
+
+  // ── 4.7 重构 RED 测试：卡片圆角与阴影 ──────────────────────────────
+
+  describe("卡片样式统一（视觉重构）", () => {
+    it("文档选择器卡片使用 rounded-lg 圆角", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      const card = wrapper.find('[data-testid="document-selector"]')
+      expect(card.classes()).toContain("rounded-lg")
+    })
+
+    it("验证结果面板卡片使用 rounded-lg 圆角", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      await wrapper.find('[data-testid="document-select"]').setValue("pd-001")
+      await wrapper.find('[data-testid="verify-button"]').trigger("click")
+      await flushPromises()
+
+      const docInfo = wrapper.find('[data-testid="document-info"]')
+      expect(docInfo.classes()).toContain("rounded-lg")
+    })
+
+    it("所有主要卡片使用 shadow-sm 阴影", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      const card = wrapper.find('[data-testid="document-selector"]')
+      expect(card.classes()).toContain("shadow-sm")
+    })
+  })
+
+  // ── 4.7 重构 RED 测试：现有功能不受影响 ─────────────────────────────
+
+  describe("视觉重构不影响现有功能", () => {
+    it("页面挂载后仍然自动加载已解析文档列表", async () => {
+      mount(VerificationView)
+      await flushPromises()
+
+      expect(mockListParsedDocuments).toHaveBeenCalled()
+    })
+
+    it("选择文档后点击验证按钮依然触发验证流程", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      await wrapper.find('[data-testid="document-select"]').setValue("pd-001")
+      await wrapper.find('[data-testid="verify-button"]').trigger("click")
+      await flushPromises()
+
+      expect(mockFetchPipelineVerification).toHaveBeenCalledWith("pd-001")
+    })
+
+    it("验证结果区域仍然包含所有必要面板", async () => {
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      await wrapper.find('[data-testid="document-select"]').setValue("pd-001")
+      await wrapper.find('[data-testid="verify-button"]').trigger("click")
+      await flushPromises()
+
+      // 所有验证结果区域应正常渲染
+      expect(wrapper.find('[data-testid="document-info"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="pipeline-stages"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="verification-summary"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="verification-stats"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="pairs-table"]').exists()).toBe(true)
+    })
+
+    it("无文档时仍然显示空状态", async () => {
+      mockListParsedDocuments.mockResolvedValue([])
+
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      expect(wrapper.find('[data-testid="documents-empty"]').exists()).toBe(true)
+      expect(wrapper.text()).toContain("暂无已解析文档")
+    })
+
+    it("验证错误仍然正常显示", async () => {
+      mockFetchPipelineVerification.mockRejectedValue(
+        Object.assign(new Error("Server error"), {
+          status: 500,
+          detail: "Server error",
+        }),
+      )
+
+      const wrapper = mount(VerificationView)
+      await flushPromises()
+
+      await wrapper.find('[data-testid="document-select"]').setValue("pd-001")
+      await wrapper.find('[data-testid="verify-button"]').trigger("click")
+      await flushPromises()
+
+      expect(wrapper.find('[data-testid="verification-error"]').exists()).toBe(true)
+    })
+  })
 })

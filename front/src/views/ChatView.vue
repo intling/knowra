@@ -1,3 +1,9 @@
+<!--
+  @deprecated 此组件已在 Phase 1 布局重构中被 ChatArea 替代。
+  核心逻辑已迁移至 `front/src/components/layout/ChatArea.vue`。
+  保留此文件以维持现有测试通过，后续清理时会移除。
+-->
+
 <script setup lang="ts">
 import { computed, ref } from "vue"
 
@@ -61,6 +67,9 @@ async function handleSend() {
   }
   conversations.value.push(conv)
 
+  // 🛡️ 从响应式数组中获取 Proxy 包装后的对象，确保后续属性赋值触发 Vue 响应式更新
+  const reactiveConv = conversations.value.find((c) => c.id === convId)!
+
   query.value = ""
   loading.value = true
   loadingStage.value = "searching"
@@ -77,7 +86,7 @@ async function handleSend() {
       query: trimmed,
       top_k: topK.value,
     })
-    conv.response = response
+    reactiveConv.response = response
     log().info("搜索请求完成", {
       query: trimmed,
       resultCount: response.results.length,
@@ -86,7 +95,7 @@ async function handleSend() {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "未知错误"
-    conv.error = message
+    reactiveConv.error = message
     log().warn("搜索请求失败", { query: trimmed, error: message })
   } finally {
     clearLoadingTimer()
@@ -104,15 +113,15 @@ function clearLoadingTimer() {
 </script>
 
 <template>
-  <section class="min-h-[calc(100vh-7rem)] bg-zinc-50 pb-36">
+  <section class="min-h-[calc(100vh-7rem)] bg-neutral-50 pb-36">
     <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:py-12">
       <!-- Page header -->
       <div class="mb-8">
-        <p class="text-sm font-medium text-zinc-500">对话召回验证</p>
-        <h1 class="mt-2 text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
+        <p class="text-sm font-medium text-neutral-500">对话召回验证</p>
+        <h1 class="font-display mt-2 text-2xl font-semibold tracking-normal text-neutral-900 sm:text-3xl">
           对话验证
         </h1>
-        <p class="mt-2 text-sm leading-6 text-zinc-500">
+        <p class="mt-2 text-sm leading-6 text-neutral-500">
           输入自然语言问题，跨所有已向量化文档进行语义搜索，AI 将基于检索结果生成带来源引用的回答。
         </p>
       </div>
@@ -124,7 +133,7 @@ function clearLoadingTimer() {
         class="flex flex-col items-center justify-center py-20 text-center"
       >
         <div
-          class="flex size-16 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-400"
+          class="flex size-16 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-400"
           aria-hidden="true"
         >
           <svg
@@ -142,10 +151,10 @@ function clearLoadingTimer() {
             <path d="M8 10h.01M12 10h.01M16 10h.01" />
           </svg>
         </div>
-        <h2 class="mt-5 text-lg font-semibold text-zinc-800">
+        <h2 class="font-display mt-5 text-lg font-semibold text-neutral-800">
           开始对话
         </h2>
-        <p class="mt-2 max-w-sm text-sm leading-6 text-zinc-500">
+        <p class="mt-2 max-w-sm text-sm leading-6 text-neutral-500">
           无需选文档，直接输入问题即可获取 AI 回答。系统将自动搜索所有已向量化的知识库内容。
         </p>
       </div>
@@ -163,7 +172,7 @@ function clearLoadingTimer() {
           <!-- User question -->
           <div class="flex justify-end">
             <div
-              class="max-w-[85%] rounded-2xl rounded-br-md bg-zinc-950 px-4 py-2.5 text-sm leading-6 text-white"
+              class="max-w-[85%] rounded-xl rounded-br-sm bg-neutral-900 px-4 py-2.5 text-sm leading-6 text-white"
             >
               {{ conv.query }}
             </div>
@@ -215,12 +224,12 @@ function clearLoadingTimer() {
         class="space-y-4"
       >
         <!-- Answer skeleton -->
-        <div class="animate-pulse rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div class="mb-3 h-4 w-20 rounded bg-zinc-200" />
+        <div class="animate-pulse rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <div class="mb-3 h-4 w-20 rounded bg-neutral-200" />
           <div class="space-y-2">
-            <div class="h-3 w-full rounded bg-zinc-100" />
-            <div class="h-3 w-5/6 rounded bg-zinc-100" />
-            <div class="h-3 w-4/6 rounded bg-zinc-100" />
+            <div class="h-3 w-full rounded bg-neutral-100" />
+            <div class="h-3 w-5/6 rounded bg-neutral-100" />
+            <div class="h-3 w-4/6 rounded bg-neutral-100" />
           </div>
         </div>
       </div>
