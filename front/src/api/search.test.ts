@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import type { RewriteInfo, RewrittenQuery } from "./search"
+
 // Mock the logger module — lazy init pattern in search.ts will create a real logger.
 vi.mock("../shared/logger", () => ({
   createLogger: () => ({
@@ -88,6 +90,19 @@ const SEARCH_RESPONSE = {
     max_tokens: 1024,
   },
   generation_error: null,
+}
+
+/** Full RewriteInfo payload matching the Python RewriteInfo Pydantic model. */
+const REWRITE_INFO_PAYLOAD: RewriteInfo = {
+  original_query: "它怎么用",
+  rewritten_queries: [
+    { query: "Python 怎么使用", strategy: "context_fusion" },
+    { query: "Python 如何使用", strategy: "normalize" },
+  ] as RewrittenQuery[],
+  strategies_used: ["context_fusion", "normalize"],
+  rewrite_time_ms: 45.2,
+  cache_hit: false,
+  rewrite_model: "qwen3.5-plus",
 }
 
 async function getSearchApi() {
@@ -301,5 +316,264 @@ describe("search api client", () => {
       status: 0,
       detail: "fetch failed: connect ECONNREFUSED",
     })
+  })
+
+  // ── rewrite_info 字段解析（Phase 1） ───────────────────────────────
+
+  it("parses rewrite_info with basic info when rewriting not enabled", async () => {
+    const basicRewriteInfo: RewriteInfo = {
+      original_query: "测试查询",
+      rewritten_queries: [] as RewrittenQuery[],
+      strategies_used: [],
+      rewrite_time_ms: 0.0,
+      cache_hit: false,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...SEARCH_RESPONSE, rewrite_info: basicRewriteInfo }),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "测试查询" })
+
+    // rewrite_info is always present (never null)
+    expect(result.rewrite_info).not.toBeNull()
+    expect(result.rewrite_info.original_query).toBe("测试查询")
+    expect(result.rewrite_info.rewritten_queries).toHaveLength(0)
+    expect(result.rewrite_info.rewrite_time_ms).toBe(0.0)
+  })
+
+  it("parses complete rewrite_info with all fields present", async () => {
+    const responseWithRewrite = {
+      ...SEARCH_RESPONSE,
+      rewrite_info: REWRITE_INFO_PAYLOAD,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(responseWithRewrite),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "它怎么用" })
+
+    expect(result.rewrite_info).not.toBeNull()
+    const ri = result.rewrite_info!
+    expect(ri.original_query).toBe("它怎么用")
+    expect(ri.rewritten_queries).toHaveLength(2)
+    expect(ri.strategies_used).toEqual(["context_fusion", "normalize"])
+    expect(ri.rewrite_time_ms).toBe(45.2)
+    expect(ri.cache_hit).toBe(false)
+  })
+
+  it("parses RewrittenQuery with query and strategy fields", async () => {
+    const responseWithRewrite = {
+      ...SEARCH_RESPONSE,
+      rewrite_info: REWRITE_INFO_PAYLOAD,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(responseWithRewrite),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "它怎么用" })
+
+    const queries = result.rewrite_info!.rewritten_queries
+    expect(queries).toHaveLength(2)
+
+    // First rewritten query
+    expect(queries[0].query).toBe("Python 怎么使用")
+    expect(queries[0].strategy).toBe("context_fusion")
+
+    // Second rewritten query
+    expect(queries[1].query).toBe("Python 如何使用")
+    expect(queries[1].strategy).toBe("normalize")
+  })
+
+  it("parses RewrittenQuery with strategy=null gracefully", async () => {
+    const payloadNoStrategy: RewriteInfo = {
+      original_query: "测试查询",
+      rewritten_queries: [
+        { query: "改写测试", strategy: null },
+      ] as RewrittenQuery[],
+      strategies_used: [],
+      rewrite_time_ms: 5.0,
+      cache_hit: true,
+    }
+    const responseWithRewrite = {
+      ...SEARCH_RESPONSE,
+      rewrite_info: payloadNoStrategy,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(responseWithRewrite),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "测试查询" })
+
+    expect(result.rewrite_info!.rewritten_queries[0].strategy).toBeNull()
+    expect(result.rewrite_info!.cache_hit).toBe(true)
+    expect(result.rewrite_info!.rewrite_time_ms).toBe(5.0)
+  })
+
+  it("parses rewrite_info with rewritten_queries as empty array", async () => {
+    const payloadEmptyQueries: RewriteInfo = {
+      original_query: "简单查询",
+      rewritten_queries: [] as RewrittenQuery[],
+      strategies_used: [],
+      rewrite_time_ms: 0.0,
+      cache_hit: true,
+    }
+    const responseWithRewrite = {
+      ...SEARCH_RESPONSE,
+      rewrite_info: payloadEmptyQueries,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(responseWithRewrite),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "简单查询" })
+
+    expect(result.rewrite_info!.rewritten_queries).toHaveLength(0)
+    expect(result.rewrite_info!.strategies_used).toEqual([])
+    expect(result.rewrite_info!.cache_hit).toBe(true)
+  })
+
+  it("rewrite_info field types match expected schema", async () => {
+    const responseWithRewrite = {
+      ...SEARCH_RESPONSE,
+      rewrite_info: REWRITE_INFO_PAYLOAD,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(responseWithRewrite),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "它怎么用" })
+    const ri = result.rewrite_info!
+
+    // Field type assertions
+    expect(typeof ri.original_query).toBe("string")
+    expect(Array.isArray(ri.rewritten_queries)).toBe(true)
+    expect(Array.isArray(ri.strategies_used)).toBe(true)
+    expect(typeof ri.rewrite_time_ms).toBe("number")
+    expect(typeof ri.cache_hit).toBe("boolean")
+
+    // RewrittenQuery sub-type assertions
+    const rq = ri.rewritten_queries[0]
+    expect(typeof rq.query).toBe("string")
+    expect(typeof rq.strategy).toBe("string")
+  })
+
+  // ── rewrite_info error 字段 ──────────────────────────────────────────
+
+  it("parses rewrite_info with error field when rewrite failed", async () => {
+    const failedRewriteInfo: RewriteInfo = {
+      original_query: "失败查询",
+      rewritten_queries: [] as RewrittenQuery[],
+      strategies_used: [],
+      rewrite_time_ms: 12.3,
+      cache_hit: false,
+      error: "Query rewriter timeout",
+    }
+    const responseWithRewriteError = {
+      ...SEARCH_RESPONSE,
+      rewrite_info: failedRewriteInfo,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(responseWithRewriteError),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "失败查询" })
+
+    expect(result.rewrite_info).not.toBeNull()
+    expect(result.rewrite_info!.error).toBe("Query rewriter timeout")
+    // generation_error should still be null (rewrite failure ≠ generation failure)
+    expect(result.generation_error).toBeNull()
+    expect(result.answer).toBe(SEARCH_RESPONSE.answer)
+  })
+
+  it("parses rewrite_info with error=null when rewrite succeeded", async () => {
+    const responseWithRewrite = {
+      ...SEARCH_RESPONSE,
+      rewrite_info: REWRITE_INFO_PAYLOAD,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(responseWithRewrite),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const result = await searchChunks({ query: "它怎么用" })
+
+    // error field should be undefined (not present) for successful rewrites
+    expect(result.rewrite_info!.error).toBeUndefined()
+  })
+
+  // ── history 参数传递 ──────────────────────────────────────────────
+
+  it("passes history to backend when provided in SearchRequest", async () => {
+    const basicRewriteInfo: RewriteInfo = {
+      original_query: "它怎么用",
+      rewritten_queries: [] as RewrittenQuery[],
+      strategies_used: [],
+      rewrite_time_ms: 0.0,
+      cache_hit: false,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...SEARCH_RESPONSE, rewrite_info: basicRewriteInfo }),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    const history = [
+      { role: "user", content: "什么是 Python？" },
+      { role: "assistant", content: "Python 是一种编程语言。" },
+    ]
+
+    await searchChunks({ query: "它怎么用", history })
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.history).toEqual(history)
+    expect(body.history).toHaveLength(2)
+  })
+
+  it("does not include history in request body when not provided", async () => {
+    const basicRewriteInfo: RewriteInfo = {
+      original_query: "普通查询",
+      rewritten_queries: [] as RewrittenQuery[],
+      strategies_used: [],
+      rewrite_time_ms: 0.0,
+      cache_hit: false,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...SEARCH_RESPONSE, rewrite_info: basicRewriteInfo }),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const { searchChunks } = await getSearchApi()
+
+    await searchChunks({ query: "普通查询" })
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.query).toBe("普通查询")
+    expect(body.top_k).toBe(5)
+    // history should not appear in the serialized body at all
+    expect(body).not.toHaveProperty("history")
   })
 })

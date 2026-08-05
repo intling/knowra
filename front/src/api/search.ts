@@ -10,9 +10,28 @@ function log() {
 
 // ── TypeScript 类型定义 ──────────────────────────────────────────────
 
+export interface RewrittenQuery {
+  query: string
+  strategy?: string | null
+}
+
+export interface RewriteInfo {
+  original_query: string
+  rewritten_queries: RewrittenQuery[]
+  strategies_used: string[]
+  rewrite_time_ms: number
+  cache_hit: boolean
+  error?: string | null
+  rewrite_model?: string | null
+}
+
 export interface SearchRequest {
   query: string
   top_k?: number
+  /** Optional conversation history for pronoun resolution during query rewriting. */
+  history?: Record<string, unknown>[] | null
+  /** Stable session identifier for L1 cache binding (same conversation = same id). */
+  session_id?: string | null
 }
 
 export interface AnswerTokens {
@@ -44,6 +63,7 @@ export interface SearchResponse {
   total_searched: number
   searched_document_count: number
   search_time_ms: number
+  rewrite_info: RewriteInfo
   results: SearchResultItem[]
   answer: string
   answer_tokens: AnswerTokens | null
@@ -89,6 +109,7 @@ async function parseErrorResponse(response: Response): Promise<SearchApiError> {
  *
  * @param request.query - 自然语言查询文本（1–2000 字符）
  * @param request.top_k - 返回的最相似分块数量（1–50，默认 5）
+ * @param request.history - 可选的多轮对话历史，用于查询重写时的指代词消解
  * @returns 包含检索结果、AI 回答、Token 统计和 prompt messages 的完整响应
  * @throws {SearchApiError} 后端返回错误响应或网络请求失败时抛出
  */
@@ -99,6 +120,8 @@ export async function searchChunks(
   const body = JSON.stringify({
     query: request.query,
     top_k: request.top_k ?? 5,
+    ...(request.history != null ? { history: request.history } : {}),
+    ...(request.session_id != null ? { session_id: request.session_id } : {}),
   })
 
   let response: Response
