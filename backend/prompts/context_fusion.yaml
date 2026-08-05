@@ -1,0 +1,120 @@
+# ============================================================================
+# knowra — 上下文融合提示词 (Context Fusion Prompt)
+# ============================================================================
+# 策略：context_fusion
+# 阶段：Phase 1（基础能力）
+# 用途：在多轮对话中，将含有指代词或省略主题的用户查询改写为独立、完整的查询。
+#
+# 触发条件：查询包含中文指代词（它、这个、那个、其等）且存在对话历史时。
+#
+# 管线位置：
+#   Preprocessor（精确词保护）→ ContextRewriter（本策略）→ StrategyRouter
+#
+# 使用方式（代码示例）：
+#   from app.services.prompt_loader import load_prompt
+#   prompt = load_prompt("context_fusion")
+#   system_prompt = prompt["system_prompt"]
+#   user_template = prompt["user_template"]
+#   messages = [
+#       {"role": "system", "content": system_prompt},
+#       {"role": "user", "content": user_template.format(history=..., query=...)},
+#   ]
+#
+# 版本规范：遵循 SemVer (MAJOR.MINOR.PATCH)
+#   MAJOR — 提示词结构/输出格式发生不兼容变更
+#   MINOR — 改写规则/策略显著调整
+#   PATCH — 措辞优化、示例修正
+# ============================================================================
+
+version: "1.0.0"
+description: >-
+  上下文融合（Context Fusion）提示词 —— 结合对话历史将含指代词的查询改写为独立、完整的查询语句，
+  消除对上下文的依赖，确保后续检索和重写步骤拿到的是自包含的查询。
+
+# ── 策略元数据 ──────────────────────────────────────────────────────────────
+metadata:
+  strategy_name: context_fusion
+  strategy_display_name: 上下文融合
+  phase: 1
+  cost: "⭐"        # 极低（1 次轻量 LLM 调用，~100ms）
+  category: "必须"  # 多轮对话场景的必要步骤
+  trigger_condition: "has_pronouns == true"
+  fallback_behavior: "查询已是自包含的则原样返回；LLM 调用失败时静默降级返回原始查询"
+
+# ── 系统提示词 ──────────────────────────────────────────────────────────────
+system_prompt: |
+  你是一个对话理解助手。用户的当前查询可能含有指代词（它、那个、这个、其等）或省略了上文提到的主题。
+  请结合对话历史，将当前查询改写为一个独立、完整、不依赖任何上下文的查询。
+
+  ## 改写规则
+  1. **指代消解**：将所有指代词替换为对话历史中对应的具体实体
+  2. **主题补全**：如果用户省略了当前讨论的主题，从历史中补全
+  3. **保持意图**：不要改变用户的原始意图和问题方向
+  4. **不要添加历史中不存在的信息**
+  5. **如果当前查询已经是独立完整的，原样返回**
+
+# ── 用户消息模板 ────────────────────────────────────────────────────────────
+# 支持的占位符：
+#   {history}  — 格式化后的对话历史文本
+#   {query}    — 当前用户查询（已经过精确词保护处理）
+user_template: |
+  对话历史：
+  {history}
+
+  当前用户查询：{query}
+
+  请输出改写后的独立查询：
+
+# ── 输出格式 ────────────────────────────────────────────────────────────────
+output_format: text          # text | json
+output_instruction: "仅输出改写后的独立查询文本，不要添加任何解释、引号或额外标记。"
+
+# ── 对话历史格式化 ──────────────────────────────────────────────────────────
+history_format:
+  role_labels:
+    user: "用户"
+    assistant: "助手"
+    system: "系统"
+  template: "{role_label}：{content}"
+  separator: "\n"
+
+# ── 测试用例 ────────────────────────────────────────────────────────────────
+examples:
+  - name: "指代词消解 — 单指代"
+    history:
+      - role: "user"
+        content: "Python 的 asyncio 怎么使用"
+      - role: "assistant"
+        content: "asyncio 是 Python 的异步编程库，使用 async/await 语法..."
+    query: "它有哪些常见的坑"
+    expected: "Python asyncio 有哪些常见的坑"
+
+  - name: "指代词消解 — 多指代"
+    history:
+      - role: "user"
+        content: "React 和 Vue 的响应式原理有什么区别"
+      - role: "assistant"
+        content: "React 使用虚拟 DOM 和 Fiber 协调，Vue 使用 Proxy 响应式系统..."
+    query: "它们在大型项目中应该如何选择"
+    expected: "React 和 Vue 在大型项目中应该如何选择"
+
+  - name: "主题补全 — 省略主语"
+    history:
+      - role: "user"
+        content: "Nginx 反向代理怎么配置"
+      - role: "assistant"
+        content: "Nginx 反向代理的配置包括 server 块、location 块和 proxy_pass 指令..."
+    query: "负载均衡呢"
+    expected: "Nginx 负载均衡怎么配置"
+
+  - name: "已是独立查询 — 原样返回"
+    history:
+      - role: "user"
+        content: "Python 性能优化有哪些方法"
+    query: "Java 垃圾回收机制是什么"
+    expected: "Java 垃圾回收机制是什么"
+
+  - name: "无对话历史 — 原样返回"
+    history: []
+    query: "它怎么用"
+    expected: "它怎么用"  # 无上下文可参考，无法消解，原样返回

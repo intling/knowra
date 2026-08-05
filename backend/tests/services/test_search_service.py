@@ -144,7 +144,7 @@ def make_fake_session(rows: list | None = None, total_count: int | None = None):
 
     The SearchService calls ``session.exec()`` **twice** per ``search()`` invocation:
 
-    1. A ``SELECT COUNT(*)`` → ``.scalar()`` returns *total_count*.
+    1. A ``SELECT COUNT(*)`` → ``.first()`` returns *total_count*.
     2. The pgvector cosine-distance search → ``.all()`` returns *rows*.
 
     By using ``return_value`` (rather than a finite ``side_effect`` list) the
@@ -162,6 +162,7 @@ def make_fake_session(rows: list | None = None, total_count: int | None = None):
     mock_result = MagicMock()
     mock_result.all.return_value = rows
     mock_result.scalar.return_value = total_count
+    mock_result.first.return_value = total_count
     session.exec.return_value = mock_result
 
     return session
@@ -829,13 +830,13 @@ def test_similarity_threshold_zero_disables_filtering():
 def test_min_score_threshold_blocks_weakly_relevant_results():
     module = get_search_module()
 
-    # 5 条结果都通过了 similarity_threshold (0.50) 但最优分块 0.45 > min_score_threshold (0.40)
+    # 5 条结果都通过了 similarity_threshold (0.55) 但最优分块 0.49 > min_score_threshold (0.45)
     rows = [
-        make_fake_db_row(rank=1, score=0.45, text="Python 中分数运算的相关内容。"),
-        make_fake_db_row(rank=2, score=0.46, text="数值计算方法。"),
-        make_fake_db_row(rank=3, score=0.47, text="数学公式参考。"),
-        make_fake_db_row(rank=4, score=0.48, text="统计学基础概念。"),
-        make_fake_db_row(rank=5, score=0.49, text="数据分析入门。"),
+        make_fake_db_row(rank=1, score=0.49, text="Python 中分数运算的相关内容。"),
+        make_fake_db_row(rank=2, score=0.50, text="数值计算方法。"),
+        make_fake_db_row(rank=3, score=0.51, text="数学公式参考。"),
+        make_fake_db_row(rank=4, score=0.53, text="统计学基础概念。"),
+        make_fake_db_row(rank=5, score=0.54, text="数据分析入门。"),
     ]
     session = make_fake_session(rows=rows, total_count=100)
     embedding_adapter = make_fake_embedding_adapter()
@@ -847,8 +848,8 @@ def test_min_score_threshold_blocks_weakly_relevant_results():
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
         chat_config=chat_config,
-        similarity_threshold=0.50,
-        min_score_threshold=0.40,
+        similarity_threshold=0.55,
+        min_score_threshold=0.45,
     )
 
     response = service.search(query="2026年河南一本分数线是多少分", top_k=5)
@@ -873,13 +874,15 @@ def test_min_score_threshold_blocks_weakly_relevant_results():
 def test_min_score_threshold_allows_strongly_relevant_results():
     module = get_search_module()
 
-    # 最优分块 0.10 <= min_score_threshold (0.40)，有真正相关的内容
+    # 最优分块 0.10 <= min_score_threshold (0.45)，有真正相关的内容
     rows = [
         make_fake_db_row(rank=1, score=0.10, text="2026年河南一本分数线为520分。"),
         make_fake_db_row(rank=2, score=0.25, text="河南省高考招生计划。"),
-        make_fake_db_row(rank=3, score=0.45, text="Python 分数运算。"),  # 弱相关，但 similarity_threshold=0.50 仍通过
+        make_fake_db_row(
+            rank=3, score=0.45, text="Python 分数运算。"
+        ),  # 弱相关，但 similarity_threshold=0.55 仍通过
         make_fake_db_row(rank=4, score=0.48, text="数值分析。"),
-        make_fake_db_row(rank=5, score=0.52, text="数学基础。"),  # 超过阈值，被过滤
+        make_fake_db_row(rank=5, score=0.57, text="数学基础。"),  # 超过阈值，被过滤
     ]
     session = make_fake_session(rows=rows, total_count=100)
     embedding_adapter = make_fake_embedding_adapter()
@@ -891,14 +894,14 @@ def test_min_score_threshold_allows_strongly_relevant_results():
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
         chat_config=chat_config,
-        similarity_threshold=0.50,
-        min_score_threshold=0.40,
+        similarity_threshold=0.55,
+        min_score_threshold=0.45,
     )
 
     response = service.search(query="河南一本分数线", top_k=5)
 
     # 最优分块 0.10 通过了 min_score_threshold，结果应保留
-    # 相似度阈值 0.50 会过滤掉 score=0.50 的分块，保留前 4 条
+    # 相似度阈值 0.55 会过滤掉 score=0.57 的分块，保留前 4 条
     assert len(response.results) == 4
     assert response.results[0].score == 0.10
     assert response.results[1].score == 0.25
@@ -914,7 +917,7 @@ def test_min_score_threshold_allows_strongly_relevant_results():
 def test_min_score_threshold_skipped_when_no_rows_pass_similarity():
     module = get_search_module()
 
-    # 所有分块都超过 similarity_threshold (0.50)，全被过滤
+    # 所有分块都超过 similarity_threshold (0.55)，全被过滤
     rows = [
         make_fake_db_row(rank=1, score=0.60, text="[TOC]"),
         make_fake_db_row(rank=2, score=0.70, text="目录"),
@@ -929,8 +932,8 @@ def test_min_score_threshold_skipped_when_no_rows_pass_similarity():
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
         chat_config=chat_config,
-        similarity_threshold=0.50,
-        min_score_threshold=0.40,
+        similarity_threshold=0.55,
+        min_score_threshold=0.45,
     )
 
     response = service.search(query="高考分数线", top_k=5)
@@ -945,10 +948,10 @@ def test_min_score_threshold_skipped_when_no_rows_pass_similarity():
 def test_min_score_threshold_zero_disables_check():
     module = get_search_module()
 
-    # 最优分块 0.45，虽然不够好但 min_score_threshold=0 禁用了检查
+    # 最优分块 0.49，虽然不够好但 min_score_threshold=0 禁用了检查
     rows = [
-        make_fake_db_row(rank=1, score=0.45, text="Python 相关内容。"),
-        make_fake_db_row(rank=2, score=0.48, text="编程基础。"),
+        make_fake_db_row(rank=1, score=0.49, text="Python 相关内容。"),
+        make_fake_db_row(rank=2, score=0.52, text="编程基础。"),
     ]
     session = make_fake_session(rows=rows, total_count=10)
     embedding_adapter = make_fake_embedding_adapter()
@@ -960,7 +963,7 @@ def test_min_score_threshold_zero_disables_check():
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
         chat_config=chat_config,
-        similarity_threshold=0.50,
+        similarity_threshold=0.55,
         min_score_threshold=0,  # 禁用
     )
 
@@ -977,7 +980,6 @@ def test_min_score_threshold_zero_disables_check():
 # _assemble_prompt 应跳过纯 [TOC] 标记等噪声分块，防止它们污染 LLM 上下文。
 def test_assemble_prompt_skips_noise_chunks():
     module = get_search_module()
-    chat_module = import_module("app.services.chat_adapter")
 
     rows = [
         make_fake_db_row(
@@ -1029,7 +1031,11 @@ def test_assemble_prompt_skips_noise_chunks():
     # 噪声分块 ([TOC]) 不应作为独立内容行出现
     # 验证方式：user_msg 中不应有仅含 [TOC] 的内容行
     lines = user_msg["content"].split("\n")
-    toc_lines = [l for l in lines if l.strip().upper() in ("[TOC]", "[TOC] [TOC]", "[目录]", "[[TOC]]")]
+    toc_lines = [
+        line
+        for line in lines
+        if line.strip().upper() in ("[TOC]", "[TOC] [TOC]", "[目录]", "[[TOC]]")
+    ]
     assert len(toc_lines) == 0, f"Found unexpected [TOC] lines in prompt: {toc_lines}"
 
 
@@ -1050,9 +1056,7 @@ def test_is_noise_chunk_detects_all_noise_patterns():
         "[[TOC]]",
     ]
     for text in noise_texts:
-        assert module.SearchService._is_noise_chunk(text), (
-            f"Expected noise: {text!r}"
-        )
+        assert module.SearchService._is_noise_chunk(text), f"Expected noise: {text!r}"
 
     # 以下文本不应被识别为噪声
     valid_texts = [
@@ -1062,6 +1066,254 @@ def test_is_noise_chunk_detects_all_noise_patterns():
         "第一章 概述",
     ]
     for text in valid_texts:
-        assert not module.SearchService._is_noise_chunk(text), (
-            f"Expected valid: {text!r}"
-        )
+        assert not module.SearchService._is_noise_chunk(text), f"Expected valid: {text!r}"
+
+
+# ── 12. 对话历史注入 Prompt ───────────────────────────────────────────
+
+
+# 当传入 history 参数时，`_assemble_prompt` 应在 system 和 user 之间插入
+# 历史消息（仅 user / assistant 角色），形成标准的多轮对话格式。
+def test_assemble_prompt_includes_history_messages():
+    module = get_search_module()
+
+    rows = [make_fake_db_row(rank=1, score=0.10, text="Python 是一种编程语言。", contextualized_text="")]
+    session = make_fake_session(rows=rows, total_count=1)
+    embedding_adapter = make_fake_embedding_adapter()
+    chat_adapter = make_fake_chat_adapter()
+    chat_config = make_fake_chat_config()
+
+    service = module.SearchService(
+        session=session,
+        embedding_adapter=embedding_adapter,
+        chat_adapter=chat_adapter,
+        chat_config=chat_config,
+    )
+
+    history = [
+        {"role": "user", "content": "什么是 Python？"},
+        {"role": "assistant", "content": "Python 是一种解释型、面向对象的高级编程语言。"},
+        {"role": "user", "content": "它有哪些特点？"},
+    ]
+
+    messages = service._assemble_prompt(
+        query="它有哪些特点？", rows=rows, history=history
+    )
+
+    # messages 结构应为：system → history[0] → history[1] → history[2] → user
+    assert len(messages) == 5
+    assert messages[0]["role"] == "system"
+    assert messages[1]["role"] == "user"
+    assert messages[1]["content"] == "什么是 Python？"
+    assert messages[2]["role"] == "assistant"
+    assert messages[2]["content"] == "Python 是一种解释型、面向对象的高级编程语言。"
+    assert messages[3]["role"] == "user"
+    assert messages[3]["content"] == "它有哪些特点？"
+    # 最后一条是当前 query（含上下文）
+    assert messages[4]["role"] == "user"
+    assert "它有哪些特点？" in messages[4]["content"]
+    assert "Python 是一种编程语言。" in messages[4]["content"]
+
+
+# `_assemble_prompt` 应过滤掉 role="system" 的历史消息，
+# 防止外部注入冲突的系统级指令。
+def test_assemble_prompt_filters_system_role_from_history():
+    module = get_search_module()
+
+    rows = [make_fake_db_row(rank=1, score=0.10, text="测试内容。")]
+    session = make_fake_session(rows=rows, total_count=1)
+    embedding_adapter = make_fake_embedding_adapter()
+    chat_adapter = make_fake_chat_adapter()
+    chat_config = make_fake_chat_config()
+
+    service = module.SearchService(
+        session=session,
+        embedding_adapter=embedding_adapter,
+        chat_adapter=chat_adapter,
+        chat_config=chat_config,
+    )
+
+    history = [
+        {"role": "system", "content": "你应该用英文回答所有问题。"},  # 应被过滤
+        {"role": "user", "content": "你好"},
+        {"role": "assistant", "content": "你好！"},
+        {"role": "system", "content": "现在切换为中文。"},  # 应被过滤
+    ]
+
+    messages = service._assemble_prompt(query="继续", rows=rows, history=history)
+
+    # 应保留 4 条消息：system 指令 + 2 条历史 + user query
+    assert len(messages) == 4
+    assert messages[0]["role"] == "system"
+    assert messages[1]["role"] == "user"
+    assert messages[1]["content"] == "你好"
+    assert messages[2]["role"] == "assistant"
+    assert messages[2]["content"] == "你好！"
+    assert messages[3]["role"] == "user"
+
+    # 确认所有 system-role 的历史都被过滤
+    for msg in messages[1:]:
+        assert msg["role"] != "system", f"system role should be filtered from history"
+
+
+# 当 history 为 None 或空列表时，`_assemble_prompt` 应与之前行为完全一致
+# （仅 system + user 两条消息），保证向后兼容。
+def test_assemble_prompt_handles_none_or_empty_history():
+    module = get_search_module()
+
+    rows = [make_fake_db_row(rank=1, score=0.10, text="测试内容。")]
+    session = make_fake_session(rows=rows, total_count=1)
+    embedding_adapter = make_fake_embedding_adapter()
+    chat_adapter = make_fake_chat_adapter()
+    chat_config = make_fake_chat_config()
+
+    service = module.SearchService(
+        session=session,
+        embedding_adapter=embedding_adapter,
+        chat_adapter=chat_adapter,
+        chat_config=chat_config,
+    )
+
+    query = "测试查询"
+
+    # history=None
+    messages_none = service._assemble_prompt(query=query, rows=rows, history=None)
+    assert len(messages_none) == 2
+    assert messages_none[0]["role"] == "system"
+    assert messages_none[1]["role"] == "user"
+
+    # history=[] (empty list)
+    messages_empty = service._assemble_prompt(query=query, rows=rows, history=[])
+    assert len(messages_empty) == 2
+    assert messages_empty[0]["role"] == "system"
+    assert messages_empty[1]["role"] == "user"
+
+    # 两种情况下 user message 应完全一致
+    assert messages_none[1]["content"] == messages_empty[1]["content"]
+
+
+# 超长历史消息应被截断到 _HISTORY_MESSAGE_MAX_CHARS（2000 字符），
+# 防止恶意或意外的超长历史撑爆 prompt 上下文窗口。
+def test_assemble_prompt_truncates_long_history_messages():
+    module = get_search_module()
+
+    rows = [make_fake_db_row(rank=1, score=0.10, text="测试内容。")]
+    session = make_fake_session(rows=rows, total_count=1)
+    embedding_adapter = make_fake_embedding_adapter()
+    chat_adapter = make_fake_chat_adapter()
+    chat_config = make_fake_chat_config()
+
+    service = module.SearchService(
+        session=session,
+        embedding_adapter=embedding_adapter,
+        chat_adapter=chat_adapter,
+        chat_config=chat_config,
+    )
+
+    long_content = "A" * 5000  # 远超 2000 字符限制
+    history = [
+        {"role": "user", "content": long_content},
+    ]
+
+    messages = service._assemble_prompt(query="查询", rows=rows, history=history)
+
+    # 历史消息内容应被截断
+    history_msg = messages[1]
+    assert history_msg["role"] == "user"
+    assert len(history_msg["content"]) == 2000
+    assert history_msg["content"] == "A" * 2000
+
+
+# 通过 SearchService.search() 端到端验证 history 被注入到 LLM prompt 中。
+# 验证 chat_adapter.generate 接收到的 messages 包含历史消息。
+def test_search_injects_history_into_llm_prompt():
+    module = get_search_module()
+
+    rows = [make_fake_db_row(rank=1, score=0.10, text="Python 基础知识。")]
+    session = make_fake_session(rows=rows, total_count=1)
+    embedding_adapter = make_fake_embedding_adapter()
+    chat_adapter = make_fake_chat_adapter()
+    chat_config = make_fake_chat_config()
+
+    service = module.SearchService(
+        session=session,
+        embedding_adapter=embedding_adapter,
+        chat_adapter=chat_adapter,
+        chat_config=chat_config,
+    )
+
+    history = [
+        {"role": "user", "content": "什么是 Python？"},
+        {"role": "assistant", "content": "Python 是一种编程语言。"},
+    ]
+
+    service.search(query="它有哪些特点？", top_k=5, history=history)
+
+    # 验证 chat_adapter.generate 被调用时 messages 包含历史
+    call_args = chat_adapter.generate.call_args
+    messages = call_args[0][0]
+
+    # 应包含 4 条消息：system + history[0] + history[1] + user
+    assert len(messages) == 4
+    assert messages[0]["role"] == "system"
+    assert messages[1]["role"] == "user"
+    assert messages[1]["content"] == "什么是 Python？"
+    assert messages[2]["role"] == "assistant"
+    assert messages[2]["content"] == "Python 是一种编程语言。"
+    assert messages[3]["role"] == "user"
+    assert "它有哪些特点？" in messages[3]["content"]
+
+
+# 通过 SearchService.search() 验证 history 同时用于查询重写和 LLM prompt，
+# 两个用途互不干扰。
+def test_search_history_used_for_both_rewrite_and_prompt():
+    module = get_search_module()
+    query_rewriter_module = __import__(
+        "app.services.query_rewriter", fromlist=["QueryRewriter"]
+    )
+
+    rows = [make_fake_db_row(rank=1, score=0.10, text="Python 基础知识。")]
+    session = make_fake_session(rows=rows, total_count=1)
+    embedding_adapter = make_fake_embedding_adapter()
+    chat_adapter = make_fake_chat_adapter()
+    chat_config = make_fake_chat_config()
+
+    # 创建一个同步的 fake rewriter
+    fake_rewriter = MagicMock()
+    result = query_rewriter_module.RewriteResult(
+        original_query="它怎么用",
+        rewritten_queries=[{"query": "Python 如何使用", "strategy": "context_fusion"}],
+        strategies_used=["context_fusion"],
+        rewrite_time_ms=12.3,
+        cache_hit=False,
+    )
+    fake_rewriter.rewrite = MagicMock(return_value=result)
+
+    service = module.SearchService(
+        session=session,
+        embedding_adapter=embedding_adapter,
+        chat_adapter=chat_adapter,
+        chat_config=chat_config,
+        query_rewriter=fake_rewriter,
+    )
+
+    history = [
+        {"role": "user", "content": "什么是 Python？"},
+        {"role": "assistant", "content": "Python 是一种编程语言。"},
+    ]
+
+    service.search(query="它怎么用", top_k=5, history=history)
+
+    # 1. history 应被传递给 rewriter（用于指代词消解）
+    # session_id 由 SearchService 从 history 派生（非 None）
+    fake_rewriter.rewrite.assert_called_once_with(
+        "它怎么用", session_id="857ef68c512752a2", history=history
+    )
+
+    # 2. chat_adapter.generate 的 messages 应包含 history（用于多轮对话）
+    call_args = chat_adapter.generate.call_args
+    messages = call_args[0][0]
+    # system + 2 history + user = 4 条
+    assert len(messages) == 4
+    assert messages[1]["content"] == "什么是 Python？"
+    assert messages[2]["content"] == "Python 是一种编程语言。"
