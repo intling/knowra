@@ -20,17 +20,11 @@ from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 from app.db.session import get_session
 from app.schemas.search import SearchRequest, SearchResponse
-from app.services.audit_trail import AuditTrail
-from app.services.cache_manager import CacheManager
 from app.services.chat_adapter import ChatAdapter
 from app.services.chat_config import ChatConfig
-from app.services.context_rewriter import ContextRewriter
 from app.services.embedding_adapter import EmbeddingAdapter, EmbeddingAPIError
 from app.services.embedding_config import EmbeddingConfig
-from app.services.query_rewrite_config import QueryRewriteConfig
-from app.services.query_rewriter import QueryRewriter
 from app.services.search import SearchService
-from app.services.term_protector import TermProtector
 
 logger = get_logger(__name__)
 
@@ -61,126 +55,9 @@ def get_chat_adapter(chat_config: Annotated[ChatConfig, Depends(get_chat_config)
     return ChatAdapter(config=chat_config)
 
 
-def get_query_rewrite_config(settings: SettingsDep) -> QueryRewriteConfig | None:
-    """从应用配置构建 QueryRewriteConfig（重写未启用时返回 None）。"""
-    if not settings.query_rewrite_enabled:
-        return None
-    return QueryRewriteConfig.from_settings(settings)
-
-
-# ── 模块级单例 ────────────────────────────────────────────────────────────
-# 由于 get_settings() 已通过 @lru_cache 保证全进程返回同一 Settings
-# 实例，QueryRewriter、SearchResponseCache、AuditTrail 只需构造一次
-# 即可实现 L1 缓存跨请求共享。
-_query_rewriter_singleton: QueryRewriter | None = None
-_query_rewriter_singleton_disabled: bool = False  # 标记是否已确认"不启用"
-_search_audit_trail_singleton: AuditTrail | None = None
-_search_response_cache_singleton: CacheManager | None = None
-_search_response_cache_disabled: bool = False  # 标记缓存是否被禁用
-
-
-def get_search_audit_trail() -> AuditTrail:
-    """获取搜索管线的 AuditTrail 单例（含 audit_trail_id 生成能力）。"""
-    global _search_audit_trail_singleton
-    if _search_audit_trail_singleton is None:
-        _search_audit_trail_singleton = AuditTrail()
-    return _search_audit_trail_singleton
-
-
-def get_search_response_cache(settings: SettingsDep) -> CacheManager | None:
-    """获取搜索响应 L1 缓存单例（会话绑定精确匹配）。
-
-    当 ``search_cache_enabled`` 为 False 时返回 None，
-    SearchService 将跳过缓存查找与存储。
-    """
-    global _search_response_cache_singleton, _search_response_cache_disabled
-
-    if _search_response_cache_singleton is not None:
-        return _search_response_cache_singleton
-    if _search_response_cache_disabled:
-        return None
-
-    if not settings.search_cache_enabled:
-        _search_response_cache_disabled = True
-        return None
-
-    _search_response_cache_singleton = CacheManager(
-        max_size=settings.search_cache_max_size,
-        ttl_seconds=settings.search_cache_ttl_seconds,
-    )
-    logger.info(
-        "search_response_cache_initialized",
-        max_size=settings.search_cache_max_size,
-        ttl_seconds=settings.search_cache_ttl_seconds,
-    )
-    return _search_response_cache_singleton
-
-
-def get_query_rewriter(
-    settings: SettingsDep,
-    query_rewrite_config: Annotated[QueryRewriteConfig | None, Depends(get_query_rewrite_config)],
-) -> QueryRewriter | None:
-    """构建 QueryRewriter 或返回 None（未启用/未配置时）。
-
-    装配完整的 QueryRewriter 管线组件：
-        TermProtector → CacheManager → ContextRewriter → AuditTrail
-
-    通过模块级变量实现单例模式：QueryRewriter 及其内部 CacheManager
-    在首次请求时创建，后续请求复用同一实例，从而保证 L1 缓存可在
-    连续请求间命中。
-    当 QUERY_REWRITE_ENABLED=false 或 QueryRewriteConfig 无效时返回 None，
-    搜索管线的 Step 0（查询重写）将被跳过。
-    """
-    global _query_rewriter_singleton, _query_rewriter_singleton_disabled
-
-    if _query_rewriter_singleton is not None:
-        return _query_rewriter_singleton
-    if _query_rewriter_singleton_disabled:
-        return None
-
-    if query_rewrite_config is None:
-        _query_rewriter_singleton_disabled = True
-        return None
-
-    if not query_rewrite_config.api_key:
-        logger.warning("query_rewrite_disabled", reason="api_key_empty")
-        _query_rewriter_singleton_disabled = True
-        return None
-
-    # ── 组装子组件 ──────────────────────────────────────────────────
-    # TermProtector：从默认词汇表和内置正则规则加载
-    term_protector = TermProtector.from_defaults()
-
-    # ChatAdapter：重写 LLM 使用独立配置（可能不同于主 chat 模型）
-    rewrite_chat_adapter = ChatAdapter(config=query_rewrite_config)
-
-    # ContextRewriter：基于对话历史进行指代词消解
-    context_rewriter = ContextRewriter(chat_adapter=rewrite_chat_adapter)
-
-    # CacheManager：L1 精确缓存（内存 LRU + TTL，单例跨请求共享）
-    cache_manager = CacheManager()
-
-    # AuditTrail：结构化审计日志
-    audit_trail = AuditTrail()
-
-    _query_rewriter_singleton = QueryRewriter(
-        exact_term_protector=term_protector,
-        context_rewriter=context_rewriter,
-        cache_manager=cache_manager,
-        chat_adapter=rewrite_chat_adapter,
-        audit_trail=audit_trail,
-        enabled=True,
-        pipeline_timeout=settings.query_rewrite_pipeline_timeout,
-    )
-    return _query_rewriter_singleton
-
-
 ChatConfigDep = Annotated[ChatConfig, Depends(get_chat_config)]
 EmbeddingAdapterDep = Annotated[EmbeddingAdapter, Depends(get_embedding_adapter)]
 ChatAdapterDep = Annotated[ChatAdapter, Depends(get_chat_adapter)]
-QueryRewriterDep = Annotated[QueryRewriter | None, Depends(get_query_rewriter)]
-SearchResponseCacheDep = Annotated[CacheManager | None, Depends(get_search_response_cache)]
-SearchAuditTrailDep = Annotated[AuditTrail, Depends(get_search_audit_trail)]
 
 
 # ── POST /api/search ──────────────────────────────────────────────────
@@ -198,16 +75,12 @@ def search_documents(
     chat_config: ChatConfigDep,
     embedding_adapter: EmbeddingAdapterDep,
     chat_adapter: ChatAdapterDep,
-    query_rewriter: QueryRewriterDep = None,
-    response_cache: SearchResponseCacheDep = None,
-    search_audit_trail: SearchAuditTrailDep = None,
 ) -> SearchResponse:
     """跨所有已向量化文档进行语义搜索，并生成 AI 回答。
 
     请求体：
     - **query**: 自然语言查询文本（1–2000 字符）
     - **top_k**: 返回的最相似分块数量（1–50，默认 5）
-    - **history**: 可选的多轮对话历史，用于查询重写时的指代词消解
 
     响应体包含检索结果列表、LLM 生成的 Markdown 回答、
     Token 用量统计以及完整的 prompt messages（供调试使用）。
@@ -239,18 +112,10 @@ def search_documents(
         chat_config=chat_config,
         similarity_threshold=settings.search_similarity_threshold,
         min_score_threshold=settings.search_min_score_threshold,
-        query_rewriter=query_rewriter,
-        response_cache=response_cache,
-        audit_trail=search_audit_trail,
     )
 
     try:
-        response = service.search(
-            query=request.query,
-            top_k=request.top_k,
-            history=request.history,
-            session_id=request.session_id,
-        )
+        response = service.search(query=request.query, top_k=request.top_k)
     except EmbeddingAPIError as exc:
         logger.warning("search_embedding_failed", error=str(exc))
         raise HTTPException(

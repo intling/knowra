@@ -191,22 +191,12 @@ def search_client(
     def _get_chat_adapter():
         return _chat_adapter
 
-    def _get_search_response_cache():
-        # 测试默认禁用 L1 搜索响应缓存，避免缓存副作用
-        return None
-
-    def _get_search_audit_trail():
-        audit_module = import_module("app.services.audit_trail")
-        return audit_module.AuditTrail()
-
     # Import the route's dependency functions (will fail in red phase)
     try:
         search_routes = import_module("app.api.routes.search")
         overrides[search_routes.get_chat_config] = _get_chat_config
         overrides[search_routes.get_embedding_adapter] = _get_embedding_adapter
         overrides[search_routes.get_chat_adapter] = _get_chat_adapter
-        overrides[search_routes.get_search_response_cache] = _get_search_response_cache
-        overrides[search_routes.get_search_audit_trail] = _get_search_audit_trail
     except ImportError:
         pass  # Red phase — route doesn't exist yet
 

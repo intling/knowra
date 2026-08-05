@@ -1,6 +1,0 @@
-schema: spec-driven
-created: 2026-07-31
-archived: 2026-08-05
-parent_change: add-query-rewriting
-phase: phase1
-summary: 查询重写模块一——基础管线（精确词保护、上下文融合、L1 精确缓存、请求去重、审计日志、RewritePanel 组件、SearchService 集成）

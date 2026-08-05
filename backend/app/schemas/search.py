@@ -4,41 +4,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-# ── 查询重写信息 ────────────────────────────────────────────────────────
-
-
-class RewrittenQuery(BaseModel):
-    """单条重写结果 —— 改写后的查询文本及其策略来源。"""
-
-    query: str = Field(description="改写后的查询文本")
-    strategy: str | None = Field(
-        default=None, description="重写策略名称（如 normalize、expand 等）"
-    )
-
-
-class RewriteInfo(BaseModel):
-    """查询重写的完整元信息 —— 原始查询、改写结果列表、使用策略、耗时与缓存命中。"""
-
-    original_query: str = Field(description="原始查询文本")
-    rewritten_queries: list[RewrittenQuery] = Field(
-        default_factory=list, description="改写后的查询列表，含策略标签"
-    )
-    strategies_used: list[str] = Field(
-        default_factory=list, description="本次重写实际使用的策略名称列表"
-    )
-    rewrite_time_ms: float = Field(description="重写耗时（毫秒）", ge=0)
-    cache_hit: bool = Field(description="是否命中缓存")
-    error: str | None = Field(
-        default=None,
-        description="重写失败时的错误信息，成功时为 None。非 None 时表示改写未生效，"
-        "搜索使用原始查询完成，rewritten_queries 和 strategies_used 为空。",
-    )
-    rewrite_model: str | None = Field(
-        default=None,
-        description="实际使用的重写模型名称。为 None 时使用服务端默认配置。",
-    )
-
-
 # ── 请求 ──────────────────────────────────────────────────────────────
 
 
@@ -48,7 +13,6 @@ class SearchRequest(BaseModel):
     约束（与 spec 一致）：
     - query：1–2000 字符
     - top_k：1–50，默认 5
-    - history：可选的多轮对话历史，用于指代词消解，最多保留最近 20 轮
     """
 
     query: str = Field(
@@ -63,17 +27,6 @@ class SearchRequest(BaseModel):
         le=50,
         description="返回的最相似分块数量",
         examples=[5, 10],
-    )
-    history: list[dict] | None = Field(
-        default=None,
-        description="可选的多轮对话历史（role + content 消息列表），用于查询重写时的指代词消解",
-        max_length=20,
-    )
-    session_id: str | None = Field(
-        default=None,
-        description="可选的会话标识符，用于 L1 缓存绑定（会话级精确匹配）。"
-        "为 None 时从 history 自动派生。",
-        max_length=128,
     )
 
 
@@ -130,18 +83,6 @@ class SearchResponse(BaseModel):
     searched_document_count: int = Field(description="涉及的不同文档数")
     search_time_ms: float = Field(description="搜索耗时（毫秒）", ge=0)
 
-    # ── 查询重写信息 ──
-    rewrite_info: RewriteInfo = Field(
-        default_factory=lambda: RewriteInfo(
-            original_query="",
-            rewritten_queries=[],
-            strategies_used=[],
-            rewrite_time_ms=0.0,
-            cache_hit=False,
-        ),
-        description="查询重写元信息（始终返回，即使未启用重写）",
-    )
-
     # ── 搜索结果 ──
     results: list[SearchResult] = Field(
         default_factory=list, description="召回的分块列表，按余弦距离升序排列"
@@ -164,13 +105,6 @@ class SearchResponse(BaseModel):
     chat_config_snapshot: dict | None = Field(
         default=None,
         description="ChatConfig.snapshot() 快照（不含 api_key），记录生成配置",
-    )
-
-    # ── 审计追踪 ──
-    audit_trail_id: str | None = Field(
-        default=None,
-        description="端到端审计追踪 ID（16 字符十六进制），贯穿缓存、重写、搜索全管线，"
-        "用于在日志系统中关联单个搜索请求的完整生命周期。",
     )
 
     # ── 降级 ──

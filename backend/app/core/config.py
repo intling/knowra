@@ -84,35 +84,18 @@ class Settings(BaseSettings):
     chat_max_tokens: int = 1024
     chat_request_timeout: float = 60.0
     chat_max_retries: int = 3
-    # 查询重写（Query Rewriting）配置
-    query_rewrite_enabled: bool = False
-    query_rewrite_model: str = "qwen3.5-plus"
-    query_rewrite_temperature: float = 0.1
-    query_rewrite_max_tokens: int = 512
-    query_rewrite_timeout: float = 30.0
-    query_rewrite_max_retries: int = 3
-    query_rewrite_api_base_url: str = "https://newapi.bytcloud.org/v1"
-    query_rewrite_api_key: str = ""
-    query_rewrite_pipeline_timeout: float = 3.0
     # 语义搜索相似度阈值（余弦距离，0-2。0=完全相同，2=完全相反）
     # 仅当分块与查询的余弦距离 <= 此阈值时才纳入检索结果。
     # 设 0 表示禁用过滤。推荐值 0.4-0.6（取决于嵌入模型）。
-    # 应与 search_min_score_threshold 保持 0.1-0.15 差距，确保两道防线分工明确。
-    search_similarity_threshold: float = 0.55
+    # 较低的值 = 更严格 = 更少幻觉，但可能漏掉部分相关内容。
+    search_similarity_threshold: float = 0.5
 
     # 语义搜索最低分数阈值（余弦距离，0-2）。
     # 检索结果中最优分块（最低余弦距离）必须 <= 此阈值，否则视为"无相关结果"，
     # 返回空结果且不调用 LLM。这是防止 LLM 基于弱相关内容产生幻觉的第二道防线。
     # 应设置得比 search_similarity_threshold 更严格（值更小）。
     # 设 0 表示禁用此检查。
-    search_min_score_threshold: float = 0.45
-    # 搜索响应 L1 缓存（内存 LRU，会话绑定精确匹配）
-    # 缓存完整的 SearchResponse（含自然语言回答、引用文档片段、模型版本、
-    # Token 消耗、生成耗时、审计追踪 ID），相同会话内完全相同的查询直接返回缓存结果。
-    # 设 False 可完全禁用；TTL 和 max_size 仅在启用时生效。
-    search_cache_enabled: bool = True
-    search_cache_ttl_seconds: float = 600.0  # 10 分钟
-    search_cache_max_size: int = 100
+    search_min_score_threshold: float = 0.4
     document_model_bootstrap_enabled: bool = True
     document_model_bootstrap_strategy: str = "download_missing"
     document_model_bootstrap_failure_policy: str = "degraded"
