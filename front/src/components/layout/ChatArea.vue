@@ -9,6 +9,7 @@ import ChatInput, { type AttachedFile } from "../../components/ChatInput.vue"
 import AnswerPanel from "../../components/AnswerPanel.vue"
 import PromptPreview from "../../components/PromptPreview.vue"
 import ResultsPanel from "../../components/ResultsPanel.vue"
+import RewritePanel from "../../components/RewritePanel.vue"
 import WelcomeView from "../../components/chat/WelcomeView.vue"
 import UserMessage from "../../components/chat/UserMessage.vue"
 import ChatTopNav from "../../components/chat/ChatTopNav.vue"
@@ -84,6 +85,21 @@ const currentModelName = computed(() => {
 
 function generateBubbleId(): string {
   return `${Date.now()}-${(nextBubbleId++).toString(36)}`
+}
+
+/** 从已有气泡列表中提取对话历史，用于查询重写的指代词消解。
+ *
+ *  每个已完成的气泡产生两条消息：user（查询）+ assistant（回答）。
+ *  跳过无响应的气泡（如发送中或出错的气泡）。
+ */
+function buildHistory(previousBubbles: ChatBubble[]): Record<string, unknown>[] {
+  const history: Record<string, unknown>[] = []
+  for (const bubble of previousBubbles) {
+    if (!bubble.response) continue
+    history.push({ role: "user", content: bubble.query })
+    history.push({ role: "assistant", content: bubble.response.answer })
+  }
+  return history
 }
 
 function clearLoadingTimer() {
@@ -202,10 +218,15 @@ async function handleSend() {
   const queryForApi = trimmed || "总结归纳文档的关键信息"
   log().info("发送搜索请求", { query: queryForApi, topK: topK.value })
 
+  // 构建对话历史（当前气泡之前的所有已完成气泡），用于查询重写的指代词消解
+  const history = buildHistory(bubbles.value.slice(0, -1))
+
   try {
     const response: SearchResponse = await searchChunks({
       query: queryForApi,
       top_k: topK.value,
+      session_id: conversationId,
+      ...(history.length > 0 ? { history } : {}),
     })
 
     // 更新气泡：写入 API 响应数据
@@ -274,6 +295,12 @@ async function handleSend() {
               <p class="text-sm font-medium text-red-800">请求失败</p>
               <p class="mt-1 text-sm text-red-600">{{ bubble.error }}</p>
             </div>
+
+            <!-- Rewrite panel (above AnswerPanel) -->
+            <RewritePanel
+              v-if="bubble.response"
+              :rewrite-info="bubble.response.rewrite_info"
+            />
 
             <!-- Answer panel -->
             <AnswerPanel

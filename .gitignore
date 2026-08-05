@@ -41,3 +41,6 @@ backend/logs/**
 
 # Models
 backend/storage/**
+.agents
+.claude
+.codex
