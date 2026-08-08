@@ -1077,7 +1077,9 @@ def test_is_noise_chunk_detects_all_noise_patterns():
 def test_assemble_prompt_includes_history_messages():
     module = get_search_module()
 
-    rows = [make_fake_db_row(rank=1, score=0.10, text="Python 是一种编程语言。", contextualized_text="")]
+    rows = [
+        make_fake_db_row(rank=1, score=0.10, text="Python 是一种编程语言。", contextualized_text="")
+    ]
     session = make_fake_session(rows=rows, total_count=1)
     embedding_adapter = make_fake_embedding_adapter()
     chat_adapter = make_fake_chat_adapter()
@@ -1096,9 +1098,7 @@ def test_assemble_prompt_includes_history_messages():
         {"role": "user", "content": "它有哪些特点？"},
     ]
 
-    messages = service._assemble_prompt(
-        query="它有哪些特点？", rows=rows, history=history
-    )
+    messages = service._assemble_prompt(query="它有哪些特点？", rows=rows, history=history)
 
     # messages 结构应为：system → history[0] → history[1] → history[2] → user
     assert len(messages) == 5
@@ -1153,7 +1153,7 @@ def test_assemble_prompt_filters_system_role_from_history():
 
     # 确认所有 system-role 的历史都被过滤
     for msg in messages[1:]:
-        assert msg["role"] != "system", f"system role should be filtered from history"
+        assert msg["role"] != "system", "system role should be filtered from history"
 
 
 # 当 history 为 None 或空列表时，`_assemble_prompt` 应与之前行为完全一致
@@ -1268,9 +1268,7 @@ def test_search_injects_history_into_llm_prompt():
 # 两个用途互不干扰。
 def test_search_history_used_for_both_rewrite_and_prompt():
     module = get_search_module()
-    query_rewriter_module = __import__(
-        "app.services.query_rewriter", fromlist=["QueryRewriter"]
-    )
+    query_rewriter_module = __import__("app.services.query_rewriter", fromlist=["QueryRewriter"])
 
     rows = [make_fake_db_row(rank=1, score=0.10, text="Python 基础知识。")]
     session = make_fake_session(rows=rows, total_count=1)

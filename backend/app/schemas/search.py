@@ -1,5 +1,6 @@
 """搜索相关的 Pydantic Schema —— 请求、单条结果、回答 Token 统计与完整响应。"""
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -14,6 +15,8 @@ class RewrittenQuery(BaseModel):
     strategy: str | None = Field(
         default=None, description="重写策略名称（如 normalize、expand 等）"
     )
+    duration_ms: float | None = Field(default=None, description="该策略执行耗时（毫秒）")
+    tokens: int | None = Field(default=None, description="该策略消耗的 token 数")
 
 
 class RewriteInfo(BaseModel):
@@ -36,6 +39,19 @@ class RewriteInfo(BaseModel):
     rewrite_model: str | None = Field(
         default=None,
         description="实际使用的重写模型名称。为 None 时使用服务端默认配置。",
+    )
+    intent: str | None = Field(
+        default=None,
+        description="查询意图分类结果（factual/analytical/comparative/"
+        "procedural/exploratory/chitchat/ambiguous）",
+    )
+    complexity: int | None = Field(
+        default=None,
+        description="查询复杂度评分（1-10）",
+    )
+    cache_level: Literal["L1", "L2"] | None = Field(
+        default=None,
+        description="缓存命中层级（L1 精确命中 / L2 语义命中 / None 未命中）",
     )
 
 

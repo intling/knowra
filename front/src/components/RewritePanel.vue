@@ -33,6 +33,52 @@ function strategyLabel(strategy: string | null | undefined): string {
   if (strategy == null) return DEFAULT_STRATEGY_LABEL
   return STRATEGY_LABELS[strategy] ?? DEFAULT_STRATEGY_LABEL
 }
+
+// ── Phase 2: Strategy color mapping (task 8.2.1) ──
+const STRATEGY_COLORS: Record<string, string> = {
+  normalize: "bg-blue-100 text-blue-700",
+  term_align: "bg-purple-100 text-purple-700",
+  expand: "bg-amber-100 text-amber-700",
+  context_fusion: "bg-teal-100 text-teal-700",
+}
+const DEFAULT_STRATEGY_COLORS = "bg-brand-100 text-brand-700"
+
+function strategyColorClasses(strategy: string | null | undefined): string {
+  if (strategy == null) return DEFAULT_STRATEGY_COLORS
+  return STRATEGY_COLORS[strategy] ?? DEFAULT_STRATEGY_COLORS
+}
+
+// ── Phase 2: Intent configuration (task 8.2.2) ──
+const INTENT_CONFIG: Record<string, { emoji: string; label: string }> = {
+  factual: { emoji: "📋", label: "事实型" },
+  analytical: { emoji: "🔍", label: "分析型" },
+  comparative: { emoji: "⚖️", label: "比较型" },
+  procedural: { emoji: "📝", label: "操作型" },
+  exploratory: { emoji: "🔎", label: "探索型" },
+  chitchat: { emoji: "💬", label: "闲聊" },
+  ambiguous: { emoji: "❓", label: "模糊" },
+}
+
+function intentDisplay(): string | null {
+  if (!props.rewriteInfo.intent) return null
+  const intent = props.rewriteInfo.intent
+  const config = INTENT_CONFIG[intent]
+  if (!config) return null
+  const complexity = props.rewriteInfo.complexity
+  const parts = [`${config.emoji} ${config.label}`]
+  if (complexity != null) {
+    parts.push(` · 复杂度 ${complexity}`)
+  }
+  return parts.join("")
+}
+
+// ── Phase 2: Cache level label (task 8.2.3) ──
+function cacheLevelLabel(): string | null {
+  const level = props.rewriteInfo.cache_level
+  if (level === "L1") return "L1 精确命中"
+  if (level === "L2") return "L2 语义命中"
+  return null
+}
 </script>
 
 <template>
@@ -60,6 +106,13 @@ function strategyLabel(strategy: string | null | undefined): string {
           class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
         >
           {{ rewriteInfo.rewritten_queries.length }}
+        </span>
+        <span
+          v-if="intentDisplay()"
+          data-testid="intent-badge"
+          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
+        >
+          {{ intentDisplay() }}
         </span>
       </div>
       <div class="flex items-center gap-2">
@@ -110,11 +163,12 @@ function strategyLabel(strategy: string | null | undefined): string {
           data-testid="rewritten-query-item"
           class="px-5 py-3"
         >
-          <!-- Strategy tag (unified gray style for Phase 1) -->
+          <!-- Strategy tag (Phase 2: color-coded by strategy) -->
           <div class="mb-1.5 flex items-center gap-2">
             <span
               data-testid="strategy-tag"
-              class="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-600"
+              class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+              :class="strategyColorClasses(item.strategy)"
             >
               {{ strategyLabel(item.strategy) }}
             </span>
@@ -158,6 +212,13 @@ function strategyLabel(strategy: string | null | undefined): string {
           :class="rewriteInfo.cache_hit ? 'text-emerald-500' : 'text-neutral-400'"
         >
           {{ rewriteInfo.cache_hit ? '⚡ 缓存命中' : '缓存未命中' }}
+        </p>
+        <p
+          v-if="cacheLevelLabel()"
+          data-testid="cache-level-tag"
+          class="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-600"
+        >
+          {{ cacheLevelLabel() }}
         </p>
       </div>
     </div>

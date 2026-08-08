@@ -13,6 +13,8 @@ function log() {
 export interface RewrittenQuery {
   query: string
   strategy?: string | null
+  duration_ms?: number | null
+  tokens?: number | null
 }
 
 export interface RewriteInfo {
@@ -23,6 +25,9 @@ export interface RewriteInfo {
   cache_hit: boolean
   error?: string | null
   rewrite_model?: string | null
+  intent?: string | null
+  complexity?: number | null
+  cache_level?: "L1" | "L2" | null
 }
 
 export interface SearchRequest {

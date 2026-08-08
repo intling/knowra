@@ -3,8 +3,9 @@
 将对话历史提供给 LLM，与受保护查询一起消解不完全指代
 （如 "它怎么用" → "Python 怎么使用"）。
 
-提示词默认从 ``backend/prompts/context_fusion.yaml`` 加载，
-可通过构造函数参数覆盖（便于测试和 A/B 实验）。
+提示词默认通过 ``PromptLoader.load("context_fusion")`` 从
+``backend/prompts/rewrite_prompts.yaml`` 加载，可通过构造函数参数覆盖
+（便于测试和 A/B 实验）。
 """
 
 from __future__ import annotations
@@ -24,21 +25,22 @@ def _format_history(history: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _load_default_prompt(field: str) -> str:
-    """从 context_fusion.yaml 加载默认提示词字段。
+def _load_default_template() -> str:
+    """通过 PromptLoader 加载默认提示词模板。
 
-    Args:
-        field: 要提取的字段名（如 ``"system_prompt"``、``"user_template"``）。
+    三层降级：环境变量 → YAML Catalog → 代码默认值。
+    加载失败时返回空字符串，由调用方降级处理。
 
     Returns:
-        提示词文本；若文件缺失或字段不存在则返回空字符串。
+        包含 ``{history}`` 和 ``{query}`` 占位符的模板字符串。
     """
     try:
-        from app.services.prompt_loader import load_prompt
+        from app.services.prompt_loader import PromptLoader
 
-        return load_prompt("context_fusion").get(field, "")
+        loader = PromptLoader()
+        return loader.load("context_fusion")
     except Exception:
-        # prompt_loader 不可用或文件缺失时静默降级
+        # PromptLoader 不可用或策略缺失时静默降级
         return ""
 
 
@@ -48,25 +50,21 @@ class ContextRewriter:
     由 ``QueryRewriter`` 在上下文融合步骤中调用，当查询包含指代词
     且存在对话历史时触发。
 
-    提示词默认从 ``backend/prompts/context_fusion.yaml`` 加载，
-    可通过 *system_prompt* / *user_template* 参数覆盖。
+    提示词默认通过 ``PromptLoader.load("context_fusion")`` 从
+    ``rewrite_prompts.yaml`` Catalog 加载，可通过 *prompt_template* 参数覆盖。
     """
 
     def __init__(
         self,
         chat_adapter: ChatAdapter,
         *,
-        system_prompt: str | None = None,
-        user_template: str | None = None,
+        prompt_template: str | None = None,
     ) -> None:
         self._chat_adapter = chat_adapter
-        self._system_prompt = system_prompt or _load_default_prompt("system_prompt")
-        self._user_template = user_template or _load_default_prompt("user_template")
+        self._prompt_template = prompt_template or _load_default_template()
         self._logger = get_logger(__name__)
 
-    def rewrite(
-        self, query: str, history: list[dict], *, model: str | None = None
-    ) -> str:
+    def rewrite(self, query: str, history: list[dict], *, model: str | None = None) -> str:
         """利用 *history* 对 *query* 进行指代词消解改写。
 
         Args:
@@ -81,10 +79,9 @@ class ContextRewriter:
             return query
 
         history_text = _format_history(history)
-        user_content = self._user_template.format(history=history_text, query=query)
+        user_content = self._prompt_template.format(history=history_text, query=query)
 
         messages = [
-            {"role": "system", "content": self._system_prompt},
             {"role": "user", "content": user_content},
         ]
 

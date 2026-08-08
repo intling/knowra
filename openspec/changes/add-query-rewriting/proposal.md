@@ -28,11 +28,12 @@
 
 ### Modified Capabilities
 - `semantic-search`: SearchService 在查询向量化之前集成 QueryRewriter；SearchResponse 新增 rewrite_info 字段暴露重写元信息及连续重复检测标记；SearchRequest 新增 session_id 可选字段用于会话绑定缓存；POST /api/search 的请求 schema 目前不引入 conversation_history 参数（多轮对话上下文由前端在 query 中隐式携带，重写模块通过 ContextRewriter 从历史中消解指代）
+- `file-upload-storage`: 新增基于内容 SHA-256 哈希的幂等上传与软删除替换机制——重复上传同一文件（同一用户 + 相同 checksum_sha256）默认幂等返回已有记录（不创建新记录、不产生物理文件副本）；携带 `force` 标记时软删除旧记录并创建新记录；去重仅在 `owner_user_id + checksum_sha256` 维度生效，软删除记录不参与去重匹配。该机制为后续查询重写的知识库指纹（kb_fingerprint）缓存失效提供可靠的数据基础。
 
 ## Impact
 
 - **后端新增文件**：`query_rewriter.py`（顶层编排器）、`audit_trail.py`（审计日志）、`query_rewrite_config.py`（配置 dataclass）、`exact_term_protector.py`（精确词保护）、`cache_manager.py`（缓存管理器）、`rewrite_strategies.py`（重写策略集）、`strategy_router.py`（策略路由器）、`prompt_loader.py`（Prompt 加载器）、`postprocessor.py`（后处理器）、`protected_terms_loader.py`（受保护术语加载器）、`term_alignment_loader.py`（术语对齐加载器）
-- **后端修改文件**：`config.py`（新增 ~23 个 Settings 字段）、`search.py`（Service 集成 QueryRewriter）、`search.py`（Schema 新增 rewrite_info 字段）、`search.py`（Route 注入 QueryRewriter 依赖）
+- **后端修改文件**：`config.py`（新增 ~23 个 Settings 字段）、`search.py`（Service 集成 QueryRewriter）、`search.py`（Schema 新增 rewrite_info 字段）、`search.py`（Route 注入 QueryRewriter 依赖）、`uploads.py`（UploadService.create_upload 新增基于 checksum_sha256 的内容去重与 force 软删除替换逻辑）
 - **前端新增文件**：`RewritePanel.vue`（组件）、`RewritePanel.spec.ts`（组件测试）、`search.spec.ts`（API 类型测试）
 - **前端修改文件**：`search.ts`（API Client 类型扩展）、`ChatArea.vue`（集成 RewritePanel）
 - **配置影响**：需新增 ~23 个环境变量（`QUERY_REWRITE_ENABLED` 等），当 `QUERY_REWRITE_ENABLED=false` 时查询重写模块静默跳过，SearchService 行为与当前一致

@@ -1,5 +1,6 @@
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO
@@ -100,7 +101,7 @@ class UploadService:
         self.max_upload_bytes = max_upload_bytes
         self.allowed_content_types = allowed_content_types
 
-    def create_upload(self, *, current_user: User, file: UploadFile) -> UploadedFile:
+    def create_upload(self, *, current_user: User, file: UploadFile, force: bool = False) -> tuple[UploadedFile, bool]:
         content_type = file.content_type
         if not self._is_allowed_content_type(content_type, file.filename):
             logger.warning(
@@ -134,6 +135,26 @@ class UploadService:
             logger.warning("上传文件为空", upload_id=str(upload_id))
             raise UploadValidationError("Uploaded file is empty")
 
+        # ── 内容去重：基于 owner_user_id + checksum_sha256 ──────────
+        existing = self._find_active_duplicate(current_user.id, stored_file.checksum_sha256)
+        if existing is not None:
+            if not force:
+                # 幂等模式：清理临时文件，直接返回已有记录
+                self.storage.delete(storage_key)
+                logger.info(
+                    "检测到重复上传，幂等返回已有记录",
+                    existing_upload_id=str(existing.id),
+                    checksum_sha256=stored_file.checksum_sha256,
+                )
+                return existing, False
+            else:
+                # 强制替换模式：软删除旧记录（含其下游 parsed/chunks/embeddings 由搜索层 filtered 屏蔽）
+                self._soft_delete_duplicate(current_user.id, stored_file.checksum_sha256)
+                logger.info(
+                    "强制替换模式：已软删除旧文件记录",
+                    checksum_sha256=stored_file.checksum_sha256,
+                )
+
         record = UploadedFile(
             id=upload_id,
             owner_user_id=current_user.id,
@@ -161,7 +182,7 @@ class UploadService:
             raise UploadMetadataError("Failed to save upload metadata") from exc
 
         logger.info("上传记录创建成功", upload_id=str(upload_id))
-        return record
+        return record, True
 
     @staticmethod
     def generate_storage_key(
@@ -182,6 +203,46 @@ class UploadService:
             and safe_extension(filename) == ".pptx"
             and PPTX_CONTENT_TYPE in self.allowed_content_types
         )
+
+    def _find_active_duplicate(self, owner_user_id: UUID, checksum_sha256: str) -> UploadedFile | None:
+        """查找同一用户下、内容哈希相同且未被软删除的已有上传记录。"""
+        from sqlmodel import select as sm_select
+
+        return self.session.exec(
+            sm_select(UploadedFile).where(
+                UploadedFile.owner_user_id == owner_user_id,
+                UploadedFile.checksum_sha256 == checksum_sha256,
+                UploadedFile.deleted_at.is_(None),
+            )
+        ).first()
+
+    def _soft_delete_duplicate(self, owner_user_id: UUID, checksum_sha256: str) -> None:
+        """软删除同一用户下指定内容哈希的所有活跃记录。
+
+        软删除后，下游搜索层会自动过滤这些文件对应的向量，
+        kb_fingerprint 也会因 embedding 更新检测到变化。
+        """
+        from sqlmodel import select as sm_select
+
+        now = datetime.now(timezone.utc)
+        duplicates = self.session.exec(
+            sm_select(UploadedFile).where(
+                UploadedFile.owner_user_id == owner_user_id,
+                UploadedFile.checksum_sha256 == checksum_sha256,
+                UploadedFile.deleted_at.is_(None),
+            )
+        ).all()
+        for record in duplicates:
+            record.deleted_at = now
+            record.updated_at = now
+            self.session.add(record)
+        if duplicates:
+            self.session.flush()
+            logger.info(
+                "批量软删除重复文件记录",
+                checksum_sha256=checksum_sha256,
+                count=len(duplicates),
+            )
 
 
 def safe_extension(filename: str | None) -> str:

@@ -222,13 +222,21 @@ class SearchService:
                 rewrite_info = RewriteInfo(
                     original_query=rewrite_result.original_query,
                     rewritten_queries=[
-                        RewrittenQuery(query=r["query"], strategy=r.get("strategy"))
+                        RewrittenQuery(
+                            query=r["query"],
+                            strategy=r.get("strategy"),
+                            duration_ms=r.get("duration_ms"),
+                            tokens=r.get("tokens"),
+                        )
                         for r in rewrite_result.rewritten_queries
                     ],
                     strategies_used=rewrite_result.strategies_used,
                     rewrite_time_ms=rewrite_result.rewrite_time_ms,
                     cache_hit=rewrite_result.cache_hit,
                     rewrite_model=rewrite_result.rewrite_model,
+                    intent=rewrite_result.intent,
+                    complexity=rewrite_result.complexity,
+                    cache_level=rewrite_result.cache_level,
                 )
             except Exception as exc:
                 self._logger.warning("query_rewrite_failed", error=str(exc))
@@ -259,10 +267,9 @@ class SearchService:
 
         # 3. 无向量数据 → 直接返回（不调用 LLM，因为没有上下文可供推理）
         if total_searched == 0:
-            response = self._build_empty_response(query, query_vector, top_k, t0, rewrite_info, audit_trail_id)
-            if self._response_cache is not None:
-                cache_key = self._make_search_cache_key(resolved_session_id, query, top_k)
-                self._response_cache.store(resolved_session_id, cache_key, response)  # type: ignore[union-attr]
+            response = self._build_empty_response(
+                query, query_vector, top_k, t0, rewrite_info, audit_trail_id
+            )
             return response
 
         # 4. pgvector 跨文档检索
@@ -304,9 +311,6 @@ class SearchService:
             response = self._build_no_match_response(
                 query, query_vector, top_k, t0, total_searched, rewrite_info, audit_trail_id
             )
-            if self._response_cache is not None:
-                cache_key = self._make_search_cache_key(resolved_session_id, query, top_k)
-                self._response_cache.store(resolved_session_id, cache_key, response)  # type: ignore[union-attr]
             return response
 
         # 8. LLM 生成（含优雅降级）
@@ -412,6 +416,7 @@ class SearchService:
                 UploadedFile,
                 ParsedDocument.uploaded_file_id == UploadedFile.id,
             )
+            .where(UploadedFile.deleted_at.is_(None))
             .order_by(distance_expr.asc())
             .limit(top_k)
         )
@@ -565,9 +570,7 @@ class SearchService:
             None,
         )
 
-    def _assemble_prompt(
-        self, query: str, rows, history: list[dict] | None = None
-    ) -> list[dict]:
+    def _assemble_prompt(self, query: str, rows, history: list[dict] | None = None) -> list[dict]:
         """Build the ``messages`` array sent to the LLM.
 
         **Context assembly rules** (per spec):

@@ -214,7 +214,9 @@ def test_search_calls_rewriter_and_uses_rewritten_query():
     response = service.search(query="Python 怎么用", top_k=5)
 
     # ── 验证 QueryRewriter.rewrite() 被调用 ──
-    fake_rewriter.rewrite.assert_called_once_with("Python 怎么用", session_id="__default__", history=None)
+    fake_rewriter.rewrite.assert_called_once_with(
+        "Python 怎么用", session_id="__default__", history=None
+    )
 
     # ── 验证向量化使用了改写后的查询 ──
     embedding_adapter.embed_single.assert_called_once()
@@ -627,7 +629,9 @@ def test_search_passes_history_to_rewriter():
     response = service.search(query="它怎么用", top_k=5, history=history)
 
     # 验证 history 被传递给 rewriter（session_id 由 SearchService 从 history 派生）
-    fake_rewriter.rewrite.assert_called_once_with("它怎么用", session_id="f22eb635d9725bf2", history=history)
+    fake_rewriter.rewrite.assert_called_once_with(
+        "它怎么用", session_id="f22eb635d9725bf2", history=history
+    )
 
     # rewrite_info 应反映上下文融合策略
     assert response.rewrite_info is not None
@@ -656,4 +660,6 @@ def test_search_passes_none_history_when_not_provided():
 
     service.search(query="独立查询", top_k=5)
 
-    fake_rewriter.rewrite.assert_called_once_with("独立查询", session_id="__default__", history=None)
+    fake_rewriter.rewrite.assert_called_once_with(
+        "独立查询", session_id="__default__", history=None
+    )

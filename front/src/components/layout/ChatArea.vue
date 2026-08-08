@@ -33,6 +33,7 @@ const loading = ref(false)
 const loadingStage = ref<"searching" | "generating" | null>(null)
 const files = ref<AttachedFile[]>([])
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const forceReplace = ref(false)
 
 /** 标记已触发自动命名的 store 对话 ID，避免重复调用 */
 let autoTitledForStoreId: string | null = null
@@ -149,7 +150,7 @@ async function uploadAttachedFile(id: string, file: File) {
   attachedFile.status = "uploading"
 
   try {
-    await uploadFile(file)
+    await uploadFile(file, forceReplace.value)
     attachedFile.status = "uploaded"
     log().info("文件上传成功", { fileName: file.name })
   } catch (error) {
@@ -286,6 +287,19 @@ async function handleSend() {
             <!-- User message bubble -->
             <UserMessage :content="bubble.query" :file-names="bubble.fileNames" />
 
+            <!-- Pending skeleton: shown for the current in-flight bubble -->
+            <div
+              v-if="!bubble.response && !bubble.error && loading"
+              class="animate-pulse rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+            >
+              <div class="mb-3 h-4 w-20 rounded bg-neutral-200" />
+              <div class="space-y-2">
+                <div class="h-3 w-full rounded bg-neutral-100" />
+                <div class="h-3 w-5/6 rounded bg-neutral-100" />
+                <div class="h-3 w-4/6 rounded bg-neutral-100" />
+              </div>
+            </div>
+
             <!-- Error state -->
             <div
               v-if="bubble.error && !bubble.response"
@@ -330,18 +344,6 @@ async function handleSend() {
           </div>
         </TransitionGroup>
 
-        <!-- Loading skeleton for current request -->
-        <div
-          v-if="loading && hasBubbles"
-          class="space-y-3"
-        >
-          <div class="mb-3 h-4 w-20 rounded bg-neutral-200" />
-          <div class="space-y-2">
-            <div class="h-3 w-full rounded bg-neutral-100" />
-            <div class="h-3 w-5/6 rounded bg-neutral-100" />
-            <div class="h-3 w-4/6 rounded bg-neutral-100" />
-          </div>
-        </div>
       </div>
     </div>
 
@@ -360,6 +362,7 @@ async function handleSend() {
         <ChatInput
           v-model:model-value="query"
           v-model:top-k="topK"
+          v-model:force-replace="forceReplace"
           :loading="loading"
           :loading-stage="loadingStage"
           :files="files"

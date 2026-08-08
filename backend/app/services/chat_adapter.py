@@ -94,7 +94,13 @@ class ChatAdapter:
     # ── 公共 API ──────────────────────────────────────────────────────────
 
     def generate(
-        self, messages: list[dict], *, stream: bool = False, model: str | None = None
+        self,
+        messages: list[dict],
+        *,
+        stream: bool = False,
+        model: str | None = None,
+        request_timeout: float | None = None,
+        max_retries: int | None = None,
     ) -> ChatResult:
         """为 *messages* 生成对话补全。
 
@@ -102,6 +108,11 @@ class ChatAdapter:
             messages: 消息字典列表，每项含 ``role`` 与 ``content``。
             stream: 为 Phase 2 预留。设为 ``True`` 时抛出 ``NotImplementedError``。
             model: 可选的模型覆盖。为 ``None`` 时使用 ``config.model``。
+            request_timeout: 可选的调用级 HTTP 超时（秒）。为 ``None`` 时使用
+                             ``config.request_timeout``。允许调用方（如
+                             StrategyRouter）设置比全局配置更短的超时。
+            max_retries: 可选的重试次数覆盖。为 ``None`` 时使用
+                         ``config.max_retries``。设为 0 可完全禁用重试。
 
         Returns:
             包含生成内容与 token 用量统计的 ChatResult。
@@ -114,19 +125,34 @@ class ChatAdapter:
             raise NotImplementedError("Streaming will be implemented in Phase 2")
 
         effective_model = model or self.config.model
+        effective_timeout = request_timeout if request_timeout is not None else self.config.request_timeout
+        effective_max_retries = max_retries if max_retries is not None else self.config.max_retries
 
         self._logger.info(
             "chat_generate_request",
             model=effective_model,
             message_count=len(messages),
             max_tokens=self.config.max_tokens,
+            request_timeout=effective_timeout,
+            max_retries=effective_max_retries,
         )
+
+        # 当调用级超时与配置不同时，创建临时客户端（OpenAI 客户端超时在构造时设定）
+        if request_timeout is not None and request_timeout != self.config.request_timeout:
+            client = OpenAI(
+                base_url=self.config.api_base_url,
+                api_key=self.config.api_key,
+                timeout=effective_timeout,
+                max_retries=0,  # 由 ChatAdapter 层管理重试，避免双重重试放大延迟
+            )
+        else:
+            client = self._client
 
         last_exception: Exception | None = None
 
-        for attempt in range(self.config.max_retries + 1):
+        for attempt in range(effective_max_retries + 1):
             try:
-                response = self._client.chat.completions.create(
+                response = client.chat.completions.create(
                     model=effective_model,
                     messages=messages,
                     temperature=self.config.temperature,
@@ -135,14 +161,14 @@ class ChatAdapter:
                 return self._parse_response(response)
             except Exception as exc:
                 last_exception = exc
-                if not self._should_retry(exc, attempt):
+                if not self._should_retry(exc, attempt, effective_max_retries):
                     break
-                if attempt < self.config.max_retries:
+                if attempt < effective_max_retries:
                     delay = self._compute_delay(exc, attempt)
                     self._logger.warning(
                         "chat_retry",
                         attempt=attempt + 1,
-                        max_retries=self.config.max_retries,
+                        max_retries=effective_max_retries,
                         delay=round(delay, 2),
                         error=str(exc),
                     )
@@ -152,9 +178,10 @@ class ChatAdapter:
 
     # ── 内部实现 ──────────────────────────────────────────────────────────
 
-    def _should_retry(self, exception: Exception, attempt: int) -> bool:
+    def _should_retry(self, exception: Exception, attempt: int, max_retries: int | None = None) -> bool:
         """判断 *exception* 是否值得再试一次。"""
-        if attempt >= self.config.max_retries:
+        effective_max_retries = max_retries if max_retries is not None else self.config.max_retries
+        if attempt >= effective_max_retries:
             return False
 
         # 超时 —— 总是重试。

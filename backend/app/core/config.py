@@ -82,18 +82,32 @@ class Settings(BaseSettings):
     chat_model: str = "qwen3.5-plus"
     chat_temperature: float = 0.1
     chat_max_tokens: int = 1024
-    chat_request_timeout: float = 60.0
-    chat_max_retries: int = 3
+    chat_request_timeout: float = 30.0
+    chat_max_retries: int = 1
     # 查询重写（Query Rewriting）配置
     query_rewrite_enabled: bool = False
     query_rewrite_model: str = "qwen3.5-plus"
     query_rewrite_temperature: float = 0.1
     query_rewrite_max_tokens: int = 512
-    query_rewrite_timeout: float = 30.0
+    query_rewrite_timeout: float = 15.0
     query_rewrite_max_retries: int = 3
     query_rewrite_api_base_url: str = "https://newapi.bytcloud.org/v1"
     query_rewrite_api_key: str = ""
-    query_rewrite_pipeline_timeout: float = 3.0
+    # 查询重写管线总超时（安全兜底，应大于内部各步骤超时之和）
+    # 典型耗时：router 8s + 1~3 个策略各 5~10s，30s 可覆盖绝大多数场景
+    query_rewrite_pipeline_timeout: float = 30.0
+    # 单个重写策略（normalize/term_align/expand）的 LLM 调用超时
+    # 默认 15s，给 LLM 充足的响应时间 + 重试余量
+    query_rewrite_strategy_timeout: float = 15.0
+    # ── 查询重写缓存 TTL（与 CacheManager 集成）──
+    # L1 精确缓存 TTL（同一会话内精确匹配，通用知识默认 30min）
+    query_rewrite_cache_ttl_seconds: float = 1800.0
+    # context_dependent 条目 L1 TTL（上下文依赖结果更短的缓存时间）
+    query_rewrite_context_dependent_ttl_seconds: float = 300.0
+    # L2 语义缓存 TTL（跨会话语义匹配，默认 1h）
+    query_rewrite_l2_cache_ttl_seconds: float = 3600.0
+    # L2 context_dependent 条目 TTL（跨会话上下文依赖结果，保守缓存 10min）
+    query_rewrite_l2_context_dependent_ttl_seconds: float = 600.0
     # 语义搜索相似度阈值（余弦距离，0-2。0=完全相同，2=完全相反）
     # 仅当分块与查询的余弦距离 <= 此阈值时才纳入检索结果。
     # 设 0 表示禁用过滤。推荐值 0.4-0.6（取决于嵌入模型）。

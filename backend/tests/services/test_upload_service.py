@@ -97,11 +97,12 @@ def test_create_upload_stores_original_file_and_current_user_metadata(
     content = b"lecture notes"
     service = make_service(session=session, storage_root=tmp_path)
 
-    record = service.create_upload(
+    record, is_new = service.create_upload(
         current_user=user,
         file=make_upload_file(content, filename="../course-notes.pdf"),
     )
 
+    assert is_new is True
     stored_record = session.get(UploadedFile, record.id)
     assert stored_record is not None
     assert stored_record.owner_user_id == user.id
@@ -135,7 +136,7 @@ def test_create_upload_accepts_pptx_with_browser_legacy_powerpoint_mime(
         },
     )
 
-    record = service.create_upload(
+    record, is_new = service.create_upload(
         current_user=user,
         file=make_upload_file(
             b"pptx payload",
@@ -144,6 +145,7 @@ def test_create_upload_accepts_pptx_with_browser_legacy_powerpoint_mime(
         ),
     )
 
+    assert is_new is True
     assert record.original_filename == "slides.pptx"
     assert record.content_type == "application/vnd.ms-powerpoint"
     assert PurePosixPath(record.storage_key).name == "original.pptx"
@@ -275,11 +277,12 @@ def test_create_upload_logs_info_on_success(
     content = b"lecture notes"
     service = make_service(session=session, storage_root=tmp_path)
 
-    record = service.create_upload(
+    record, is_new = service.create_upload(
         current_user=user,
         file=make_upload_file(content, content_type="application/pdf"),
     )
 
+    assert is_new is True
     assert str(record.id) in caplog.text
     assert str(len(content)) in caplog.text
     assert any(r.levelname == "INFO" and "上传" in r.message for r in caplog.records)
@@ -383,3 +386,109 @@ def test_create_upload_logs_error_on_metadata_commit_failure(
         )
 
     assert any(r.levelname == "ERROR" for r in caplog.records if r.message and "回滚" in r.message)
+
+
+# =========================================================================
+# 内容去重测试（spec: uploads.py 哈希去重）
+# =========================================================================
+
+
+# 测试幂等上传：相同文件的第二次上传直接返回已有记录，不创建新记录。
+def test_create_upload_idempotent_returns_existing_on_duplicate(
+    session: Session,
+    user: User,
+    tmp_path,
+) -> None:
+    """相同内容哈希 + 同一用户 = 幂等返回已有记录，跳过解析管线。"""
+    content = b"identical file content"
+    service = make_service(session=session, storage_root=tmp_path)
+
+    # 首次上传
+    record1, is_new1 = service.create_upload(
+        current_user=user,
+        file=make_upload_file(content, filename="notes.pdf"),
+    )
+    assert is_new1 is True
+
+    # 第二次上传（相同内容，不同文件名）
+    record2, is_new2 = service.create_upload(
+        current_user=user,
+        file=make_upload_file(content, filename="notes-copy.pdf"),
+    )
+
+    # 应返回同一记录
+    assert is_new2 is False
+    assert record2.id == record1.id
+    assert record2.checksum_sha256 == record1.checksum_sha256
+
+    # 数据库中只有一条记录
+    assert count_uploads(session) == 1
+
+
+# 测试不同内容上传正常创建新记录（不应被误判为重复）。
+def test_create_upload_different_content_creates_new_record(
+    session: Session,
+    user: User,
+    tmp_path,
+) -> None:
+    """不同内容哈希 = 两条独立记录。"""
+    service = make_service(session=session, storage_root=tmp_path)
+
+    record1, is_new1 = service.create_upload(
+        current_user=user,
+        file=make_upload_file(b"content A", filename="a.pdf"),
+    )
+    record2, is_new2 = service.create_upload(
+        current_user=user,
+        file=make_upload_file(b"content B", filename="b.pdf"),
+    )
+
+    assert is_new1 is True
+    assert is_new2 is True
+    assert record2.id != record1.id
+    assert count_uploads(session) == 2
+
+
+# 测试强制替换：force=True 时软删除旧记录并创建新记录。
+def test_create_upload_force_replaces_duplicate(
+    session: Session,
+    user: User,
+    tmp_path,
+) -> None:
+    """force=True 时旧记录被软删除，新管线结果替换旧结果。"""
+    UploadedFile = get_uploaded_file_model()
+    content = b"file to replace"
+    service = make_service(session=session, storage_root=tmp_path)
+
+    # 首次上传
+    record1, is_new1 = service.create_upload(
+        current_user=user,
+        file=make_upload_file(content, filename="v1.pdf"),
+    )
+    assert is_new1 is True
+
+    # 强制替换
+    record2, is_new2 = service.create_upload(
+        current_user=user,
+        file=make_upload_file(content, filename="v2.pdf"),
+        force=True,
+    )
+    assert is_new2 is True
+    assert record2.id != record1.id  # 新记录 ID 不同
+    assert count_uploads(session) == 2  # 两条记录都存在（一条软删除）
+
+    # 旧记录已被软删除
+    session.refresh(record1)
+    assert record1.deleted_at is not None
+
+    # 新记录未被删除
+    session.refresh(record2)
+    assert record2.deleted_at is None
+
+    # 再次以非 force 模式上传，应返回新记录（旧记录已被软删除）
+    record3, is_new3 = service.create_upload(
+        current_user=user,
+        file=make_upload_file(content, filename="v3.pdf"),
+    )
+    assert is_new3 is False
+    assert record3.id == record2.id  # 返回未被删除的记录

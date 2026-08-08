@@ -15,9 +15,10 @@ export interface UploadedFile {
   updated_at: string
 }
 
-export function uploadFile(file: File): Promise<UploadedFile> {
+export function uploadFile(file: File, force: boolean = false): Promise<UploadedFile> {
   const formData = new FormData()
   formData.append("file", file)
 
-  return apiPostForm<UploadedFile>("/uploads", formData)
+  const queryString = force ? "?force=true" : ""
+  return apiPostForm<UploadedFile>(`/uploads${queryString}`, formData)
 }

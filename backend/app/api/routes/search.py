@@ -25,11 +25,22 @@ from app.services.cache_manager import CacheManager
 from app.services.chat_adapter import ChatAdapter
 from app.services.chat_config import ChatConfig
 from app.services.context_rewriter import ContextRewriter
+from app.services.context_verifier import ContextVerifier
 from app.services.embedding_adapter import EmbeddingAdapter, EmbeddingAPIError
 from app.services.embedding_config import EmbeddingConfig
+from app.services.expand_rewriter import ExpandRewriter
+from app.services.kb_fingerprint import compute_fingerprint
+from app.services.normalize_rewriter import NormalizeRewriter
+from app.services.prompt_loader import PromptLoader
 from app.services.query_rewrite_config import QueryRewriteConfig
-from app.services.query_rewriter import QueryRewriter
+from app.services.query_rewriter import (
+    DissatisfactionDetector,
+    KnowledgeClassifier,
+    QueryRewriter,
+)
 from app.services.search import SearchService
+from app.services.strategy_router import StrategyRouter
+from app.services.term_align_rewriter import TermAlignRewriter
 from app.services.term_protector import TermProtector
 
 logger = get_logger(__name__)
@@ -154,14 +165,57 @@ def get_query_rewriter(
     # ChatAdapter：重写 LLM 使用独立配置（可能不同于主 chat 模型）
     rewrite_chat_adapter = ChatAdapter(config=query_rewrite_config)
 
+    # PromptLoader：三层降级加载器（加载 rewrite_prompts.yaml）
+    prompt_loader = PromptLoader()
+
+    # ── Phase 1 组件 ────────────────────────────────────────────────
     # ContextRewriter：基于对话历史进行指代词消解
     context_rewriter = ContextRewriter(chat_adapter=rewrite_chat_adapter)
 
-    # CacheManager：L1 精确缓存（内存 LRU + TTL，单例跨请求共享）
-    cache_manager = CacheManager()
+    # CacheManager：L1 精确缓存 + L2 语义缓存（内存 LRU + TTL，单例跨请求共享）
+    cache_manager = CacheManager(
+        ttl_seconds=settings.query_rewrite_cache_ttl_seconds,
+    )
 
     # AuditTrail：结构化审计日志
     audit_trail = AuditTrail()
+
+    # ── Phase 2 组件 ────────────────────────────────────────────────
+    # StrategyRouter：意图分类 + 策略路由
+    strategy_router = StrategyRouter(
+        chat_adapter=rewrite_chat_adapter,
+        prompt_loader=prompt_loader,
+    )
+
+    # NormalizeRewriter：口语→书面语规范化
+    normalize_rewriter = NormalizeRewriter(
+        chat_adapter=rewrite_chat_adapter,
+        prompt_loader=prompt_loader,
+    )
+
+    # TermAlignRewriter：口语→正式术语对齐
+    term_align_rewriter = TermAlignRewriter(
+        chat_adapter=rewrite_chat_adapter,
+        prompt_loader=prompt_loader,
+    )
+
+    # ExpandRewriter：模糊查询→语义扩展
+    expand_rewriter = ExpandRewriter(
+        chat_adapter=rewrite_chat_adapter,
+        prompt_loader=prompt_loader,
+    )
+
+    # DissatisfactionDetector：不满意重试检测（默认 60s 滑动窗口）
+    dissatisfaction_detector = DissatisfactionDetector(window_seconds=60.0)
+
+    # KnowledgeClassifier：通用知识/上下文依赖分类
+    knowledge_classifier = KnowledgeClassifier()
+
+    # ContextVerifier：L2 缓存上下文相关性校验
+    context_verifier = ContextVerifier(
+        chat_adapter=rewrite_chat_adapter,
+        prompt_loader=prompt_loader,
+    )
 
     _query_rewriter_singleton = QueryRewriter(
         exact_term_protector=term_protector,
@@ -171,6 +225,20 @@ def get_query_rewriter(
         audit_trail=audit_trail,
         enabled=True,
         pipeline_timeout=settings.query_rewrite_pipeline_timeout,
+        strategy_timeout=settings.query_rewrite_strategy_timeout,
+        # Phase 2 组件
+        strategy_router=strategy_router,
+        normalize_rewriter=normalize_rewriter,
+        term_align_rewriter=term_align_rewriter,
+        expand_rewriter=expand_rewriter,
+        dissatisfaction_detector=dissatisfaction_detector,
+        knowledge_classifier=knowledge_classifier,
+        context_verifier=context_verifier,
+        # 差异化 TTL 配置（统一从 Settings 读取）
+        l1_general_ttl=settings.query_rewrite_cache_ttl_seconds,
+        l1_context_dependent_ttl=settings.query_rewrite_context_dependent_ttl_seconds,
+        l2_general_ttl=settings.query_rewrite_l2_cache_ttl_seconds,
+        l2_context_dependent_ttl=settings.query_rewrite_l2_context_dependent_ttl_seconds,
     )
     return _query_rewriter_singleton
 
@@ -243,6 +311,16 @@ def search_documents(
         response_cache=response_cache,
         audit_trail=search_audit_trail,
     )
+
+    # ── 知识库指纹注入 ──────────────────────────────────────────────────
+    # 每次请求前计算当前知识库指纹，注入到查询重写缓存和搜索响应缓存中。
+    # 指纹变化时，缓存层会在读取条目时惰性淘汰旧数据。
+    # 指纹计算为轻量聚合查询（COUNT + MAX），通常在 1ms 内完成。
+    _kb_fp = compute_fingerprint(session)
+    if query_rewriter is not None:
+        query_rewriter.update_fingerprint(_kb_fp)
+    if response_cache is not None:
+        response_cache.update_fingerprint(_kb_fp)
 
     try:
         response = service.search(

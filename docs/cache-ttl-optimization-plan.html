@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowra 缓存时间过长问题 —— 最终实施方案</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --text: #1a1a2e;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #2563eb;
+    --accent-light: #dbeafe;
+    --warn: #d97706;
+    --warn-light: #fef3c7;
+    --danger: #dc2626;
+    --danger-light: #fee2e2;
+    --success: #16a34a;
+    --success-light: #dcfce7;
+    --info: #7c3aed;
+    --info-light: #ede9fe;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 2rem; margin-bottom: .25rem; }
+  h2 { font-size: 1.4rem; margin: 2rem 0 .75rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 1.15rem; margin: 1.5rem 0 .5rem; }
+  h4 { font-size: 1rem; margin: 1rem 0 .4rem; color: var(--text-secondary); }
+  p, li { margin-bottom: .5rem; }
+  ul, ol { padding-left: 1.5rem; margin-bottom: .75rem; }
+  .meta { color: var(--text-secondary); font-size: .9rem; margin-bottom: 1.5rem; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+  }
+  .card.danger { border-left: 4px solid var(--danger); }
+  .card.warn  { border-left: 4px solid var(--warn); }
+  .card.info  { border-left: 4px solid var(--info); }
+  .card.success { border-left: 4px solid var(--success); }
+  .card h3 { margin-top: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: .75rem 0 1.25rem;
+    font-size: .92rem;
+  }
+  th, td {
+    text-align: left;
+    padding: .6rem .75rem;
+    border: 1px solid var(--border);
+  }
+  th { background: #f1f5f9; font-weight: 600; }
+  tr:nth-child(even) { background: #fafafa; }
+  code {
+    background: #f1f5f9;
+    padding: .12rem .4rem;
+    border-radius: 4px;
+    font-size: .88em;
+    font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: .75rem 0 1.25rem;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+  .badge {
+    display: inline-block;
+    padding: .15rem .55rem;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: .3rem;
+  }
+  .badge-red   { background: var(--danger-light); color: var(--danger); }
+  .badge-amber { background: var(--warn-light); color: var(--warn); }
+  .badge-green { background: var(--success-light); color: var(--success); }
+  .badge-blue  { background: var(--info-light); color: var(--info); }
+  .decision {
+    background: var(--success-light);
+    border: 1px solid var(--success);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+  }
+  .decision h4 { margin-top: 0; color: var(--success); }
+  .toc { list-style: none; padding-left: 0; }
+  .toc li { margin-bottom: .35rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } body { padding: 1rem; } }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  .status-confirmed {
+    display: inline-block;
+    width: 10px; height: 10px;
+    background: var(--success);
+    border-radius: 50%;
+    margin-right: .4rem;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<h1>Knowra 缓存时间过长问题 —— 最终实施方案</h1>
+<p class="meta">
+  状态：<span class="badge badge-green">已确认</span> &nbsp;|&nbsp;
+  生成日期：2026-08-07 &nbsp;|&nbsp;
+  分析范围：<code>CacheManager</code>（L1/L2）、<code>QueryRewriter</code>、<code>SearchService</code> &nbsp;|&nbsp;
+  分支：<code>feat/add-query-rewriting</code>
+</p>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2>目录</h2>
+<ol class="toc">
+  <li><a href="#s1">一、现状分析：三个核心问题的回答</a></li>
+  <li><a href="#s2">二、问题诊断：缓存时间过长的根因</a></li>
+  <li><a href="#s3">三、决策记录</a></li>
+  <li><a href="#s4">四、方案一：条目级差异化 TTL</a></li>
+  <li><a href="#s5">五、方案二：写入时抽样主动过期清理</a></li>
+  <li><a href="#s6">六、方案三：无匹配/零向量缓存策略优化</a></li>
+  <li><a href="#s7">七、方案四：缓存可观测性 —— 结构化日志</a></li>
+  <li><a href="#s8">八、方案五：配置化 TTL</a></li>
+  <li><a href="#s9">九、实施路线图</a></li>
+  <li><a href="#s10">十、文档重新索引后旧缓存处理分析</a></li>
+  <li><a href="#s11">十一、零数据缓存详细分析</a></li>
+  <li><a href="#s12">十二、待确认问题（Q&A）</a></li>
+</ol>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s1">一、现状分析：三个核心问题的回答</h2>
+
+<h3>1.1 什么情况下会缓存？</h3>
+
+<div class="two-col">
+  <div class="card info">
+    <h4>L1 精确缓存（会话绑定）</h4>
+    <p><strong>触发条件：</strong>每次 QueryRewriter 或 SearchService 成功执行后自动写入，Key = <code>session_id + query_hash</code>。</p>
+    <table>
+      <tr><th>组件</th><th>缓存内容</th><th>写入位置</th></tr>
+      <tr>
+        <td>QueryRewriter</td>
+        <td><code>RewriteResult</code></td>
+        <td><a href="../backend/app/services/query_rewriter.py#L768" target="_blank">query_rewriter.py:768</a></td>
+      </tr>
+      <tr>
+        <td>SearchService</td>
+        <td><code>SearchResponse</code></td>
+        <td><a href="../backend/app/services/search.py#L359" target="_blank">search.py:359</a></td>
+      </tr>
+    </table>
+    <p><strong>特别注意：</strong>QueryRewriter 的失败/超时降级场景<em>不会</em>写入 L1 缓存，但 SearchService <em>所有三种场景都会写</em>（正常、无匹配、零向量）。</p>
+  </div>
+
+  <div class="card info">
+    <h4>L2 语义缓存（跨会话）</h4>
+    <p><strong>触发条件：</strong>仅 QueryRewriter 管线成功执行后写入，含知识分类标记。</p>
+    <p><strong>写入位置：</strong><a href="../backend/app/services/query_rewriter.py#L773" target="_blank">query_rewriter.py:773</a></p>
+    <p><strong>分类逻辑：</strong></p>
+    <ul>
+      <li><code>general_knowledge</code> → 可跨会话复用</li>
+      <li><code>context_dependent</code> → 仅同会话可用</li>
+    </ul>
+    <p>SearchService <em>没有</em> L2 缓存。</p>
+  </div>
+</div>
+
+<h3>1.2 缓存过期如何处理？</h3>
+
+<div class="card warn">
+  <h3>当前策略：纯惰性淘汰（Lazy Eviction）</h3>
+  <ul>
+    <li><strong>检查时机：</strong>仅在 <code>lookup()</code> / <code>lookup_l2()</code> 被调用时检查 TTL（<a href="../backend/app/services/cache_manager.py#L84" target="_blank">cache_manager.py:84</a>）</li>
+    <li><strong>过期行为：</strong>时间戳差值 &gt; TTL → 删除条目 → 返回 <code>None</code></li>
+    <li><strong>没有的特性：</strong>
+      <ul>
+        <li>❌ 无后台定时扫描清理过期条目</li>
+        <li>❌ 无主动通知/回调机制</li>
+        <li>❌ 无持久化（进程重启全部丢失）</li>
+        <li>❌ 无条目级差异化 TTL（所有条目共用同一过期时间）</li>
+      </ul>
+    </li>
+    <li><strong>实际影响：</strong>如果某个会话的查询只执行了一次且不再访问，其缓存条目将在内存中<strong>完整存活到 TTL 结束 + 直到 LRU 淘汰</strong>。</li>
+  </ul>
+</div>
+
+<h3>1.3 是否正常、无匹配、零向量都会存储？</h3>
+
+<div class="card danger">
+  <h3>是的 —— SearchService 三种场景均存入 L1 缓存</h3>
+  <table>
+    <tr><th>场景</th><th>缓存行为</th><th>代码位置</th></tr>
+    <tr>
+      <td><span class="badge badge-green">正常结果</span> 有匹配 + LLM 回答</td>
+      <td>✅ 存入 L1</td>
+      <td><a href="../backend/app/services/search.py#L359" target="_blank">search.py:359-371</a></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-amber">无匹配</span> rows=0（向量搜索无结果或被阈值过滤）</td>
+      <td>✅ 存入 L1</td>
+      <td><a href="../backend/app/services/search.py#L316" target="_blank">search.py:316-319</a></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-red">零向量</span> total_searched=0（知识库无任何向量化文档）</td>
+      <td>✅ 存入 L1</td>
+      <td><a href="../backend/app/services/search.py#L272" target="_blank">search.py:272-275</a></td>
+    </tr>
+  </table>
+  <p><strong>问题严重性：</strong>无匹配和零向量响应价值极低（只是固定短语），但它们与正常 LLM 生成的响应使用<em>完全相同的 TTL 和缓存空间</em>。这不仅浪费内存，还会导致 LRU 淘汰时挤掉真正有价值的正常结果缓存。</p>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s2">二、问题诊断：缓存时间过长的根因</h2>
+
+<div class="card">
+  <h3>当前 TTL 配置一览</h3>
+  <table>
+    <tr><th>缓存层</th><th>默认 TTL</th><th>说明</th></tr>
+    <tr><td>QueryRewriter L1</td><td><code>3600 秒（1 小时）</code></td><td>CacheManager 构造默认值，见 <a href="../backend/app/services/cache_manager.py#L53" target="_blank">cache_manager.py:53</a></td></tr>
+    <tr><td>QueryRewriter L2</td><td><code>3600 秒（1 小时）</code></td><td>与 L1 共用同一个 ttl_seconds 参数</td></tr>
+    <tr><td>SearchService L1</td><td><code>600 秒（10 分钟）</code></td><td>可配置：<code>SEARCH_CACHE_TTL_SECONDS</code>，见 <a href="../backend/app/core/config.py#L114" target="_blank">config.py:114</a></td></tr>
+  </table>
+</div>
+
+<div class="card warn">
+  <h3>根本原因分析</h3>
+  <ol>
+    <li><strong>一刀切的 TTL：</strong>所有类型的结果（正常/无匹配/零向量）使用相同 TTL，语义上不合理的"负面结果"缓存了过长时间。</li>
+    <li><strong>惰性淘汰依赖访问：</strong>不被访问的过期条目不会主动释放，持续占用内存。在低流量或长尾查询场景下，过期条目比例可能很高。</li>
+    <li><strong>无 TTL 分段策略：</strong>没有根据查询类型（通用知识 vs 上下文依赖）、用户行为模式等动态调整 TTL。</li>
+    <li><strong>L1 改写缓存 1 小时过长：</strong>对于实时对话场景，1 小时前的改写结果可能已不适用（知识库更新、上下文变化）。</li>
+    <li><strong>缺乏缓存驱逐监控：</strong>没有 hit rate、eviction rate、expired ratio 等指标，无法判断 TTL 设置是否合理。</li>
+  </ol>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s3">三、决策记录</h2>
+
+<p>以下决策经过分析与确认，作为后续实施的依据：</p>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> D1：条目级 TTL（方式 A）</h4>
+  <p>在 <code>store()</code> 中增加 <code>ttl_override</code> 参数，每条缓存记录独立存储自己的 TTL。统一 LRU 池保证低价值条目被自然淘汰，DI 链零改动，与 Redis 迁移路径一致。Python/AI 缓存生态（cachetools、LangChain、LlamaIndex、GPTCache）均采用 per-entry TTL。</p>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> D2：TTL 值确认</h4>
+  <table>
+    <tr><th>缓存场景</th><th>TTL</th><th>理由</th></tr>
+    <tr><td>QueryRewriter L1 - 通用知识</td><td><strong>1800s (30min)</strong></td><td>改写结果稳定性中等；30 分钟在新鲜度与命中率间取平衡</td></tr>
+    <tr><td>QueryRewriter L1 - 上下文依赖</td><td><strong>300s (5min)</strong></td><td>对话上下文快速变化</td></tr>
+    <tr><td>QueryRewriter L2</td><td><strong>3600s (1h)</strong></td><td>跨会话通用知识价值高，可保持较长</td></tr>
+    <tr><td>SearchService L1 - 正常结果</td><td><strong>600s (10min)</strong></td><td>包含 LLM 生成文本，10 分钟合理</td></tr>
+    <tr><td>SearchService L1 - 无匹配</td><td><strong>不缓存</strong></td><td>仅固定短语，缓存价值极低，直接跳过即可</td></tr>
+    <tr><td>SearchService L1 - 零向量</td><td><strong>不缓存</strong></td><td>通常是知识库未初始化，缓存无意义</td></tr>
+  </table>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> D3：写入时抽样清理</h4>
+  <p>每 N 次写入触发一次随机抽样清理，检查 20 条随机条目是否过期并移除。参考 Redis active-expiration 设计，轻量、零额外 CPU 开销。</p>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> D4：结构化日志输出统计，不暴露 HTTP 端点</h4>
+  <p>项目无用户认证系统，暴露 <code>/admin</code> 端点有安全风险。进程重启后内存统计归零，端点数据不可靠。统计数据通过结构化日志输出（每 5 分钟快照），可接入 ELK/Loki 等日志管道做可视化。与 LangChain、LlamaIndex、GPTCache 惯例一致。</p>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> D5：暂不引入 Redis</h4>
+  <p>当前单实例内存缓存在功能上足够，且 per-entry TTL + 写入时抽样的方案在向 Redis 迁移时语义直接映射，无架构阻抗。后期实现多 work 队列时再评估。</p>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s4">四、方案一：条目级差异化 TTL（P0）</h2>
+
+<div class="card success">
+  <h3>4.1 设计思路</h3>
+  <p>参考 <strong>LangChain / LlamaIndex / GPTCache / cachetools</strong> 缓存最佳实践，通过在 <code>store()</code> 中增加 <code>ttl_override</code> 参数，实现每条缓存记录独立存储 TTL。不同类型的结果设置不同的过期时间，在统一 LRU 池中竞争。</p>
+  <ul>
+    <li><strong>高质量 LLM 生成回答 → 较长 TTL：</strong>LLM 调用成本高、延迟大，值得长时间缓存</li>
+    <li><strong>无匹配/零向量 → 不缓存：</strong>固定文本无 LLM 成本，低价值，缓存无意义</li>
+    <li><strong>通用知识改写 → 较长 TTL：</strong>跨会话复用价值高</li>
+    <li><strong>上下文依赖改写 → 短 TTL：</strong>依赖对话历史，快速失效</li>
+  </ul>
+  <p><strong>数据结构变更：</strong>存储元组从 <code>(timestamp, value)</code> 升级为 <code>(timestamp, ttl, value)</code>。</p>
+</div>
+
+<h3>4.2 实现细节</h3>
+
+<h4>CacheManager 内部变更</h4>
+<pre><code># cache_manager.py
+
+class CacheManager:
+    def store(
+        self, session_id: str, query_hash: str, result: Any,
+        *, ttl_override: float | None = None  # ← 新增：None 时回退到实例默认 TTL
+    ) -> None:
+        composite_key = self._make_composite_key(session_id, query_hash)
+
+        if composite_key in self._store:
+            self._store.move_to_end(composite_key)
+
+        effective_ttl = ttl_override if ttl_override is not None else self._ttl
+        self._store[composite_key] = (time.monotonic(), effective_ttl, result)  # ← 三元组
+
+        while len(self._store) > self._max_size:
+            evicted_key, _ = self._store.popitem(last=False)
+            self._stats["evictions"] += 1
+            self._logger.debug("cache_evicted", composite_key=evicted_key)
+
+        self._write_count += 1
+        self._maybe_sweep()        # ← 方案二的写入时抽样
+        self._maybe_log_stats()    # ← 方案四的统计快照
+        self._logger.debug("cache_stored", session_id=session_id, query_hash=query_hash)
+
+    def lookup(self, session_id: str, query_hash: str) -> Any | None:
+        composite_key = self._make_composite_key(session_id, query_hash)
+        entry = self._store.get(composite_key)
+        if entry is None:
+            self._stats["misses"] += 1
+            self._logger.debug("cache_miss_l1", session_id=session_id, query_hash=query_hash)
+            return None
+
+        inserted_at, entry_ttl, result = entry  # ← 解构三元组
+        if time.monotonic() - inserted_at > entry_ttl:  # ← 使用条目级 TTL
+            del self._store[composite_key]
+            self._stats["expirations"] += 1
+            self._logger.debug("cache_entry_expired", ...)
+            self._stats["misses"] += 1
+            return None
+
+        self._store.move_to_end(composite_key)
+        self._stats["hits"] += 1
+        self._logger.debug("cache_hit_l1", ...)
+        return result</code></pre>
+
+<h4>L2 同步变更</h4>
+<pre><code># store_l2 和 lookup_l2 同步增加 ttl_override 和三元组支持
+def store_l2(self, query_text: str, result: Any, *,
+             knowledge_type: str = "general_knowledge",
+             session_id: str | None = None,
+             ttl_override: float | None = None) -> None:
+    effective_ttl = ttl_override if ttl_override is not None else self._ttl
+    self._l2_store[composite_key] = (time.monotonic(), effective_ttl,
+                                      result, knowledge_type, session_id)</code></pre>
+
+<h4>QueryRewriter 调用方变更</h4>
+<pre><code># query_rewriter.py —— _do_rewrite 方法
+
+# Step 7: 写入 L1 缓存 —— 根据知识类型使用不同 TTL
+knowledge_type = (
+    self._knowledge_classifier.classify(query, rewritten_queries=result.rewritten_queries)
+    if self._knowledge_classifier is not None
+    else KnowledgeClassifier.classify(query, rewritten_queries=result.rewritten_queries)
+)
+
+ttl = 300.0 if knowledge_type == "context_dependent" else 1800.0  # 5min / 30min
+self._cache_manager.store(session_id, query_hash, result, ttl_override=ttl)
+
+# Step 7a: 写入 L2 缓存 —— L2 保持 3600s 默认值（不传 ttl_override）
+store_l2(final_query, result, knowledge_type=knowledge_type, session_id=session_id)</code></pre>
+
+<h4>SearchService 调用方变更</h4>
+<pre><code># search.py —— 正常结果使用默认 TTL（600s，不传 ttl_override）
+self._response_cache.store(resolved_session_id, cache_key, response)
+
+# 无匹配结果：直接不缓存（删除 _build_no_match_response 中的 store 调用）
+# 零向量：直接不缓存（删除 _build_empty_response 中的 store 调用）</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s5">五、方案二：写入时抽样主动过期清理（P1）</h2>
+
+<div class="card">
+  <h3>5.1 设计思路</h3>
+  <p>参考 <strong>Redis active-expiration</strong> 双轨制（惰性删除 + 主动抽样），在写入路径上增加轻量级抽样清理：每 N 次写入随机抽样检查 20 条，移除已过期条目。</p>
+  <ul>
+    <li><strong>零额外开销：</strong>不需要后台 asyncio Task、不需要定时器、空闲时零 CPU</li>
+    <li><strong>随流量自适应：</strong>高写入时清理更频繁，低流量时依赖惰性淘汰即可</li>
+    <li><strong>概率性覆盖：</strong>每次抽样 20 条，配合 LRU 自然淘汰，过期条目不会长期堆积</li>
+  </ul>
+</div>
+
+<h3>5.2 实现细节</h3>
+<pre><code># cache_manager.py
+
+import random
+
+class CacheManager:
+    _CLEANUP_SAMPLE_SIZE = 20   # 每次抽样检查 20 条
+    _CLEANUP_TRIGGER_EVERY_N = 10  # 每 10 次写入触发一次清理
+
+    def __init__(self, ...):
+        ...
+        self._write_count = 0
+
+    def _maybe_sweep(self) -> None:
+        """写入时抽样清理过期条目（Redis active-expiration 模式）。"""
+        self._write_count += 1
+        if self._write_count % self._CLEANUP_TRIGGER_EVERY_N != 0:
+            return
+        self._sweep_expired(self._store, "l1")
+        self._sweep_expired(self._l2_store, "l2")
+
+    def _sweep_expired(self, store: OrderedDict, label: str) -> int:
+        """随机抽样清理过期条目，返回清理数量。"""
+        if not store:
+            return 0
+
+        keys = list(store.keys())
+        if len(keys) <= self._CLEANUP_SAMPLE_SIZE:
+            sample_keys = keys
+        else:
+            sample_keys = random.sample(keys, self._CLEANUP_SAMPLE_SIZE)
+
+        now = time.monotonic()
+        removed = 0
+        for key in sample_keys:
+            entry = store.get(key)
+            if entry is None:
+                continue
+            inserted_at = entry[0]
+            entry_ttl = entry[1] if len(entry) >= 3 else self._ttl  # 兼容旧二元组
+            if now - inserted_at > entry_ttl:
+                del store[key]
+                removed += 1
+
+        if removed:
+            self._stats["sweep_removed"] += removed
+            self._logger.debug(
+                "cache_sweep_expired",
+                label=label, removed=removed,
+                sampled=len(sample_keys), total=len(store),
+            )
+        return removed</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s6">六、方案三：无匹配/零向量缓存策略优化（P0）</h2>
+
+<div class="card danger">
+  <h3>6.1 核心问题</h3>
+  <p>当前 <code>SearchService</code> 对正常、无匹配、零向量三种结果<strong>一视同仁地缓存</strong>（相同 TTL、相同 LRU 队列）。</p>
+  <p><strong>后果：</strong></p>
+  <ul>
+    <li>10 分钟的无匹配缓存（固定短语"根据现有文档内容，无法回答此问题"）占用宝贵的缓存槽位</li>
+    <li>当用户高频尝试不同查询（探索阶段），大量无匹配结果涌入缓存 → LRU 淘汰正常 LLM 生成结果</li>
+    <li>零向量结果纯属知识库未初始化，缓存毫无意义</li>
+  </ul>
+</div>
+
+<h3>6.2 推荐策略</h3>
+
+<table>
+  <tr><th>结果类型</th><th>当前行为</th><th>实施后行为</th><th>TTL</th></tr>
+  <tr>
+    <td><span class="badge badge-green">正常结果</span></td>
+    <td>✅ 缓存 600s</td>
+    <td>✅ 缓存（默认 TTL）</td>
+    <td>600s</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-amber">无匹配</span></td>
+    <td>✅ 缓存 600s</td>
+    <td><strong>❌ 不缓存</strong></td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-red">零向量</span></td>
+    <td>✅ 缓存 600s</td>
+    <td><strong>❌ 不缓存</strong></td>
+    <td>N/A</td>
+  </tr>
+</table>
+
+<h3>6.3 实现改动</h3>
+<pre><code># search.py —— _build_no_match_response 中
+
+# 无匹配结果：直接删除原有 store 调用，不缓存
+# search.py —— _build_empty_response 中
+
+# 零向量：直接删除原有 store 调用，不缓存
+# （最终仅正常结果缓存 —— 不传 ttl_override，使用默认 600s）
+#   无匹配和零向量均删除 store 调用）</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s7">七、方案四：缓存可观测性 —— 结构化日志（P1）</h2>
+
+<div class="card">
+  <h3>7.1 设计思路</h3>
+  <p>不引入 Prometheus / OpenTelemetry 等重型依赖，不暴露 HTTP 管理端点。仅在 CacheManager 中维护统计计数器，通过<strong>结构化日志</strong>输出快照。</p>
+  <p>理由：项目无用户认证系统，暴露管理端点有安全风险；进程重启后内存统计归零，端点数据不可靠。主流 AI 框架（LangChain、LlamaIndex、GPTCache）均通过日志/回调输出缓存统计。</p>
+</div>
+
+<h3>7.2 统计指标</h3>
+<table>
+  <tr><th>指标</th><th>类型</th><th>说明</th></tr>
+  <tr><td><code>hits</code></td><td>Counter</td><td>L1 缓存命中次数</td></tr>
+  <tr><td><code>misses</code></td><td>Counter</td><td>L1 缓存未命中次数</td></tr>
+  <tr><td><code>l2_hits</code></td><td>Counter</td><td>L2 缓存命中次数</td></tr>
+  <tr><td><code>l2_misses</code></td><td>Counter</td><td>L2 缓存未命中次数</td></tr>
+  <tr><td><code>evictions</code></td><td>Counter</td><td>LRU 淘汰次数</td></tr>
+  <tr><td><code>expirations</code></td><td>Counter</td><td>惰性淘汰次数（TTL 过期）</td></tr>
+  <tr><td><code>sweep_removed</code></td><td>Counter</td><td>写入时抽样清理移除数（方案二）</td></tr>
+  <tr><td><code>size</code></td><td>Gauge</td><td>当前 L1 条目数（已有）</td></tr>
+  <tr><td><code>l2_size</code></td><td>Gauge</td><td>当前 L2 条目数（已有）</td></tr>
+  <tr><td><code>hit_rate</code></td><td>Gauge</td><td>L1 命中率 = hits / (hits + misses)</td></tr>
+</table>
+
+<h3>7.3 实现细节</h3>
+<pre><code># cache_manager.py
+
+class CacheManager:
+    _STATS_LOG_INTERVAL = 300.0  # 每 5 分钟输出一次统计快照
+
+    def __init__(self, ...):
+        ...
+        self._stats = {
+            "hits": 0, "misses": 0,
+            "l2_hits": 0, "l2_misses": 0,
+            "evictions": 0, "expirations": 0,
+            "sweep_removed": 0,
+        }
+        self._last_stats_log = time.monotonic()
+
+    def get_stats(self) -> dict:
+        total = self._stats["hits"] + self._stats["misses"]
+        return {
+            **self._stats,
+            "size": self.size,
+            "l2_size": self.l2_size,
+            "hit_rate": round(self._stats["hits"] / total, 4) if total > 0 else 0.0,
+        }
+
+    def _maybe_log_stats(self) -> None:
+        """定期输出统计快照到结构化日志。"""
+        now = time.monotonic()
+        if now - self._last_stats_log >= self._STATS_LOG_INTERVAL:
+            self._logger.info("cache_stats_snapshot", **self.get_stats())
+            self._last_stats_log = now</code></pre>
+
+<p>日志输出示例（可接入 ELK / Grafana Loki / Datadog）：</p>
+<pre><code>{"event": "cache_stats_snapshot", "hits": 142, "misses": 58, "l2_hits": 8,
+ "l2_misses": 22, "evictions": 23, "expirations": 15, "sweep_removed": 7,
+ "size": 47, "l2_size": 12, "hit_rate": 0.71, "timestamp": "..."}</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s8">八、方案五：配置化 TTL（P2）</h2>
+
+<div class="card">
+  <h3>8.1 新增环境变量</h3>
+  <table>
+    <tr><th>环境变量</th><th>默认值</th><th>说明</th></tr>
+    <tr><td><code>QUERY_REWRITE_CACHE_TTL_SECONDS</code></td><td><code>1800</code></td><td>改写 L1 缓存默认 TTL（通用知识，取代硬编码的 3600）</td></tr>
+    <tr><td><code>QUERY_REWRITE_CONTEXT_DEPENDENT_TTL_SECONDS</code></td><td><code>300</code></td><td>改写 L1 缓存上下文依赖 TTL</td></tr>
+    <tr><td><code>QUERY_REWRITE_L2_CACHE_TTL_SECONDS</code></td><td><code>3600</code></td><td>改写 L2 语义缓存 TTL</td></tr>
+    <tr><td><code>SEARCH_CACHE_TTL_SECONDS</code></td><td><code>600</code></td><td>搜索正常结果缓存 TTL（已有）</td></tr>
+    <tr><td><code>CACHE_CLEANUP_SAMPLE_SIZE</code></td><td><code>20</code></td><td>写入时抽样的样本量</td></tr>
+    <tr><td><code>CACHE_CLEANUP_TRIGGER_EVERY_N</code></td><td><code>10</code></td><td>每 N 次写入触发清理</td></tr>
+    <tr><td><code>CACHE_STATS_LOG_INTERVAL_SECONDS</code></td><td><code>300</code></td><td>统计快照输出间隔</td></tr>
+  </table>
+</div>
+
+<h3>8.2 config.py 新增字段</h3>
+<pre><code># app/core/config.py
+
+class Settings(BaseSettings):
+    ...
+
+    # 查询重写缓存
+    query_rewrite_cache_ttl_seconds: float = 1800.0       # 通用知识 30min
+    query_rewrite_context_dependent_ttl_seconds: float = 300.0  # 上下文依赖 5min
+    query_rewrite_l2_cache_ttl_seconds: float = 3600.0    # L2 语义 1h
+
+    # 搜索响应缓存
+    search_cache_enabled: bool = True                      # 已有
+    search_cache_ttl_seconds: float = 600.0                # 已有，正常结果 10min
+    search_cache_max_size: int = 100                       # 已有
+
+    # 缓存清理
+    cache_cleanup_sample_size: int = 20
+    cache_cleanup_trigger_every_n: int = 10
+    cache_stats_log_interval_seconds: float = 300.0</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s10">十、文档重新索引后旧缓存处理分析</h2>
+
+<div class="card danger">
+  <h3>10.1 核心发现：无缓存失效机制</h3>
+  <p><strong>结论：上传新文档并完成重新索引后，旧的缓存答案和旧的 404/无匹配响应 <em>不会被主动清除</em>，仍会在 TTL 有效期内被命中返回。</strong></p>
+</div>
+
+<h3>10.2 缓存键构成分析</h3>
+
+<p>当前缓存键 <strong>不包含</strong> 任何知识库版本信息：</p>
+
+<table>
+  <tr><th>缓存层</th><th>缓存键构成</th><th>代码位置</th><th>是否含版本号</th></tr>
+  <tr>
+    <td>SearchService L1</td>
+    <td><code>SHA-256(session_id + ":" + query + ":" + top_k)[:16]</code></td>
+    <td><a href="../backend/app/services/search.py#L109" target="_blank">search.py:109-116</a></td>
+    <td><span class="badge badge-red">❌ 否</span></td>
+  </tr>
+  <tr>
+    <td>QueryRewriter L1</td>
+    <td><code>session_id + ":" + query_hash</code></td>
+    <td><a href="../backend/app/services/cache_manager.py#L236" target="_blank">cache_manager.py:236-241</a></td>
+    <td><span class="badge badge-red">❌ 否</span></td>
+  </tr>
+  <tr>
+    <td>QueryRewriter L2</td>
+    <td><code>"l2:" + normalized_query</code></td>
+    <td><a href="../backend/app/services/cache_manager.py#L244" target="_blank">cache_manager.py:244-250</a></td>
+    <td><span class="badge badge-red">❌ 否</span></td>
+  </tr>
+</table>
+
+<h3>10.3 上传/索引管线与缓存的隔离</h3>
+
+<div class="card warn">
+  <h4>完全隔离 —— 无任何挂钩点</h4>
+  <table>
+    <tr><th>操作</th><th>路由文件</th><th>是否触发缓存失效</th></tr>
+    <tr>
+      <td>文件上传 (<code>POST /api/uploads</code>)</td>
+      <td><a href="../backend/app/api/routes/uploads.py" target="_blank">uploads.py</a></td>
+      <td><span class="badge badge-red">❌ 否</span></td>
+    </tr>
+    <tr>
+      <td>文档解析 (<code>POST /api/document-parsing-jobs</code>)</td>
+      <td><a href="../backend/app/api/routes/document_parsing.py" target="_blank">document_parsing.py</a></td>
+      <td><span class="badge badge-red">❌ 否</span></td>
+    </tr>
+    <tr>
+      <td>文档分块 (<code>POST /api/document-chunk-jobs</code>)</td>
+      <td><a href="../backend/app/api/routes/document_chunking.py" target="_blank">document_chunking.py</a></td>
+      <td><span class="badge badge-red">❌ 否</span></td>
+    </tr>
+    <tr>
+      <td>向量化 (<code>POST /api/document-embedding-jobs</code>)</td>
+      <td><a href="../backend/app/api/routes/document_embedding.py" target="_blank">document_embedding.py</a></td>
+      <td><span class="badge badge-red">❌ 否</span></td>
+    </tr>
+    <tr>
+      <td>重新向量化 (<code>POST /.../re-embed</code>)</td>
+      <td><a href="../backend/app/api/routes/document_embedding.py#L213" target="_blank">document_embedding.py:213</a></td>
+      <td><span class="badge badge-red">❌ 否</span></td>
+    </tr>
+  </table>
+  <p>上传和索引路由完全不了解缓存层的存在，反之亦然。<code>CacheManager</code> 提供的 <code>clear()</code> 方法（<a href="../backend/app/services/cache_manager.py#L130" target="_blank">cache_manager.py:130</a>）<strong>从未被任何生产代码调用</strong>。</p>
+</div>
+
+<h3>10.4 具体影响场景</h3>
+
+<div class="card danger">
+  <h4>场景 A：旧答案被缓存后新文档索引完毕</h4>
+  <ol>
+    <li>用户在会话 <code>sess_abc</code> 中提问「公司的考勤制度是什么？」</li>
+    <li>知识库中无相关文档 → 返回 <em>「根据现有文档内容，无法回答此问题」</em></li>
+    <li>该无匹配响应被缓存（TTL = 600s），Key = <code>SHA-256("sess_abc:公司的考勤制度是什么？:5")</code></li>
+    <li>管理员上传《考勤制度 v2.0.pdf》并完成分块+向量化（10 秒后完成）</li>
+    <li>用户再次提问「公司的考勤制度是什么？」（距第一次 30 秒）</li>
+    <li><strong>结果：命中缓存，返回旧的「无法回答」——即使知识库已有相关文档</strong></li>
+  </ol>
+</div>
+
+<div class="card warn">
+  <h4>场景 B：旧正常答案被缓存后知识库更新</h4>
+  <ol>
+    <li>用户提问「退换货政策是什么？」→ LLM 基于旧版《退换货政策 v1》生成回答 → 缓存 600s</li>
+    <li>管理员上传《退换货政策 v2》（规则已变更），完成重新索引</li>
+    <li>用户再次提问同一问题（缓存未过期）</li>
+    <li><strong>结果：命中缓存，返回基于 v1 的旧回答，用户看到的是过时信息</strong></li>
+  </ol>
+</div>
+
+<div class="card info">
+  <h4>场景 C：跨会话 L2 缓存的放大效应</h4>
+  <ol>
+    <li>QueryRewriter L2 缓存的 TTL 高达 <strong>3600s（1 小时）</strong>，且是<strong>跨会话</strong>共享的</li>
+    <li>用户 A 在会话中触发了某个改写，结果存入 L2（标记为 general_knowledge）</li>
+    <li>知识库更新后，用户 B 在完全不同的会话中提问</li>
+    <li><strong>结果：用户 B 可能命中用户 A 的旧 L2 改写缓存（1 小时内），使用过时的改写结果进行搜索</strong></li>
+  </ol>
+</div>
+
+<h3>10.5 进程重启的隐式"清理"</h3>
+
+<div class="card">
+  <p>当前缓存为<strong>纯内存存储</strong>（<code>OrderedDict</code>），进程重启后所有缓存自动清空。这意味着：</p>
+  <ul>
+    <li>✅ 部署新版本 → 缓存自动清空（副作用变为特性）</li>
+    <li>✅ 服务重启 → 缓存清零</li>
+    <li>❌ 但这<strong>不是设计意图</strong>，而是内存存储的附带行为</li>
+    <li>❌ 生产环境中服务可能长时间运行（数天/数周），依赖重启来清理缓存不可靠</li>
+  </ul>
+</div>
+
+<h3>10.6 AI 项目最佳实践对比</h3>
+
+<table>
+  <tr><th>框架/项目</th><th>缓存失效策略</th></tr>
+  <tr>
+    <td><strong>LangChain</strong></td>
+    <td>支持 <code>InMemoryCache</code> 的 <code>clear()</code> + 可配置 TTL；社区推荐在文档更新时调用 <code>cache.clear()</code> 或使用带版本号的 cache key</td>
+  </tr>
+  <tr>
+    <td><strong>LlamaIndex</strong></td>
+    <td><code>IngestionCache</code> 以文档 hash 为 key，天然防止过期；查询端推荐用 <code>cache_key</code> 拼接文档集合指纹</td>
+  </tr>
+  <tr>
+    <td><strong>GPTCache</strong></td>
+    <td>支持通过 <code>cache.flush()</code> 或配置 <code>auto_flush</code> 在知识库更新时自动清理</td>
+  </tr>
+  <tr>
+    <td><strong>OpenAI Assistants API</strong></td>
+    <td>文件更新后 vector store 自动重新索引，不对外暴露缓存概念（缓存由平台托管）</td>
+  </tr>
+  <tr>
+    <td><strong>RAG 最佳实践</strong></td>
+    <td>推荐在 cache key 中加入 <strong>知识库版本号/指纹</strong>（如 <code>max(embedding.updated_at)</code> 的 hash），知识库更新 → key 变化 → 旧缓存自然失效</td>
+  </tr>
+</table>
+
+<h3>10.7 推荐方案</h3>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> 方案 A（推荐，轻量）：缓存键加入知识库指纹</h4>
+  <p>在 SearchService 缓存键中拼接<strong>知识库指纹</strong>（如所有 embedding 记录中 <code>MAX(created_at)</code> 的 hash），知识库有任何更新 → 指纹变化 → 所有旧缓存自动失效。</p>
+  <pre><code># search.py —— _make_search_cache_key 改进
+@staticmethod
+def _make_search_cache_key(session_id: str, query: str, top_k: int, kb_fingerprint: str = "") -> str:
+    raw = f"{session_id}:{query}:{top_k}:{kb_fingerprint}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+# 在 search() 方法开头计算指纹
+kb_fingerprint = self._get_kb_fingerprint()  # SELECT MAX(updated_at) FROM document_embeddings</code></pre>
+  <p><strong>优点：</strong>零侵入性（不修改上传/索引路由）、自动失效、实施成本极低（3 行 SQL + 1 个字段）。</p>
+  <p><strong>缺点：</strong>任何文档更新都会清空<strong>所有</strong>缓存（粒度较粗）。</p>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> 方案 B（进阶，精细）：向量化完成后回调清除缓存</h4>
+  <p>在 <code>DocumentEmbeddingService.execute_queued_job()</code> 成功完成后，发送一个信号/事件，由缓存层监听并选择性清除。</p>
+  <pre><code># 在 re-embed 成功后调用
+from app.services.cache_manager import get_search_response_cache
+cache = get_search_response_cache()
+if cache:
+    cache.clear()  # 清空所有 L1 + L2 缓存</code></pre>
+  <p><strong>优点：</strong>精确触发、即时生效、实现简单。</p>
+  <p><strong>缺点：</strong>需要在索引路由中注入缓存依赖（DI 链变更）、clear 粒度粗（清空所有会话缓存）。</p>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s11">十一、零数据（无匹配/零向量）缓存详细分析</h2>
+
+<h3>11.1 当前行为确认</h3>
+
+<div class="card danger">
+  <h3>是的 —— 三种结果类型全部缓存，且使用相同 TTL</h3>
+  <table>
+    <tr><th>场景</th><th>触发条件</th><th>缓存内容</th><th>答案文本</th><th>TTL</th><th>代码位置</th></tr>
+    <tr>
+      <td><span class="badge badge-red">零向量</span></td>
+      <td><code>total_searched == 0</code>（知识库无任何向量化文档）</td>
+      <td>完整 <code>SearchResponse</code></td>
+      <td><code>"知识库中暂无任何已向量化的文档…"</code></td>
+      <td>600s</td>
+      <td><a href="../backend/app/services/search.py#L269" target="_blank">search.py:269-275</a></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-amber">无匹配</span></td>
+      <td><code>len(rows) == 0</code>（向量搜索无结果或被阈值全过滤）</td>
+      <td>完整 <code>SearchResponse</code></td>
+      <td><code>"根据现有文档内容，无法回答此问题。"</code></td>
+      <td>600s</td>
+      <td><a href="../backend/app/services/search.py#L313" target="_blank">search.py:313-319</a></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-green">正常结果</span></td>
+      <td>有匹配 + LLM 生成成功</td>
+      <td>完整 <code>SearchResponse</code></td>
+      <td>LLM 生成的 Markdown</td>
+      <td>600s</td>
+      <td><a href="../backend/app/services/search.py#L360" target="_blank">search.py:360-371</a></td>
+    </tr>
+  </table>
+</div>
+
+<h3>11.2 问题严重性分析</h3>
+
+<div class="card danger">
+  <h4>零向量场景的特殊危害</h4>
+  <p>零向量响应（<code>total_searched == 0</code>）意味着知识库<strong>完全为空</strong>。这个状态的缓存是<strong>最危险的</strong>：</p>
+  <ol>
+    <li><strong>完全阻塞：</strong>一旦被缓存，用户在 10 分钟内<strong>无论如何都无法获得任何答案</strong>——即使管理员在此期间完成了文档上传+索引。</li>
+    <li><strong>零价值缓存：</strong>返回的是 68 个字符的固定中文字符串，不涉及 LLM 调用，缓存它没有任何成本节省。</li>
+    <li><strong>API 层面已返回 404：</strong>路由层在检测到 <code>total_searched == 0</code> 时已经 raise HTTP 404（<a href="../backend/app/api/routes/search.py#L321" target="_blank">search.py 路由:321-325</a>），但在此之前缓存已经写入。这意味着<strong>第二次请求会命中缓存返回 200 而非 404</strong>，行为不一致。</li>
+  </ol>
+</div>
+
+<div class="card warn">
+  <h4>无匹配场景的问题</h4>
+  <ol>
+    <li><strong>浪费 LRU 槽位：</strong>固定文本占用与 LLM 生成结果相同的内存和 LRU 位置。</li>
+    <li><strong>阻塞新文档生效：</strong>与场景 A 相同——新文档索引后，旧的无匹配缓存仍会命中。</li>
+    <li><strong>无 LLM 成本节省：</strong><code>_build_no_match_response</code> 不调用 LLM（<a href="../backend/app/services/search.py#L786" target="_blank">search.py:786-787</a>），缓存它不节省任何 API 费用。</li>
+  </ol>
+</div>
+
+<h3>11.3 AI 项目最佳实践对比</h3>
+
+<table>
+  <tr><th>框架/项目</th><th>对空结果/无匹配的处理</th></tr>
+  <tr>
+    <td><strong>LangChain</strong></td>
+    <td>不缓存空结果；<code>BaseCache</code> 的 <code>lookup</code> 返回 <code>None</code> 时直接走 LLM 调用路径</td>
+  </tr>
+  <tr>
+    <td><strong>GPTCache</strong></td>
+    <td>默认不缓存空响应；可通过 <code>cache_empty_result</code> 配置项控制（默认 False）</td>
+  </tr>
+  <tr>
+    <td><strong>LlamaIndex</strong></td>
+    <td><code>IngestionCache</code> 不区分结果类型；查询结果缓存由用户自行实现，社区建议跳过空结果</td>
+  </tr>
+  <tr>
+    <td><strong>RAG 最佳实践</strong></td>
+    <td>空结果（无匹配/无数据）<strong>不应缓存</strong>：① 没有 LLM 成本需要节省；② 缓存空结果会阻止知识库更新后的正确回答；③ 空结果的响应体积极小，重新计算成本可忽略</td>
+  </tr>
+</table>
+
+<h3>11.4 推荐方案</h3>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> 零向量 & 无匹配：直接不缓存</h4>
+  <p>这与方案三（<a href="#s6">第六节</a>）的决策 <strong>D2 完全一致</strong>：</p>
+  <table>
+    <tr><th>结果类型</th><th>当前行为</th><th>推荐行为</th><th>理由</th></tr>
+    <tr><td>零向量</td><td>✅ 缓存 600s</td><td><strong>❌ 不缓存</strong></td><td>知识库为空是临时状态；固定文本无 LLM 成本</td></tr>
+    <tr><td>无匹配</td><td>✅ 缓存 600s</td><td><strong>❌ 不缓存</strong></td><td>新文档索引后应立即生效；固定文本无 LLM 成本</td></tr>
+    <tr><td>正常结果</td><td>✅ 缓存 600s</td><td>✅ 缓存（配合知识库指纹）</td><td>LLM 生成有实际成本，值得缓存</td></tr>
+  </table>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<h2 id="s12">十二、待确认问题（Q&A）</h2>
+
+<div class="card info">
+  <h3>以下问题需要产品/业务方确认后决定实施方案</h3>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> Q1：知识库更新后的缓存行为期望 ✅ 已确认</h4>
+  <p><strong>背景：</strong>当前缓存键不含知识库版本信息，重新索引后旧缓存继续生效（最长 10 分钟）。</p>
+  <p><strong>确认答案：<span class="badge badge-green">方案 A —— 知识库指纹</span></strong></p>
+  <p>知识库更新后，<strong>所有用户的搜索缓存都应立即失效</strong>。通过知识库指纹（fingerprint）机制，文档上传完成 → 指纹变化 → 旧缓存自动失效，无需人工干预。</p>
+  <p><strong>实施要点：</strong></p>
+  <ul>
+    <li>缓存键中加入知识库指纹（如最新文档更新时间戳的哈希）</li>
+    <li>文档重新索引完成后更新指纹 → 所有旧缓存键自动失效</li>
+    <li>同时适用于 L1 和 L2 缓存（见 Q2）</li>
+  </ul>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> Q2：L2 语义缓存（跨会话）是否需要加入知识库版本感知？ ✅ 已确认</h4>
+  <p><strong>背景：</strong>QueryRewriter L2 缓存 TTL = 3600s，跨会话共享。知识库更新后，其他用户可能命中旧的改写结果。</p>
+  <p><strong>确认答案：<span class="badge badge-green">需要 —— L2 也加入知识库指纹</span></strong></p>
+  <p>L2 语义缓存虽然只缓存改写结果而非搜索答案，但知识库更新后术语映射、领域知识等都可能变化，旧改写结果已不适用。L2 同样需要知识库版本感知，与 L1 使用统一的指纹机制。</p>
+</div>
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> Q3：是否需要为管理员提供手动清除缓存的 API？ ✅ 已确认</h4>
+  <p><strong>背景：</strong>项目无用户认证系统（参见 <a href="#s7">D4</a>），暴露管理端点有安全风险。但生产运维中可能需要手动清除缓存。</p>
+  <p><strong>确认答案：<span class="badge badge-green">方案 A —— 不需要</span></strong></p>
+  <p>依赖 TTL 自动过期 + 知识库指纹自动失效即可。紧急情况通过进程重启清除内存缓存。与 D4 决策一致，与 LangChain/GPTCache/LlamaIndex 行业惯例对齐。</p>
+</div>
+
+
+
+<div class="decision">
+  <h4><span class="status-confirmed"></span> Q4：无匹配/零向量不缓存的决策确认 ✅ 已确认</h4>
+  <p><strong>背景：</strong>方案三（第六节）决策 D2 已确定「无匹配和零向量不缓存」。本节提供了详细的技术分析支持。</p>
+  <p><strong>确认答案：<span class="badge badge-green">不缓存，不做折中</span></strong></p>
+  <p>无匹配（rows=0）、零向量（total_searched=0）、零数据均<strong>不缓存</strong>。不需要极短 TTL 折中方案——这些场景返回的是固定短语，无 LLM 调用成本，缓存价值为零。直接跳过缓存写入即可。</p>
+</div>
+
+<div class="card success">
+  <h3>Phase 1（本次迭代，预计 2-3h）—— 核心问题修复</h3>
+  <table>
+    <tr><th>#</th><th>内容</th><th>涉及文件</th><th>依赖</th></tr>
+    <tr><td>1.1</td><td>CacheManager 存储结构升级为三元组 <code>(timestamp, ttl, value)</code></td><td><code>cache_manager.py</code></td><td>—</td></tr>
+    <tr><td>1.2</td><td><code>store()</code> 增加 <code>ttl_override</code> 可选参数；<code>lookup()</code> 使用条目级 TTL 判断过期</td><td><code>cache_manager.py</code></td><td>1.1</td></tr>
+    <tr><td>1.3</td><td><code>store_l2()</code> 同步支持 <code>ttl_override</code>；<code>lookup_l2()</code> 同步三元组支持</td><td><code>cache_manager.py</code></td><td>1.2</td></tr>
+    <tr><td>1.4</td><td>SearchService 区分三类缓存策略（正常缓存/无匹配不缓存/零向量不缓存）</td><td><code>search.py</code></td><td>1.2</td></tr>
+    <tr><td>1.5</td><td>QueryRewriter 对 <code>context_dependent</code> 结果传 <code>ttl_override=300</code></td><td><code>query_rewriter.py</code></td><td>1.2</td></tr>
+    <tr><td>1.6</td><td>config.py 新增 TTL 相关配置项；get_query_rewriter 使用配置值构造 CacheManager</td><td><code>config.py</code>、<code>search.py</code> 路由</td><td>—</td></tr>
+    <tr><td>1.7</td><td>更新现有测试：适配三元组结构 + 新增差异化 TTL 测试</td><td><code>test_cache_manager.py</code> 等</td><td>1.1-1.6</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>Phase 2（后续迭代，预计 1-2h）—— 可观测性与清理</h3>
+  <table>
+    <tr><th>#</th><th>内容</th><th>涉及文件</th><th>依赖</th></tr>
+    <tr><td>2.1</td><td>CacheManager 增加统计计数器（hits/misses/evictions/expirations）</td><td><code>cache_manager.py</code></td><td>—</td></tr>
+    <tr><td>2.2</td><td>增加 <code>_maybe_log_stats()</code> 定期输出结构化统计快照</td><td><code>cache_manager.py</code></td><td>2.1</td></tr>
+    <tr><td>2.3</td><td>增加写入时抽样过期清理（<code>_maybe_sweep</code> / <code>_sweep_expired</code>）</td><td><code>cache_manager.py</code></td><td>1.1（依赖三元组）</td></tr>
+    <tr><td>2.4</td><td>新增可观测性与清理的单元测试</td><td><code>test_cache_manager.py</code></td><td>2.1-2.3</td></tr>
+  </table>
+</div>
+
+<div class="card info">
+  <h3>向后兼容保障</h3>
+  <ul>
+    <li><strong><code>ttl_override=None</code>（默认值）：</strong>回退到实例默认 <code>self._ttl</code>，所有现有调用方行为不变</li>
+    <li><strong>旧二元组格式：</strong><code>_sweep_expired</code> 中通过 <code>len(entry) >= 3</code> 检测旧格式并回退</li>
+    <li><strong>单例缓存实例：</strong>路由层 <code>get_query_rewriter()</code> 和 <code>get_search_response_cache()</code> 的模块级单例模式不受影响</li>
+  </ul>
+</div>
+
+<hr>
+<p style="color: var(--text-secondary); font-size: .85rem;">
+  本文档由 Claude Code 基于 Knowra 项目代码库分析生成。所有代码引用可点击跳转至对应源文件。
+  &nbsp;|&nbsp; 生成分支：<code>feat/add-query-rewriting</code>
+  &nbsp;|&nbsp; 更新：新增第十节（文档重新索引后旧缓存处理）、第十一节（零数据缓存详细分析）、第十二节（待确认 Q&A）
+  &nbsp;|&nbsp; 状态：<span class="badge badge-green">全部确认，可进入实施阶段</span>
+</p>
+
+</body>
+</html>

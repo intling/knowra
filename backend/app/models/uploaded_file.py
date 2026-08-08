@@ -13,6 +13,12 @@ class UploadedFile(SQLModel, table=True):
         Index("ix_uploaded_files_owner_user_id", "owner_user_id"),
         Index("ix_uploaded_files_status", "status"),
         Index("ix_uploaded_files_created_at", "created_at"),
+        Index(
+            "ix_uploaded_files_dedup",
+            "owner_user_id",
+            "checksum_sha256",
+            "deleted_at",
+        ),
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)

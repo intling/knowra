@@ -966,6 +966,7 @@ class TestSessionScopedCache:
         sid_hash_2 = mock_cache_manager.lookup.call_args_list[1][0][0]
         assert sid_hash_1 != sid_hash_2
 
+
 # ══════════════════════════════════════════════════════════
 # Session ID 派生测试
 # ══════════════════════════════════════════════════════════
