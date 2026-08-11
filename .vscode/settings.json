@@ -1,0 +1,16 @@
+{
+  // VSCode 不再监视日志文件变动（减少资源消耗）
+  "files.watcherExclude": {
+    "**/*.log": true,
+    "**/logs/**": true
+  },
+  // 搜索时排除日志文件
+  "search.exclude": {
+    "**/*.log": true,
+    "**/logs/**": true
+  },
+  // 资源管理器中隐藏 logs/ 目录
+  "files.exclude": {
+    "**/logs/**": true
+  }
+}
