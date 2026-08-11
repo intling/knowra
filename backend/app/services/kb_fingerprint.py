@@ -35,9 +35,7 @@ def compute_fingerprint(session: Session) -> str:
     指纹长度固定 16 字符（SHA-256 hex[:16]），可在 1ms 内完成查询。
     返回值为纯哈希无盐字符串，不包含原始聚合值。
     """
-    count = session.exec(
-        select(func.count()).select_from(DocumentEmbedding)
-    ).one()
+    count = session.exec(select(func.count()).select_from(DocumentEmbedding)).one()
 
     max_updated = session.exec(
         select(func.max(DocumentEmbeddingJob.updated_at)).where(

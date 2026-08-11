@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
@@ -67,7 +69,7 @@ class TestFingerprintChange:
 
     def test_fingerprint_changes_after_adding_document(self, db_session):
         """新增文档向量化后指纹应改变。"""
-        from datetime import datetime, timezone
+        from datetime import datetime
         from uuid import uuid4
 
         from app.models.document_embedding import DocumentEmbedding, DocumentEmbeddingJob
@@ -85,7 +87,7 @@ class TestFingerprintChange:
             model="test-model",
             dimensions=128,
             embedding_count=1,
-            updated_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(UTC),
         )
         db_session.add(job)
 
@@ -109,7 +111,7 @@ class TestFingerprintChange:
 
     def test_unsuccessful_jobs_do_not_affect_fingerprint(self, db_session):
         """状态非 succeeded 的向量化任务不影响指纹。"""
-        from datetime import datetime, timezone
+        from datetime import datetime
         from uuid import uuid4
 
         from app.models.document_embedding import DocumentEmbeddingJob
@@ -127,7 +129,7 @@ class TestFingerprintChange:
             model="test-model",
             dimensions=128,
             embedding_count=0,
-            updated_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(UTC),
         )
         db_session.add(job)
         db_session.commit()

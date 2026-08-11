@@ -24,6 +24,7 @@ from app.services.audit_trail import AuditTrail
 from app.services.cache_manager import CacheManager
 from app.services.chat_adapter import ChatAdapter
 from app.services.chat_config import ChatConfig
+from app.services.circuit_breaker import CircuitBreaker
 from app.services.context_rewriter import ContextRewriter
 from app.services.context_verifier import ContextVerifier
 from app.services.embedding_adapter import EmbeddingAdapter, EmbeddingAPIError
@@ -31,6 +32,7 @@ from app.services.embedding_config import EmbeddingConfig
 from app.services.expand_rewriter import ExpandRewriter
 from app.services.kb_fingerprint import compute_fingerprint
 from app.services.normalize_rewriter import NormalizeRewriter
+from app.services.postprocessor import Postprocessor
 from app.services.prompt_loader import PromptLoader
 from app.services.query_rewrite_config import QueryRewriteConfig
 from app.services.query_rewriter import (
@@ -88,6 +90,7 @@ _query_rewriter_singleton_disabled: bool = False  # 标记是否已确认"不启
 _search_audit_trail_singleton: AuditTrail | None = None
 _search_response_cache_singleton: CacheManager | None = None
 _search_response_cache_disabled: bool = False  # 标记缓存是否被禁用
+_chat_circuit_breaker_singleton: CircuitBreaker | None = None
 
 
 def get_search_audit_trail() -> AuditTrail:
@@ -125,6 +128,21 @@ def get_search_response_cache(settings: SettingsDep) -> CacheManager | None:
         ttl_seconds=settings.search_cache_ttl_seconds,
     )
     return _search_response_cache_singleton
+
+
+def get_chat_circuit_breaker(settings: SettingsDep) -> CircuitBreaker:
+    """获取对话生成熔断器单例。
+
+    连续失败后自动断开，冷却期满后半开探测恢复。
+    熔断期间所有 LLM 生成跳过，直接返回降级文本。
+    """
+    global _chat_circuit_breaker_singleton
+    if _chat_circuit_breaker_singleton is None:
+        _chat_circuit_breaker_singleton = CircuitBreaker(
+            failure_threshold=settings.chat_circuit_breaker_threshold,
+            cooldown_seconds=settings.chat_circuit_breaker_cooldown_seconds,
+        )
+    return _chat_circuit_breaker_singleton
 
 
 def get_query_rewriter(
@@ -217,6 +235,19 @@ def get_query_rewriter(
         prompt_loader=prompt_loader,
     )
 
+    # CircuitBreaker：连续失败熔断保护
+    circuit_breaker = CircuitBreaker(
+        failure_threshold=settings.query_rewrite_circuit_breaker_threshold,
+        cooldown_seconds=settings.query_rewrite_circuit_breaker_cooldown_seconds,
+    )
+
+    # Postprocessor：改写质量评估与回溯控制
+    postprocessor = Postprocessor(
+        chat_adapter=rewrite_chat_adapter,
+        prompt_loader=prompt_loader,
+        audit_trail=audit_trail,
+    )
+
     _query_rewriter_singleton = QueryRewriter(
         exact_term_protector=term_protector,
         context_rewriter=context_rewriter,
@@ -234,6 +265,10 @@ def get_query_rewriter(
         dissatisfaction_detector=dissatisfaction_detector,
         knowledge_classifier=knowledge_classifier,
         context_verifier=context_verifier,
+        # 集成联调: 质量评估与回溯
+        postprocessor=postprocessor,
+        # 熔断器
+        circuit_breaker=circuit_breaker,
         # 差异化 TTL 配置（统一从 Settings 读取）
         l1_general_ttl=settings.query_rewrite_cache_ttl_seconds,
         l1_context_dependent_ttl=settings.query_rewrite_context_dependent_ttl_seconds,
@@ -248,6 +283,7 @@ EmbeddingAdapterDep = Annotated[EmbeddingAdapter, Depends(get_embedding_adapter)
 ChatAdapterDep = Annotated[ChatAdapter, Depends(get_chat_adapter)]
 QueryRewriterDep = Annotated[QueryRewriter | None, Depends(get_query_rewriter)]
 SearchResponseCacheDep = Annotated[CacheManager | None, Depends(get_search_response_cache)]
+ChatCircuitBreakerDep = Annotated[CircuitBreaker, Depends(get_chat_circuit_breaker)]
 SearchAuditTrailDep = Annotated[AuditTrail, Depends(get_search_audit_trail)]
 
 
@@ -269,6 +305,7 @@ def search_documents(
     query_rewriter: QueryRewriterDep = None,
     response_cache: SearchResponseCacheDep = None,
     search_audit_trail: SearchAuditTrailDep = None,
+    chat_circuit_breaker: ChatCircuitBreakerDep = None,
 ) -> SearchResponse:
     """跨所有已向量化文档进行语义搜索，并生成 AI 回答。
 
@@ -310,6 +347,7 @@ def search_documents(
         query_rewriter=query_rewriter,
         response_cache=response_cache,
         audit_trail=search_audit_trail,
+        circuit_breaker=chat_circuit_breaker,
     )
 
     # ── 知识库指纹注入 ──────────────────────────────────────────────────

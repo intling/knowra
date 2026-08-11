@@ -29,6 +29,7 @@ def make_config(**overrides):
         "max_tokens": 1024,
         "request_timeout": 30.0,
         "max_retries": 3,
+        "first_token_timeout": 10.0,
     }
     defaults.update(overrides)
     return config_module.ChatConfig(**defaults)
@@ -354,6 +355,7 @@ def test_chat_config_from_settings_maps_all_fields():
         chat_max_tokens = 2048
         chat_request_timeout = 45.0
         chat_max_retries = 5
+        chat_first_token_timeout = 10.0
 
     config = config_module.ChatConfig.from_settings(FakeSettings())
 
@@ -364,6 +366,7 @@ def test_chat_config_from_settings_maps_all_fields():
     assert config.max_tokens == 2048
     assert config.request_timeout == 45.0
     assert config.max_retries == 5
+    assert config.first_token_timeout == 10.0
 
 
 # from_settings() 不传参时应使用全局 Settings（通过 get_settings()）。

@@ -5,7 +5,7 @@
 
 from importlib import import_module
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -45,11 +45,24 @@ def make_fake_chat_adapter(
     content: str = "根据文档内容，答案如下。",
     model: str = "test-chat-model",
 ):
-    """Create a fake ChatAdapter whose ``generate`` returns a canned ChatResult."""
+    """Create a fake ChatAdapter whose ``generate_async`` returns a canned ChatResult.
+
+    ``generate_async`` is an ``AsyncMock`` — awaitable and supports call assertions.
+    ``generate`` is a sync ``MagicMock`` for backward-compatible test paths.
+    """
     chat_module = import_module("app.services.chat_adapter")
     adapter = MagicMock()
     adapter.config = SimpleNamespace(model=model)
     adapter.generate = MagicMock(
+        return_value=chat_module.ChatResult(
+            content=content,
+            model=model,
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+        )
+    )
+    adapter.generate_async = AsyncMock(
         return_value=chat_module.ChatResult(
             content=content,
             model=model,
@@ -71,6 +84,7 @@ def make_fake_chat_config(*, model: str = "test-chat-model", **overrides):
         "max_tokens": 1024,
         "request_timeout": 30.0,
         "max_retries": 3,
+        "first_token_timeout": 10.0,
     }
     defaults.update(overrides)
     chat_config_module = import_module("app.services.chat_config")
@@ -296,7 +310,7 @@ def test_search_returns_empty_results_when_no_embeddings_exist():
 
     # 无向量数据时不调用 LLM，使用硬编码友好提示
     # 理由：LLM 的价值在于"对上下文进行推理"——没有上下文时不应浪费 Token 和延迟
-    chat_adapter.generate.assert_not_called()
+    chat_adapter.generate_async.assert_not_called()
     assert isinstance(response.answer, str)
     assert len(response.answer) > 0
     # 硬编码提示应包含"暂无已向量化文档"的引导信息
@@ -328,7 +342,7 @@ def test_search_skips_llm_when_no_embeddings_exist():
     response = service.search(query="测试查询", top_k=5)
 
     # LLM 应完全不被调用——没有上下文可供推理
-    chat_adapter.generate.assert_not_called()
+    chat_adapter.generate_async.assert_not_called()
 
     # answer 应为硬编码的友好提示
     assert isinstance(response.answer, str)
@@ -344,7 +358,7 @@ def test_search_skips_llm_when_no_embeddings_exist():
 # ── 3. 正常返回 answer ───────────────────────────────────────────────
 
 
-# search() 应调用 ChatAdapter.generate()，并将 LLM 回答填入 SearchResponse.answer，
+# search() 应调用 ChatAdapter.generate_async()，并将 LLM 回答填入 SearchResponse.answer，
 # 同时填充 answer_tokens 和 chat_model。
 # 正常路径下 generation_error 应为 None（表示未降级）。
 def test_search_returns_llm_answer_with_token_stats():
@@ -391,7 +405,7 @@ def test_search_returns_llm_answer_with_token_stats():
     assert response.generation_error is None
 
     # Verify chat_adapter was called
-    chat_adapter.generate.assert_called_once()
+    chat_adapter.generate_async.assert_called_once()
 
 
 # LLM 生成的 messages 应包含 system prompt（回答规则）和 user prompt（上下文 + 问题）。
@@ -439,7 +453,7 @@ def test_search_assembles_prompt_with_system_and_context():
     service.search(query="什么是 Python？", top_k=5)
 
     # Verify the messages passed to chat_adapter
-    call_args = chat_adapter.generate.call_args
+    call_args = chat_adapter.generate_async.call_args
     messages = call_args[0][0]  # First positional arg
 
     # Should have at least system + user messages
@@ -520,7 +534,7 @@ def test_search_graceful_degradation_when_chat_disabled():
     assert len(response.answer) > 0
     assert response.answer_tokens is None
     assert response.chat_model is None
-    chat_adapter.generate.assert_not_called()
+    chat_adapter.generate_async.assert_not_called()
 
     # generation_error 记录原因，前端据此展示"未启用"降级 UI
     assert response.generation_error == "Chat generation is disabled"
@@ -529,7 +543,7 @@ def test_search_graceful_degradation_when_chat_disabled():
 # ── 5. LLM 调用失败时优雅降级 ────────────────────────────────────────
 
 
-# 当 ChatAdapter.generate() 抛出 ChatAPIError 时，SearchService 不应
+# 当 ChatAdapter.generate_async() 抛出 ChatAPIError 时，SearchService 不应
 # 丢弃已成功的检索结果，而应优雅降级：返回完整 SearchResponse，
 # results 保留检索结果，answer 为硬编码错误提示，generation_error 记录
 # 原始错误信息供前端展示。
@@ -549,7 +563,7 @@ def test_search_graceful_degradation_on_llm_failure():
     session = make_fake_session(rows=rows, total_count=1)
     embedding_adapter = make_fake_embedding_adapter()
     chat_adapter = make_fake_chat_adapter()
-    chat_adapter.generate.side_effect = chat_module.ChatAPIError("LLM API timeout", status_code=502)
+    chat_adapter.generate_async.side_effect = chat_module.ChatAPIError("LLM API timeout", status_code=502)
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
@@ -745,7 +759,7 @@ def test_similarity_threshold_filters_irrelevant_results():
     assert response.searched_document_count == 0
 
     # 不应调用 LLM —— 没有有效上下文可供推理
-    chat_adapter.generate.assert_not_called()
+    chat_adapter.generate_async.assert_not_called()
 
     # 应答应为固定的"无法回答"短语
     assert response.answer == "根据现有文档内容，无法回答此问题。"
@@ -788,7 +802,7 @@ def test_similarity_threshold_keeps_relevant_results():
     assert response.total_searched == 100
 
     # LLM 应被调用（有有效上下文）
-    chat_adapter.generate.assert_called_once()
+    chat_adapter.generate_async.assert_called_once()
 
 
 # 当 threshold=0 时应禁用过滤，保留所有结果。
@@ -818,7 +832,7 @@ def test_similarity_threshold_zero_disables_filtering():
     # threshold=0 时不过滤任何结果
     assert len(response.results) == 2
     # LLM 应被调用
-    chat_adapter.generate.assert_called_once()
+    chat_adapter.generate_async.assert_called_once()
 
 
 # ── 10b. 最低分数阈值（第二道防线）────────────────────────────────────
@@ -860,7 +874,7 @@ def test_min_score_threshold_blocks_weakly_relevant_results():
     assert response.searched_document_count == 0
 
     # 不应调用 LLM —— 没有真正相关的上下文
-    chat_adapter.generate.assert_not_called()
+    chat_adapter.generate_async.assert_not_called()
 
     # 应答应为固定的"无法回答"短语
     assert response.answer == "根据现有文档内容，无法回答此问题。"
@@ -908,7 +922,7 @@ def test_min_score_threshold_allows_strongly_relevant_results():
     assert response.total_searched == 100
 
     # LLM 应被调用（有强相关的上下文）
-    chat_adapter.generate.assert_called_once()
+    chat_adapter.generate_async.assert_called_once()
 
 
 # 当 similarity_threshold 过滤后所有分块都被移除时，
@@ -941,7 +955,7 @@ def test_min_score_threshold_skipped_when_no_rows_pass_similarity():
     # 所有分块均被 similarity_threshold 过滤
     assert len(response.results) == 0
     # 不应调用 LLM
-    chat_adapter.generate.assert_not_called()
+    chat_adapter.generate_async.assert_not_called()
 
 
 # 当 min_score_threshold=0 时应禁用检查，保留所有通过 similarity_threshold 的结果。
@@ -971,7 +985,7 @@ def test_min_score_threshold_zero_disables_check():
 
     # min_score_threshold=0 不禁用，所有通过 similarity_threshold 的结果保留
     assert len(response.results) == 2
-    chat_adapter.generate.assert_called_once()
+    chat_adapter.generate_async.assert_called_once()
 
 
 # ── 11. 噪声分块过滤 ────────────────────────────────────────────────────
@@ -1020,7 +1034,7 @@ def test_assemble_prompt_skips_noise_chunks():
     service.search(query="河南一本分数线", top_k=5)
 
     # 验证发送给 LLM 的 messages
-    call_args = chat_adapter.generate.call_args
+    call_args = chat_adapter.generate_async.call_args
     messages = call_args[0][0]
     user_msg = next(m for m in messages if m["role"] == "user")
 
@@ -1225,7 +1239,7 @@ def test_assemble_prompt_truncates_long_history_messages():
 
 
 # 通过 SearchService.search() 端到端验证 history 被注入到 LLM prompt 中。
-# 验证 chat_adapter.generate 接收到的 messages 包含历史消息。
+# 验证 chat_adapter.generate_async 接收到的 messages 包含历史消息。
 def test_search_injects_history_into_llm_prompt():
     module = get_search_module()
 
@@ -1249,8 +1263,8 @@ def test_search_injects_history_into_llm_prompt():
 
     service.search(query="它有哪些特点？", top_k=5, history=history)
 
-    # 验证 chat_adapter.generate 被调用时 messages 包含历史
-    call_args = chat_adapter.generate.call_args
+    # 验证 chat_adapter.generate_async 被调用时 messages 包含历史
+    call_args = chat_adapter.generate_async.call_args
     messages = call_args[0][0]
 
     # 应包含 4 条消息：system + history[0] + history[1] + user
@@ -1308,8 +1322,8 @@ def test_search_history_used_for_both_rewrite_and_prompt():
         "它怎么用", session_id="857ef68c512752a2", history=history
     )
 
-    # 2. chat_adapter.generate 的 messages 应包含 history（用于多轮对话）
-    call_args = chat_adapter.generate.call_args
+    # 2. chat_adapter.generate_async 的 messages 应包含 history（用于多轮对话）
+    call_args = chat_adapter.generate_async.call_args
     messages = call_args[0][0]
     # system + 2 history + user = 4 条
     assert len(messages) == 4

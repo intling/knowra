@@ -8,9 +8,14 @@ const props = defineProps<{
 
 // ── Collapse toggle ──
 const isExpanded = ref(false)
+const isDimensionsExpanded = ref(false)
 
 function toggleExpand() {
   isExpanded.value = !isExpanded.value
+}
+
+function toggleDimensions() {
+  isDimensionsExpanded.value = !isDimensionsExpanded.value
 }
 
 // ── Computed helpers ──
@@ -78,6 +83,41 @@ function cacheLevelLabel(): string | null {
   if (level === "L1") return "L1 精确命中"
   if (level === "L2") return "L2 语义命中"
   return null
+}
+
+// ── Integration: Quality scores (task 10.2) ──
+const VERDICT_LABELS: Record<string, string> = {
+  excellent: "优秀",
+  good: "良好",
+  marginal: "一般",
+  poor: "较差",
+}
+
+const VERDICT_COLORS: Record<string, string> = {
+  excellent: "text-emerald-600",
+  good: "text-amber-600",
+  marginal: "text-red-600",
+  poor: "text-red-600",
+}
+
+function verdictLabel(verdict: string): string {
+  return VERDICT_LABELS[verdict] ?? verdict
+}
+
+function verdictColorClass(verdict: string): string {
+  return VERDICT_COLORS[verdict] ?? "text-neutral-500"
+}
+
+const DIMENSIONS = [
+  { key: "semantic_preservation", label: "语义保留" },
+  { key: "clarity_improvement", label: "清晰度提升" },
+  { key: "information_gain", label: "信息增益" },
+  { key: "term_accuracy", label: "术语准确度" },
+  { key: "retrievability", label: "可检索性" },
+] as const
+
+function hasQualityScores(): boolean {
+  return props.rewriteInfo.quality_scores != null
 }
 </script>
 
@@ -196,6 +236,86 @@ function cacheLevelLabel(): string | null {
         >
           {{ hasError() ? `⚠️ 重写失败：${rewriteInfo.error}` : '未启用查询重写或未产生改写结果，使用原始查询检索。' }}
         </p>
+      </div>
+
+      <!-- Quality scores (Integration) -->
+      <div
+        v-if="hasQualityScores()"
+        data-testid="quality-score-container"
+        class="border-t border-neutral-100 px-5 py-3"
+      >
+        <!-- Total score + verdict row -->
+        <div class="mb-2 flex items-center gap-2">
+          <span
+            data-testid="quality-total-score"
+            class="font-mono tabular-nums text-sm font-semibold text-neutral-800"
+          >
+            {{ rewriteInfo.quality_scores!.total_score }}
+          </span>
+          <span
+            data-testid="quality-verdict"
+            class="text-xs font-semibold"
+            :class="verdictColorClass(rewriteInfo.quality_scores!.verdict)"
+          >
+            {{ verdictLabel(rewriteInfo.quality_scores!.verdict) }}
+          </span>
+          <button
+            data-testid="quality-dimensions-toggle"
+            class="ml-auto text-xs text-neutral-400 transition hover:text-neutral-600"
+            type="button"
+            @click="toggleDimensions"
+          >
+            {{ isDimensionsExpanded ? '收起详情' : '评分详情' }}
+          </button>
+        </div>
+
+        <!-- 5-dimension score details -->
+        <div
+          v-if="isDimensionsExpanded"
+          data-testid="quality-dimensions"
+          class="space-y-2"
+        >
+          <div
+            v-for="dim in DIMENSIONS"
+            :key="dim.key"
+            data-testid="quality-dimension-item"
+            class="flex items-center gap-2"
+          >
+            <span
+              data-testid="quality-dimension-label"
+              class="w-24 shrink-0 text-xs text-neutral-500"
+            >
+              {{ dim.label }}
+            </span>
+            <div
+              data-testid="quality-dimension-bar-bg"
+              class="h-1.5 flex-1 rounded-full bg-neutral-200"
+            >
+              <div
+                data-testid="quality-dimension-bar-fill"
+                class="h-1.5 rounded-full bg-emerald-500"
+                :style="{
+                  width: ((rewriteInfo.quality_scores![dim.key as keyof typeof rewriteInfo.quality_scores] as number) / 5) * 100 + '%',
+                }"
+              />
+            </div>
+            <span
+              data-testid="quality-dimension-score"
+              class="w-4 text-right font-mono tabular-nums text-xs text-neutral-600"
+            >
+              {{ rewriteInfo.quality_scores![dim.key as keyof typeof rewriteInfo.quality_scores] }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Backtrack notice -->
+        <div
+          v-if="rewriteInfo.backtrack_triggered"
+          data-testid="backtrack-notice"
+          class="mt-2 text-xs text-amber-500"
+        >
+          已自动升级策略重新改写
+        </div>
       </div>
 
       <!-- Performance metrics -->

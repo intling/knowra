@@ -82,8 +82,19 @@ class Settings(BaseSettings):
     chat_model: str = "qwen3.5-plus"
     chat_temperature: float = 0.1
     chat_max_tokens: int = 1024
-    chat_request_timeout: float = 30.0
+    # 搜推分离超时：检索（向量搜索）通常在百毫秒内完成，其结果是用户可见的核心价值；
+    # 答案生成为"锦上添花"，应快速超时降级为"仅返回检索结果 + 降级提示"。
+    # 15s 单次 HTTP 超时 + 1 次重试 = 最坏 30s，由 search.py 的 asyncio.wait_for(20s) 兜底。
+    chat_request_timeout: float = 15.0
     chat_max_retries: int = 1
+    # 流式生成首 token 超时（秒）：首个 token 未在此时间内到达则判定服务不可用，
+    # 快速降级返回检索结果。一旦首 token 到达即表明模型在工作，后续收集不受此限制。
+    chat_first_token_timeout: float = 10.0
+    # ── 对话生成熔断器（Circuit Breaker）──
+    # 连续 N 次 LLM 生成失败后自动断开，期间跳过 LLM 调用直接返回降级文本
+    chat_circuit_breaker_threshold: int = 5
+    # 熔断冷却时间（秒），期满后半开探测
+    chat_circuit_breaker_cooldown_seconds: float = 30.0
     # 查询重写（Query Rewriting）配置
     query_rewrite_enabled: bool = False
     query_rewrite_model: str = "qwen3.5-plus"
@@ -99,6 +110,11 @@ class Settings(BaseSettings):
     # 单个重写策略（normalize/term_align/expand）的 LLM 调用超时
     # 默认 15s，给 LLM 充足的响应时间 + 重试余量
     query_rewrite_strategy_timeout: float = 15.0
+    # ── 熔断器（Circuit Breaker）──
+    # 连续 N 次重写失败后自动断开，期间所有请求跳过重写
+    query_rewrite_circuit_breaker_threshold: int = 5
+    # 熔断冷却时间（秒），期满后半开探测
+    query_rewrite_circuit_breaker_cooldown_seconds: float = 30.0
     # ── 查询重写缓存 TTL（与 CacheManager 集成）──
     # L1 精确缓存 TTL（同一会话内精确匹配，通用知识默认 30min）
     query_rewrite_cache_ttl_seconds: float = 1800.0

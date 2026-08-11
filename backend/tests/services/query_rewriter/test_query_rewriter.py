@@ -907,7 +907,7 @@ class TestSessionScopedCache:
         mock_chat_adapter_fixture,
         mock_audit_trail,
     ):
-        """不同空白或不同内容的查询产生不同的 query_hash（无规范化）。"""
+        """语义不同的查询产生不同的 query_hash（规范化后仍不同）。"""
         mock_protector.protect.return_value = ("Python 怎么学", {})
         mock_protector.restore.return_value = "Python 怎么学"
         mock_cache_manager.lookup.return_value = None
@@ -920,9 +920,8 @@ class TestSessionScopedCache:
             audit_trail=mock_audit_trail,
         )
 
-        # 不同空白 → 不同原始文本 → 不同哈希
-        q1 = "Python  怎么学"
-        q2 = "  Python 怎么学  "
+        q1 = "Python 怎么学"
+        q2 = "Java 怎么学"
 
         await rewriter.rewrite(q1, session_id="sess", history=None)
         await rewriter.rewrite(q2, session_id="sess", history=None)
@@ -931,6 +930,110 @@ class TestSessionScopedCache:
         hash1 = mock_cache_manager.lookup.call_args_list[0][0][1]
         hash2 = mock_cache_manager.lookup.call_args_list[1][0][1]
         assert hash1 != hash2
+
+    async def test_same_query_different_whitespace_same_hash(
+        self,
+        mock_protector,
+        mock_context_rewriter,
+        mock_cache_manager,
+        mock_chat_adapter_fixture,
+        mock_audit_trail,
+    ):
+        """仅空白不同的相同查询经规范化后产生相同的 query_hash。"""
+        mock_protector.protect.return_value = ("Python 怎么学", {})
+        mock_protector.restore.return_value = "Python 如何学习"
+        mock_cache_manager.lookup.return_value = None
+
+        rewriter = _build_rewriter(
+            protector=mock_protector,
+            context_rewriter=mock_context_rewriter,
+            cache_manager=mock_cache_manager,
+            chat_adapter=mock_chat_adapter_fixture,
+            audit_trail=mock_audit_trail,
+        )
+
+        # 多余空格 + 首尾空白 → 规范化后与普通版本相同
+        q1 = "Python  怎么学"
+        q2 = "  Python 怎么学  "
+        q3 = "Python 怎么学"
+
+        await rewriter.rewrite(q1, session_id="sess", history=None)
+        await rewriter.rewrite(q2, session_id="sess", history=None)
+        await rewriter.rewrite(q3, session_id="sess", history=None)
+
+        assert mock_cache_manager.lookup.call_count == 3
+        hash1 = mock_cache_manager.lookup.call_args_list[0][0][1]
+        hash2 = mock_cache_manager.lookup.call_args_list[1][0][1]
+        hash3 = mock_cache_manager.lookup.call_args_list[2][0][1]
+        # 规范化后三个查询应产生相同的哈希
+        assert hash1 == hash2 == hash3
+
+    async def test_different_case_different_hash(
+        self,
+        mock_protector,
+        mock_context_rewriter,
+        mock_cache_manager,
+        mock_chat_adapter_fixture,
+        mock_audit_trail,
+    ):
+        """大小写差异不折叠——英文术语大写/小写产生不同哈希。"""
+        mock_protector.protect.return_value = ("US economic policy", {})
+        mock_protector.restore.return_value = "US economic policy"
+        mock_cache_manager.lookup.return_value = None
+
+        rewriter = _build_rewriter(
+            protector=mock_protector,
+            context_rewriter=mock_context_rewriter,
+            cache_manager=mock_cache_manager,
+            chat_adapter=mock_chat_adapter_fixture,
+            audit_trail=mock_audit_trail,
+        )
+
+        await rewriter.rewrite("US", session_id="sess", history=None)
+        await rewriter.rewrite("us", session_id="sess", history=None)
+
+        assert mock_cache_manager.lookup.call_count == 2
+        hash1 = mock_cache_manager.lookup.call_args_list[0][0][1]
+        hash2 = mock_cache_manager.lookup.call_args_list[1][0][1]
+        # 不做大小写折叠 → 不同哈希
+        assert hash1 != hash2
+
+    async def test_unicode_nfc_normalization_same_hash(
+        self,
+        mock_protector,
+        mock_context_rewriter,
+        mock_cache_manager,
+        mock_chat_adapter_fixture,
+        mock_audit_trail,
+    ):
+        """Unicode NFC 标准化——组合字符和预组合字符产生相同哈希。"""
+        mock_protector.protect.return_value = ("éclair", {})
+        mock_protector.restore.return_value = "éclair"
+        mock_cache_manager.lookup.return_value = None
+
+        rewriter = _build_rewriter(
+            protector=mock_protector,
+            context_rewriter=mock_context_rewriter,
+            cache_manager=mock_cache_manager,
+            chat_adapter=mock_chat_adapter_fixture,
+            audit_trail=mock_audit_trail,
+        )
+
+        import unicodedata
+
+        # NFC 预组合形式（单码位）
+        nfc_form = unicodedata.normalize("NFC", "éclair")  # éclair
+        # NFD 分解形式（e + 组合重音）
+        nfd_form = unicodedata.normalize("NFD", "éclair")  # éclair
+
+        await rewriter.rewrite(nfc_form, session_id="sess", history=None)
+        await rewriter.rewrite(nfd_form, session_id="sess", history=None)
+
+        assert mock_cache_manager.lookup.call_count == 2
+        hash1 = mock_cache_manager.lookup.call_args_list[0][0][1]
+        hash2 = mock_cache_manager.lookup.call_args_list[1][0][1]
+        # NFC 标准化后应产生相同的哈希
+        assert hash1 == hash2
 
     async def test_session_id_derived_from_history(
         self,

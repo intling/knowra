@@ -9,7 +9,7 @@
 
 from importlib import import_module
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 # ── helpers ──────────────────────────────────────────────────────────────
@@ -49,11 +49,24 @@ def make_fake_chat_adapter(
     content: str = "根据文档内容，答案如下。",
     model: str = "test-chat-model",
 ):
-    """Create a fake ChatAdapter whose ``generate`` returns a canned ChatResult."""
+    """Create a fake ChatAdapter whose ``generate_async`` returns a canned ChatResult.
+
+    ``generate_async`` is an ``AsyncMock`` — awaitable and supports call assertions.
+    ``generate`` is a sync ``MagicMock`` for backward-compatible test paths.
+    """
     chat_module = import_module("app.services.chat_adapter")
     adapter = MagicMock()
     adapter.config = SimpleNamespace(model=model)
     adapter.generate = MagicMock(
+        return_value=chat_module.ChatResult(
+            content=content,
+            model=model,
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+        )
+    )
+    adapter.generate_async = AsyncMock(
         return_value=chat_module.ChatResult(
             content=content,
             model=model,
@@ -75,6 +88,7 @@ def make_fake_chat_config(*, model: str = "test-chat-model", **overrides):
         "max_tokens": 1024,
         "request_timeout": 30.0,
         "max_retries": 3,
+        "first_token_timeout": 10.0,
     }
     defaults.update(overrides)
     chat_config_module = import_module("app.services.chat_config")
@@ -460,7 +474,7 @@ def test_search_preserves_rewrite_info_when_llm_fails():
     embedding_adapter = make_fake_embedding_adapter()
     chat_adapter = make_fake_chat_adapter()
     # LLM 调用失败
-    chat_adapter.generate.side_effect = chat_module.ChatAPIError("LLM timeout", status_code=502)
+    chat_adapter.generate_async.side_effect = chat_module.ChatAPIError("LLM timeout", status_code=502)
     chat_config = make_fake_chat_config()
 
     fake_rewriter = make_fake_rewriter(

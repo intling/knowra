@@ -67,6 +67,7 @@ class EmbeddingAdapter:
                 base_url=config.api_base_url,
                 api_key=config.api_key,
                 timeout=config.request_timeout,
+                max_retries=0,  # 关闭 SDK 内部重试，由 EmbeddingAdapter 层统一管理
             )
 
     # ── public API ──────────────────────────────────────────────────

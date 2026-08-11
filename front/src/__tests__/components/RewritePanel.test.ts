@@ -1,11 +1,11 @@
 import { mount } from "@vue/test-utils"
 import { describe, expect, it } from "vitest"
 
-import type { RewriteInfo, RewrittenQuery } from "../../api/search"
+import type { QualityScores, RewriteInfo, RewrittenQuery } from "../../api/search"
 
-// ── Test fixtures ─────────────────────────────────────────────────────────
+// ── 测试 Fixture ──────────────────────────────────────────────────────────
 
-/** Full RewriteInfo payload with rewritten_queries. */
+/** 包含 rewritten_queries 的完整 RewriteInfo 数据 */
 const FULL_REWRITE_INFO: RewriteInfo = {
   original_query: "它怎么用",
   rewritten_queries: [
@@ -17,7 +17,7 @@ const FULL_REWRITE_INFO: RewriteInfo = {
   cache_hit: false,
 }
 
-/** RewriteInfo with cache hit (no LLM call). */
+/** 缓存命中的 RewriteInfo（无 LLM 调用） */
 const CACHE_HIT_REWRITE_INFO: RewriteInfo = {
   original_query: "Python 怎么使用",
   rewritten_queries: [
@@ -28,7 +28,7 @@ const CACHE_HIT_REWRITE_INFO: RewriteInfo = {
   cache_hit: true,
 }
 
-/** RewriteInfo with empty rewritten_queries. */
+/** rewritten_queries 为空的 RewriteInfo */
 const EMPTY_QUERIES_REWRITE_INFO: RewriteInfo = {
   original_query: "简单查询",
   rewritten_queries: [] as RewrittenQuery[],
@@ -37,7 +37,7 @@ const EMPTY_QUERIES_REWRITE_INFO: RewriteInfo = {
   cache_hit: true,
 }
 
-/** RewriteInfo with rewrite error. */
+/** 包含重写错误的 RewriteInfo */
 const ERROR_REWRITE_INFO: RewriteInfo = {
   original_query: "失败查询",
   rewritten_queries: [] as RewrittenQuery[],
@@ -47,9 +47,9 @@ const ERROR_REWRITE_INFO: RewriteInfo = {
   error: "Query rewriter timeout",
 }
 
-// ── Phase 2 fixtures ────────────────────────────────────────────────────────
+// ── Phase 2 Fixture ──────────────────────────────────────────────────────
 
-/** Phase 2 RewriteInfo with intent, complexity, and multiple strategy types. */
+/** 包含意图、复杂度和多种策略类型的 RewriteInfo */
 const PHASE2_REWRITE_INFO: RewriteInfo = {
   original_query: "数据库咋优化",
   rewritten_queries: [
@@ -80,7 +80,7 @@ const PHASE2_REWRITE_INFO: RewriteInfo = {
   cache_level: null,
 }
 
-/** RewriteInfo with context_fusion strategy for teal color verification. */
+/** 用于 teal 颜色验证的 context_fusion 策略 RewriteInfo */
 const CONTEXT_FUSION_ONLY_INFO: RewriteInfo = {
   original_query: "它怎么用",
   rewritten_queries: [
@@ -91,7 +91,7 @@ const CONTEXT_FUSION_ONLY_INFO: RewriteInfo = {
   cache_hit: false,
 }
 
-/** RewriteInfo with L1 cache level. */
+/** L1 缓存层级的 RewriteInfo */
 const L1_CACHE_LEVEL_INFO: RewriteInfo = {
   original_query: "Python 怎么使用",
   rewritten_queries: [
@@ -103,7 +103,7 @@ const L1_CACHE_LEVEL_INFO: RewriteInfo = {
   cache_level: "L1",
 }
 
-/** RewriteInfo with L2 cache level. */
+/** L2 缓存层级的 RewriteInfo */
 const L2_CACHE_LEVEL_INFO: RewriteInfo = {
   original_query: "如何配置 Nginx",
   rewritten_queries: [
@@ -115,7 +115,7 @@ const L2_CACHE_LEVEL_INFO: RewriteInfo = {
   cache_level: "L2",
 }
 
-/** RewriteInfo with an unknown strategy for fallback color verification. */
+/** 用于回退颜色验证的未知策略 RewriteInfo */
 const UNKNOWN_STRATEGY_INFO: RewriteInfo = {
   original_query: "某个查询",
   rewritten_queries: [
@@ -126,7 +126,7 @@ const UNKNOWN_STRATEGY_INFO: RewriteInfo = {
   cache_hit: false,
 }
 
-/** RewriteInfo with factual intent and low complexity. */
+/** 事实型意图、低复杂度的 RewriteInfo */
 const FACTUAL_INTENT_INFO: RewriteInfo = {
   original_query: "Redis 默认端口是多少",
   rewritten_queries: [
@@ -139,7 +139,7 @@ const FACTUAL_INTENT_INFO: RewriteInfo = {
   complexity: 1,
 }
 
-/** RewriteInfo with no intent/complexity (backward compatibility). */
+/** 无意图/复杂度的 RewriteInfo（向后兼容） */
 const NO_INTENT_INFO: RewriteInfo = {
   original_query: "老数据",
   rewritten_queries: [
@@ -148,10 +148,10 @@ const NO_INTENT_INFO: RewriteInfo = {
   strategies_used: ["context_fusion"],
   rewrite_time_ms: 100.0,
   cache_hit: false,
-  // intent and complexity intentionally omitted
+  // 有意省略 intent 和 complexity
 }
 
-/** RewriteInfo with missing cache_level (Phase 1 style cache hit). */
+/** 缺少 cache_level 的 RewriteInfo（Phase 1 风格缓存命中） */
 const PHASE1_CACHE_HIT_INFO: RewriteInfo = {
   original_query: "Python 怎么使用",
   rewritten_queries: [
@@ -160,10 +160,166 @@ const PHASE1_CACHE_HIT_INFO: RewriteInfo = {
   strategies_used: [],
   rewrite_time_ms: 2.1,
   cache_hit: true,
-  // cache_level intentionally omitted (Phase 1 backward compat)
+  // 有意省略 cache_level（Phase 1 向后兼容）
 }
 
-// ── Lazy import (component may not exist yet — TDD red test) ──────────────
+// ── Integration Fixture（质量评分、回溯）──────────────────────────────────
+
+/** 优秀质量评分的 RewriteInfo */
+const EXCELLENT_QUALITY_INFO: RewriteInfo = {
+  original_query: "数据库咋优化",
+  rewritten_queries: [
+    {
+      query: "如何优化数据库性能",
+      strategy: "normalize",
+      duration_ms: 120.5,
+      tokens: 45,
+    },
+  ] as RewrittenQuery[],
+  strategies_used: ["normalize"],
+  rewrite_time_ms: 320.5,
+  cache_hit: false,
+  intent: "analytical",
+  complexity: 7,
+  quality_scores: {
+    semantic_preservation: 5,
+    clarity_improvement: 5,
+    information_gain: 4,
+    term_accuracy: 5,
+    retrievability: 5,
+    total_score: 24,
+    verdict: "excellent",
+    issues: [],
+  } as QualityScores,
+  backtrack_triggered: false,
+  backtrack_strategy: null,
+}
+
+/** 良好质量评分的 RewriteInfo */
+const GOOD_QUALITY_INFO: RewriteInfo = {
+  original_query: "Python咋学",
+  rewritten_queries: [
+    {
+      query: "如何系统地学习 Python 编程",
+      strategy: "normalize",
+      duration_ms: 95.0,
+      tokens: 38,
+    },
+  ] as RewrittenQuery[],
+  strategies_used: ["normalize"],
+  rewrite_time_ms: 250.0,
+  cache_hit: false,
+  quality_scores: {
+    semantic_preservation: 4,
+    clarity_improvement: 4,
+    information_gain: 3,
+    term_accuracy: 4,
+    retrievability: 3,
+    total_score: 18,
+    verdict: "good",
+    issues: ["可进一步扩展关键词覆盖"],
+  } as QualityScores,
+  backtrack_triggered: false,
+}
+
+/** 一般质量评分的 RewriteInfo */
+const MARGINAL_QUALITY_INFO: RewriteInfo = {
+  original_query: "那个东西怎么弄",
+  rewritten_queries: [
+    {
+      query: "那个东西怎么弄",
+      strategy: "normalize",
+      duration_ms: 80.0,
+      tokens: 15,
+    },
+  ] as RewrittenQuery[],
+  strategies_used: ["normalize"],
+  rewrite_time_ms: 200.0,
+  cache_hit: false,
+  quality_scores: {
+    semantic_preservation: 3,
+    clarity_improvement: 2,
+    information_gain: 1,
+    term_accuracy: 3,
+    retrievability: 2,
+    total_score: 11,
+    verdict: "marginal",
+    issues: ["语义保留度低", "信息增益不足"],
+  } as QualityScores,
+  backtrack_triggered: false,
+}
+
+/** 较差质量评分的 RewriteInfo */
+const POOR_QUALITY_INFO: RewriteInfo = {
+  original_query: "??",
+  rewritten_queries: [
+    {
+      query: "??",
+      strategy: "normalize",
+      duration_ms: 50.0,
+      tokens: 5,
+    },
+  ] as RewrittenQuery[],
+  strategies_used: ["normalize"],
+  rewrite_time_ms: 150.0,
+  cache_hit: false,
+  quality_scores: {
+    semantic_preservation: 1,
+    clarity_improvement: 1,
+    information_gain: 1,
+    term_accuracy: 1,
+    retrievability: 1,
+    total_score: 5,
+    verdict: "poor",
+    issues: ["无法理解查询意图", "改写无改善"],
+  } as QualityScores,
+  backtrack_triggered: false,
+}
+
+/** 触发回溯的 RewriteInfo */
+const BACKTRACK_INFO: RewriteInfo = {
+  original_query: "数据库咋优化",
+  rewritten_queries: [
+    {
+      query: "数据库性能优化：索引策略、查询优化、缓存配置、连接池管理",
+      strategy: "expand",
+      duration_ms: 210.0,
+      tokens: 65,
+    },
+  ] as RewrittenQuery[],
+  strategies_used: ["normalize", "expand"],
+  rewrite_time_ms: 520.0,
+  cache_hit: false,
+  intent: "analytical",
+  complexity: 7,
+  quality_scores: {
+    semantic_preservation: 4,
+    clarity_improvement: 4,
+    information_gain: 5,
+    term_accuracy: 4,
+    retrievability: 4,
+    total_score: 21,
+    verdict: "good",
+    issues: [],
+  } as QualityScores,
+  backtrack_triggered: true,
+  backtrack_strategy: "expand",
+}
+
+/** 无 quality_scores 的 RewriteInfo（向后兼容 / null 处理） */
+const NO_QUALITY_SCORES_INFO: RewriteInfo = {
+  original_query: "老数据查询",
+  rewritten_queries: [
+    { query: "老数据查询", strategy: "context_fusion" },
+  ] as RewrittenQuery[],
+  strategies_used: ["context_fusion"],
+  rewrite_time_ms: 100.0,
+  cache_hit: false,
+  // 有意省略 quality_scores（Phase 2 向后兼容）
+  // 有意省略 backtrack_triggered
+}
+
+// ── 懒加载导入（组件可能尚未创建 — TDD 红测试）──
 
 async function getRewritePanel() {
   const module = await import(
@@ -843,6 +999,289 @@ describe("RewritePanel", () => {
 
       const cacheLevelTag = wrapper.find('[data-testid="cache-level-tag"]')
       expect(cacheLevelTag.exists()).toBe(false)
+    })
+  })
+
+  // ── Integration: 质量评分颜色区分 ───────────────────────────────────
+
+  describe("quality score color differentiation (Integration)", () => {
+    it("excellent verdict uses emerald-600 text color", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const scoreContainer = wrapper.find('[data-testid="quality-score-container"]')
+      expect(scoreContainer.exists()).toBe(true)
+
+      const verdictEl = scoreContainer.find('[data-testid="quality-verdict"]')
+      expect(verdictEl.exists()).toBe(true)
+      expect(verdictEl.text()).toContain("优秀")
+      expect(verdictEl.classes()).toContain("text-emerald-600")
+    })
+
+    it("good verdict uses amber-600 text color", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: GOOD_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const verdictEl = wrapper.find('[data-testid="quality-verdict"]')
+      expect(verdictEl.exists()).toBe(true)
+      expect(verdictEl.text()).toContain("良好")
+      expect(verdictEl.classes()).toContain("text-amber-600")
+    })
+
+    it("marginal verdict uses red-600 text color", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: MARGINAL_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const verdictEl = wrapper.find('[data-testid="quality-verdict"]')
+      expect(verdictEl.exists()).toBe(true)
+      expect(verdictEl.text()).toContain("一般")
+      expect(verdictEl.classes()).toContain("text-red-600")
+    })
+
+    it("poor verdict uses red-600 text color", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: POOR_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const verdictEl = wrapper.find('[data-testid="quality-verdict"]')
+      expect(verdictEl.exists()).toBe(true)
+      expect(verdictEl.text()).toContain("较差")
+      expect(verdictEl.classes()).toContain("text-red-600")
+    })
+
+    it("total score number uses font-mono tabular-nums for monospaced digit rendering", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const totalScoreEl = wrapper.find('[data-testid="quality-total-score"]')
+      expect(totalScoreEl.exists()).toBe(true)
+      expect(totalScoreEl.text()).toContain("24")
+      expect(totalScoreEl.classes()).toContain("font-mono")
+      expect(totalScoreEl.classes()).toContain("tabular-nums")
+    })
+  })
+
+  // ── Integration: 5 维度评分条形图展开/收起 ───────────────────────────
+
+  describe("5-dimension score bar chart expand/collapse (Integration)", () => {
+    it("dimension details are hidden by default", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      // Quality score container should be visible
+      expect(wrapper.find('[data-testid="quality-score-container"]').exists()).toBe(true)
+      // But dimension details should NOT be visible initially
+      expect(wrapper.find('[data-testid="quality-dimensions"]').exists()).toBe(false)
+    })
+
+    it("clicking dimension toggle expands the 5-dimension bar chart", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      // Toggle exists
+      const toggleBtn = wrapper.find('[data-testid="quality-dimensions-toggle"]')
+      expect(toggleBtn.exists()).toBe(true)
+
+      // Click to expand
+      await toggleBtn.trigger("click")
+
+      // Dimension details should now be visible
+      const dimensionsEl = wrapper.find('[data-testid="quality-dimensions"]')
+      expect(dimensionsEl.exists()).toBe(true)
+    })
+
+    it("clicking dimension toggle again collapses the bar chart", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const toggleBtn = wrapper.find('[data-testid="quality-dimensions-toggle"]')
+
+      // Expand first
+      await toggleBtn.trigger("click")
+      expect(wrapper.find('[data-testid="quality-dimensions"]').exists()).toBe(true)
+
+      // Collapse
+      await toggleBtn.trigger("click")
+      expect(wrapper.find('[data-testid="quality-dimensions"]').exists()).toBe(false)
+    })
+
+    it("displays all 5 dimensions with label and score", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+      await wrapper.find('[data-testid="quality-dimensions-toggle"]').trigger("click")
+
+      const dimensionItems = wrapper.findAll('[data-testid="quality-dimension-item"]')
+      expect(dimensionItems).toHaveLength(5)
+
+      // Each dimension should have a label and a score
+      for (const item of dimensionItems) {
+        const label = item.find('[data-testid="quality-dimension-label"]')
+        expect(label.exists()).toBe(true)
+        expect(label.text().length).toBeGreaterThan(0)
+
+        const score = item.find('[data-testid="quality-dimension-score"]')
+        expect(score.exists()).toBe(true)
+        // Score should be a number between 1 and 5
+        const scoreText = score.text()
+        expect(scoreText).toMatch(/[1-5]/)
+      }
+    })
+
+    it("each dimension has a bar visualization with bg-neutral-200 track and colored fill", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+      await wrapper.find('[data-testid="quality-dimensions-toggle"]').trigger("click")
+
+      const dimensionItems = wrapper.findAll('[data-testid="quality-dimension-item"]')
+
+      for (const item of dimensionItems) {
+        // Bar background track
+        const barBg = item.find('[data-testid="quality-dimension-bar-bg"]')
+        expect(barBg.exists()).toBe(true)
+        expect(barBg.classes()).toContain("bg-neutral-200")
+        expect(barBg.classes()).toContain("rounded-full")
+        expect(barBg.classes()).toContain("h-1.5")
+
+        // Bar colored fill
+        const barFill = item.find('[data-testid="quality-dimension-bar-fill"]')
+        expect(barFill.exists()).toBe(true)
+        expect(barFill.classes()).toContain("rounded-full")
+        expect(barFill.classes()).toContain("h-1.5")
+      }
+    })
+  })
+
+  // ── Integration: 回溯提示展示 ───────────────────────────────────────
+
+  describe("backtrack notice display (Integration)", () => {
+    it("shows backtrack notice when backtrack_triggered is true", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: BACKTRACK_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const backtrackNotice = wrapper.find('[data-testid="backtrack-notice"]')
+      expect(backtrackNotice.exists()).toBe(true)
+      expect(backtrackNotice.text()).toContain("已自动升级策略重新改写")
+    })
+
+    it("backtrack notice uses text-xs text-amber-500 styling", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: BACKTRACK_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const backtrackNotice = wrapper.find('[data-testid="backtrack-notice"]')
+      expect(backtrackNotice.classes()).toContain("text-xs")
+      expect(backtrackNotice.classes()).toContain("text-amber-500")
+    })
+
+    it("does not show backtrack notice when backtrack_triggered is false", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: EXCELLENT_QUALITY_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const backtrackNotice = wrapper.find('[data-testid="backtrack-notice"]')
+      expect(backtrackNotice.exists()).toBe(false)
+    })
+  })
+
+  // ── Integration: 评分缺失时容错 ─────────────────────────────────────
+
+  describe("graceful handling when quality_scores is missing (Integration)", () => {
+    it("does not render quality score section when quality_scores is null", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: NO_QUALITY_SCORES_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      // Quality score container should not exist
+      const scoreContainer = wrapper.find('[data-testid="quality-score-container"]')
+      expect(scoreContainer.exists()).toBe(false)
+
+      // Quality dimensions toggle should not exist
+      const dimensionsToggle = wrapper.find('[data-testid="quality-dimensions-toggle"]')
+      expect(dimensionsToggle.exists()).toBe(false)
+    })
+
+    it("component does not crash when quality_scores is not provided", async () => {
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: NO_QUALITY_SCORES_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      // All other content should still render normally
+      expect(wrapper.find('[data-testid="rewrite-content"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="original-query"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="rewritten-query-item"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="rewrite-time"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="cache-hit"]').exists()).toBe(true)
+    })
+
+    it("does not render quality score section when quality_scores is null even for Phase 2 data", async () => {
+      // FULL_REWRITE_INFO from Phase 1 has no quality_scores field
+      const RewritePanel = await getRewritePanel()
+      const wrapper = mount(RewritePanel, {
+        props: { rewriteInfo: FULL_REWRITE_INFO },
+      })
+
+      await wrapper.find('[data-testid="rewrite-toggle"]').trigger("click")
+
+      const scoreContainer = wrapper.find('[data-testid="quality-score-container"]')
+      expect(scoreContainer.exists()).toBe(false)
+
+      // Other Phase 1 content should still render
+      expect(wrapper.find('[data-testid="rewritten-queries-list"]').exists()).toBe(true)
     })
   })
 })

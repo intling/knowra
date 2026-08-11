@@ -2,13 +2,19 @@
 
 提供 ``POST /v1/chat/completions`` 的薄适配层，包含重试、错误处理和
 结构化返回类型 —— 遵循与 ``EmbeddingAdapter`` 相同的模式，但用于对话领域。
+
+支持两种调用模式：
+- ``generate()``：同步调用，用于向后兼容和简单场景。
+- ``generate_async()``：异步流式调用，支持首 token 超时检测，
+  避免因服务不可用导致长时间阻塞。推荐 RAG 答案生成场景使用。
 """
 
+import asyncio
 import random
 import time
 from dataclasses import dataclass
 
-from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
+from openai import APIConnectionError, APIStatusError, APITimeoutError, AsyncOpenAI, OpenAI
 
 from app.core.logging import get_logger
 from app.services.chat_config import ChatConfig
@@ -88,6 +94,7 @@ class ChatAdapter:
                 base_url=config.api_base_url,
                 api_key=config.api_key,
                 timeout=config.request_timeout,
+                max_retries=0,  # 关闭 SDK 内部重试，由 ChatAdapter 层统一管理
             )
         self._logger = get_logger(__name__)
 
@@ -175,6 +182,219 @@ class ChatAdapter:
                     time.sleep(delay)
 
         raise self._wrap_error(last_exception)
+
+    # ── 异步流式 API（RAG 答案生成推荐） ──────────────────────────────────
+
+    @property
+    def _async_client(self) -> AsyncOpenAI:
+        """懒初始化异步 OpenAI 客户端，与同步客户端共享配置。"""
+        if not hasattr(self, "_async_client_cache"):
+            self._async_client_cache = AsyncOpenAI(
+                base_url=self.config.api_base_url,
+                api_key=self.config.api_key,
+                timeout=self.config.request_timeout,
+                max_retries=0,  # 关闭 SDK 内部重试，由本层统一管理
+            )
+        return self._async_client_cache
+
+    async def generate_async(
+        self,
+        messages: list[dict],
+        *,
+        model: str | None = None,
+        request_timeout: float | None = None,
+        max_retries: int | None = None,
+        first_token_timeout: float | None = None,
+    ) -> ChatResult:
+        """异步流式生成对话补全，支持首 token 超时检测。
+
+        与 ``generate()`` 的关键区别：
+        1. **首 token 超时**：首个 token 在 ``first_token_timeout`` 秒内
+           未到达则判定服务不可用，快速抛出 ``asyncio.TimeoutError``。
+           一旦首 token 到达即表明模型在工作，后续收集不受此限制。
+        2. **流式收集**：使用 SSE 流式接收，避免因生成慢而被误杀。
+           调用方可用 ``asyncio.wait_for`` 设置整体超时兜底。
+        3. **异步非阻塞**：不阻塞事件循环，适合 FastAPI 异步路由。
+
+        Args:
+            messages: 消息字典列表，每项含 ``role`` 与 ``content``。
+            model: 可选的模型覆盖。为 ``None`` 时使用 ``config.model``。
+            request_timeout: 可选的 HTTP 超时（秒）。为 ``None`` 时使用
+                             ``config.request_timeout``。
+            max_retries: 可选的重试次数覆盖。为 ``None`` 时使用
+                         ``config.max_retries``。
+            first_token_timeout: 首 token 超时（秒）。为 ``None`` 时使用
+                                 ``config.first_token_timeout``。
+
+        Returns:
+            包含生成内容与 token 用量统计的 ChatResult。
+
+        Raises:
+            asyncio.TimeoutError: 首 token 未在超时内到达。
+            ChatAPIError: API 调用在重试耗尽后失败。
+        """
+        effective_model = model or self.config.model
+        effective_timeout = request_timeout if request_timeout is not None else self.config.request_timeout
+        effective_max_retries = max_retries if max_retries is not None else self.config.max_retries
+        effective_first_token_timeout = (
+            first_token_timeout if first_token_timeout is not None else self.config.first_token_timeout
+        )
+
+        self._logger.info(
+            "chat_generate_async_request",
+            model=effective_model,
+            message_count=len(messages),
+            max_tokens=self.config.max_tokens,
+            request_timeout=effective_timeout,
+            max_retries=effective_max_retries,
+            first_token_timeout=effective_first_token_timeout,
+        )
+
+        # 当调用级超时与配置不同时，创建临时异步客户端
+        if request_timeout is not None and request_timeout != self.config.request_timeout:
+            client = AsyncOpenAI(
+                base_url=self.config.api_base_url,
+                api_key=self.config.api_key,
+                timeout=effective_timeout,
+                max_retries=0,
+            )
+        else:
+            client = self._async_client
+
+        last_exception: Exception | None = None
+
+        for attempt in range(effective_max_retries + 1):
+            try:
+                stream = await client.chat.completions.create(
+                    model=effective_model,
+                    messages=messages,
+                    temperature=self.config.temperature,
+                    max_tokens=self.config.max_tokens,
+                    stream=True,
+                    stream_options={"include_usage": True},
+                )
+                return await self._collect_stream(
+                    stream,
+                    effective_model,
+                    first_token_timeout=effective_first_token_timeout,
+                )
+            except asyncio.TimeoutError:
+                last_exception = asyncio.TimeoutError(
+                    f"First token not received within {effective_first_token_timeout}s"
+                )
+                if not self._should_retry(last_exception, attempt, effective_max_retries):
+                    break
+                if attempt < effective_max_retries:
+                    delay = self._compute_delay(last_exception, attempt)
+                    self._logger.warning(
+                        "chat_first_token_timeout_retry",
+                        attempt=attempt + 1,
+                        max_retries=effective_max_retries,
+                        delay=round(delay, 2),
+                        first_token_timeout=effective_first_token_timeout,
+                    )
+                    await asyncio.sleep(delay)
+            except Exception as exc:
+                last_exception = exc
+                if not self._should_retry(exc, attempt, effective_max_retries):
+                    break
+                if attempt < effective_max_retries:
+                    delay = self._compute_delay(exc, attempt)
+                    self._logger.warning(
+                        "chat_async_retry",
+                        attempt=attempt + 1,
+                        max_retries=effective_max_retries,
+                        delay=round(delay, 2),
+                        error=str(exc),
+                    )
+                    await asyncio.sleep(delay)
+
+        raise self._wrap_error(last_exception)
+
+    async def _collect_stream(
+        self,
+        stream,
+        model: str,
+        *,
+        first_token_timeout: float,
+    ) -> ChatResult:
+        """从异步流中收集全部 token，首 token 含超时检测。
+
+        流式收集策略：
+        1. 首个 chunk：使用 ``asyncio.wait_for`` 硬限时，
+           超时则服务不可用 → 快速失败。
+        2. 后续 chunks：无单独时限（由调用方的 ``asyncio.wait_for`` 总超时兜底），
+           一旦模型在工作就不再因"慢"而误杀。
+        3. Usage 信息从流末 chunk 提取（需要 ``stream_options={"include_usage": True}``）。
+        """
+        content_parts: list[str] = []
+        prompt_tokens = 0
+        completion_tokens = 0
+        total_tokens = 0
+        first_chunk_received = False
+
+        async for chunk in self._iter_stream_with_first_timeout(
+            stream, first_token_timeout
+        ):
+            if not first_chunk_received:
+                first_chunk_received = True
+                self._logger.debug("chat_first_token_received", model=model)
+
+            try:
+                choices = chunk.choices
+                if choices and len(choices) > 0:
+                    delta = choices[0].delta
+                    if delta and delta.content:
+                        content_parts.append(delta.content)
+            except (AttributeError, IndexError):
+                pass
+
+            # Usage 信息通常包含在流的最后一个 chunk 中
+            try:
+                usage = getattr(chunk, "usage", None)
+                if usage is not None:
+                    prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+                    completion_tokens = getattr(usage, "completion_tokens", 0) or 0
+                    total_tokens = getattr(usage, "total_tokens", 0) or 0
+            except Exception:
+                pass
+
+        content = "".join(content_parts)
+
+        if not first_chunk_received:
+            raise ChatAPIError("Stream completed without any content chunks")
+
+        return ChatResult(
+            content=content,
+            model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+        )
+
+    async def _iter_stream_with_first_timeout(self, stream, first_token_timeout: float):
+        """包装异步流迭代器，对首个元素施加超时检测。
+
+        首个元素使用 ``asyncio.wait_for`` 硬限时 —— 超时则服务不可用。
+        后续元素不做单独限时，由调用方整体超时兜底。
+        """
+        aiter = stream.__aiter__()
+
+        # 首个 chunk：硬超时检测
+        try:
+            first = await asyncio.wait_for(aiter.__anext__(), timeout=first_token_timeout)
+        except asyncio.TimeoutError:
+            self._logger.warning(
+                "chat_first_token_timeout",
+                timeout=first_token_timeout,
+            )
+            raise
+
+        yield first
+
+        # 后续 chunks：无单独时限
+        async for chunk in aiter:
+            yield chunk
 
     # ── 内部实现 ──────────────────────────────────────────────────────────
 

@@ -17,6 +17,17 @@ export interface RewrittenQuery {
   tokens?: number | null
 }
 
+export interface QualityScores {
+  semantic_preservation: number
+  clarity_improvement: number
+  information_gain: number
+  term_accuracy: number
+  retrievability: number
+  total_score: number
+  verdict: "excellent" | "good" | "marginal" | "poor"
+  issues: string[]
+}
+
 export interface RewriteInfo {
   original_query: string
   rewritten_queries: RewrittenQuery[]
@@ -28,6 +39,9 @@ export interface RewriteInfo {
   intent?: string | null
   complexity?: number | null
   cache_level?: "L1" | "L2" | null
+  quality_scores?: QualityScores | null
+  backtrack_triggered?: boolean
+  backtrack_strategy?: string | null
 }
 
 export interface SearchRequest {

@@ -1,8 +1,10 @@
 """StrategyRouter —— 查询意图分类与策略路由决策。
 
-通过 LLM 对用户查询进行意图分类和复杂度评分，根据分类结果决定
-执行哪些重写策略。当 LLM 不可用或超时时，自动降级为轻量级
-关键词启发式分类器（零延迟、零成本）。
+采用 **启发式先行 + LLM 兜底** 两级架构：
+    1. 关键词启发式分类器（<1ms）先行判定
+    2. 高置信度匹配 → 直接返回，零 LLM 调用
+    3. 低/中置信度 → 调用 LLM 精分类（5s 超时，不重试）
+    4. LLM 失败 → 降级至启发式结果
 
 路由规则：
     - factual / chitchat + complexity ≤ 2 → direct（跳过所有重写）
@@ -35,9 +37,9 @@ from app.services.chat_adapter import ChatAdapter, ChatAPIError
 from app.services.prompt_loader import PromptLoader
 
 # ── 默认 LLM 超时（秒）──────────────────────────────────────────────────────
-# 意图分类是轻量任务（输出 ~20 tokens JSON），正常应在 2-5 秒内完成。
-# 设为 8 秒给足余量，避免因偶发网络抖动误触发降级。
-_DEFAULT_LLM_TIMEOUT = 8.0
+# 意图分类是超轻量任务（输出 ~20 tokens JSON），正常应在 1-3 秒内完成。
+# 启发式先行后，LLM 仅对低置信度查询调用，设为 5 秒严格兜底。
+_DEFAULT_LLM_TIMEOUT = 5.0
 
 # ── 默认 LLM 最大重试次数 ──────────────────────────────────────────────────
 # 意图分类失败时允许 1 次重试（应对偶发网络抖动），仍失败则降级至关键词分类器。
@@ -47,10 +49,11 @@ _DEFAULT_LLM_MAX_RETRIES = 1
 class StrategyRouter:
     """查询意图分类器 + 策略路由决策器。
 
-    通过 PromptLoader 获取意图分类提示词模板，调用 LLM 对查询进行
-    意图分类和复杂度评分，然后根据规则决定执行哪些重写策略。
+    两级架构：
+        1. 关键词启发式分类器（<1ms）先行 —— 对明确查询直接返回
+        2. LLM 精分类兜底 —— 仅对低置信度查询（ambiguous、泛化兜底）调用
 
-    LLM 调用失败或解析失败时，优先使用关键词启发式分类器降级，
+    LLM 调用失败或解析失败时，降级至启发式分类结果，
     确保管线不中断且保持合理的分类质量。
     """
 
@@ -75,26 +78,28 @@ class StrategyRouter:
     )
 
     # ── 关键词启发式分类规则 ──────────────────────────────────────────────
-    # 当 LLM 不可用时，使用以下规则在 <1ms 内完成分类。
+    # 每条规则包含 (意图, 复杂度, 正则列表, 置信度)。
+    # 置信度：high → 跳过 LLM 直接采用；medium/low → 尝试 LLM 优化。
     # 规则按优先级从高到低排列，第一个匹配生效。
 
     _HEURISTIC_RULES: tuple[tuple, ...] = (
-        # (意图, 复杂度, 正则模式列表)
-        # 操作/教程类查询 → procedural, complexity 4
+        # (意图, 复杂度, 正则模式列表, 置信度)
+        # 操作/教程类查询 → procedural, complexity 4, HIGH
         (
             "procedural",
             4,
             [
-                r"怎么(?:安装|配置|部署|设置|使用|操作|运行|启动|创建|构建|搭建|连接|集成)",
-                r"如何(?:安装|配置|部署|设置|使用|操作|运行|启动|创建|构建|搭建|连接|集成)",
-                r"(?:安装|配置|部署|设置|操作|运行|启动|创建|构建|搭建)(?:步骤|教程|指南|方法|流程|过程)",
+                r"怎么(?:安装|配置|部署|设置|使用|用|操作|运行|启动|创建|构建|搭建|连接|集成)",
+                r"如何(?:安装|配置|部署|设置|使用|用|操作|运行|启动|创建|构建|搭建|连接|集成)",
+                r"(?:安装|配置|部署|设置|操作|使用|运行|启动|创建|构建|搭建)(?:步骤|教程|指南|方法|流程|过程)",
                 r"(?:详细)?(?:步骤|教程|指南).*(?:安装|配置|部署|设置)",
-                r"^(?:怎么|如何|怎样)(?:安装|配置|部署|设置|使用|操作|运行|启动|创建|搭建)",
+                r"^(?:怎么|如何|怎样)(?:安装|配置|部署|设置|使用|用|操作|运行|启动|创建|搭建)",
                 r"一步一步",
                 r"step.?by.?step",
             ],
+            "high",
         ),
-        # 比较类查询 → comparative, complexity 5
+        # 比较类查询 → comparative, complexity 5, HIGH
         (
             "comparative",
             5,
@@ -103,9 +108,12 @@ class StrategyRouter:
                 r"(?:哪个|哪种).*(?:更好|更优|更适合|更合适|更快|更强)",
                 r"(?:和|与|vs|VS).*(?:对比|比较|区别|差异|哪个好)",
                 r"(?:选择|选用|挑选).*(?:还是|或者)",
+                r"有(?:什么|哪些)(?:区别|不同|差异)",  # "有什么区别" / "有哪些不同"
+                r"(?:区别|不同|差异).*是什么",  # "...的区别是什么"
             ],
+            "high",
         ),
-        # 分析类查询 → analytical, complexity 5
+        # 分析类查询 → analytical, complexity 5, HIGH
         (
             "analytical",
             5,
@@ -115,18 +123,24 @@ class StrategyRouter:
                 r"(?:原因|原理|机制).*是什么",
                 r"深度(?:分析|解读|理解)",
             ],
+            "high",
         ),
-        # 探索类查询 → exploratory, complexity 4
+        # 探索类查询 → exploratory, complexity 4, HIGH
         (
             "exploratory",
             4,
             [
-                r"(?:有哪些|有什么|什么是|推荐|介绍).*(?:方案|工具|框架|方法|技术|组件|插件|库|系统|软件)",
+                r"(?:有哪些|有什么|什么是|推荐|介绍).*(?:方案|工具|框架|方法|技术|组件|插件|库|系统|软件|操作|功能|特性|特点|优缺点|优势|劣势|类型|种类|分类|数据类型|版本|命令|语句|语法|指令)",
                 r"(?:最新|前沿|趋势|发展).*(?:技术|方案|工具|框架|方法)",
                 r"(?:概述|概览|总览|综述|汇总)",
+                # "TOPIC有哪些/有什么" 模式（疑问词在句末的探索型查询）
+                r".{3,}(?:有哪些|有什么)\s*$",
+                # 泛化"介绍一下/推荐"类探索型查询
+                r"(?:介绍|推荐|列举|说说|讲讲).{2,}",
             ],
+            "high",
         ),
-        # 简单事实查询 → factual, complexity 2
+        # 简单事实查询 → factual, complexity 2, HIGH
         (
             "factual",
             2,
@@ -135,17 +149,10 @@ class StrategyRouter:
                 r"^(?:定义|解释|说明).{1,30}$",
                 r"(?:是什么|是谁|是哪个)",
             ],
+            "high",
         ),
-        # 模糊/简短查询 → ambiguous, complexity 3
-        (
-            "ambiguous",
-            3,
-            [
-                r"^.{1,5}$",  # ≤5 个字符的极短查询
-                r"^(?:这个|那个|帮我|看看|查查|搜一下|搜搜|找一下)",
-            ],
-        ),
-        # 闲聊 → chitchat, complexity 1
+        # 闲聊 → chitchat, complexity 1, HIGH
+        # 必须放在 ambiguous 之前，否则 "你好" 等短问候会被 ^.{1,5}$ 捕获
         (
             "chitchat",
             1,
@@ -153,9 +160,22 @@ class StrategyRouter:
                 r"^(?:你好|嗨|hello|hi|谢谢|感谢|再见|拜拜|bye).{0,5}$",
                 r"^(?:你是谁|你叫什么|你能做什么|你有什么功能)",
             ],
+            "high",
         ),
-        # 兜底：中等复杂度的操作类查询
-        ("procedural", 4, [r"(?:怎么|如何|怎样)"]),
+        # 模糊/简短查询 → ambiguous, complexity 3, MEDIUM
+        # 置信度中：简短查询可能蕴含复杂意图，LLM 或许能更好地消歧
+        (
+            "ambiguous",
+            3,
+            [
+                r"^.{1,5}$",  # ≤5 个字符的极短查询
+                r"^(?:这个|那个|帮我|看看|查查|搜一下|搜搜|找一下)",
+            ],
+            "medium",
+        ),
+        # 兜底：含有疑问词的查询 → procedural, LOW 置信度
+        # 模式泛化性强（仅匹配"怎么/如何/怎样"），LLM 精分类收益大
+        ("procedural", 4, [r"(?:怎么|如何|怎样)"], "low"),
     )
 
     # ── 构造 ─────────────────────────────────────────────────────────────
@@ -173,9 +193,9 @@ class StrategyRouter:
             chat_adapter: 用于调用 LLM 的对话适配器。
             prompt_loader: 三层降级提示词加载器，通过
                            ``load("intent_classification")`` 获取模板。
-            llm_timeout: LLM 调用超时（秒）。意图分类是轻量任务，
-                         默认 8 秒已足够。
-            llm_max_retries: LLM 调用最大重试次数。默认 0（不重试），
+            llm_timeout: LLM 调用超时（秒）。启发式先行后仅低置信度查询
+                         走 LLM，5 秒已足够。
+            llm_max_retries: LLM 调用最大重试次数。默认 1（允许 1 次重试），
                              失败时直接使用启发式降级。
         """
         self._chat_adapter = chat_adapter
@@ -189,8 +209,8 @@ class StrategyRouter:
     def route(self, query: str) -> dict:
         """对 *query* 进行意图分类和策略路由。
 
-        优先调用 LLM 进行高精度分类；LLM 不可用或超时时自动降级为
-        关键词启发式分类器，确保管线零阻塞。
+        启发式先行：先用关键词分类器（<1ms）判定，高置信度直接返回，
+        低/中置信度时调用 LLM 精分类，LLM 失败则降级至启发式结果。
 
         Args:
             query: 用户查询文本（可能已经过上下文融合或保护词注入）。
@@ -201,34 +221,57 @@ class StrategyRouter:
               procedural/exploratory/chitchat/ambiguous）
             - ``complexity``: 复杂度评分（1-10 的整数）
             - ``strategies``: 应执行的策略名称列表（空列表 = direct）
-            - ``source``: 分类来源（"llm" 或 "heuristic"）
+            - ``source``: 分类来源（"heuristic" 或 "llm"）
         """
         start_time = time.monotonic()
 
-        # ── 尝试 LLM 分类 ──
-        intent, complexity = self._classify_with_llm(query)
+        # ── 第 1 层：关键词启发式分类（<1ms，零成本）──
+        intent, complexity, confidence = self._heuristic_classify(query)
 
-        if intent is not None and complexity is not None:
+        # 高置信度 → 直接采用，跳过 LLM
+        if confidence == "high":
             strategies = self._decide_strategies(intent, complexity)
             elapsed_ms = (time.monotonic() - start_time) * 1000
             self._logger.debug(
-                "strategy_route_complete",
+                "strategy_route_heuristic_direct",
                 query=query,
                 intent=intent,
                 complexity=complexity,
                 strategies=strategies,
+                confidence=confidence,
                 duration_ms=elapsed_ms,
-                source="llm",
+                source="heuristic",
             )
             return {
                 "intent": intent,
                 "complexity": complexity,
                 "strategies": strategies,
+                "source": "heuristic",
+            }
+
+        # ── 第 2 层：LLM 精分类（仅对低/中置信度查询）──
+        llm_intent, llm_complexity = self._classify_with_llm(query)
+
+        if llm_intent is not None and llm_complexity is not None:
+            strategies = self._decide_strategies(llm_intent, llm_complexity)
+            elapsed_ms = (time.monotonic() - start_time) * 1000
+            self._logger.debug(
+                "strategy_route_complete",
+                query=query,
+                intent=llm_intent,
+                complexity=llm_complexity,
+                strategies=strategies,
+                duration_ms=elapsed_ms,
+                source="llm",
+            )
+            return {
+                "intent": llm_intent,
+                "complexity": llm_complexity,
+                "strategies": strategies,
                 "source": "llm",
             }
 
-        # ── LLM 失败 → 关键词启发式降级 ──
-        intent, complexity = self._heuristic_classify(query)
+        # ── 第 3 层：LLM 失败 → 降级至启发式结果 ──
         strategies = self._decide_strategies(intent, complexity)
         elapsed_ms = (time.monotonic() - start_time) * 1000
         self._logger.info(
@@ -289,27 +332,28 @@ class StrategyRouter:
 
     # ── 关键词启发式分类 ─────────────────────────────────────────────────
 
-    def _heuristic_classify(self, query: str) -> tuple[str, int]:
+    def _heuristic_classify(self, query: str) -> tuple[str, int, str]:
         """基于关键词模式的轻量级意图分类（<1ms，零 LLM 成本）。
 
         按预定义规则顺序匹配，第一个命中的规则生效。
-        所有规则均未命中时返回 ``("factual", 3)`` 作为安全兜底。
+        所有规则均未命中时返回 ``("procedural", 3, "low")`` 作为安全兜底。
 
         Args:
             query: 用户查询文本。
 
         Returns:
-            ``(intent, complexity)`` 元组。
+            ``(intent, complexity, confidence)`` 三元组。
+            confidence 为 "high"、"medium" 或 "low"。
         """
         query_normalized = query.strip()
 
-        for intent, complexity, patterns in self._HEURISTIC_RULES:
+        for intent, complexity, patterns, confidence in self._HEURISTIC_RULES:
             for pattern in patterns:
                 if re.search(pattern, query_normalized):
-                    return intent, complexity
+                    return intent, complexity, confidence
 
-        # 安全兜底：中等复杂度的操作类查询（最常见的查询类型）
-        return "procedural", 3
+        # 安全兜底：低置信度，触发 LLM 精分类
+        return "procedural", 3, "low"
 
     # ── 内部 ──────────────────────────────────────────────────────────────
 
@@ -331,7 +375,7 @@ class StrategyRouter:
             data = json.loads(content)
             if "intent" in data and "complexity" in data:
                 return _validate_parsed(data)
-        except (json.JSONDecodeError, ValueError):
+        except json.JSONDecodeError, ValueError:
             pass
 
         # 尝试 2: 提取 Markdown 代码块中的 JSON
@@ -341,7 +385,7 @@ class StrategyRouter:
                 data = json.loads(code_block_match.group(1).strip())
                 if "intent" in data and "complexity" in data:
                     return _validate_parsed(data)
-            except (json.JSONDecodeError, ValueError):
+            except json.JSONDecodeError, ValueError:
                 pass
 
         # 尝试 3: 提取第一个 JSON 对象
@@ -351,7 +395,7 @@ class StrategyRouter:
                 data = json.loads(json_match.group(0))
                 if "intent" in data and "complexity" in data:
                     return _validate_parsed(data)
-            except (json.JSONDecodeError, ValueError):
+            except json.JSONDecodeError, ValueError:
                 pass
 
         return None
@@ -435,7 +479,7 @@ def _validate_parsed(data: dict) -> dict:
 
     try:
         complexity = int(data.get("complexity", 5))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         complexity = 5
 
     # 钳制范围

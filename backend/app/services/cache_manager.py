@@ -11,8 +11,9 @@
 
 知识库指纹校验：
     - 每条缓存条目存储写入时的知识库指纹
-    - 读取时对比当前指纹与存储指纹：不匹配则视为过期（惰性淘汰）
-    - L1 和 L2 均受指纹保护；指纹为 ``None`` 时跳过校验（兼容旧数据）
+    - L2 跨会话缓存读取时对比当前指纹与存储指纹：不匹配则视为过期（惰性淘汰）
+    - L1 会话绑定缓存不校验指纹（同一会话内 TTL 短，知识库不会在 TTL 内变更）
+    - 指纹为 ``None`` 时跳过校验（兼容旧数据）
 
 泛型设计：
     CacheManager 是类型无关的通用 LRU 缓存，可存储任意类型的值。
@@ -64,9 +65,9 @@ class CacheManager:
     """
 
     # ── 写入时抽样清理常量（Redis active-expiration 模式）──
-    _CLEANUP_SAMPLE_SIZE: int = 20        # 每次抽样检查的条目数
-    _CLEANUP_TRIGGER_EVERY_N: int = 10    # 每 N 次写入触发一次清理
-    _STATS_LOG_INTERVAL: float = 300.0    # 统计快照输出间隔（秒）
+    _CLEANUP_SAMPLE_SIZE: int = 20  # 每次抽样检查的条目数
+    _CLEANUP_TRIGGER_EVERY_N: int = 10  # 每 N 次写入触发一次清理
+    _STATS_LOG_INTERVAL: float = 300.0  # 统计快照输出间隔（秒）
 
     def __init__(
         self, *, max_size: int = 1000, ttl_seconds: float = 3600.0, max_l2_size: int = 500
@@ -79,8 +80,12 @@ class CacheManager:
         self._fingerprint: str | None = None
         # L1 条目格式：(inserted_at_monotonic, entry_ttl_seconds, value, kb_fingerprint | None)
         self._store: OrderedDict[str, tuple[float, float, Any, str | None]] = OrderedDict()
-        # L2 条目格式：(inserted_at_monotonic, entry_ttl_seconds, value, knowledge_type, session_id, kb_fingerprint | None)
-        self._l2_store: OrderedDict[str, tuple[float, float, Any, str, str | None, str | None]] = OrderedDict()
+        # L2 条目格式：
+        # (inserted_at_monotonic, entry_ttl_seconds, value, knowledge_type,
+        #  session_id, kb_fingerprint | None)
+        self._l2_store: OrderedDict[str, tuple[float, float, Any, str, str | None, str | None]] = (
+            OrderedDict()
+        )
         self._logger = get_logger(__name__)
 
         # ── 统计计数器 ──
@@ -118,7 +123,8 @@ class CacheManager:
         """返回 *session_id + query_hash* 对应的缓存值，未命中时返回 ``None``。
 
         过期的条目在访问时惰性淘汰。
-        指纹不匹配的条目也被视为过期（知识库已变更 → 旧缓存无效）。
+
+        NOTE: L1 不校验知识库指纹（会话绑定 + 短 TTL，指纹校验仅作用于 L2）。
 
         Args:
             session_id: 会话标识符（用于会话绑定缓存键）。
@@ -148,19 +154,9 @@ class CacheManager:
             )
             return None
 
-        # ── 指纹校验 ──
-        if not self._fingerprint_matches(stored_fp):
-            del self._store[composite_key]
-            self._stats["fingerprint_mismatches"] += 1
-            self._stats["misses"] += 1
-            self._logger.debug(
-                "cache_invalidated_by_fingerprint",
-                session_id=session_id,
-                query_hash=query_hash,
-                stored_fp=stored_fp,
-                current_fp=self._fingerprint,
-            )
-            return None
+        # NOTE: L1 不校验知识库指纹（设计决策：同一会话内知识库
+        # 不可能在 5-30 分钟的缓存 TTL 内发生变更，无需指纹保护）。
+        # 指纹校验仅作用于 L2 跨会话缓存（见 lookup_l2）。
 
         # LRU：移到末尾（最近使用）
         self._store.move_to_end(composite_key)
@@ -172,7 +168,15 @@ class CacheManager:
         )
         return result
 
-    def store(self, session_id: str, query_hash: str, result: Any, *, ttl_override: float | None = None) -> None:
+    def store(
+        self,
+        session_id: str,
+        query_hash: str,
+        result: Any,
+        *,
+        ttl_override: float | None = None,
+        zero_vector: bool = False,
+    ) -> None:
         """以 *session_id + query_hash* 为复合键存储任意值。
 
         容量满时淘汰最久未使用的条目。
@@ -183,7 +187,17 @@ class CacheManager:
             query_hash: 查询文本的哈希值。
             result: 要缓存的任意值（RewriteResult、SearchResponse 等）。
             ttl_override: 条目级 TTL（秒）。为 ``None`` 时回退到实例默认 TTL。
+            zero_vector: 查询向量为零向量时跳过缓存写入（不进入 L1/L2）。
         """
+        if zero_vector:
+            self._logger.debug(
+                "zero_vector_skip_cache",
+                session_id=session_id,
+                query_hash=query_hash,
+                cache_level="L1",
+            )
+            return
+
         composite_key = self._make_composite_key(session_id, query_hash)
 
         if composite_key in self._store:
@@ -222,6 +236,7 @@ class CacheManager:
         knowledge_type: str = "general_knowledge",
         session_id: str | None = None,
         ttl_override: float | None = None,
+        zero_vector: bool = False,
     ) -> None:
         """将重写结果存入 L2 语义缓存（跨会话）。
 
@@ -237,7 +252,17 @@ class CacheManager:
             knowledge_type: ``"general_knowledge"`` 或 ``"context_dependent"``。
             session_id: 来源会话 ID（仅 context_dependent 需要，用于跨会话拦截）。
             ttl_override: 条目级 TTL（秒）。为 ``None`` 时回退到实例默认 TTL。
+            zero_vector: 查询向量为零向量时跳过缓存写入（不进入 L1/L2）。
         """
+        if zero_vector:
+            self._logger.debug(
+                "zero_vector_skip_cache",
+                query_text=query_text,
+                knowledge_type=knowledge_type,
+                cache_level="L2",
+            )
+            return
+
         normalized = self._normalize_text(query_text)
         composite_key = self._make_l2_key(normalized)
 
@@ -289,7 +314,9 @@ class CacheManager:
             self._logger.debug("l2_cache_miss", normalized_query=normalized)
             return None
 
-        inserted_at, entry_ttl, result, knowledge_type, session_id, stored_fp = self._unpack_l2(entry)
+        inserted_at, entry_ttl, result, knowledge_type, session_id, stored_fp = self._unpack_l2(
+            entry
+        )
         if time.monotonic() - inserted_at > entry_ttl:
             del self._l2_store[composite_key]
             self._stats["expirations"] += 1
@@ -353,8 +380,7 @@ class CacheManager:
     def _maybe_sweep(self) -> None:
         """每 N 次写入触发一次随机抽样清理过期条目。
 
-        检查 L1 和 L2 两个存储的随机样本，移除已过期条目。
-        参考 Redis active-expiration 双轨制（惰性删除 + 主动抽样）。
+        检查 L1（仅 TTL 过期）和 L2（TTL 过期 + 指纹不匹配）两个存储的随机样本。
         """
         if self._write_count % self._CLEANUP_TRIGGER_EVERY_N != 0:
             return
@@ -362,7 +388,10 @@ class CacheManager:
         self._sweep_expired(self._l2_store, "l2")
 
     def _sweep_expired(self, store: OrderedDict, label: str) -> int:
-        """随机抽样清理 *store* 中的过期条目（含 TTL 过期 + 指纹不匹配）。
+        """随机抽样清理 *store* 中的过期条目（TTL 过期；L2 额外含指纹不匹配）。
+
+        L1 仅移除 TTL 过期条目，不校验指纹（设计决策）。
+        L2 同时移除 TTL 过期和指纹不匹配条目。
 
         Args:
             store: 要清理的 OrderedDict（L1 或 L2）。
@@ -392,7 +421,8 @@ class CacheManager:
             entry_ttl = unpacked[1]
             stored_fp = unpacked[-1]
             expired = now - inserted_at > entry_ttl
-            fp_mismatch = not self._fingerprint_matches(stored_fp)
+            # L1 不校验指纹（设计决策），L2 校验
+            fp_mismatch = False if label == "l1" else not self._fingerprint_matches(stored_fp)
             if expired or fp_mismatch:
                 del store[key]
                 removed += 1

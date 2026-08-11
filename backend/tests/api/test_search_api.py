@@ -9,7 +9,7 @@
 from collections.abc import Generator
 from importlib import import_module
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
@@ -58,6 +58,15 @@ def make_fake_chat_adapter(*, content: str = "AI 生成的回答。", model: str
             total_tokens=150,
         )
     )
+    adapter.generate_async = AsyncMock(
+        return_value=chat_module.ChatResult(
+            content=content,
+            model=model,
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+        )
+    )
     return adapter
 
 
@@ -71,6 +80,7 @@ def make_fake_chat_config(*, model: str = "test-chat-model", **overrides):
         "max_tokens": 1024,
         "request_timeout": 30.0,
         "max_retries": 3,
+        "first_token_timeout": 10.0,
     }
     defaults.update(overrides)
     chat_config_module = import_module("app.services.chat_config")
@@ -92,6 +102,7 @@ def make_fake_session(*, total_embedding_count: int = 1, rows: list | None = Non
     mock_result = MagicMock()
     mock_result.all.return_value = rows
     mock_result.scalar.return_value = total_embedding_count
+    mock_result.first.return_value = total_embedding_count
     session.exec.return_value = mock_result
     return session
 
@@ -199,6 +210,16 @@ def search_client(
         audit_module = import_module("app.services.audit_trail")
         return audit_module.AuditTrail()
 
+    def _get_query_rewriter():
+        # 测试默认禁用查询重写，避免发起真实 LLM 调用
+        return None
+
+    def _get_chat_circuit_breaker():
+        # 测试默认禁用熔断器，避免状态跨测试污染
+        from app.services.circuit_breaker import CircuitBreaker
+
+        return CircuitBreaker()
+
     # Import the route's dependency functions (will fail in red phase)
     try:
         search_routes = import_module("app.api.routes.search")
@@ -207,6 +228,8 @@ def search_client(
         overrides[search_routes.get_chat_adapter] = _get_chat_adapter
         overrides[search_routes.get_search_response_cache] = _get_search_response_cache
         overrides[search_routes.get_search_audit_trail] = _get_search_audit_trail
+        overrides[search_routes.get_query_rewriter] = _get_query_rewriter
+        overrides[search_routes.get_chat_circuit_breaker] = _get_chat_circuit_breaker
     except ImportError:
         pass  # Red phase — route doesn't exist yet
 
@@ -283,7 +306,7 @@ def test_search_returns_200_with_answer_and_results(search_client: TestClient):
 # 2. 使用硬编码友好提示，而非 LLM 生成内容
 def test_search_returns_404_when_no_vector_data(search_client: TestClient):
     # Arrange — simulate empty DB
-    search_client.app._search_test_refs.session.exec.return_value.scalar.return_value = 0
+    search_client.app._search_test_refs.session.exec.return_value.first.return_value = 0
     search_client.app._search_test_refs.session.exec.return_value.all.return_value = []
 
     response = search_client.post(
@@ -297,7 +320,7 @@ def test_search_returns_404_when_no_vector_data(search_client: TestClient):
     # 验证硬编码友好提示（非 LLM 生成）
     assert "知识库中暂无任何已向量化的文档" in detail["detail"]
     # 验证 LLM 未被调用 —— 无向量数据时不应产生任何 API 费用
-    search_client.app._search_test_refs.chat_adapter.generate.assert_not_called()
+    search_client.app._search_test_refs.chat_adapter.generate_async.assert_not_called()
 
 
 # ── 3. 参数校验失败 → 422 ───────────────────────────────────────────────

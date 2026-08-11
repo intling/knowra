@@ -6,6 +6,7 @@ query rewriter test modules.
 
 from __future__ import annotations
 
+import time as _time
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -32,6 +33,7 @@ def mock_chat_adapter() -> MagicMock:
         model="test-rewrite-model",
         temperature=0.1,
         max_tokens=512,
+        max_retries=3,
     )
     adapter.generate = MagicMock(
         return_value=ChatResult(
@@ -94,6 +96,36 @@ def sample_rewrite_result() -> dict:
         "cache_hit": False,
         "rewrite_model": None,
     }
+
+
+# ── _make_result helper ───────────────────────────────────────────────────
+
+
+def _make_result(original_query: str):
+    """构建简化的 RewriteResult 用于缓存测试。
+
+    返回仅包含 original_query 和 rewritten_queries 的结果，
+    用于测试 CacheManager 的存储/查找行为。
+    """
+    from app.services.query_rewriter import RewriteResult
+
+    return RewriteResult(
+        original_query=original_query,
+        rewritten_queries=[{"query": original_query, "strategy": "direct"}],
+    )
+
+
+# ── _advance_time helper ───────────────────────────────────────────────────
+
+
+def _advance_time(monkeypatch, delta: float = 0.02) -> None:
+    """将 ``time.monotonic()`` 推进 *delta* 秒，用于模拟 TTL 过期。
+
+    仅在写入操作完成后调用，确保存储时间戳使用真实时间，
+    后续 lookup/sweep 使用模拟时间。
+    """
+    fake_now = _time.monotonic() + delta
+    monkeypatch.setattr(_time, "monotonic", lambda: fake_now)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -235,6 +267,7 @@ def build_phase2_rewriter(
     expand_rewriter=None,
     dissatisfaction_detector=None,
     context_verifier=None,
+    postprocessor=None,
     enabled: bool = True,
     pipeline_timeout: float = 20.0,
     strategy_timeout: float = 10.0,
@@ -242,6 +275,7 @@ def build_phase2_rewriter(
     strategy_normalize_enabled: bool = True,
     strategy_expand_enabled: bool = True,
     strategy_term_align_enabled: bool = True,
+    max_backtrack_attempts: int = 1,
 ):
     """构建 Phase 2 增强后的 QueryRewriter 实例。"""
     from app.services.query_rewriter import QueryRewriter
@@ -268,6 +302,7 @@ def build_phase2_rewriter(
         expand_rewriter=expand_rewriter,
         dissatisfaction_detector=dissatisfaction_detector,
         context_verifier=context_verifier,
+        postprocessor=postprocessor,
         enabled=enabled,
         pipeline_timeout=pipeline_timeout,
         strategy_timeout=strategy_timeout,
@@ -275,6 +310,7 @@ def build_phase2_rewriter(
         strategy_normalize_enabled=strategy_normalize_enabled,
         strategy_expand_enabled=strategy_expand_enabled,
         strategy_term_align_enabled=strategy_term_align_enabled,
+        max_backtrack_attempts=max_backtrack_attempts,
     )
 
 

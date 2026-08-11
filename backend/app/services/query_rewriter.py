@@ -40,6 +40,7 @@ Usage::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import inspect
 import time
@@ -233,6 +234,9 @@ class RewriteResult:
                 procedural/exploratory/chitchat/ambiguous）。
         complexity: Phase 2 —— 查询复杂度评分（1-10 或 None）。
         cache_level: Phase 2 —— 缓存命中层级（"L1" / "L2" / None）。
+        quality_scores: 集成联调 —— 改写质量 5 维评分。
+        backtrack_triggered: 集成联调 —— 是否触发过回溯重试。
+        backtrack_strategy: 集成联调 —— 回溯后使用的策略名称。
     """
 
     original_query: str
@@ -244,6 +248,10 @@ class RewriteResult:
     intent: str | None = None
     complexity: int | None = None
     cache_level: Literal["L1", "L2"] | None = None
+    quality_scores: object | None = None  # QualityScores | None
+    backtrack_triggered: bool = False
+    backtrack_strategy: str | None = None
+    quality_fallback: bool = False
 
     def __post_init__(self) -> None:
         if self.rewrite_time_ms < 0:
@@ -264,6 +272,13 @@ _STRATEGY_ENABLED_ATTR: dict[str, str] = {
     "normalize": "_strategy_normalize_enabled",
     "term_align": "_strategy_term_align_enabled",
     "expand": "_strategy_expand_enabled",
+}
+
+# 策略优先级（数值越小越优先，预算紧张时先执行高优先级策略）
+_STRATEGY_PRIORITY: dict[str, int] = {
+    "normalize": 0,
+    "term_align": 1,
+    "expand": 2,
 }
 
 
@@ -312,6 +327,11 @@ class QueryRewriter:
         l2_similarity_threshold: float = 0.95,
         knowledge_classifier: object | None = None,
         context_verifier: object | None = None,
+        # ── 集成联调 新增依赖 ──
+        postprocessor: object | None = None,
+        max_backtrack_attempts: int = 1,
+        # ── 熔断器 ──
+        circuit_breaker: object | None = None,
         # ── 差异化 TTL 配置（从 Settings 注入，替换硬编码）──
         l1_general_ttl: float = 1800.0,
         l1_context_dependent_ttl: float = 300.0,
@@ -341,6 +361,13 @@ class QueryRewriter:
         self._knowledge_classifier = knowledge_classifier
         self._context_verifier = context_verifier
 
+        # 集成联调 dependencies
+        self._postprocessor = postprocessor
+        self._max_backtrack_attempts = max_backtrack_attempts
+
+        # 熔断器
+        self._circuit_breaker = circuit_breaker
+
         # 差异化 TTL 配置
         self._l1_general_ttl = l1_general_ttl
         self._l1_context_dependent_ttl = l1_context_dependent_ttl
@@ -366,13 +393,34 @@ class QueryRewriter:
     # ── helpers ─────────────────────────────────────────────────────────
 
     @staticmethod
+    def _normalize_query(query: str) -> str:
+        """规范化查询文本，用于缓存键比较。
+
+        规则（遵循 design.md Decision 5）：
+            - 去除首尾空白
+            - 连续空白字符折叠为单个空格
+            - Unicode NFC 标准化
+            - 不做大小写折叠（中文无意义，英文术语大小写可能承载语义差异如 "US" vs "us"）
+        """
+        import unicodedata
+
+        # 1. 去除首尾空白 + 2. 折叠连续空白
+        collapsed = " ".join(query.strip().split())
+        # 3. Unicode NFC 标准化
+        return unicodedata.normalize("NFC", collapsed)
+
+    @staticmethod
     def _hash_query(query: str) -> str:
         """对查询文本计算 SHA-256 哈希前缀。
 
-        返回 16 字符十六进制哈希，用于缓存键。直接对原始查询文本哈希，
-        不做任何规范化处理 —— 相同字符串（逐字符一致）才会产生相同哈希。
+        先对查询文本进行规范化处理（trim + 空白折叠 + NFC 标准化），
+        再计算 SHA-256 哈希。规范化确保相同语义意图但格式差异
+        （如多余空格）的查询命中相同缓存条目。
+
+        返回 16 字符十六进制哈希，用于缓存键。
         """
-        return hashlib.sha256(query.encode()).hexdigest()[:16]
+        normalized = QueryRewriter._normalize_query(query)
+        return hashlib.sha256(normalized.encode()).hexdigest()[:16]
 
     @staticmethod
     def _derive_session_id(history: list[dict] | None) -> str:
@@ -429,6 +477,30 @@ class QueryRewriter:
             return None
         return getattr(self, attr, None)
 
+    # 当前支持的策略升级链：normalize → expand, term_align → expand
+    _BACKTRACK_UPGRADE_CHAIN: dict[str, str] = {
+        "normalize": "expand",
+        "term_align": "expand",
+    }
+
+    def _resolve_backtrack_strategy(self, attempted_strategies: list[str]) -> str | None:
+        """解析回溯升级策略。
+
+        当前升级链：``normalize`` → ``expand``。
+        更多升级链可通过配置扩展。
+
+        Args:
+            attempted_strategies: 已尝试的策略名称列表。
+
+        Returns:
+            升级后的策略名称，无可用升级时返回 ``None``。
+        """
+        for strategy_item in attempted_strategies:
+            upgrade = self._BACKTRACK_UPGRADE_CHAIN.get(strategy_item)
+            if upgrade is not None and upgrade not in attempted_strategies:
+                return upgrade
+        return None
+
     # ── public API ──────────────────────────────────────────────────────
 
     async def rewrite(
@@ -462,6 +534,19 @@ class QueryRewriter:
 
         # 模块开关
         if not self._enabled:
+            return RewriteResult(
+                original_query=query,
+                rewritten_queries=[{"query": query, "strategy": "direct"}],
+                rewrite_model=effective_model,
+            )
+
+        # ── 熔断器检查：已断开 → 跳过重写，直接返回原始查询 ──
+        if self._circuit_breaker is not None and not self._circuit_breaker.before_call():
+            self._logger.debug(
+                "circuit_breaker_open",
+                original_query=query,
+                session_id=resolved_session_id,
+            )
             return RewriteResult(
                 original_query=query,
                 rewritten_queries=[{"query": query, "strategy": "direct"}],
@@ -538,12 +623,20 @@ class QueryRewriter:
             )
             self._inflight_results[dedup_key] = result
 
+            # ── 熔断器：成功通知 ──
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.on_success()
+
             # ── 记录当前查询用于未来不满意检测（Phase 2）──
             if self._dissatisfaction_detector is not None:
                 self._dissatisfaction_detector.record(resolved_session_id, query_hash)
 
             return result
         except TimeoutError:
+            # ── 熔断器：失败通知 ──
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.on_failure()
+
             self._logger.warning(
                 "query_rewrite_timeout",
                 original_query=query,
@@ -600,7 +693,9 @@ class QueryRewriter:
             if trigger_context_fusion:
                 rewritten = await self._run_sync_in_thread(
                     self._context_rewriter.rewrite,  # type: ignore[union-attr]
-                    protected_query, history=history, model=rewrite_model,
+                    protected_query,
+                    history=history,
+                    model=rewrite_model,
                 )
                 strategies.append("context_fusion")
 
@@ -710,7 +805,8 @@ class QueryRewriter:
             if self._strategy_router is not None:
                 try:
                     route_result = await self._run_sync_in_thread(
-                        self._strategy_router.route, rewritten,
+                        self._strategy_router.route,
+                        rewritten,
                     )
                     intent = route_result.get("intent")
                     complexity = route_result.get("complexity")
@@ -719,79 +815,373 @@ class QueryRewriter:
                     # 策略路由失败时降级：不执行任何策略
                     routed_strategies = []
 
-            # Step 4: 策略串联执行（Phase 2）
-            # 前策略输出作为后策略输入，保护词在策略链期间保持为占位符
-            # 每个策略有自己的超时，且从管线剩余预算中分配，防止任一策略耗尽时间
+            # Step 4: 策略执行（Phase 2）
+            # - 策略优先级排序：预算不足时按 normalize > term_align > expand 排序
+            # - normalize 和 term_align 无依赖关系，预算充足时可并行执行
+            # - 每个策略通过 asyncio.wait_for 施加硬超时，确保单策略执行可被中断
             strategy_rewrites: list[dict] = []
             current_query = rewritten
+            rewrite_input = current_query  # 保存策略输入，供回溯使用
             protected_terms_list = list(term_map.values()) if term_map else None
 
             # ── 管线预算感知的超时分配 ──
             # 统计实际可执行的策略数量（排除开关关闭或 rewriter 缺失的）
             executable_strategies = [
-                s for s in routed_strategies
+                s
+                for s in routed_strategies
                 if self._is_strategy_enabled(s) and self._get_strategy_rewriter(s) is not None
             ]
 
-            for i, strategy_name in enumerate(routed_strategies):
-                # 检查策略开关
-                if not self._is_strategy_enabled(strategy_name):
-                    continue
-
-                rewriter = self._get_strategy_rewriter(strategy_name)
-                if rewriter is None:
-                    continue
-
-                # ── 计算该策略的剩余超时 ──
-                remaining_strategies = len(executable_strategies) - i
+            if executable_strategies:
+                # ── 计算管线剩余预算 ──
                 elapsed = time.monotonic() - start_time
                 remaining_budget = max(0, self._pipeline_timeout - elapsed)
-                # 平等分配剩余预算给后续策略，但不低于最小阈值
-                # 单策略最低 8s（与 strategy_router 的 LLM 超时一致，留足 1 次重试余量）
-                per_strategy_timeout = max(
-                    8.0,  # 单策略最低 8s（太短无意义，不如跳过）
-                    min(
-                        self._strategy_timeout,  # 不超过配置的单策略上限
-                        remaining_budget / max(remaining_strategies, 1),
-                    ),
+
+                # ── 检测可并行执行的策略对（normalize + term_align 无依赖）──
+                has_normalize = "normalize" in executable_strategies
+                has_term_align = "term_align" in executable_strategies
+                parallel_norm_term = (
+                    has_normalize
+                    and has_term_align
+                    and remaining_budget >= 16.0  # 两个策略各需最低 8s
                 )
 
-                # 预算不足：跳过剩余所有策略
-                if remaining_budget < 8.0:
-                    self._logger.warning(
-                        "pipeline_budget_exhausted",
-                        original_query=query,
-                        session_id=session_id,
-                        elapsed_s=elapsed,
-                        remaining_budget_s=remaining_budget,
-                        skipped_strategies=routed_strategies[i:],
+                if parallel_norm_term:
+                    # 并行路径：normalize + term_align 并行，其余按优先级顺序执行
+                    sequential_strategies = [
+                        s for s in executable_strategies if s not in ("normalize", "term_align")
+                    ]
+                else:
+                    # 顺序路径：所有策略按优先级排序执行
+                    sequential_strategies = sorted(
+                        executable_strategies,
+                        key=lambda s: _STRATEGY_PRIORITY.get(s, 99),
                     )
-                    break
+
+                # ══════════════════════════════════════════════════════════════
+                # Step 4a: 并行执行 normalize + term_align（无依赖，预算充足时）
+                #
+                # 注意：并行块必须在串行块之前执行！
+                # normalize 的高优先级输出会作为 current_query 传递给后续策略
+                # （如 expand），确保 expand 收到最佳输入。
+                # ══════════════════════════════════════════════════════════════
+
+                if parallel_norm_term:
+                    elapsed = time.monotonic() - start_time
+                    parallel_budget = max(0, self._pipeline_timeout - elapsed)
+
+                    if parallel_budget >= 8.0:
+                        # 每个策略分配剩余预算的一半，但不低于 8s、不超过 strategy_timeout
+                        parallel_timeout = max(
+                            8.0,
+                            min(self._strategy_timeout, parallel_budget / 2),
+                        )
+
+                        norm_rewriter = self._get_strategy_rewriter("normalize")
+                        term_rewriter = self._get_strategy_rewriter("term_align")
+
+                        async def _exec_normalize():
+                            try:
+                                return await asyncio.wait_for(
+                                    self._run_sync_in_thread(
+                                        norm_rewriter.rewrite,
+                                        current_query,
+                                        protected_terms=protected_terms_list,
+                                        request_timeout=parallel_timeout,
+                                        max_retries=self._chat_adapter.config.max_retries,
+                                    ),
+                                    timeout=parallel_timeout,
+                                )
+                            except (asyncio.TimeoutError, Exception):
+                                return None
+
+                        async def _exec_term_align():
+                            try:
+                                return await asyncio.wait_for(
+                                    self._run_sync_in_thread(
+                                        term_rewriter.rewrite,
+                                        current_query,
+                                        protected_terms=protected_terms_list,
+                                        request_timeout=parallel_timeout,
+                                        max_retries=self._chat_adapter.config.max_retries,
+                                    ),
+                                    timeout=parallel_timeout,
+                                )
+                            except (asyncio.TimeoutError, Exception):
+                                return None
+
+                        # 并行执行，各自处理异常，互不影响
+                        norm_result, term_result = await asyncio.gather(
+                            _exec_normalize(),
+                            _exec_term_align(),
+                        )
+
+                        # ── 合并并行结果：normalize 优先（更高优先级）──
+                        # normalize 结果作为后续策略的基础输入
+                        if norm_result is not None:
+                            norm_query = norm_result.get("query", current_query)
+                            strategy_rewrites.append(
+                                {
+                                    "query": norm_query,
+                                    "strategy": "normalize",
+                                    "duration_ms": norm_result.get("duration_ms"),
+                                    "tokens": norm_result.get("tokens"),
+                                }
+                            )
+                            strategies.append("normalize")
+                            current_query = norm_query
+
+                        if term_result is not None:
+                            term_query = term_result.get("query", current_query)
+                            strategy_rewrites.append(
+                                {
+                                    "query": term_query,
+                                    "strategy": "term_align",
+                                    "duration_ms": term_result.get("duration_ms"),
+                                    "tokens": term_result.get("tokens"),
+                                }
+                            )
+                            strategies.append("term_align")
+
+                # ══════════════════════════════════════════════════════════════
+                # Step 4b: 顺序执行剩余策略（按优先级排序）
+                # ══════════════════════════════════════════════════════════════
+
+                for i, strategy_name in enumerate(sequential_strategies):
+                    if not self._is_strategy_enabled(strategy_name):
+                        continue
+
+                    rewriter = self._get_strategy_rewriter(strategy_name)
+                    if rewriter is None:
+                        continue
+
+                    # ── 计算该策略的剩余超时 ──
+                    remaining_count = len(sequential_strategies) - i
+                    elapsed = time.monotonic() - start_time
+                    remaining_budget = max(0, self._pipeline_timeout - elapsed)
+                    per_strategy_timeout = max(
+                        8.0,
+                        min(
+                            self._strategy_timeout,
+                            remaining_budget / max(remaining_count, 1),
+                        ),
+                    )
+
+                    if remaining_budget < 8.0:
+                        self._logger.warning(
+                            "pipeline_budget_exhausted",
+                            original_query=query,
+                            session_id=session_id,
+                            elapsed_s=elapsed,
+                            remaining_budget_s=remaining_budget,
+                            skipped_strategies=sequential_strategies[i:],
+                        )
+                        break
+
+                    try:
+                        # ── asyncio.wait_for 硬超时：确保单策略可被中断 ──
+                        strategy_result = await asyncio.wait_for(
+                            self._run_sync_in_thread(
+                                rewriter.rewrite,
+                                current_query,
+                                protected_terms=protected_terms_list,
+                                request_timeout=per_strategy_timeout,
+                                max_retries=self._chat_adapter.config.max_retries,
+                            ),
+                            timeout=per_strategy_timeout,
+                        )
+
+                        new_query = strategy_result.get("query", current_query)
+                        strategy_rewrites.append(
+                            {
+                                "query": new_query,
+                                "strategy": strategy_name,
+                                "duration_ms": strategy_result.get("duration_ms"),
+                                "tokens": strategy_result.get("tokens"),
+                            }
+                        )
+                        current_query = new_query
+                        strategies.append(strategy_name)
+                    except asyncio.TimeoutError:
+                        self._logger.warning(
+                            "strategy_hard_timeout",
+                            strategy=strategy_name,
+                            original_query=query,
+                            session_id=session_id,
+                            timeout_s=per_strategy_timeout,
+                        )
+                    except Exception:
+                        # 单个策略失败不阻断管线，继续使用当前查询执行后续策略
+                        pass
+
+            # ── 集成联调: Postprocessor 质量评估与回溯 ──
+            # 每条策略执行后 → Postprocessor.evaluate() → 确定性预检查
+            # → LLM 质量评估 → 质量合格则保留，不合格则回溯（最多 1 次）
+            # → 二次失败丢弃回退原始查询
+            quality_scores: object | None = None
+            backtrack_triggered = False
+            backtrack_strategy: str | None = None
+            quality_fallback = False
+
+            if self._postprocessor is not None and strategy_rewrites:
+                # ── 对最终改写结果进行质量评估 ──
+                final_rewrite = strategy_rewrites[-1]["query"]
 
                 try:
-                    # 调用策略重写器（传入保护词列表以保持占位符安全，
-                    # 以及超时和重试参数确保 LLM 调用有充足恢复机会）
-                    strategy_result = await self._run_sync_in_thread(
-                        rewriter.rewrite,
-                        current_query, protected_terms=protected_terms_list,
-                        request_timeout=per_strategy_timeout,
-                        max_retries=self._chat_adapter.config.max_retries,
+                    eval_result = await self._run_sync_in_thread(
+                        self._postprocessor.evaluate,
+                        query,  # original_query
+                        final_rewrite,  # rewritten_query
+                        intent,  # ← 传入意图类型，用于分层阈值
+                    )
+                except Exception:
+                    # Postprocessor 调用异常 → 降级，保守接受改写
+                    self._logger.warning(
+                        "postprocessor_evaluate_exception",
+                        original_query=query,
+                        session_id=session_id,
+                    )
+                    eval_result = {
+                        "quality_scores": None,
+                        "passed": True,  # 保守接受
+                        "pre_check_failed": False,
+                        "pre_check_issues": [],
+                    }
+
+                passed = eval_result.get("passed", True)
+                quality_scores = eval_result.get("quality_scores")
+                pre_check_failed = eval_result.get("pre_check_failed", False)
+
+                # ── 单策略 normalize 降级快速路径 ──
+                # normalize 仅是清理/补全，不改变语义结构，预检失败时不丢弃，
+                # 而是标记 quality_fallback 接受改写。
+                is_normalize_only = (
+                    len(routed_strategies) == 1
+                    and routed_strategies[0] == "normalize"
+                )
+                if not passed and is_normalize_only and pre_check_failed:
+                    passed = True
+                    pre_check_failed = False
+                    quality_fallback = True
+                    self._logger.info(
+                        "quality_fallback_normalize_only",
+                        original_query=query,
+                        session_id=session_id,
+                        rewritten_query=final_rewrite,
+                    )
+                    self._audit_trail.record(  # type: ignore[union-attr]
+                        "quality_fallback_normalize_only",
+                        original_query=query,
+                        rewritten_query=final_rewrite,
                     )
 
-                    new_query = strategy_result.get("query", current_query)
-                    strategy_rewrites.append(
-                        {
-                            "query": new_query,
-                            "strategy": strategy_name,
-                            "duration_ms": strategy_result.get("duration_ms"),
-                            "tokens": strategy_result.get("tokens"),
-                        }
-                    )
-                    current_query = new_query
-                    strategies.append(strategy_name)
-                except Exception:
-                    # 单个策略失败不阻断管线，继续使用当前查询执行后续策略
-                    pass
+                if not passed:
+                    # ── 回溯逻辑：升级策略重新改写（最多 max_backtrack_attempts 次）──
+                    upgrade_strategy_name = self._resolve_backtrack_strategy(routed_strategies)
+
+                    if upgrade_strategy_name and self._max_backtrack_attempts >= 1:
+                        # 执行升级策略
+                        upgrade_rewriter = self._get_strategy_rewriter(upgrade_strategy_name)
+                        if upgrade_rewriter is not None and self._is_strategy_enabled(
+                            upgrade_strategy_name
+                        ):
+                            try:
+                                upgrade_result = await self._run_sync_in_thread(
+                                    upgrade_rewriter.rewrite,
+                                    rewrite_input,
+                                    protected_terms=protected_terms_list,
+                                    request_timeout=getattr(self, "_strategy_timeout", 30.0),
+                                    max_retries=self._chat_adapter.config.max_retries,  # type: ignore[union-attr]
+                                )
+
+                                backtrack_query = upgrade_result.get("query", current_query)
+                                backtrack_triggered = True
+                                backtrack_strategy = upgrade_strategy_name
+
+                                # 追加回溯改写记录
+                                strategy_rewrites.append(
+                                    {
+                                        "query": backtrack_query,
+                                        "strategy": upgrade_strategy_name,
+                                        "duration_ms": upgrade_result.get("duration_ms"),
+                                        "tokens": upgrade_result.get("tokens"),
+                                    }
+                                )
+                                strategies.append(upgrade_strategy_name)
+                                current_query = backtrack_query
+
+                                # ── 对回溯结果再次评估 ──
+                                try:
+                                    retry_eval = await self._run_sync_in_thread(
+                                        self._postprocessor.evaluate,
+                                        query,
+                                        backtrack_query,
+                                        intent,  # ← 传入意图类型，用于分层阈值
+                                    )
+                                    retry_passed = retry_eval.get("passed", False)
+                                    quality_scores = retry_eval.get("quality_scores")
+
+                                    if retry_passed:
+                                        # 二次评估通过 → 使用升级后的改写
+                                        self._audit_trail.record(  # type: ignore[union-attr]
+                                            "quality_backtrack_success",
+                                            original_query=query,
+                                            session_id=session_id,
+                                            initial_rewrite=final_rewrite,
+                                            backtrack_strategy=upgrade_strategy_name,
+                                            backtrack_rewrite=backtrack_query,
+                                        )
+                                    else:
+                                        # 二次失败 → 丢弃改写，使用原始查询
+                                        self._logger.info(
+                                            "quality_backtrack_failed_discarding",
+                                            original_query=query,
+                                            session_id=session_id,
+                                            initial_rewrite=final_rewrite,
+                                            backtrack_rewrite=backtrack_query,
+                                        )
+                                        current_query = query  # 回退到原始查询
+                                        strategy_rewrites = [{"query": query, "strategy": "direct"}]
+                                        strategies = []
+                                except Exception:
+                                    # 二次评估异常 → 降级，保守接受回溯结果
+                                    self._logger.warning(
+                                        "quality_backtrack_evaluate_exception",
+                                        original_query=query,
+                                        session_id=session_id,
+                                    )
+                            except Exception:
+                                # 升级策略执行失败 → 丢弃改写，使用原始查询
+                                self._logger.warning(
+                                    "quality_backtrack_strategy_failed",
+                                    original_query=query,
+                                    session_id=session_id,
+                                    upgrade_strategy=upgrade_strategy_name,
+                                )
+                                current_query = query
+                                strategy_rewrites = [{"query": query, "strategy": "direct"}]
+                                strategies = []
+                                backtrack_triggered = True
+                                backtrack_strategy = upgrade_strategy_name
+                        else:
+                            # 升级策略不可用 → 直接丢弃
+                            self._logger.info(
+                                "quality_backtrack_no_upgrade_strategy",
+                                original_query=query,
+                                session_id=session_id,
+                                attempted_upgrade=upgrade_strategy_name,
+                            )
+                            current_query = query
+                            strategy_rewrites = [{"query": query, "strategy": "direct"}]
+                            strategies = []
+                            backtrack_triggered = True
+                    else:
+                        # 无可用升级策略或 max_backtrack_attempts == 0
+                        # → 直接丢弃改写，使用原始查询
+                        current_query = query
+                        strategy_rewrites = [{"query": query, "strategy": "direct"}]
+                        strategies = []
+                        backtrack_triggered = pre_check_failed or upgrade_strategy_name is not None
 
             # Step 5: 保护词还原
             final_query = self._protector.restore(  # type: ignore[union-attr]
@@ -820,6 +1210,10 @@ class QueryRewriter:
                 intent=intent,
                 complexity=complexity,
                 cache_level=None,
+                quality_scores=quality_scores,
+                backtrack_triggered=backtrack_triggered,
+                backtrack_strategy=backtrack_strategy,
+                quality_fallback=quality_fallback,
             )
 
             # Step 7: 计算知识分类（L1 和 L2 缓存共用）
@@ -843,24 +1237,19 @@ class QueryRewriter:
             )
 
             # Step 7b: 写入 L2 语义缓存（跨会话，含知识分类标记）
+            # 设计决策：上下文依赖答案仅写 L1，不进入 L2 跨会话缓存。
+            # 理由：依赖对话历史的答案（如"基于刚才的代码"）无法安全地跨会话复用，
+            # 写入 L2 纯属浪费空间，且已被 L2 lookup 的跨会话拦截逻辑保护。
             store_l2 = getattr(self._cache_manager, "store_l2", None)  # type: ignore[union-attr]
-            if store_l2 is not None:
-                try:
-                    l2_ttl = (
-                        self._l2_context_dependent_ttl
-                        if knowledge_type == "context_dependent"
-                        else self._l2_general_ttl
-                    )
+            if store_l2 is not None and knowledge_type != "context_dependent":
+                with contextlib.suppress(Exception):
                     store_l2(
                         final_query,
                         result,
                         knowledge_type=knowledge_type,
                         session_id=session_id,
-                        ttl_override=l2_ttl,
+                        ttl_override=self._l2_general_ttl,
                     )
-                except Exception:
-                    # L2 写入失败非关键，不影响管线
-                    pass
 
             # Step 8: 审计日志
             self._audit_trail.record(  # type: ignore[union-attr]
@@ -880,6 +1269,10 @@ class QueryRewriter:
             return result
 
         except (ChatAPIError, RuntimeError) as exc:
+            # ── 熔断器：失败通知 ──
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.on_failure()
+
             self._logger.warning(
                 "query_rewrite_failed",
                 original_query=query,

@@ -570,7 +570,7 @@ class TestMultiStrategyChaining:
 
     pytestmark = pytest.mark.asyncio
 
-    async def test_normalize_output_passed_to_term_align(
+    async def test_normalize_and_term_align_run_in_parallel_with_same_input(
         self,
         mock_protector_phase2,
         mock_strategy_router,
@@ -580,9 +580,9 @@ class TestMultiStrategyChaining:
         mock_cache_manager_with_l2,
         mock_audit_trail_phase2,
     ):
-        """normalize 的输出查询应作为 term_align 的输入。"""
+        """normalize 和 term_align 无依赖关系，预算充足时并行执行，接收相同输入。"""
         mock_protector_phase2.protect.return_value = ("咋整Python", {})
-        mock_protector_phase2.restore.return_value = "如何学习 Python（术语已对齐）"
+        mock_protector_phase2.restore.return_value = "如何学习 Python"
         mock_strategy_router.route.return_value = {
             "intent": "procedural",
             "complexity": 4,
@@ -613,12 +613,17 @@ class TestMultiStrategyChaining:
 
         await rewriter.rewrite("咋整Python", history=None)
 
-        # term_align 收到的输入是 normalize 的输出
-        term_align_call_args = mock_term_align_rewriter.rewrite.call_args
-        # 第一个位置参数应为 normalize 的输出 "如何学习 Python"
-        assert term_align_call_args[0][0] == "如何学习 Python"
+        # 两者都被调用
+        mock_normalize_rewriter.rewrite.assert_called_once()
+        mock_term_align_rewriter.rewrite.assert_called_once()
 
-    async def test_full_chain_normalize_term_align_expand(
+        # 并行执行：两者接收相同输入（protected query），而非链式传递
+        norm_input = mock_normalize_rewriter.rewrite.call_args[0][0]
+        term_input = mock_term_align_rewriter.rewrite.call_args[0][0]
+        assert norm_input == "咋整Python"
+        assert term_input == "咋整Python"
+
+    async def test_full_chain_parallel_norm_term_align_then_expand(
         self,
         mock_protector_phase2,
         mock_strategy_router,
@@ -628,7 +633,7 @@ class TestMultiStrategyChaining:
         mock_cache_manager_with_l2,
         mock_audit_trail_phase2,
     ):
-        """高复杂度三策略串联：normalize → term_align → expand。"""
+        """高复杂度三策略：normalize + term_align 并行 → expand 串行（接收 normalize 输出）。"""
         mock_protector_phase2.protect.return_value = ("高并发系统怎么搞", {})
         mock_protector_phase2.restore.return_value = (
             "高并发系统架构设计：分布式、负载均衡、缓存策略、数据库优化"
@@ -638,21 +643,20 @@ class TestMultiStrategyChaining:
             "complexity": 8,
             "strategies": ["normalize", "term_align", "expand"],
         }
-        # Stage 1
+        # Stage 1 (parallel)
         mock_normalize_rewriter.rewrite.return_value = {
             "query": "如何设计高并发系统",
             "strategy": "normalize",
             "duration_ms": 120.0,
             "tokens": 45,
         }
-        # Stage 2
         mock_term_align_rewriter.rewrite.return_value = {
-            "query": "如何设计高并发系统（术语已对齐）",
+            "query": "高并发系统术语对齐结果",
             "strategy": "term_align",
             "duration_ms": 85.0,
             "tokens": 35,
         }
-        # Stage 3
+        # Stage 2 (sequential after parallel)
         mock_expand_rewriter.rewrite.return_value = {
             "query": "高并发系统架构设计：分布式、负载均衡、缓存策略、数据库优化",
             "strategy": "expand",
@@ -672,11 +676,12 @@ class TestMultiStrategyChaining:
 
         await rewriter.rewrite("高并发系统怎么搞", history=None)
 
-        # 验证链式传递
-        # term_align 收到 normalize 的输出
-        assert mock_term_align_rewriter.rewrite.call_args[0][0] == "如何设计高并发系统"
-        # expand 收到 term_align 的输出
-        assert mock_expand_rewriter.rewrite.call_args[0][0] == "如何设计高并发系统（术语已对齐）"
+        # normalize 和 term_align 并行执行，接收相同输入
+        assert mock_normalize_rewriter.rewrite.call_args[0][0] == "高并发系统怎么搞"
+        assert mock_term_align_rewriter.rewrite.call_args[0][0] == "高并发系统怎么搞"
+
+        # expand 串行执行，接收 normalize 的输出（高优先级策略结果优先）
+        assert mock_expand_rewriter.rewrite.call_args[0][0] == "如何设计高并发系统"
 
     async def test_protected_terms_preserved_during_strategy_chain(
         self,
@@ -787,13 +792,165 @@ class TestMultiStrategyChaining:
         assert "normalize" in result.strategies_used
         assert "term_align" in result.strategies_used
         assert "expand" in result.strategies_used
-        # 顺序应为路由决定的顺序
+        # 顺序应为路由决定的顺序：并行块先执行（normalize, term_align），再串行（expand）
         assert result.strategies_used == ["normalize", "term_align", "expand"]
 
+    async def test_sequential_fallback_when_budget_tight(
+        self,
+        mock_protector_phase2,
+        mock_strategy_router,
+        mock_normalize_rewriter,
+        mock_term_align_rewriter,
+        mock_expand_rewriter,
+        mock_cache_manager_with_l2,
+        mock_audit_trail_phase2,
+    ):
+        """预算紧张时（<16s），normalize + term_align 回退为顺序执行。
 
-# ═════════════════════════════════════════════════════════════════════
-# 策略开关测试
-# ═════════════════════════════════════════════════════════════════════
+        使用较短的 pipeline_timeout 模拟预算不足场景，
+        验证策略仍按优先级顺序执行，不会跳过。
+        """
+        mock_protector_phase2.protect.return_value = ("咋整Python", {})
+        mock_protector_phase2.restore.return_value = "如何学习 Python"
+        mock_strategy_router.route.return_value = {
+            "intent": "procedural",
+            "complexity": 5,
+            "strategies": ["normalize", "term_align"],
+        }
+        mock_normalize_rewriter.rewrite.return_value = {
+            "query": "如何学习 Python",
+            "strategy": "normalize",
+            "duration_ms": 100.0,
+            "tokens": 35,
+        }
+        mock_term_align_rewriter.rewrite.return_value = {
+            "query": "Python 入门学习指南",
+            "strategy": "term_align",
+            "duration_ms": 80.0,
+            "tokens": 30,
+        }
+
+        # pipeline_timeout=10s < 16s → 回退为顺序执行
+        rewriter = build_phase2_rewriter(
+            protector=mock_protector_phase2,
+            strategy_router=mock_strategy_router,
+            normalize_rewriter=mock_normalize_rewriter,
+            term_align_rewriter=mock_term_align_rewriter,
+            expand_rewriter=mock_expand_rewriter,
+            cache_manager=mock_cache_manager_with_l2,
+            audit_trail=mock_audit_trail_phase2,
+            pipeline_timeout=10.0,  # 不足 16s，触发顺序回退
+        )
+
+        await rewriter.rewrite("咋整Python", history=None)
+
+        # 两者都被调用（顺序执行，非并行）
+        mock_normalize_rewriter.rewrite.assert_called_once()
+        mock_term_align_rewriter.rewrite.assert_called_once()
+
+        # 顺序执行：term_align 接收 normalize 的输出
+        assert mock_term_align_rewriter.rewrite.call_args[0][0] == "如何学习 Python"
+
+    async def test_priority_ordering_when_only_two_strategies(
+        self,
+        mock_protector_phase2,
+        mock_strategy_router,
+        mock_normalize_rewriter,
+        mock_term_align_rewriter,
+        mock_expand_rewriter,
+        mock_cache_manager_with_l2,
+        mock_audit_trail_phase2,
+    ):
+        """仅 normalize + expand 时，仍按优先级顺序执行（非并行对）。"""
+        mock_protector_phase2.protect.return_value = ("查询文本", {})
+        mock_protector_phase2.restore.return_value = "优化后的查询"
+        mock_strategy_router.route.return_value = {
+            "intent": "ambiguous",
+            "complexity": 4,
+            "strategies": ["expand", "normalize"],  # 故意乱序
+        }
+        mock_normalize_rewriter.rewrite.return_value = {
+            "query": "规范化查询",
+            "strategy": "normalize",
+            "duration_ms": 80.0,
+            "tokens": 25,
+        }
+        mock_expand_rewriter.rewrite.return_value = {
+            "query": "优化后的查询",
+            "strategy": "expand",
+            "duration_ms": 120.0,
+            "tokens": 40,
+        }
+
+        rewriter = build_phase2_rewriter(
+            protector=mock_protector_phase2,
+            strategy_router=mock_strategy_router,
+            normalize_rewriter=mock_normalize_rewriter,
+            term_align_rewriter=mock_term_align_rewriter,
+            expand_rewriter=mock_expand_rewriter,
+            cache_manager=mock_cache_manager_with_l2,
+            audit_trail=mock_audit_trail_phase2,
+        )
+
+        result = await rewriter.rewrite("查询文本", history=None)
+
+        # prioritize: normalize (priority 0) > expand (priority 2)
+        assert result.strategies_used == ["normalize", "expand"]
+        # normalize 先执行，输出传给 expand
+        assert mock_expand_rewriter.rewrite.call_args[0][0] == "规范化查询"
+
+    async def test_strategy_hard_timeout_isolation(
+        self,
+        mock_protector_phase2,
+        mock_strategy_router,
+        mock_normalize_rewriter,
+        mock_term_align_rewriter,
+        mock_expand_rewriter,
+        mock_cache_manager_with_l2,
+        mock_audit_trail_phase2,
+    ):
+        """单策略超时不阻塞后续策略执行（asyncio.wait_for 硬超时隔离）。"""
+        import asyncio
+        from unittest.mock import patch
+
+        mock_protector_phase2.protect.return_value = ("查询文本", {})
+        mock_protector_phase2.restore.return_value = "优化后的查询"
+        mock_strategy_router.route.return_value = {
+            "intent": "analytical",
+            "complexity": 5,
+            "strategies": ["normalize", "term_align"],
+        }
+
+        # 预算只有 10s → 顺序执行（不足 16s 并行阈值）
+        # normalize 超时，term_align 仍应执行
+        rewriter = build_phase2_rewriter(
+            protector=mock_protector_phase2,
+            strategy_router=mock_strategy_router,
+            normalize_rewriter=mock_normalize_rewriter,
+            term_align_rewriter=mock_term_align_rewriter,
+            expand_rewriter=mock_expand_rewriter,
+            cache_manager=mock_cache_manager_with_l2,
+            audit_trail=mock_audit_trail_phase2,
+            pipeline_timeout=10.0,
+        )
+
+        # 注入 asyncio.TimeoutError 仅对 normalize 策略的 rewriter.rewrite 调用
+        _orig_run_sync = rewriter._run_sync_in_thread
+
+        async def _patched_run_sync(func, *args, **kwargs):
+            # 仅当 func 是 normalize_rewriter.rewrite 时才触发超时
+            if func is mock_normalize_rewriter.rewrite:
+                raise asyncio.TimeoutError("simulated hard timeout")
+            # 其他调用（strategy_router、term_align 等）→ 正常
+            return await _orig_run_sync(func, *args, **kwargs)
+
+        with patch.object(rewriter, "_run_sync_in_thread", _patched_run_sync):
+            result = await rewriter.rewrite("查询文本", history=None)
+
+        # normalize 因超时被跳过（未调用底层 rewriter）
+        mock_normalize_rewriter.rewrite.assert_not_called()
+        # term_align 仍被调用（超时隔离成立）
+        mock_term_align_rewriter.rewrite.assert_called_once()
 
 
 class TestStrategySwitches:

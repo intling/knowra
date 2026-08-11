@@ -9,20 +9,9 @@
 
 from __future__ import annotations
 
-import time
-
 from app.services.cache_manager import CacheManager
-from app.services.query_rewriter import RewriteResult
 
-# ── helpers ──────────────────────────────────────────────────────
-
-
-def _make_result(original_query: str) -> RewriteResult:
-    return RewriteResult(
-        original_query=original_query,
-        rewritten_queries=[{"query": original_query, "strategy": "direct"}],
-    )
-
+from .conftest import _advance_time, _make_result
 
 # ══════════════════════════════════════════════════════════
 # 会话绑定缓存测试
@@ -90,11 +79,9 @@ class TestTTLExpiration:
     def test_expired_entry_returns_none(self, monkeypatch):
         """过期的缓存条目应返回 None。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
-        result = _make_result("test")
-        cache.store("sess", "hash", result)
+        cache.store("sess", "hash", _make_result("test"))
 
-        # 等待超过 TTL
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
 
         found = cache.lookup("sess", "hash")
         assert found is None
@@ -104,7 +91,7 @@ class TestTTLExpiration:
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store("sess", "hash", _make_result("test"))
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         cache.lookup("sess", "hash")
 
         assert cache.size == 0
@@ -225,17 +212,17 @@ class TestTTLOverride:
         cache = CacheManager(max_size=10, ttl_seconds=3600)  # 默认 1 小时
         cache.store("sess", "hash", _make_result("test"), ttl_override=0.01)
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         found = cache.lookup("sess", "hash")
         assert found is None
 
-    def test_store_ttl_override_longer_than_default(self):
+    def test_store_ttl_override_longer_than_default(self, monkeypatch):
         """ttl_override 长于默认 TTL 时，条目有效期应更长。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store("sess", "hash", _make_result("test"), ttl_override=3600)
 
         # 默认 TTL 0.01s 已过期，但 ttl_override=3600 应保持条目存活
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         found = cache.lookup("sess", "hash")
         assert found is not None
         assert found.original_query == "test"
@@ -245,7 +232,7 @@ class TestTTLOverride:
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store("sess", "hash", _make_result("test"), ttl_override=None)
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         found = cache.lookup("sess", "hash")
         assert found is None
 
@@ -258,7 +245,7 @@ class TestTTLOverride:
         # 条目 B：长 TTL
         cache.store("sess", "hash_b", _make_result("b"), ttl_override=3600)
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
 
         # A 已过期，B 仍有效
         assert cache.lookup("sess", "hash_a") is None
@@ -275,11 +262,11 @@ class TestTTLOverride:
             ttl_override=0.01,
         )
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         found = cache.lookup_l2("test query")
         assert found is None
 
-    def test_store_l2_ttl_override_longer(self):
+    def test_store_l2_ttl_override_longer(self, monkeypatch):
         """store_l2() 的 ttl_override 长于默认时保持条目存活。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store_l2(
@@ -289,7 +276,7 @@ class TestTTLOverride:
             ttl_override=3600,
         )
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         found = cache.lookup_l2("test query")
         assert found is not None
         assert found["knowledge_type"] == "general_knowledge"
@@ -304,7 +291,7 @@ class TestTTLOverride:
             ttl_override=None,
         )
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         found = cache.lookup_l2("test query")
         assert found is None
 
@@ -321,7 +308,7 @@ class TestTTLOverride:
             ttl_override=3600,
         )
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
 
         # L1 过期，L2 仍有效
         assert cache.lookup("sess", "hash") is None
@@ -357,12 +344,12 @@ class TestStatsCounters:
         assert stats["misses"] == 1
         assert stats["hits"] == 0
 
-    def test_expirations_counter_increments_on_ttl_expiry(self):
+    def test_expirations_counter_increments_on_ttl_expiry(self, monkeypatch):
         """TTL 过期时 expirations 和 misses 计数器应同时递增。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store("sess", "hash", _make_result("test"))
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         cache.lookup("sess", "hash")  # 过期
 
         stats = cache.get_stats()
@@ -398,12 +385,12 @@ class TestStatsCounters:
         assert stats["l2_misses"] == 1
         assert stats["l2_hits"] == 0
 
-    def test_l2_expirations_increments_both_counters(self):
+    def test_l2_expirations_increments_both_counters(self, monkeypatch):
         """L2 TTL 过期时 expirations 和 l2_misses 应同时递增。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store_l2("test query", _make_result("test"), knowledge_type="general_knowledge")
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         cache.lookup_l2("test query")  # 过期
 
         stats = cache.get_stats()
@@ -440,10 +427,18 @@ class TestGetStats:
         stats = cache.get_stats()
 
         expected_keys = {
-            "hits", "misses", "l2_hits", "l2_misses",
-            "evictions", "expirations", "sweep_removed",
-            "fingerprint_mismatches", "l2_fingerprint_mismatches",
-            "size", "l2_size", "hit_rate",
+            "hits",
+            "misses",
+            "l2_hits",
+            "l2_misses",
+            "evictions",
+            "expirations",
+            "sweep_removed",
+            "fingerprint_mismatches",
+            "l2_fingerprint_mismatches",
+            "size",
+            "l2_size",
+            "hit_rate",
         }
         assert set(stats.keys()) == expected_keys
 
@@ -484,12 +479,12 @@ class TestGetStats:
         assert stats["size"] == 2
         assert stats["l2_size"] == 1
 
-    def test_expired_entries_affect_hit_rate(self):
+    def test_expired_entries_affect_hit_rate(self, monkeypatch):
         """过期条目应计为 miss，影响 hit_rate。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store("sess", "hash", _make_result("test"))
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         cache.lookup("sess", "hash")  # 过期 → miss
 
         stats = cache.get_stats()
@@ -505,25 +500,25 @@ class TestGetStats:
 class TestSweepExpired:
     """验证 _sweep_expired / _maybe_sweep 写入时抽样清理。"""
 
-    def test_sweep_removes_expired_l1_entries(self):
+    def test_sweep_removes_expired_l1_entries(self, monkeypatch):
         """_sweep_expired 应移除 L1 中的过期条目。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store("sess", "hash_a", _make_result("a"))
         cache.store("sess", "hash_b", _make_result("b"))
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
 
         removed = cache._sweep_expired(cache._store, "l1")
         assert removed == 2
         assert cache.size == 0
 
-    def test_sweep_removes_expired_l2_entries(self):
+    def test_sweep_removes_expired_l2_entries(self, monkeypatch):
         """_sweep_expired 应移除 L2 中的过期条目。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store_l2("query a", _make_result("a"))
         cache.store_l2("query b", _make_result("b"))
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
 
         removed = cache._sweep_expired(cache._l2_store, "l2")
         assert removed == 2
@@ -545,19 +540,19 @@ class TestSweepExpired:
         removed = cache._sweep_expired(cache._store, "l1")
         assert removed == 0
 
-    def test_sweep_increments_sweep_removed_stat(self):
+    def test_sweep_increments_sweep_removed_stat(self, monkeypatch):
         """清理过期条目后 sweep_removed 计数器应递增。"""
         cache = CacheManager(max_size=10, ttl_seconds=0.01)
         cache.store("sess", "hash_a", _make_result("a"))
         cache.store("sess", "hash_b", _make_result("b"))
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
         cache._sweep_expired(cache._store, "l1")
 
         stats = cache.get_stats()
         assert stats["sweep_removed"] == 2
 
-    def test_sweep_only_samples_up_to_limit(self):
+    def test_sweep_only_samples_up_to_limit(self, monkeypatch):
         """条目数超过抽样上限时只检查随机样本。"""
         cache = CacheManager(max_size=100, ttl_seconds=0.01)
 
@@ -565,7 +560,7 @@ class TestSweepExpired:
         for i in range(100):
             cache.store("sess", f"hash_{i}", _make_result(f"test_{i}"))
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
 
         removed = cache._sweep_expired(cache._store, "l1")
         # 抽样上限为 20，所以最多移除 20 条
@@ -606,7 +601,7 @@ class TestSweepExpired:
         cache.store("sess", "hash_f", _make_result("f"))
         assert len(sweep_counts) == 4
 
-    def test_sweep_mixed_expired_and_unexpired(self):
+    def test_sweep_mixed_expired_and_unexpired(self, monkeypatch):
         """混合过期/未过期条目时只移除过期的。"""
         cache = CacheManager(max_size=10, ttl_seconds=3600)
 
@@ -615,7 +610,7 @@ class TestSweepExpired:
         # 长 TTL 条目
         cache.store("sess", "hash_valid", _make_result("valid"), ttl_override=3600)
 
-        time.sleep(0.02)
+        _advance_time(monkeypatch)
 
         removed = cache._sweep_expired(cache._store, "l1")
         assert removed == 1
@@ -643,7 +638,9 @@ class TestMaybeLogStats:
         snapshot_logs = [r for r in caplog.records if r.name == "app.services.cache_manager"]
         # 应该有一条 cache_stats_snapshot 日志
         assert len(snapshot_logs) == 1
-        assert "cache_stats_snapshot" in snapshot_logs[0].msg or "cache_stats_snapshot" in str(snapshot_logs[0].msg)
+        assert "cache_stats_snapshot" in snapshot_logs[0].msg or "cache_stats_snapshot" in str(
+            snapshot_logs[0].msg
+        )
 
     def test_does_not_log_too_frequently(self, monkeypatch, caplog):
         """日志间隔未到时不应重复输出。"""
@@ -705,8 +702,8 @@ class TestFingerprintValidation:
         assert found is not None
         assert found.original_query == "test"
 
-    def test_fingerprint_mismatch_cache_miss(self):
-        """指纹不匹配时缓存应视为 miss。"""
+    def test_fingerprint_mismatch_l1_still_hits(self):
+        """L1 不校验指纹，指纹变更后 L1 缓存仍应命中。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
@@ -714,10 +711,11 @@ class TestFingerprintValidation:
         # 改变指纹
         cache.update_fingerprint("fp_v2")
         found = cache.lookup("sess", "hash")
-        assert found is None
+        assert found is not None
+        assert found.original_query == "test"
 
-    def test_fingerprint_mismatch_removes_entry(self):
-        """指纹不匹配时应从存储中移除旧条目。"""
+    def test_fingerprint_mismatch_l1_entry_preserved(self):
+        """指纹变更后 L1 条目保留不被删除。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
@@ -725,10 +723,10 @@ class TestFingerprintValidation:
         cache.update_fingerprint("fp_v2")
         cache.lookup("sess", "hash")
 
-        assert cache.size == 0
+        assert cache.size == 1
 
-    def test_fingerprint_mismatch_increments_counter(self):
-        """指纹不匹配时 fingerprint_mismatches 计数器应递增。"""
+    def test_fingerprint_mismatch_l1_no_counter_increment(self):
+        """L1 不校验指纹，fingerprint_mismatches 计数器不应递增。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
@@ -737,8 +735,8 @@ class TestFingerprintValidation:
         cache.lookup("sess", "hash")
 
         stats = cache.get_stats()
-        assert stats["fingerprint_mismatches"] == 1
-        assert stats["misses"] == 1
+        assert stats["fingerprint_mismatches"] == 0
+        assert stats["hits"] == 1
 
     def test_no_fingerprint_set_all_hits_pass(self):
         """未设置指纹时（向后兼容），所有查找应正常通过。"""
@@ -764,20 +762,20 @@ class TestFingerprintValidation:
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
         cache.update_fingerprint("fp_v2")
-        # 先确认 fp_v2 会让旧条目失败
-        assert cache.lookup("sess", "hash") is None
+        # L1 不校验指纹 → 仍命中
+        assert cache.lookup("sess", "hash") is not None
 
         # 重新存入 fp_v1 的条目
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
 
-        # 设为 None → 禁用校验
+        # 设为 None → 也命中（向后兼容）
         cache.update_fingerprint(None)
         found = cache.lookup("sess", "hash")
         assert found is not None
 
     def test_multiple_entries_different_fingerprints(self):
-        """同时存储不同指纹的条目，匹配当前指纹的应命中。"""
+        """不同指纹的 L1 条目在指纹变更后仍然命中（L1 不校验指纹）。"""
         cache = CacheManager(max_size=10)
 
         cache.update_fingerprint("fp_v1")
@@ -787,9 +785,11 @@ class TestFingerprintValidation:
         cache.update_fingerprint("fp_v2")
         cache.store("sess", "hash_c", _make_result("v2_c"))
 
-        # 当前指纹为 fp_v2，v1 的条目不应命中
-        assert cache.lookup("sess", "hash_a") is None
-        assert cache.lookup("sess", "hash_b") is None
+        # L1 不校验指纹，所有条目均应命中
+        assert cache.lookup("sess", "hash_a") is not None
+        assert cache.lookup("sess", "hash_a").original_query == "v1_a"
+        assert cache.lookup("sess", "hash_b") is not None
+        assert cache.lookup("sess", "hash_b").original_query == "v1_b"
         assert cache.lookup("sess", "hash_c") is not None
         assert cache.lookup("sess", "hash_c").original_query == "v2_c"
 
@@ -801,8 +801,7 @@ class TestL2FingerprintValidation:
         """L2 指纹匹配时正常返回。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
-        cache.store_l2("test query", _make_result("test"),
-                       knowledge_type="general_knowledge")
+        cache.store_l2("test query", _make_result("test"), knowledge_type="general_knowledge")
 
         found = cache.lookup_l2("test query")
         assert found is not None
@@ -812,8 +811,7 @@ class TestL2FingerprintValidation:
         """L2 指纹不匹配时应返回 None。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
-        cache.store_l2("test query", _make_result("test"),
-                       knowledge_type="general_knowledge")
+        cache.store_l2("test query", _make_result("test"), knowledge_type="general_knowledge")
 
         cache.update_fingerprint("fp_v2")
         found = cache.lookup_l2("test query")
@@ -823,8 +821,7 @@ class TestL2FingerprintValidation:
         """L2 指纹不匹配时应从存储中移除。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
-        cache.store_l2("test query", _make_result("test"),
-                       knowledge_type="general_knowledge")
+        cache.store_l2("test query", _make_result("test"), knowledge_type="general_knowledge")
 
         cache.update_fingerprint("fp_v2")
         cache.lookup_l2("test query")
@@ -835,8 +832,7 @@ class TestL2FingerprintValidation:
         """L2 指纹不匹配时 l2_fingerprint_mismatches 计数器应递增。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
-        cache.store_l2("test query", _make_result("test"),
-                       knowledge_type="general_knowledge")
+        cache.store_l2("test query", _make_result("test"), knowledge_type="general_knowledge")
 
         cache.update_fingerprint("fp_v2")
         cache.lookup_l2("test query")
@@ -848,34 +844,33 @@ class TestL2FingerprintValidation:
     def test_l2_no_fingerprint_set_all_hits_pass(self):
         """L2 未设置指纹时（向后兼容），所有查找正常通过。"""
         cache = CacheManager(max_size=10)
-        cache.store_l2("test query", _make_result("test"),
-                       knowledge_type="general_knowledge")
+        cache.store_l2("test query", _make_result("test"), knowledge_type="general_knowledge")
 
         found = cache.lookup_l2("test query")
         assert found is not None
 
     def test_l1_l2_independent_fingerprint_validation(self):
-        """L1 和 L2 的指纹校验应独立工作。"""
+        """L1 不校验指纹（仍命中），L2 校验指纹（miss）。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("l1_v1"))
-        cache.store_l2("test query", _make_result("l2_v1"),
-                       knowledge_type="general_knowledge")
+        cache.store_l2("test query", _make_result("l2_v1"), knowledge_type="general_knowledge")
 
         cache.update_fingerprint("fp_v2")
 
-        # 两者都应因指纹不匹配而 miss
-        assert cache.lookup("sess", "hash") is None
+        # L1 不校验指纹 → 仍命中
+        assert cache.lookup("sess", "hash") is not None
+        assert cache.size == 1
+        # L2 校验指纹 → miss
         assert cache.lookup_l2("test query") is None
-        assert cache.size == 0
         assert cache.l2_size == 0
 
 
 class TestFingerprintSweep:
     """验证 _sweep_expired 在指纹不匹配时的行为。"""
 
-    def test_sweep_removes_fingerprint_mismatched_l1(self):
-        """_sweep_expired 应移除指纹不匹配的 L1 条目。"""
+    def test_sweep_l1_preserves_fingerprint_mismatched(self):
+        """_sweep_expired 对 L1 不检查指纹不匹配（设计决策），应保留条目。"""
         cache = CacheManager(max_size=10, ttl_seconds=3600)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash_a", _make_result("a"))
@@ -884,8 +879,8 @@ class TestFingerprintSweep:
         cache.update_fingerprint("fp_v2")
 
         removed = cache._sweep_expired(cache._store, "l1")
-        assert removed == 2
-        assert cache.size == 0
+        assert removed == 0
+        assert cache.size == 2
 
     def test_sweep_removes_fingerprint_mismatched_l2(self):
         """_sweep_expired 应移除指纹不匹配的 L2 条目。"""

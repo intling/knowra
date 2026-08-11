@@ -89,7 +89,7 @@ QUERY_REWRITE_TIMEOUT: float = 5.0               # 重写超时更短，避免�
 QUERY_REWRITE_API_BASE_URL: str = ""             # 为空时复用 document_embedding_api_base_url 或 chat_api_base_url
 ```
 
-### 3. 策略路由：两阶段 LLM 调用（分类→执行）
+### 3. 策略路由与执行：两阶段 LLM 调用（分类→执行）
 
 **选择**：先通过正则检测指代词（零 LLM 成本），若有指代词则先执行上下文融合（1 次调用），再进行意图分类+复杂度评分（1 次调用），最后根据结果选择性地执行重写策略（0-3 次调用）。简单查询（complexity ≤ 2, factual）直接跳过重写。
 
@@ -101,8 +101,17 @@ QUERY_REWRITE_API_BASE_URL: str = ""             # 为空时复用 document_embe
 | complexity 3-5 | 规范重述 + 术语对齐 |
 | complexity ≥ 6 | 规范重述 + 术语对齐 + 扩展重述（本阶段不使用 HyDE/Multi-Query） |
 
+**策略执行模型**：
+
+路由决策产出策略列表后，执行阶段遵循以下规则（在 ``_do_rewrite()`` 中实现）：
+
+1. **并行执行非依赖策略**：normalize 和 term_align 无依赖关系，当管线剩余预算 ≥ 16s（每个策略最低 8s）时，通过 ``asyncio.gather`` 并行执行，两者接收相同的当前查询作为输入。并行块（Step 4a）必须在串行块（Step 4b）之前执行，确保 normalize 的结果能作为 expand 的输入。
+2. **策略优先级动态调整**：预算紧张（无法并行）时，策略按优先级降序串行执行：``normalize (0) > term_align (1) > expand (2)``。高优先级策略的输出作为低优先级策略的输入。
+3. **硬超时兜底**：每个策略通过 ``asyncio.wait_for`` 施加硬超时（``strategy_timeout``，默认 30s）。单策略超时后仅丢弃该策略，其余策略继续执行——超时隔离保证单个慢策略不会阻塞管线。
+4. **预算感知**：每个策略执行前检查管线剩余时间预算，预算 < 2s 时跳过后续所有策略。
+
 **替代方案**：单次 LLM 调用完成分类和重写——无法做分层跳过，简单查询也会产生不必要的 LLM 调用。
-**理由**：分层调用遵循"低成本策略优先"原则，避免为简单查询浪费计算资源。指代词检测通过正则实现（零 LLM 成本），避免了对含指代词的查询进行两次分类（先分类→消解→再分类）的浪费——含指代词的查询必须在消解后才能准确分类，因此先消解再分类一次即可。不含指代词的简单查询在分类阶段即可被门控拦截，后续零 LLM 调用。
+**理由**：分层调用遵循"低成本策略优先"原则，避免为简单查询浪费计算资源。指代词检测通过正则实现（零 LLM 成本），避免了对含指代词的查询进行两次分类（先分类→消解→再分类）的浪费——含指代词的查询必须在消解后才能准确分类，因此先消解再分类一次即可。不含指代词的简单查询在分类阶段即可被门控拦截，后续零 LLM 调用。并行执行利用 normalize 和 term_align 的独立性减少端到端延迟；优先级排序确保预算紧张时最高价值的策略优先执行；硬超时防止单策略卡死拖垮整个管线。
 
 ### 4. 精确词保护：纯本地实现，零 LLM 成本
 
@@ -162,12 +171,105 @@ L2: 语义向量缓存 —— key = quantize(query_vector)
 
 **理由**：模块一精确缓存覆盖"同一对话中重复提问"的常见场景（如用户反复确认信息）。模块二负责语义缓存 + 意图检测（连续重复检测），在后续阶段处理跨对话复用和用户不满意重新生成的场景。
 
+#### 动态 TTL 策略
+
+缓存条目按内容类型采用差异化 TTL，避免"一刀切"导致的内存浪费或过早失效：
+
+| 内容类型 | TTL | 判定方式 | 理由 |
+|---------|-----|---------|------|
+| **通用知识** (`general_knowledge`) | **30 分钟** (`QUERY_REWRITE_CACHE_TTL_GENERAL_KNOWLEDGE`) | L2 上下文相关性校验通过（答案不依赖特定对话历史）的缓存条目 | 通用知识（如"报销流程"、"Python 语法"）跨会话复用价值高，适当延长 TTL |
+| **上下文依赖** (`context_dependent`) | **5 分钟** (`QUERY_REWRITE_CACHE_TTL_CONTEXT_DEPENDENT`) | L2 校验判定答案依赖特定历史背景（如"基于刚才的代码"）的条目——仅限当前会话 L1 复用，不进入 L2 跨会话缓存 | 依赖上下文的答案在对话结束后快速失效，避免占用内存；短 TTL 覆盖同一对话内的回看场景 |
+| **搜索结果缓存** (`search_result`) | **10 分钟** (`QUERY_REWRITE_CACHE_TTL_SEARCH`) | 语义搜索结果（向量检索结果 + LLM 回答）缓存条目 | 搜索结果时效性介于通用知识和上下文依赖之间，10 分钟平衡新鲜度和命中率 |
+| **零向量** | **不缓存** | 查询向量化后为零向量（全零向量）的查询 | 零向量通常是 embedding API 失败或空输入的产物，无语义价值，缓存无意义且可能污染语义检索结果 |
+
+**TTL 判定流程**：
+```
+CacheManager.store(query, result)
+  │
+  ├── 零向量检查 → 直接跳过，不写入任何缓存
+  ├── 通用知识标记 → L2 TTL = 30min，写入 L2
+  └── 上下文依赖标记 → L1 TTL = 5min，仅写 L1，不写 L2
+```
+
+所有 TTL 均可通过环境变量独立配置，以支持不同场景的调优需求。
+
+#### 知识库指纹（Fingerprint）机制
+
+**问题**：当用户上传新文档、删除旧文档或修改文档内容后，知识库的语义空间发生变化。基于旧知识库生成的缓存答案可能不再准确（例如旧文档中的流程已更新）。当前 L2 语义缓存仅基于查询向量相似度匹配，不感知知识库版本变化，存在返回过时答案的风险。
+
+**方案**：引入知识库指纹（`kb_fingerprint`）——一个反映当前知识库状态的摘要哈希：
+
+```
+kb_fingerprint = SHA256(
+    sorted([
+        doc_id + ":" + updated_at.isoformat()
+        for doc in active_documents
+    ])
+)[:16]
+```
+
+**工作原理**：
+1. **计算时机**：每次缓存读写时，从数据库查询当前所有活跃文档的 `(id, updated_at)` 列表，计算指纹。指纹计算开销极低（仅查询文档元数据，不扫描内容）。
+2. **写入缓存**：`CacheManager.store()` 将当前 `kb_fingerprint` 作为缓存条目的元数据字段一并存储。
+3. **读取缓存**：`CacheManager.lookup_l2()` 命中语义相似条目后，**额外校验**缓存条目的 `kb_fingerprint` 是否与当前指纹一致：
+   - 一致 → 缓存有效，继续上下文相关性校验
+   - 不一致 → **缓存失效**，丢弃该条目（惰性删除），记录 `l2_fingerprint_mismatch` 事件，回退到正常重写管线
+4. **指纹变更触发范围**：仅影响 L2 跨会话缓存。L1 精确缓存（会话绑定，TTL 短）不受指纹机制影响——同一会话内知识库不可能在 5-30 分钟内发生变更。
+
+**与 file-upload-storage 的协同**：`file-upload-storage` 模块已实现的 `checksum_sha256` 内容去重机制为本功能提供了数据基础——文档的 `updated_at` 字段在每次上传/替换时更新，指纹随之变化，无需额外修改上传模块。
+
+**配置**：
+```
+QUERY_REWRITE_CACHE_FINGERPRINT_ENABLED = true   # 指纹机制开关
+```
+
+#### 跨会话 L2 缓存的知识库版本感知
+
+在已有 L2 语义缓存跨会话支持的基础上，增加知识库版本感知层：
+
+```
+L2 缓存命中判定流程（更新后）：
+  query_vector
+    │
+    ├── 1. 向量余弦距离 ≤ 0.05（语义相似）    ← 原有逻辑
+    ├── 2. kb_fingerprint 匹配                  ← 新增：知识库版本感知
+    ├── 3. 上下文相关性校验（LLM 轻量判断）     ← 原有逻辑
+    └── 4. TTL 未过期（按内容类型动态判定）     ← 新增：动态 TTL
+```
+
+只有以上 4 层校验全部通过，L2 缓存才返回命中结果。任一校验失败均回退到正常重写管线。这保证了跨会话复用的缓存答案既语义相关、又版本有效、又上下文安全、又未过期。
+
+#### 性能优化：写入时抽样清理
+
+**问题**：内存 LRU 缓存在长期运行中会积累大量过期条目（TTL 已过期但未被访问的条目）。传统方案是后台定时任务扫描清理，但这会引入后台线程管理复杂度。
+
+**方案**：采用**写入时抽样清理（Write-Time Sampling Cleanup）**——在每次缓存写入时，以概率 P（默认 10%，通过 `QUERY_REWRITE_CACHE_SAMPLING_CLEANUP_RATIO` 配置）触发一次轻量清理扫描：
+
+```
+CacheManager.store(query, result):
+    cache[key] = entry
+    
+    if random() < QUERY_REWRITE_CACHE_SAMPLING_CLEANUP_RATIO:  # 默认 0.1
+        _cleanup_expired()        # 扫描并移除 TTL 过期条目
+        _cleanup_stale_fingerprint()  # 扫描并移除指纹不匹配的条目
+```
+
+**清理策略**：
+- **TTL 过期清理**：遍历缓存条目，移除 `now - created_at > ttl` 的条目（按条目自身的动态 TTL 判定）
+- **指纹过期清理**：移除 `entry.kb_fingerprint != current_fingerprint` 的条目
+- **上限保护**：单次清理最多扫描 `QUERY_REWRITE_CACHE_MAX_CLEANUP_SCAN`（默认 500）个条目，防止大规模缓存时清理阻塞写入路径
+- **清理耗时**：遍历 500 条目的清理耗时 < 1ms，对写入延迟影响可忽略
+
+**替代方案**：后台定时线程扫描清理。
+**拒绝理由**：引入线程管理复杂度、与 asyncio 事件循环的协调成本、多 worker 部署时的重复清理。写入时抽样清理利用写入操作自然分布的时间点，概率性地维持缓存健康度，零额外线程开销。
+
 ### 6. 质量评估与回溯：改写安全网
 
 **选择**：采用**三层递进式安全网**（从快到慢、从廉价到昂贵）：
 
 1. **确定性预检查（零 LLM 成本）**：
-   - **关键词留存检查**：从原始查询中提取名词/实体（jieba 词性标注或简单正则），验证在改写结果中出现。留存率 < 阈值（默认 70%）→ 自动丢弃。
+   - **关键词留存检查**：使用 2-gram 中文分词（双字滑动窗口）+ 拉丁字母单词提取，过滤常见停用词后，通过子串包含判定（``token in rewritten_text``）计算留存率。相比逐字 n-gram 集合交集法，分词后匹配能正确识别"基本"/"操作"等有意义 token，避免"本操"等噪声。
+   - **分层阈值**：按意图类型采用不同的关键词留存率阈值。``procedural`` / ``chitchat`` / ``ambiguous`` 允许更低留存率（0.50–0.55），因为补全、规范化本身就是策略目标；``factual`` 使用更高阈值（0.80）防止事实类查询变形；其他意图使用默认值（0.70）。
    - **长度比例检查**：改写长度 / 原始长度 < 0.3 或 > 5.0 → 标记可疑，降低评估通过阈值。
 
 2. **LLM 质量评估（5 维成对比较评分）**：
@@ -177,8 +279,9 @@ L2: 语义向量缓存 —— key = quantize(query_vector)
    - `total_score < 15` → 触发**单次回溯**（最多 1 次，升级策略重新改写）。二次失败直接丢弃，不再重试——避免无限回溯导致延迟爆炸。
 
 3. **降级兜底**：质量评估本身超时或失败时，保守接受改写结果（避免因评估器故障丢弃有效改写）。
+  4. **单策略 normalize 降级快速路径**：当仅执行 ``normalize`` 一个策略且确定性预检查失败时，不丢弃结果——接受为 ``quality_fallback``。normalize 只是清理/补全，不应因关键词留存率不足而丢弃其输出。
 
-**理由**：LLM 改写存在"越改越差"的风险——表达更流畅但丢失了关键语义（如将 "JVM Full GC 频繁触发" 改写为 "Java 性能问题" 丢失了 GC 的精确概念）。纯 LLM 质量评估存在"用 LLM 评判 LLM"的循环问题，因此补充确定性预检查作为第一道防线（零成本、零偏差）。成对比较提示词比绝对评分更可靠，因为 LLM 在"判断哪个更好"任务中比"给绝对分数"任务中表现更稳定。
+**理由**：LLM 改写存在"越改越差"的风险——表达更流畅但丢失了关键语义（如将 "JVM Full GC 频繁触发" 改写为 "Java 性能问题" 丢失了 GC 的精确概念）。纯 LLM 质量评估存在"用 LLM 评判 LLM"的循环问题，因此补充确定性预检查作为第一道防线（零成本、零偏差）。成对比较提示词比绝对评分更可靠，因为 LLM 在"判断哪个更好"任务中比"给绝对分数"任务中表现更稳定。分层阈值承认不同意图的改写目标不同——procedural 的补全规范化本身就是目标，不应与 factual 的事实保留使用同一标准。单策略 normalize 快速路径避免清理/补全类改写因形式化预检被误杀。
 
 ### 7. 审计日志：仅 structlog 文件输出，不持久化数据库
 
@@ -274,6 +377,69 @@ YAML 是多行多段落文本编辑的行业标准格式选择（LangChain、DSP
 
 **理由**：YAML Catalog 在「零运维成本」和「可维护性」之间取得最佳平衡。Prompt 变更可以通过编辑一个文件完成，Git diff 清晰可读，不增加外部依赖，不引入新的基础设施。三层降级保证紧急热修复、日常迭代、零配置场景都有对应路径。
 
+### Decision 10: RAG 回答生成的可靠性保障机制
+
+**决策**：在 RAG 管线的 LLM 回答生成环节引入五层可靠性保障机制：关闭 SDK 内部重试由业务层统一管理、搜推分离超时策略、生成快速失败降级返回、流式生成首 token 超时检测、以及 ChatCircuitBreaker 熔断器。
+
+**背景**：RAG 回答生成（SearchService 中调用 ChatAdapter 生成 AI 回答）是整个搜索链路的最终环节，其稳定性和延迟直接影响用户体验。当前存在以下风险：
+- OpenAI SDK 默认 `max_retries=2`，与业务层自有的指数退避重试叠加导致超时放大
+- 搜索（向量检索）和生成（LLM 回答）共享相同的超时和重试配置，LLM 延迟会阻塞快速检索结果的返回
+- LLM 超时后缺少兜底策略，用户可能长时间等待后看到错误而非部分有效结果
+- 无流式生成能力，用户需等待完整的 LLM 回复后才能看到内容
+- LLM 持续故障时缺乏自动熔断保护，故障请求反复消耗配额和资源
+
+**实现方案**：
+
+1. **关闭 SDK 内部重试**：`ChatAdapter.__init__()` 中 `AsyncOpenAI(max_retries=0)`，将重试逻辑完全收归业务层。业务层重试策略（指数退避 + jitter + 429 Retry-After 支持）相比 SDK 默认重试具有更精确的错误分类（仅对可重试错误如 429/5xx 重试，4xx 不重试）和抗惊群的 jitter 机制。避免 SDK 层 × 业务层双重重试导致不可控的延迟积累。
+
+2. **搜推分离超时策略**：搜索和生成使用独立的超时和重试参数：
+   - `chat_request_timeout=15s`：单次 LLM 生成调用超时（区别于通用的 `request_timeout=60s`）
+   - `chat_max_retries=1`：业务层仅重试 1 次，总等待上限 30s
+   - 搜索（向量检索）超时独立配置，不受 LLM 延迟影响
+   - 确保即使 LLM 响应缓慢，检索结果仍可快速返回
+
+3. **LLM 快速失败 + 降级返回**：SearchService 中将 `_generate_answer()` 调用包装在 `asyncio.wait_for(timeout=20s)` 安全网中：
+   - 超时或失败时返回降级 SearchResponse
+   - `generation_error` 字段描述失败原因（如 "LLM generation timeout after 20s"）
+   - `answer` 返回友好提示文案（如 "AI 回答生成超时，请稍后重试或优化查询后重新搜索"）
+   - `answer_tokens=0` 且 `chat_model` 仍然返回以反映配置
+   - `results` 字段正常返回检索结果（不因生成失败而丢弃检索结果）
+   - 核心原则：**搜索结果优先可用，AI 回答尽力而为**
+
+4. **流式生成 + 首 token 超时**：新增 `ChatAdapter.generate_async()` 基于 `stream=True` 的异步生成方法：
+   - `chat_first_token_timeout=10s`：若 10s 内未收到首个 token 则判定服务不可用并快速失败
+   - 流式接收过程中连接中断或超时同样触发降级
+   - 避免用户长时间等待无响应的 LLM 请求
+   - 积累到完整内容后返回 `ChatResult`（与同步 generate() 接口一致）
+   - 内部通过 `_iter_stream_with_first_timeout()` 实现：首个 chunk 使用 `asyncio.wait_for` 超时监控，后续 chunk 无超时限制
+
+5. **ChatCircuitBreaker 熔断器**：新增独立于查询重写的 LLM 生成熔断器：
+   - `ChatCircuitBreaker` 独立追踪 LLM 生成失败计数
+   - 连续失败 N 次（配置项 `CHAT_CIRCUIT_BREAKER_THRESHOLD`，默认 5）后自动熔断
+   - 冷却期（`CHAT_CIRCUIT_BREAKER_COOLDOWN_SECONDS`，默认 60s）内跳过 LLM 调用直接返回降级响应
+   - 冷却期满后进入半开状态，允许 1 次探测请求通过：成功 → 恢复（关闭熔断），失败 → 重新断开
+   - 熔断时返回的降级响应中 `generation_error` 描述为 "AI 回答生成暂时不可用（已熔断），请稍后重试"
+   - 配置项 `CHAT_CIRCUIT_BREAKER_ENABLED`（默认 true）可全局关闭熔断逻辑
+   - 与查询重写熔断器（`QueryRewriteCircuitBreaker`）共享 `CircuitBreaker` 基类但独立追踪状态
+
+**配置项**：
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| CHAT_REQUEST_TIMEOUT | 15.0 | 单次生成调用超时（秒），与通用 request_timeout 分离 |
+| CHAT_MAX_RETRIES | 1 | 业务层生成重试次数（SDK 已关闭内部重试） |
+| CHAT_FIRST_TOKEN_TIMEOUT | 10.0 | 流式生成首 token 超时（秒），超时判定服务不可用 |
+| CHAT_CIRCUIT_BREAKER_ENABLED | true | 生成熔断器开关 |
+| CHAT_CIRCUIT_BREAKER_THRESHOLD | 5 | 连续失败 N 次后熔断 |
+| CHAT_CIRCUIT_BREAKER_COOLDOWN_SECONDS | 60 | 熔断冷却时间（秒） |
+
+**考虑过的替代方案**：
+- A) 保持 SDK 默认重试 + 业务层重试：拒绝——双重重试导致超时不可控，故障场景下延迟累积至分钟级
+- B) 统一超时（search 和 chat 使用同一个 timeout）：拒绝——无法解耦检索和生成两个独立阶段，LLM 延迟会阻塞检索结果
+- C) 熔断器仅覆盖查询重写：不够——LLM 生成同样是外部依赖，故障时需同等保护
+- D) 使用同步 `generate()` 而非流式 `generate_async()`：不够——无法感知服务响应延迟，用户需等待完整超时后才能得知服务不可用
+
+**理由**：五层机制构成递进式防护网——SDK 零重试避免延迟不可控 → 搜推分离保证检索独立 → 降级返回保证部分结果可用 → 首 token 超时快速检测故障 → 熔断器避免持续冲击。每层独立生效且向后兼容（熔断和降级逻辑始终生效，不影响未配置流式生成的已有部署）。
+
 ## Risks / Trade-offs
 
 - **[延迟增加] 重写模块增加 1-4 次 LLM 调用，P50 延迟增加 ~200-400ms（缓存命中时）至 ~2-4s（全部调用未命中时）**。
@@ -289,8 +455,9 @@ YAML 是多行多段落文本编辑的行业标准格式选择（LangChain、DSP
 - **[改写质量不稳定] LLM 可能越改越差——流畅但丢失关键语义**。
   三层安全网（从快到慢、从廉价到昂贵）：
   1. **确定性预检查（零 LLM 成本）**：
-     - **关键词留存检查**：从原始查询中提取名词/实体（通过 jieba 词性标注或简单正则），验证这些词在改写结果中出现。留存率 < 阈值（如 70%）→ 自动丢弃，不进入 LLM 评估。
+     - **关键词留存检查**：使用 2-gram 中文分词（双字滑动窗口）+ 子串包含判定计算留存率。留存率 < 意图对应的分层阈值 → 自动丢弃，不进入 LLM 评估。分层阈值：procedural/chitchat/ambiguous → 0.50–0.55；factual → 0.80；其他意图 → 0.70。
      - **长度比例检查**：改写长度 < 原始长度 × 0.3 或 > 原始长度 × 5 → 标记为可疑，降低 LLM 评估通过阈值。
+     - **单策略 normalize 快速路径**：仅 normalize 策略执行且预检失败时，接受为 quality_fallback（normalize 只是清理/补全，不改变语义）。
   2. **LLM 质量评估（5 维评分）**：
      - `semantic_preservation < 3` → 自动丢弃（硬约束）
      - `total_score < 15` → 触发单次回溯（最多 1 次，升级策略重新改写），二次失败则丢弃
@@ -313,7 +480,7 @@ YAML 是多行多段落文本编辑的行业标准格式选择（LangChain、DSP
 
 **部署步骤：**
 
-1. **添加环境变量**：在 `.env` 和 `.env.example` 中新增 ~23 个 `QUERY_REWRITE_` 前缀的配置项，默认启用
+1. **添加环境变量**：在 `.env` 和 `.env.example` 中新增 ~30 个 `QUERY_REWRITE_` 前缀的配置项，默认启用
 2. **部署后端代码**：新模块通过 DI 注入 SearchService，无需数据库 migration
 3. **验证向后兼容**：设置 `QUERY_REWRITE_ENABLED=false` 后系统行为与部署前一致
 4. **渐进式灰度**：先设置 `QUERY_REWRITE_ENABLED=true` 观察日志中的改写质量和缓存命中率，确认稳定后全量开启
@@ -340,7 +507,13 @@ YAML 是多行多段落文本编辑的行业标准格式选择（LangChain、DSP
 | QUERY_REWRITE_STRATEGY_TERM_ALIGN | true | 术语对齐开关 |
 | QUERY_REWRITE_SKIP_MAX_COMPLEXITY | 2 | 跳过重写的复杂度阈值 |
 | QUERY_REWRITE_CACHE_L1_TTL_SECONDS | 3600 | L1 缓存 TTL |
-| QUERY_REWRITE_CACHE_L2_TTL_SECONDS | 21600 | L2 缓存 TTL |
+| QUERY_REWRITE_CACHE_L2_TTL_SECONDS | 21600 | L2 缓存 TTL（默认值，实际按内容类型动态判定） |
+| QUERY_REWRITE_CACHE_TTL_GENERAL_KNOWLEDGE | 1800 | 通用知识缓存 TTL（秒），默认 30 分钟 |
+| QUERY_REWRITE_CACHE_TTL_CONTEXT_DEPENDENT | 300 | 上下文依赖缓存 TTL（秒），默认 5 分钟 |
+| QUERY_REWRITE_CACHE_TTL_SEARCH | 600 | 搜索结果缓存 TTL（秒），默认 10 分钟 |
+| QUERY_REWRITE_CACHE_FINGERPRINT_ENABLED | true | 知识库指纹缓存失效开关，关闭后 L2 缓存不校验知识库版本 |
+| QUERY_REWRITE_CACHE_SAMPLING_CLEANUP_RATIO | 0.1 | 写入时抽样清理触发概率，0 表示禁用 |
+| QUERY_REWRITE_CACHE_MAX_CLEANUP_SCAN | 500 | 单次抽样清理最大扫描条目数 |
 | QUERY_REWRITE_QUALITY_MIN_TOTAL_SCORE | 15 | 质量最低通过分 |
 | QUERY_REWRITE_QUALITY_KEYWORD_RETENTION_THRESHOLD | 0.7 | 关键词留存率阈值，低于此值自动丢弃改写（零 LLM 成本） |
 | QUERY_REWRITE_QUALITY_MAX_BACKTRACK_ATTEMPTS | 1 | 质量不合格时最大回溯重试次数，防止无限回溯 |

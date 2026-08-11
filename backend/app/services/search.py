@@ -13,8 +13,10 @@ L1 搜索响应缓存（会话绑定精确匹配）：
 """
 
 import asyncio
+import dataclasses
 import hashlib
 import inspect
+import threading
 import time
 
 from sqlmodel import Session, func, select
@@ -26,6 +28,7 @@ from app.models.document_parsing import ParsedDocument
 from app.models.uploaded_file import UploadedFile
 from app.schemas.search import (
     AnswerTokens,
+    QualityScores,
     RewriteInfo,
     RewrittenQuery,
     SearchResponse,
@@ -33,7 +36,46 @@ from app.schemas.search import (
 )
 from app.services.chat_adapter import ChatAdapter, ChatAPIError
 from app.services.chat_config import ChatConfig
+from app.services.circuit_breaker import CircuitBreaker
 from app.services.embedding_adapter import EmbeddingAdapter
+
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+
+def _run_async(coro):
+    """Safely await a coroutine in both sync and async contexts.
+
+    Uses ``asyncio.run()`` when no event loop is active.  When called from inside
+    a running event loop (e.g. Starlette's TestClient with anyio), the coroutine
+    is dispatched to a fresh event loop on a background thread.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        # No running loop — asyncio.run() is safe.
+        return asyncio.run(coro)
+
+    # An event loop is already running.  Create a new one on a dedicated thread
+    # to avoid "cannot be called from a running event loop" errors.
+    result_container: dict[str, object] = {}
+    error_container: dict[str, Exception] = {}
+
+    def _target() -> None:
+        try:
+            result_container["value"] = asyncio.run(coro)
+        except Exception as exc:  # noqa: BLE001
+            error_container["value"] = exc
+
+    thread = threading.Thread(target=_target, daemon=True)
+    thread.start()
+    thread.join()
+
+    if "value" in error_container:
+        raise error_container["value"]
+    return result_container["value"]
+
 
 # ── prompt 模板 ──────────────────────────────────────────────────────────
 
@@ -68,6 +110,10 @@ _CHAT_DISABLED_ANSWER = "AI 回答生成功能未启用，请联系管理员配�
 _CHAT_FAILED_ANSWER = "AI 回答生成失败，请稍后重试。以下为检索到的相关内容。"
 _CHAT_DISABLED_ERROR = "Chat generation is disabled"
 
+# LLM 答案生成总超时（秒）—— 含首 token 等待 + 流式收集 + 重试
+# 单次 HTTP 超时 15s + 1 次重试 最坏 30s，此 20s 兜底确保不会无限等待
+_CHAT_GENERATION_TOTAL_TIMEOUT = 20.0
+
 # 防御性截断：单条历史消息的最大字符数，防止超长历史撑爆 prompt
 _HISTORY_MESSAGE_MAX_CHARS = 2000
 
@@ -91,6 +137,7 @@ class SearchService:
         query_rewriter: object | None = None,
         response_cache: object | None = None,
         audit_trail: object | None = None,
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
         self._session = session
         self._embedding_adapter = embedding_adapter
@@ -101,6 +148,7 @@ class SearchService:
         self._query_rewriter = query_rewriter
         self._response_cache = response_cache
         self._audit_trail = audit_trail
+        self._circuit_breaker = circuit_breaker
         self._logger = get_logger(__name__)
 
     # ── public API ──────────────────────────────────────────────────
@@ -213,9 +261,9 @@ class SearchService:
                     query, session_id=resolved_session_id, history=history
                 )
                 # QueryRewriter.rewrite() is async in production, but tests use sync mocks.
-                # Use asyncio.run() for real coroutines, pass through sync results directly.
+                # Use _run_async() for real coroutines, pass through sync results directly.
                 if inspect.isawaitable(rewrite_result):
-                    rewrite_result = asyncio.run(rewrite_result)
+                    rewrite_result = _run_async(rewrite_result)
                 # 使用改写后的首个查询进行向量化
                 if rewrite_result.rewritten_queries:
                     query_for_embedding = rewrite_result.rewritten_queries[0]["query"]
@@ -237,6 +285,13 @@ class SearchService:
                     intent=rewrite_result.intent,
                     complexity=rewrite_result.complexity,
                     cache_level=rewrite_result.cache_level,
+                    quality_scores=(
+                        QualityScores(**dataclasses.asdict(rewrite_result.quality_scores))
+                        if rewrite_result.quality_scores is not None
+                        else None
+                    ),
+                    backtrack_triggered=rewrite_result.backtrack_triggered,
+                    backtrack_strategy=rewrite_result.backtrack_strategy,
                 )
             except Exception as exc:
                 self._logger.warning("query_rewrite_failed", error=str(exc))
@@ -314,8 +369,9 @@ class SearchService:
             return response
 
         # 8. LLM 生成（含优雅降级）
+        #    _generate_answer 为 async，在此通过 _run_async 桥接同步调用
         answer, answer_tokens, chat_model, prompt_messages, generation_error = (
-            self._generate_answer(query, rows, history=history)
+            _run_async(self._generate_answer(query, rows, history=history))
         )
 
         # 9. 组装响应
@@ -464,7 +520,7 @@ class SearchService:
 
     # ── private: LLM generation ─────────────────────────────────────
 
-    def _generate_answer(
+    async def _generate_answer(
         self, query: str, rows, history: list[dict] | None = None
     ) -> tuple[
         str,  # answer
@@ -479,6 +535,15 @@ class SearchService:
         generation_error)``.  On the happy path ``generation_error`` is ``None``;
         when non-``None`` it signals that ``answer`` is a degradation fallback
         rather than an LLM-authored response.
+
+        LLM 调用采用 **异步流式 + 首 token 超时 + 整体超时兜底** 三层防护：
+
+        1. **首 token 超时**（``chat_first_token_timeout``，默认 10s）：
+           首个 token 未在此时间内到达 → 判定服务不可用，快速降级。
+        2. **流式收集**：一旦首 token 到达即表明模型在工作，后续收集无单独时限，
+           避免因生成慢而被误杀。
+        3. **整体超时兜底**（``_CHAT_GENERATION_TOTAL_TIMEOUT``，20s）：
+           ``asyncio.wait_for`` 硬限时，防止流式收集无限挂起。
 
         When a **403** is received from the upstream API (common with API proxies
         that have content-safety filters), the method retries once with the
@@ -502,13 +567,32 @@ class SearchService:
                 _CHAT_DISABLED_ERROR,
             )
 
+        # ── 熔断器检查：已断开 → 跳过 LLM 调用，直接返回降级文本 ──
+        if self._circuit_breaker is not None and not self._circuit_breaker.before_call():
+            self._logger.warning(
+                "chat_circuit_breaker_open",
+                query=query,
+                failure_count=self._circuit_breaker.failure_count,
+            )
+            return (
+                _CHAT_FAILED_ANSWER,
+                None,
+                None,
+                [],
+                "Circuit breaker open — chat generation skipped",
+            )
+
         # 组装 prompt（使用分块完整文本，非截断版本）
         messages = self._assemble_prompt(query, rows, history=history)
 
-        def _try_generate(msgs: list[dict]) -> tuple:
-            """尝试调用 LLM，返回 (answer, answer_tokens, chat_model, messages, error)。"""
+        async def _try_generate(msgs: list[dict]) -> tuple:
+            """异步调用 LLM（流式 + 首 token 超时），返回 (answer, answer_tokens, chat_model, messages, error)。"""
             try:
-                chat_result = self._chat_adapter.generate(msgs)
+                # asyncio.wait_for 硬兜底：即使流式收集挂起也不会超过 20s
+                chat_result = await asyncio.wait_for(
+                    self._chat_adapter.generate_async(msgs),
+                    timeout=_CHAT_GENERATION_TOTAL_TIMEOUT,
+                )
                 answer_tokens = AnswerTokens(
                     prompt_tokens=chat_result.prompt_tokens,
                     completion_tokens=chat_result.completion_tokens,
@@ -521,10 +605,17 @@ class SearchService:
                     msgs,
                     None,
                 )
+            except asyncio.TimeoutError:
+                self._logger.warning(
+                    "chat_generation_total_timeout",
+                    timeout=_CHAT_GENERATION_TOTAL_TIMEOUT,
+                    user_query=query,
+                )
+                return (None, None, None, msgs, ChatAPIError("LLM generation timed out"))
             except ChatAPIError as exc:
                 return (None, None, None, msgs, exc)
 
-        result = _try_generate(messages)
+        result = await _try_generate(messages)
         answer, answer_tokens, chat_model, final_messages, gen_error = result
 
         if gen_error is not None and gen_error.status_code == 403:
@@ -539,7 +630,7 @@ class SearchService:
                 merged_message_count=len(merged_messages),
                 total_chars=sum(len(m["content"]) for m in merged_messages),
             )
-            result = _try_generate(merged_messages)
+            result = await _try_generate(merged_messages)
             answer, answer_tokens, chat_model, final_messages, gen_error = result
 
         if gen_error is not None:
@@ -554,6 +645,9 @@ class SearchService:
                 context_chunk_count=len(rows),
                 total_prompt_chars=sum(len(m["content"]) for m in final_messages),
             )
+            # ── 通知熔断器：LLM 调用失败 ──
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.on_failure()
             return (
                 _CHAT_FAILED_ANSWER,
                 None,
@@ -562,6 +656,9 @@ class SearchService:
                 str(gen_error),
             )
 
+        # ── 通知熔断器：LLM 调用成功 ──
+        if self._circuit_breaker is not None:
+            self._circuit_breaker.on_success()
         return (
             answer or "",
             answer_tokens,

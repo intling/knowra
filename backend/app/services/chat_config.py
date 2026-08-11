@@ -25,6 +25,7 @@ class ChatConfig:
     max_tokens: int
     request_timeout: float
     max_retries: int
+    first_token_timeout: float
 
     @classmethod
     def from_settings(cls, settings=None) -> ChatConfig:
@@ -42,6 +43,7 @@ class ChatConfig:
             max_tokens=settings.chat_max_tokens,
             request_timeout=settings.chat_request_timeout,
             max_retries=settings.chat_max_retries,
+            first_token_timeout=settings.chat_first_token_timeout,
         )
 
     def snapshot(self) -> dict[str, Any]:
@@ -57,4 +59,5 @@ class ChatConfig:
             "max_tokens": self.max_tokens,
             "request_timeout": self.request_timeout,
             "max_retries": self.max_retries,
+            "first_token_timeout": self.first_token_timeout,
         }

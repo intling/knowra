@@ -8,6 +8,25 @@ from pydantic import BaseModel, Field
 # ── 查询重写信息 ────────────────────────────────────────────────────────
 
 
+class QualityScores(BaseModel):
+    """改写质量 5 维评分模型。
+
+    由 Postprocessor 评估生成，提供改写质量的量化指标。
+    """
+
+    semantic_preservation: int = Field(description="语义保留度（1-5）", ge=1, le=5)
+    clarity_improvement: int = Field(description="清晰度提升（1-5）", ge=1, le=5)
+    information_gain: int = Field(description="信息增量（1-5）", ge=1, le=5)
+    term_accuracy: int = Field(description="术语准确性（1-5）", ge=1, le=5)
+    retrievability: int = Field(description="可检索性（1-5）", ge=1, le=5)
+    total_score: int = Field(description="五项总分（5-25）")
+    verdict: Literal["excellent", "good", "marginal", "poor"] = Field(description="综合评级")
+    issues: list[str] = Field(
+        default_factory=list,
+        description="发现的问题列表",
+    )
+
+
 class RewrittenQuery(BaseModel):
     """单条重写结果 —— 改写后的查询文本及其策略来源。"""
 
@@ -52,6 +71,18 @@ class RewriteInfo(BaseModel):
     cache_level: Literal["L1", "L2"] | None = Field(
         default=None,
         description="缓存命中层级（L1 精确命中 / L2 语义命中 / None 未命中）",
+    )
+    quality_scores: QualityScores | None = Field(
+        default=None,
+        description="集成联调 —— 改写质量 5 维评分集（Postprocessor 评估结果）",
+    )
+    backtrack_triggered: bool = Field(
+        default=False,
+        description="是否触发过回溯重试（首次质量不合格时自动升级策略重新改写）",
+    )
+    backtrack_strategy: str | None = Field(
+        default=None,
+        description="回溯后使用的升级策略名称（如 'expand'），未触发回溯时为 None",
     )
 
 

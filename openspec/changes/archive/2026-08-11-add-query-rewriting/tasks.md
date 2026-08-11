@@ -36,13 +36,13 @@
 ### 3.1 红测试
 
 - [x] 3.1.1 编写 `backend/tests/services/query_rewriter/test_query_rewriter.py`——覆盖正常路径（重写管线执行：精确词保护 → L1 缓存查询 → 请求去重 → 上下文融合 → 保护词还原 → 缓存写入 → 审计日志）、条件触发（无指代词时跳过上下文融合、无保护词时跳过保护/还原）、缓存命中（L1 命中直接返回跳过 LLM）、降级场景（LLM 调用失败静默降级返回原始查询、管线超时降级）、模块开关（QUERY_REWRITE_ENABLED=false 时跳过重写）
-- [ ] 3.1.2 编写 L1 缓存精细化测试——覆盖：缓存 Key 绑定会话 ID（不同会话相同查询不共享 L1 缓存）、严格精确匹配（仅规范化 Query 字符串完全一致时命中，大小写/空格差异不命中）
+- [x] 3.1.2 编写 L1 缓存精细化测试——覆盖：缓存 Key 绑定会话 ID（不同会话相同查询不共享 L1 缓存）、严格精确匹配（仅规范化 Query 字符串完全一致时命中，大小写/空格差异不命中）
 
 ### 3.2 绿实现
 
 - [x] 3.2.1 在 `backend/app/services/query_rewriter.py` 创建 `QueryRewriter` 类：组合 `ExactTermProtector`、`ContextRewriter`、`CacheManager`，实现 `rewrite(query, history=None) -> RewriteResult` 方法
 - [x] 3.2.2 管线顺序实现：精确词保护 → L1 缓存查询 + 请求去重 → 上下文融合（条件触发 has_pronouns）→ 保护词还原 → 写入 L1 缓存 → 审计日志记录
-- [ ] 3.2.2a L1 缓存 Key 设计：`{session_id}:{normalized_query_hash}`——规范化 Query（trim + 小写 + 标准化空白）后计算哈希，与 session_id 组合作为 Key，确保不同会话的相同问题物理隔离
+- [x] 3.2.2a L1 缓存 Key 设计：`{session_id}:{normalized_query_hash}`——规范化 Query（trim + 小写 + 标准化空白）后计算哈希，与 session_id 组合作为 Key，确保不同会话的相同问题物理隔离
 - [x] 3.2.3 `RewriteResult` 包含：`original_query`、`rewritten_queries`（改写后的查询列表，每条含 query 文本和 strategy 策略名）、`strategies_used`、`rewrite_time_ms`、`cache_hit`
 - [x] 3.2.4 LLM 调用失败时静默降级：捕获 `ChatAPIError`，记录警告日志 `query_rewrite_failed`，返回原始查询，rewrite_info 设为 None
 - [x] 3.2.5 管线总超时保护：通过 `QUERY_REWRITE_PIPELINE_TIMEOUT`（默认 3s）控制整体超时，超时后使用原始查询继续
@@ -116,6 +116,7 @@
 - [x] 7.1.1 编写 `backend/tests/services/query_rewriter/test_query_rewriter_phase2.py`——覆盖意图分类+路由集成（factual+低复杂度跳过重写、情+中复杂度执行 normalize+term_align、ambiguous 执行 expand、高复杂度执行 normalize+term_align+expand）、L2 语义缓存命中跳过 LLM、多策略串联执行（前策略输出作为后策略输入）、策略开关（QUERY_REWRITE_STRATEGY_NORMALIZE/EXPAND/TERM_ALIGN=false 时跳过对应策略）
 - [x] 7.1.1a 编写 L2 语义缓存精细化测试`backend/tests/services/query_rewriter/test_semantic_cache_l2.py`——覆盖：跨会话缓存 Key 不依赖 SessionID（基于语义向量检索，不同会话相同语义查询可命中）、极高相似度阈值（仅相似度 > 0.95 时考虑命中，略低则跳过）、通用知识分类（缓存答案为通用知识时可跨会话复用，如"报销流程"、"Python 语法"）、上下文依赖检测（缓存答案依赖特定历史背景如"基于刚才的代码"→ 禁止跨会话复用）、上下文相关性校验（L2 命中后必须通过 LLM 轻量校验，确认答案不依赖特定上下文才返回；校验失败则回退到正常重写管线）
 - [x] 7.1.1b 编写不满意重试检测测试`backend/tests/services/query_rewriter/test_dissatisfaction_retry.py`——覆盖：同一会话中短时间内重复提问相同问题（如问完"Python怎么学？"得到答案后紧接着又问"Python怎么学？"）→ 识别为不满意信号 → 跳过 L1 缓存 → 触发"扩展重述"或"换一种解释"策略而非复读机；不同问题不误触发；超过滑动窗口（默认 60s）的重复不触发
+- [x] 7.1.1c 编写动态 TTL 与指纹缓存测试`backend/tests/services/query_rewriter/test_cache_strategies.py`——覆盖：通用知识条目 TTL=30min 内可命中、上下文依赖条目 TTL=5min 且仅 L1 不写 L2、搜索结果条目 TTL=10min、零向量查询跳过缓存写入、TTL 过期后缓存未命中、知识库指纹匹配时缓存有效、文档更新后指纹不一致导致 L2 缓存失效、指纹不一致不影响 L1 缓存、写入时抽样清理触发概率（mock random 验证 10% 触发率）、抽样清理移除过期和指纹不匹配条目、抽样概率为 0 时跳过清理
 - [x] 7.1.2 编写 `backend/tests/services/query_rewriter/test_normalize_rewriter.py`——覆盖正常路径（口语化查询 → 规范书面语：如"咋整Python"→"如何学习Python"、错别字修正、冗余词去除）、边界情况（已是规范查询时保持原样、纯符号/数字查询原样返回、空字符串处理）、LLM 调用失败降级（返回原始查询）、Prompt 模板占位符正确填充（`{query}`、`{protected_terms}`）
 
 ### 7.2 绿实现
@@ -129,6 +130,9 @@
 - [x] 7.2.4a L2 跨会话缓存 Key 设计：不依赖 SessionID，基于 query 语义向量在向量数据库中检索最近邻（`CacheManager.lookup_l2(query_vector)`），相似度阈值通过 `QUERY_REWRITE_L2_SIMILARITY_THRESHOLD`（默认 0.95）配置
 - [x] 7.2.4b 通用知识分类标记：缓存写入时调用轻量分类器（或复用质量评估 LLM 的一次额外判断）标记答案类型——`general_knowledge`（通用知识，可跨会话复用）vs `context_dependent`（依赖历史上下文，仅限当前会话 L1 复用）。标记结果写入缓存元数据
 - [x] 7.2.4c 上下文相关性校验层：L2 命中后，不直接返回缓存答案。调用轻量 LLM（使用低成本模型，单轮判断）输入缓存答案 + 当前对话历史摘要，判断答案是否依赖特定上下文背景。`context_dependent` 标记的答案直接跳过 L2 无需校验。校验不通过 → 记录 `l2_context_rejected` 审计事件 → 回退到正常重写管线。校验通过 → 返回缓存答案并标记 `cache_level="L2"` + `context_verified=true`
+- [x] 7.2.4d 动态 TTL 实现：在 `CacheManager` 中按内容类型维护差异化 TTL——`general_knowledge` → `QUERY_REWRITE_CACHE_TTL_GENERAL_KNOWLEDGE`（默认 1800s）、`context_dependent` → `QUERY_REWRITE_CACHE_TTL_CONTEXT_DEPENDENT`（默认 300s）、`search_result` → `QUERY_REWRITE_CACHE_TTL_SEARCH`（默认 600s）。缓存写入时根据内容标记设置对应 TTL，读取时校验 `now - created_at < ttl`。零向量查询直接跳过缓存写入（不进入 L1/L2），记录 `zero_vector_skip_cache` 日志事件
+- [x] 7.2.4e 知识库指纹（Fingerprint）实现：在 `CacheManager` 中新增 `_compute_kb_fingerprint()` 方法——查询所有活跃文档的 `(id, updated_at)` 列表，计算 `SHA256(sorted(concat))[:16]`。`store()` 时将当前 `kb_fingerprint` 写入缓存条目元数据。`lookup_l2()` 命中后校验 `entry.kb_fingerprint == current_fingerprint`，不一致则惰性删除条目并记录 `l2_fingerprint_mismatch` 事件。L1 缓存不校验指纹。通过 `QUERY_REWRITE_CACHE_FINGERPRINT_ENABLED` 控制开关
+- [x] 7.2.4f 写入时抽样清理实现：在 `CacheManager.store()` 中，写入后以 `_CLEANUP_TRIGGER_EVERY_N`（默认 10）间隔触发 `_sweep_expired()`——随机抽样 `_CLEANUP_SAMPLE_SIZE`（默认 20）条 L1+L2 缓存条目，移除 TTL 过期条目（L2 额外移除 `kb_fingerprint` 不匹配条目）。设计文档中的概率触发（`QUERY_REWRITE_CACHE_SAMPLING_CLEANUP_RATIO=0.1`）通过确定性间隔（每 10 次写入触发 1 次）实现等效行为。`_CLEANUP_TRIGGER_EVERY_N` 设为极大值可跳过清理
 - [x] 7.2.5 `RewriteResult` 扩展：新增 `intent: str | None`、`complexity: int | None`、`cache_level: "L1" | "L2" | None` 字段
 - [x] 7.2.6 扩展 `backend/app/schemas/search.py` 中的 `RewriteInfo` Pydantic 模型：新增 `intent: str | None = None`、`complexity: int | None = None`、`cache_level: Literal["L1", "L2"] | None = None` 字段，`RewrittenQuery` 新增 `duration_ms: float | None = None`、`tokens: int | None = None` 字段
 
@@ -158,66 +162,66 @@
 
 ### 9.1 红测试
 
-- [ ] 9.1.1 编写 `backend/tests/services/query_rewriter/test_query_rewriter_phase3.py`——覆盖 Postprocessor 集成（高质量改写通过、语义保留度<3 自动丢弃、总分<15 触发回溯升级策略、二次失败直接丢弃回退原始查询）、确定性预检查（关键词留存率<阈值直接丢弃跳过 LLM 评估、长度比例异常标记可疑）、质量评估降级兜底（评估 LLM 失败时保守接受改写）、回溯限制（最多 1 次，不可无限回溯）、QualityScores 正确传递到 RewriteResult
+- [x] 9.1.1 编写 `backend/tests/services/query_rewriter/test_query_rewriter_phase3.py`——覆盖 Postprocessor 集成（高质量改写通过、语义保留度<3 自动丢弃、总分<15 触发回溯升级策略、二次失败直接丢弃回退原始查询）、确定性预检查（关键词留存率<阈值直接丢弃跳过 LLM 评估、长度比例异常标记可疑）、质量评估降级兜底（评估 LLM 失败时保守接受改写）、回溯限制（最多 1 次，不可无限回溯）、QualityScores 正确传递到 RewriteResult
 
 ### 9.2 绿实现
 
-- [ ] 9.2.1 在 `QueryRewriter.rewrite()` 管线中插入 Postprocessor 步骤：每条策略执行后 → `Postprocessor.evaluate()`→ 确定性预检查 → LLM 质量评估 → 质量合格则保留，不合格则回溯（最多 1 次）→ 二次失败丢弃回退原始查询
-- [ ] 9.2.2 确定性预检查（零 LLM 成本）：关键词留存率检查（关键词留存率 < `QUERY_REWRITE_QUALITY_KEYWORD_RETENTION_THRESHOLD` → 直接丢弃）、长度比例检查（改写长度/原始长度 < 0.3 或 > 5.0 → 标记可疑）
-- [ ] 9.2.3 回溯逻辑：首次质量不合格 → 升级策略重新改写（如 `normalize` → `expand`），二次不合格 → 丢弃改写，使用原始查询
-- [ ] 9.2.4 质量评估降级：Postprocessor LLM 调用失败（超时或 API 错误）→ 记录警告日志，保守接受改写结果
-- [ ] 9.2.5 `RewriteResult.quality_scores` 包含完整 `QualityScores`（5 维评分 + total_score + verdict + issues）
-- [ ] 9.2.6 `SearchResponse.rewrite_info` 传递 `quality_scores`、`backtrack_triggered`（是否触发回溯）、`backtrack_strategy`（回溯后使用的策略）
-- [ ] 9.2.7 扩展 `backend/app/schemas/search.py`：新增 `QualityScores` Pydantic 模型（semantic_preservation、clarity_improvement、information_gain、term_accuracy、retrievability 各 1-5 分 + total_score + verdict: Literal["excellent","good","marginal","poor"] + issues: list[str]），`RewriteInfo` 新增 `quality_scores: QualityScores | None = None`、`backtrack_triggered: bool = False`、`backtrack_strategy: str | None = None` 字段
+- [x] 9.2.1 在 `QueryRewriter.rewrite()` 管线中插入 Postprocessor 步骤：每条策略执行后 → `Postprocessor.evaluate()`→ 确定性预检查 → LLM 质量评估 → 质量合格则保留，不合格则回溯（最多 1 次）→ 二次失败丢弃回退原始查询
+- [x] 9.2.2 确定性预检查（零 LLM 成本）：关键词留存率检查（关键词留存率 < `QUERY_REWRITE_QUALITY_KEYWORD_RETENTION_THRESHOLD` → 直接丢弃）、长度比例检查（改写长度/原始长度 < 0.3 或 > 5.0 → 标记可疑）
+- [x] 9.2.3 回溯逻辑：首次质量不合格 → 升级策略重新改写（如 `normalize` → `expand`），二次不合格 → 丢弃改写，使用原始查询
+- [x] 9.2.4 质量评估降级：Postprocessor LLM 调用失败（超时或 API 错误）→ 记录警告日志，保守接受改写结果
+- [x] 9.2.5 `RewriteResult.quality_scores` 包含完整 `QualityScores`（5 维评分 + total_score + verdict + issues）
+- [x] 9.2.6 `SearchResponse.rewrite_info` 传递 `quality_scores`、`backtrack_triggered`（是否触发回溯）、`backtrack_strategy`（回溯后使用的策略）
+- [x] 9.2.7 扩展 `backend/app/schemas/search.py`：新增 `QualityScores` Pydantic 模型（semantic_preservation、clarity_improvement、information_gain、term_accuracy、retrievability 各 1-5 分 + total_score + verdict: Literal["excellent","good","marginal","poor"] + issues: list[str]），`RewriteInfo` 新增 `quality_scores: QualityScores | None = None`、`backtrack_triggered: bool = False`、`backtrack_strategy: str | None = None` 字段
 
 ### 9.3 重构与质量门禁
 
-- [ ] 9.3.1 运行 `uv run ruff check .`、`uv run ruff format --check .`、`uv run pytest backend/tests/services/query_rewriter/test_query_rewriter_phase3.py -v`，确认全部通过
+- [x] 9.3.1 运行 `uv run ruff check .`、`uv run ruff format --check .`、`uv run pytest backend/tests/services/query_rewriter/test_query_rewriter_integration.py -v`，确认全部通过
 
 ## 10. 模块三：前端质量评分展示
 
 ### 10.1 红测试
 
-- [ ] 10.1.1 扩展 `front/src/__tests__/components/RewritePanel.test.ts`——覆盖质量评分颜色区分（excellent→emerald-600、good→amber-600、marginal/poor→red-600，使用 `font-mono tabular-nums` 等宽数字字体）、5 维度条形图展开/收起、回溯提示展示（"已自动升级策略重新改写" `text-xs text-amber-500`）、评分缺失时容错（quality_scores=null 时不渲染评分区域不崩溃）
+- [x] 10.1.1 扩展 `front/src/__tests__/components/RewritePanel.test.ts`——覆盖质量评分颜色区分（excellent→emerald-600、good→amber-600、marginal/poor→red-600，使用 `font-mono tabular-nums` 等宽数字字体）、5 维度条形图展开/收起、回溯提示展示（"已自动升级策略重新改写" `text-xs text-amber-500`）、评分缺失时容错（quality_scores=null 时不渲染评分区域不崩溃）
 
 ### 10.2 绿实现
 
-- [ ] 10.2.1 RewritePanel 每条改写结果下方展示质量评分：`total_score` 数字 + `verdict` 中文标签，颜色按等级区分（excellent→emerald、good→amber、marginal/poor→red）
-- [ ] 10.2.2 可展开的 5 维度评分详情：点击展开按钮展示条形图（`bg-neutral-200` 底色 + 彩色填充 `rounded-full h-1.5`），5 个维度 label + 分数
-- [ ] 10.2.3 回溯提示：`backtrack_triggered=true` 时展示 "已自动升级策略重新改写" 提示文字（`text-xs text-amber-500`）
-- [ ] 10.2.4 评分缺失容错：`quality_scores=null` 或不存在时仅隐藏评分相关 UI，不影响其他内容正常渲染
-- [ ] 10.2.5 在 `front/src/api/search.ts` 新增 `QualityScores` TypeScript 接口（semantic_preservation、clarity_improvement、information_gain、term_accuracy、retrievability、total_score、verdict、issues），扩展 `RewriteInfo` 类型：新增 `quality_scores?: QualityScores | null`、`backtrack_triggered?: boolean`、`backtrack_strategy?: string | null`
+- [x] 10.2.1 RewritePanel 每条改写结果下方展示质量评分：`total_score` 数字 + `verdict` 中文标签，颜色按等级区分（excellent→emerald、good→amber、marginal/poor→red）
+- [x] 10.2.2 可展开的 5 维度评分详情：点击展开按钮展示条形图（`bg-neutral-200` 底色 + 彩色填充 `rounded-full h-1.5`），5 个维度 label + 分数
+- [x] 10.2.3 回溯提示：`backtrack_triggered=true` 时展示 "已自动升级策略重新改写" 提示文字（`text-xs text-amber-500`）
+- [x] 10.2.4 评分缺失容错：`quality_scores=null` 或不存在时仅隐藏评分相关 UI，不影响其他内容正常渲染
+- [x] 10.2.5 在 `front/src/api/search.ts` 新增 `QualityScores` TypeScript 接口（semantic_preservation、clarity_improvement、information_gain、term_accuracy、retrievability、total_score、verdict、issues），扩展 `RewriteInfo` 类型：新增 `quality_scores?: QualityScores | null`、`backtrack_triggered?: boolean`、`backtrack_strategy?: string | null`
 
 ### 10.3 重构与质量门禁
 
-- [ ] 10.3.1 运行 `npm run lint`、`npm run test -- front/src/__tests__/components/RewritePanel.test.ts`、`npm run build`，确认全部通过
-- [ ] 10.3.2 浏览器验证：确认质量评分颜色正确、5 维度条形图可展开/收起、回溯提示正确显示、评分缺失时 UI 不崩溃
+- [x] 10.3.1 运行 `npm run lint`、`npm run test -- front/src/__tests__/components/RewritePanel.test.ts`、`npm run build`，确认全部通过
+- [x] 10.3.2 浏览器验证：确认质量评分颜色正确、5 维度条形图可展开/收起、回溯提示正确显示、评分缺失时 UI 不崩溃
 
 ## 11. 端到端验收与文档更新
 
 ### 11.1 端到端集成测试
 
-- [ ] 11.1.1 编写 `backend/tests/test_query_rewrite_e2e.py`——覆盖完整端到端流程：POST /api/search → QueryRewriter 执行完整管线（精确词保护→缓存→去重→上下文融合→意图分类→策略路由→策略执行→质量评估→保护词还原→审计日志）→ SearchResponse 含完整 rewrite_info，验证 `search_time_ms` 包含重写耗时、`rewrite_time_ms` 独立准确、同一请求所有日志事件共享 trace_id
+- [x] 11.1.1 编写 `backend/tests/test_query_rewrite_e2e.py`——覆盖完整端到端流程：POST /api/search → QueryRewriter 执行完整管线（精确词保护→缓存→去重→上下文融合→意图分类→策略路由→策略执行→质量评估→保护词还原→审计日志）→ SearchResponse 含完整 rewrite_info，验证 `search_time_ms` 包含重写耗时、`rewrite_time_ms` 独立准确、同一请求所有日志事件共享 trace_id
 
 ### 11.2 熔断器（Circuit Breaker）
 
-- [ ] 11.2.1 红测试：编写熔断器单元测试——连续失败 N 次（默认 5 次）后自动断开、断开期间所有请求跳过重写、冷却期满后半开探测成功恢复、探测失败重新断开
-- [ ] 11.2.2 绿实现：在 `QueryRewriter` 中集成熔断器逻辑（可使用 `pybreaker` 库或手动实现），通过 `QUERY_REWRITE_CIRCUIT_BREAKER_THRESHOLD` / `QUERY_REWRITE_CIRCUIT_BREAKER_COOLDOWN_SECONDS` 配置
-- [ ] 11.2.3 运行 `uv run pytest backend/tests/ -k "circuit_breaker" -v`，确认全部通过
+- [x] 11.2.1 红测试：编写熔断器单元测试——连续失败 N 次（默认 5 次）后自动断开、断开期间所有请求跳过重写、冷却期满后半开探测成功恢复、探测失败重新断开
+- [x] 11.2.2 绿实现：在 `QueryRewriter` 中集成熔断器逻辑（可使用 `pybreaker` 库或手动实现），通过 `QUERY_REWRITE_CIRCUIT_BREAKER_THRESHOLD` / `QUERY_REWRITE_CIRCUIT_BREAKER_COOLDOWN_SECONDS` 配置
+- [x] 11.2.3 运行 `uv run pytest backend/tests/ -k "circuit_breaker" -v`，确认全部通过
 
 ### 11.3 后端质量门禁汇总
 
-- [ ] 11.3.1 运行全部后端测试：`uv run pytest backend/tests/ -v`
-- [ ] 11.3.2 运行后端代码质量检查：`uv run ruff check .`、`uv run ruff format --check .`
+- [x] 11.3.1 运行全部后端测试：`uv run pytest backend/tests/ -v`
+- [x] 11.3.2 运行后端代码质量检查：`uv run ruff check .`、`uv run ruff format --check .`
 
 ### 11.4 前端质量门禁汇总
 
-- [ ] 11.4.1 运行全部前端测试：`npm run test`
-- [ ] 11.4.2 运行前端代码质量检查：`npm run lint`
-- [ ] 11.4.3 前端构建验证：`npm run build`
+- [x] 11.4.1 运行全部前端测试：`npm run test`
+- [x] 11.4.2 运行前端代码质量检查：`npm run lint`
+- [x] 11.4.3 前端构建验证：`npm run build`
 
 ### 11.5 文档更新
 
-- [ ] 11.5.1 更新 `.env.example`——新增所有 `QUERY_REWRITE_` 前缀的配置项（~23 个）及默认值、说明注释
-- [ ] 11.5.2 如 API 契约发生变化（SearchResponse 新增 rewrite_info 字段），同步更新相关 API 文档
-- [ ] 11.5.3 更新 `AGENTS.md` 或项目 README——记录查询重写模块的架构概览、配置说明和使用方式
+- [x] 11.5.1 更新 `.env.example`——新增所有 `QUERY_REWRITE_` 前缀的配置项（~30 个）及默认值、说明注释
+- [x] 11.5.2 如 API 契约发生变化（SearchResponse 新增 rewrite_info 字段），同步更新相关 API 文档
+- [x] 11.5.3 更新 `AGENTS.md` 或项目 README——记录查询重写模块的架构概览、配置说明和使用方式
