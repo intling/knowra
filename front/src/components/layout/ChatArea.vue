@@ -29,8 +29,6 @@ const chatStore = useChatStore()
 
 const query = ref("")
 const topK = ref(5)
-const loading = ref(false)
-const loadingStage = ref<"searching" | "generating" | null>(null)
 const files = ref<AttachedFile[]>([])
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const forceReplace = ref(false)
@@ -39,7 +37,6 @@ const forceReplace = ref(false)
 let autoTitledForStoreId: string | null = null
 
 let nextBubbleId = 0
-let loadingTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Bubbles (store-backed, 响应式) ─────────────────────────────────────────
 
@@ -51,6 +48,20 @@ const bubbles = computed<ChatBubble[]>(() => {
   return conv.bubbles
 })
 
+/** 当前活跃对话是否处于“等待响应”状态（存在 response/error 均为 null 的在途气泡）。
+ *  从气泡持久化数据派生，而非组件局部状态，因此切换对话后仍能正确反映加载态，
+ *  并让输入框保持加载样式、发送按钮保持禁用。 */
+const loading = computed(() =>
+  bubbles.value.some((bubble) => !bubble.response && !bubble.error),
+)
+
+/** 当前在途气泡的加载阶段（searching/generating）。
+ *  同样从气泡持久化数据派生，切换对话后能恢复正确阶段文案。 */
+const loadingStage = computed<"searching" | "generating" | null>(() => {
+  const pending = bubbles.value.find((bubble) => !bubble.response && !bubble.error)
+  return pending?.stage ?? null
+})
+
 // ── 切换对话时重置本地 UI 状态 ────────────────────────────────────────────
 
 watch(
@@ -59,11 +70,8 @@ watch(
     if (newId !== oldId) {
       query.value = ""
       files.value = []
-      loading.value = false
-      loadingStage.value = null
       nextBubbleId = 0
       autoTitledForStoreId = null
-      clearLoadingTimer()
     }
   },
 )
@@ -101,13 +109,6 @@ function buildHistory(previousBubbles: ChatBubble[]): Record<string, unknown>[] 
     history.push({ role: "assistant", content: bubble.response.answer })
   }
   return history
-}
-
-function clearLoadingTimer() {
-  if (loadingTimer !== null) {
-    clearTimeout(loadingTimer)
-    loadingTimer = null
-  }
 }
 
 /** 确保存在活跃对话（防御：无活跃对话时自动创建） */
@@ -170,10 +171,6 @@ function handleRemoveFile(id: string) {
 
 // ── Send ───────────────────────────────────────────────────────────────────
 
-function transitionLoadingStage(stage: "searching" | "generating") {
-  loadingStage.value = stage
-}
-
 async function handleSend() {
   const trimmed = query.value.trim()
   const hasUploadedFiles = files.value.some((f) => f.status === "uploaded")
@@ -195,6 +192,7 @@ async function handleSend() {
     fileNames: attachedFileNames,
     response: null,
     error: null,
+    stage: "searching",
   }
 
   // 持久化气泡到 store（立即反映到 UI，Optimistic UI）
@@ -208,12 +206,16 @@ async function handleSend() {
 
   query.value = ""
   files.value = []
-  loading.value = true
-  loadingStage.value = "searching"
 
-  // Transition to "generating" after 2s for UX feedback
-  loadingTimer = setTimeout(() => {
-    transitionLoadingStage("generating")
+  // Transition to "generating" after 2s for UX feedback。
+  //  写入气泡的 stage 字段（而非组件局部状态），这样即使切换对话，
+  //  该在途气泡的阶段也能被正确持久化并恢复。
+  setTimeout(() => {
+    const conv = chatStore.conversations.find((c) => c.id === conversationId)
+    const pending = conv?.bubbles.find((b) => b.id === bubbleId)
+    if (pending && !pending.response && !pending.error) {
+      chatStore.updateBubble(conversationId, bubbleId, { stage: "generating" })
+    }
   }, 2000)
 
   const queryForApi = trimmed || "总结归纳文档的关键信息"
@@ -231,7 +233,7 @@ async function handleSend() {
     })
 
     // 更新气泡：写入 API 响应数据
-    chatStore.updateBubble(conversationId, bubbleId, { response, error: null })
+    chatStore.updateBubble(conversationId, bubbleId, { response, error: null, stage: null })
 
     // AI 响应回来后，若标题仍为空/默认值，用 AI 回答内容二次提炼
     if (isFirstMessage && response.answer.length > 0) {
@@ -249,12 +251,8 @@ async function handleSend() {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "未知错误"
-    chatStore.updateBubble(conversationId, bubbleId, { error: message })
+    chatStore.updateBubble(conversationId, bubbleId, { error: message, stage: null })
     log().warn("搜索请求失败", { query: queryForApi, error: message })
-  } finally {
-    clearLoadingTimer()
-    loading.value = false
-    loadingStage.value = null
   }
 }
 </script>
@@ -287,9 +285,11 @@ async function handleSend() {
             <!-- User message bubble -->
             <UserMessage :content="bubble.query" :file-names="bubble.fileNames" />
 
-            <!-- Pending skeleton: shown for the current in-flight bubble -->
+            <!-- Pending skeleton: shown while a bubble is awaiting its response.
+                 基于气泡自身状态（response/error 均为空）判断，而非组件级 loading 标志，
+                 从而在切换对话后仍能正确显示未完成气泡的骨架框。 -->
             <div
-              v-if="!bubble.response && !bubble.error && loading"
+              v-if="!bubble.response && !bubble.error"
               class="animate-pulse rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
             >
               <div class="mb-3 h-4 w-20 rounded bg-neutral-200" />
@@ -310,9 +310,9 @@ async function handleSend() {
               <p class="mt-1 text-sm text-red-600">{{ bubble.error }}</p>
             </div>
 
-            <!-- Rewrite panel (above AnswerPanel) -->
+            <!-- Rewrite panel (above AnswerPanel, only when rewrite is enabled) -->
             <RewritePanel
-              v-if="bubble.response"
+              v-if="bubble.response && bubble.response.rewrite_info !== null"
               :rewrite-info="bubble.response.rewrite_info"
             />
 

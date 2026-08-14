@@ -178,15 +178,9 @@ class SearchResponse(BaseModel):
     search_time_ms: float = Field(description="搜索耗时（毫秒）", ge=0)
 
     # ── 查询重写信息 ──
-    rewrite_info: RewriteInfo = Field(
-        default_factory=lambda: RewriteInfo(
-            original_query="",
-            rewritten_queries=[],
-            strategies_used=[],
-            rewrite_time_ms=0.0,
-            cache_hit=False,
-        ),
-        description="查询重写元信息（始终返回，即使未启用重写）",
+    rewrite_info: RewriteInfo | None = Field(
+        default=None,
+        description="查询重写元信息。禁用重写时返回 null。",
     )
 
     # ── 搜索结果 ──

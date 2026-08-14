@@ -320,28 +320,18 @@ describe("search api client", () => {
 
   // ── rewrite_info 字段解析（Phase 1） ───────────────────────────────
 
-  it("parses rewrite_info with basic info when rewriting not enabled", async () => {
-    const basicRewriteInfo: RewriteInfo = {
-      original_query: "测试查询",
-      rewritten_queries: [] as RewrittenQuery[],
-      strategies_used: [],
-      rewrite_time_ms: 0.0,
-      cache_hit: false,
-    }
+  it("parses rewrite_info as null when rewriting is disabled", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ ...SEARCH_RESPONSE, rewrite_info: basicRewriteInfo }),
+      json: () => Promise.resolve({ ...SEARCH_RESPONSE, rewrite_info: null }),
     })
     vi.stubGlobal("fetch", fetchMock)
     const { searchChunks } = await getSearchApi()
 
     const result = await searchChunks({ query: "测试查询" })
 
-    // rewrite_info is always present (never null)
-    expect(result.rewrite_info).not.toBeNull()
-    expect(result.rewrite_info.original_query).toBe("测试查询")
-    expect(result.rewrite_info.rewritten_queries).toHaveLength(0)
-    expect(result.rewrite_info.rewrite_time_ms).toBe(0.0)
+    // rewrite_info is null when QUERY_REWRITE_ENABLED=false
+    expect(result.rewrite_info).toBeNull()
   })
 
   it("parses complete rewrite_info with all fields present", async () => {

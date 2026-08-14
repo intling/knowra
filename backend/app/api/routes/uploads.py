@@ -27,6 +27,7 @@ from app.services.uploads import (
     UploadValidationError,
 )
 from app.services.users import CurrentUserUnavailableError, get_current_user
+from app.api.routes.search import invalidate_all_search_caches
 
 logger = get_logger(__name__)
 
@@ -101,6 +102,21 @@ def create_upload(
     # ── 仅对新上传触发解析流水线；幂等命中时已有完整管线结果 ──────────
     if is_new:
         _try_auto_parse(session, settings, background_tasks, request, current_user, record.id)
+
+    # ── 文档状态变更时失效 L1 搜索缓存 ─────────────────────────────────
+    # 上传新文件或强制替换时，知识库状态已变更，需清除会话级 L1 缓存
+    # 以防止后续搜索返回基于旧知识库状态的缓存结果。
+    # 指纹校验机制提供二级保护（lookup 时惰性淘汰），此调用为主动失效。
+    if is_new or force:
+        removed = invalidate_all_search_caches()
+        if removed["query_rewrite_removed"] or removed["search_response_removed"]:
+            logger.info(
+                "search_caches_invalidated_after_upload",
+                is_new=is_new,
+                force=force,
+                upload_id=str(record.id),
+                **removed,
+            )
 
     # 幂等命中返回 200，新上传返回 201
     status_code_to_use = status.HTTP_201_CREATED if is_new else status.HTTP_200_OK

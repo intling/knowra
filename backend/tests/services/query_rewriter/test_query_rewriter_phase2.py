@@ -552,7 +552,7 @@ class TestL2SemanticCache:
             audit_trail=mock_audit_trail_phase2,
         )
 
-        result = await rewriter.rewrite("完全相同的查询", history=None)
+        result = await rewriter.rewrite("完全相同的查询", session_id="test-session", history=None)
 
         # L1 命中
         assert result.cache_hit is True
@@ -736,9 +736,10 @@ class TestMultiStrategyChaining:
         normalize_input = mock_normalize_rewriter.rewrite.call_args[0][0]
         assert "[[TERM_0]]" in normalize_input
 
-        # 最终保护词被还原
+        # 最终保护词被还原（主策略 normalize 的输出在索引 0，
+        # index -1 是 term_align 辅助记录，其输出保留占位符是预期行为）
         mock_protector_phase2.restore.assert_called_once()
-        assert "Nginx" in result.rewritten_queries[-1]["query"]
+        assert "Nginx" in result.rewritten_queries[0]["query"]
 
     async def test_strategies_used_reflects_executed_strategies(
         self,
@@ -1331,7 +1332,7 @@ class TestRewriteResultPhase2Extensions:
             audit_trail=mock_audit_trail_phase2,
         )
 
-        result = await rewriter.rewrite("完全相同的查询", history=None)
+        result = await rewriter.rewrite("完全相同的查询", session_id="test-session", history=None)
 
         assert result.cache_hit is True
         assert result.cache_level == "L1"

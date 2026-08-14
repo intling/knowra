@@ -596,6 +596,52 @@ def test_search_graceful_degradation_on_llm_failure():
     assert "LLM API timeout" in response.generation_error
 
 
+# 当 ChatAdapter.generate_async() 成功返回但 content 为空串时（例如推理模型
+# 仅通过 reasoning_content 流式输出、或 token 预算耗尽），SearchService 不得
+# 以 generation_error=None 返回空 answer——否则前端 AnswerPanel 会误判为
+# "仍在等待生成"而无限显示"等待 AI 回答生成..."。应视作一次生成失败并降级。
+def test_search_degrades_on_empty_llm_content():
+    module = get_search_module()
+    schema_module = get_schema_module()
+    chat_module = import_module("app.services.chat_adapter")
+
+    rows = [make_fake_db_row(rank=1, score=0.10, text="测试内容")]
+    session = make_fake_session(rows=rows, total_count=1)
+    embedding_adapter = make_fake_embedding_adapter()
+    chat_adapter = make_fake_chat_adapter()
+    chat_adapter.generate_async = AsyncMock(
+        return_value=chat_module.ChatResult(
+            content="",
+            model="test-chat-model",
+            prompt_tokens=10,
+            completion_tokens=0,
+            total_tokens=10,
+        )
+    )
+    chat_config = make_fake_chat_config()
+
+    service = module.SearchService(
+        session=session,
+        embedding_adapter=embedding_adapter,
+        chat_adapter=chat_adapter,
+        chat_config=chat_config,
+    )
+
+    response = service.search(query="测试查询", top_k=5)
+
+    # 检索结果应完整保留
+    assert isinstance(response, schema_module.SearchResponse)
+    assert len(response.results) == 1
+
+    # answer 应为友好的降级提示，而非空字符串
+    assert isinstance(response.answer, str)
+    assert len(response.answer) > 0
+
+    # generation_error 应非空，前端据此展示降级状态而非"等待生成"
+    assert response.generation_error is not None
+    assert "empty content" in response.generation_error
+
+
 # ── 6. 查询向量化失败 ────────────────────────────────────────────────
 
 

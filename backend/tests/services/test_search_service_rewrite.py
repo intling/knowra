@@ -229,7 +229,7 @@ def test_search_calls_rewriter_and_uses_rewritten_query():
 
     # ── 验证 QueryRewriter.rewrite() 被调用 ──
     fake_rewriter.rewrite.assert_called_once_with(
-        "Python 怎么用", session_id="__default__", history=None
+        "Python 怎么用", session_id=None, history=None
     )
 
     # ── 验证向量化使用了改写后的查询 ──
@@ -313,11 +313,11 @@ def test_search_uses_first_rewritten_query_when_multiple_rewrites():
     assert response.rewrite_info.rewrite_time_ms == 78.9
 
 
-# ── 2. 重写未启用时 rewrite_info 包含基本信息 ─────────────────────────
+# ── 2. 重写未启用时 rewrite_info 为 null ─────────────────────────
 
 
 # 当未传入 query_rewriter 参数（None）时，SearchService 应正常搜索，
-# 并返回包含原始查询的基本 RewriteInfo（rewritten_queries 为空）。
+# rewrite_info 应返回 null，前端据此区分"功能未启用"与"重写尝试但无产出"。
 def test_search_rewrite_info_has_original_query_when_no_rewriter_provided():
     module = get_search_module()
     schema_module = get_schema_module()
@@ -338,13 +338,8 @@ def test_search_rewrite_info_has_original_query_when_no_rewriter_provided():
 
     response = service.search(query="测试查询", top_k=5)
 
-    # rewrite_info 应始终非 None，包含原始查询和空改写列表
-    assert response.rewrite_info is not None
-    assert response.rewrite_info.original_query == "测试查询"
-    assert response.rewrite_info.rewritten_queries == []
-    assert response.rewrite_info.strategies_used == []
-    assert response.rewrite_info.rewrite_time_ms == 0.0
-    assert response.rewrite_info.cache_hit is False
+    # rewrite_info 应返回 null（未配置重写）
+    assert response.rewrite_info is None
 
     # 向量化应使用原始查询
     embedding_adapter.embed_single.assert_called_once_with("测试查询")
@@ -354,7 +349,7 @@ def test_search_rewrite_info_has_original_query_when_no_rewriter_provided():
     assert len(response.results) == 1
 
 
-# 当 query_rewriter 被显式传入 None 时，rewrite_info 也包含原始查询信息。
+# 当 query_rewriter 被显式传入 None 时，rewrite_info 也应返回 null。
 def test_search_rewrite_info_has_original_query_when_rewriter_explicitly_none():
     module = get_search_module()
 
@@ -374,9 +369,7 @@ def test_search_rewrite_info_has_original_query_when_rewriter_explicitly_none():
 
     response = service.search(query="任意查询", top_k=5)
 
-    assert response.rewrite_info is not None
-    assert response.rewrite_info.original_query == "任意查询"
-    assert response.rewrite_info.rewritten_queries == []
+    assert response.rewrite_info is None
     # 向量化应使用原始查询
     embedding_adapter.embed_single.assert_called_once_with("任意查询")
 
@@ -675,5 +668,5 @@ def test_search_passes_none_history_when_not_provided():
     service.search(query="独立查询", top_k=5)
 
     fake_rewriter.rewrite.assert_called_once_with(
-        "独立查询", session_id="__default__", history=None
+        "独立查询", session_id=None, history=None
     )

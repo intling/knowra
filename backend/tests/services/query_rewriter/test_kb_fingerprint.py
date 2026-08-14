@@ -99,9 +99,9 @@ class TestFingerprintChange:
             owner_user_id=uuid4(),
             sequence_index=0,
             model="test-model",
-            dimensions=128,
-            embedding_json=[0.1, 0.2],
-            embedding_vector=[0.1, 0.2],
+            dimensions=2560,
+            embedding_json=[0.1] * 2560,
+            embedding_vector=[0.1] * 2560,
         )
         db_session.add(embedding)
         db_session.commit()

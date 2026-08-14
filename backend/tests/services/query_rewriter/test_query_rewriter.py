@@ -433,7 +433,7 @@ class TestQueryRewriterCacheHit:
             audit_trail=mock_audit_trail,
         )
 
-        result = await rewriter.rewrite("如何优化 JVM 参数", history=None)
+        result = await rewriter.rewrite("如何优化 JVM 参数", session_id="test-session", history=None)
 
         assert result.cache_hit is True
         assert result.rewrite_time_ms == 0.5
@@ -467,7 +467,7 @@ class TestQueryRewriterCacheHit:
             audit_trail=mock_audit_trail,
         )
 
-        await rewriter.rewrite("test", history=None)
+        await rewriter.rewrite("test", session_id="test-session", history=None)
 
         mock_audit_trail.record.assert_called()
         audit_kwargs = mock_audit_trail.record.call_args[1]
@@ -573,6 +573,8 @@ class TestQueryRewriterDegradation:
         result = await rewriter.rewrite("test query", history=None)
 
         assert result.original_query == "test query"
+        # 超时降级也应如实上报实际耗时（而非默认 0.0），供前端正确展示。
+        assert result.rewrite_time_ms > 0
 
     async def test_pipeline_timeout_still_completes_without_error(
         self,
@@ -1078,15 +1080,15 @@ class TestSessionScopedCache:
 class TestSessionIdDerivation:
     """验证从对话历史派生 session_id 的逻辑。"""
 
-    def test_no_history_returns_default(self):
-        """无历史时返回默认 session_id。"""
+    def test_no_history_returns_none(self):
+        """无历史时返回 None（无法确定可信会话身份）。"""
         sid = QueryRewriter._derive_session_id(None)
-        assert sid == "__default__"
+        assert sid is None
 
-    def test_empty_history_returns_default(self):
-        """空历史列表时返回默认 session_id。"""
+    def test_empty_history_returns_none(self):
+        """空历史列表时返回 None（无法确定可信会话身份）。"""
         sid = QueryRewriter._derive_session_id([])
-        assert sid == "__default__"
+        assert sid is None
 
     def test_same_history_same_session_id(self):
         """相同历史内容产生相同 session_id。"""

@@ -43,6 +43,7 @@ import asyncio
 import contextlib
 import hashlib
 import inspect
+import threading
 import time
 from dataclasses import dataclass, field, replace
 from typing import Literal
@@ -324,7 +325,7 @@ class QueryRewriter:
         strategy_normalize_enabled: bool = True,
         strategy_expand_enabled: bool = True,
         strategy_term_align_enabled: bool = True,
-        l2_similarity_threshold: float = 0.95,
+        l2_similarity_threshold: float = 0.95,  # 已弃用：当前 L2 为精确文本匹配，阈值检查待向量检索实现后启用
         knowledge_classifier: object | None = None,
         context_verifier: object | None = None,
         # ── 集成联调 新增依赖 ──
@@ -337,6 +338,8 @@ class QueryRewriter:
         l1_context_dependent_ttl: float = 300.0,
         l2_general_ttl: float = 3600.0,
         l2_context_dependent_ttl: float = 600.0,
+        # ── 请求去重超时 ──
+        dedup_timeout: float = 30.0,
     ) -> None:
         self._protector = exact_term_protector
         self._context_rewriter = context_rewriter
@@ -346,6 +349,7 @@ class QueryRewriter:
         self._enabled = enabled
         self._pipeline_timeout = pipeline_timeout
         self._strategy_timeout = strategy_timeout
+        self._dedup_timeout = dedup_timeout
 
         # Phase 2 dependencies
         self._strategy_router = strategy_router
@@ -357,7 +361,7 @@ class QueryRewriter:
         self._strategy_normalize_enabled = strategy_normalize_enabled
         self._strategy_expand_enabled = strategy_expand_enabled
         self._strategy_term_align_enabled = strategy_term_align_enabled
-        self._l2_similarity_threshold = l2_similarity_threshold
+        self._l2_similarity_threshold = l2_similarity_threshold  # 已弃用：当前为精确匹配，向量检索时启用
         self._knowledge_classifier = knowledge_classifier
         self._context_verifier = context_verifier
 
@@ -376,9 +380,10 @@ class QueryRewriter:
 
         self._logger = get_logger(__name__)
 
-        # 请求去重：in-flight 查询追踪
-        self._inflight: dict[str, asyncio.Event] = {}
+        # 请求去重：in-flight 查询追踪（使用 threading.Event 确保跨线程安全）
+        self._inflight: dict[str, threading.Event] = {}
         self._inflight_results: dict[str, RewriteResult] = {}
+        self._inflight_lock = threading.Lock()
 
     # ── 指纹管理 ─────────────────────────────────────────────────────────
 
@@ -389,6 +394,15 @@ class QueryRewriter:
         """
         if self._cache_manager is not None:
             self._cache_manager.update_fingerprint(fingerprint)  # type: ignore[union-attr]
+
+    @property
+    def cache_manager(self):
+        """公开内部 CacheManager 实例，供外部缓存失效操作使用。
+
+        文件操作 API（上传/删除）通过此属性访问缓存，
+        在文档状态变更后主动失效 L1 会话缓存。
+        """
+        return self._cache_manager
 
     # ── helpers ─────────────────────────────────────────────────────────
 
@@ -423,17 +437,18 @@ class QueryRewriter:
         return hashlib.sha256(normalized.encode()).hexdigest()[:16]
 
     @staticmethod
-    def _derive_session_id(history: list[dict] | None) -> str:
+    def _derive_session_id(history: list[dict] | None) -> str | None:
         """从对话历史派生会话标识符。
 
         当外部未提供 session_id 时，通过对历史中的 user/assistant 消息序列
         进行哈希来生成一个稳定的会话标识。同一对话的不同轮次会产生相同的
         session_id（只要历史序列前缀一致）。
 
-        无历史时返回固定默认值 ``"__default__"``。
+        无历史时返回 ``None``，表示无法确定可信会话身份——此时 L1 会话缓存
+        将被跳过，防止匿名/不可信请求之间互相命中私有缓存。
         """
         if not history:
-            return "__default__"
+            return None
 
         normalized = [
             f"{msg.get('role', '')}:{msg.get('content', '')}"
@@ -441,7 +456,7 @@ class QueryRewriter:
             if msg.get("role") in ("user", "assistant")
         ]
         if not normalized:
-            return "__default__"
+            return None
 
         return hashlib.sha256("|".join(normalized).encode()).hexdigest()[:16]
 
@@ -573,7 +588,10 @@ class QueryRewriter:
                 )
 
         # ── L1 缓存：会话绑定查找（不满意重试时跳过）──
-        if not is_dissatisfaction:
+        # 仅当 resolved_session_id 可确定身份时才查询 L1 缓存。
+        # 匿名/不可信请求（session_id 和 history 均缺失）跳过 L1，
+        # 防止不同用户命中彼此的私有缓存结果。
+        if not is_dissatisfaction and resolved_session_id is not None:
             cached = self._cache_manager.lookup(  # type: ignore[union-attr]
                 resolved_session_id, query_hash
             )
@@ -592,23 +610,67 @@ class QueryRewriter:
 
         # ── 请求去重：仅对真正 in-flight（尚未完成）的并发请求共享结果 ──
         # 去重键包含 session_id + query_hash，与缓存键保持一致。
+        # 使用 threading.Event（而非 asyncio.Event）确保跨线程/event loop 安全：
+        #   - FastAPI 的 sync 端点通过 _run_async() 为每个请求创建独立 event loop，
+        #     asyncio.Event 绑定到创建它的 loop，跨 loop 的 set()/wait() 无法互相通知。
+        #   - threading.Event 是 OS 级原语，跨线程/loop 均可正常工作。
         dedup_key = f"{resolved_session_id}:{query_hash}"
-        if dedup_key in self._inflight:
-            inflight_event = self._inflight[dedup_key]
-            if not inflight_event.is_set():
-                await inflight_event.wait()
-                result = self._inflight_results[dedup_key]
-                # 不满意重试时仍记录当前查询
-                if self._dissatisfaction_detector is not None:
-                    self._dissatisfaction_detector.record(resolved_session_id, query_hash)
-                return result
-            # 前一个请求已完成 —— 清理过期状态
-            del self._inflight[dedup_key]
-            self._inflight_results.pop(dedup_key, None)
 
-        event = asyncio.Event()
-        self._inflight[dedup_key] = event
+        # 获取或创建 in-flight event（锁保护 dict 操作）
+        event: threading.Event
+        with self._inflight_lock:
+            existing = self._inflight.get(dedup_key)
+            if existing is not None and not existing.is_set():
+                # 另一个请求正在处理 → 作为 follower 等待
+                event = existing
+            else:
+                # 无活跃请求或前一个已完成 → 作为 leader 注册
+                if existing is not None:
+                    self._inflight_results.pop(dedup_key, None)
+                event = threading.Event()
+                self._inflight[dedup_key] = event
+                # event 由当前请求负责 set()
+                # 注意：需要记录是否为 leader，因为接下来还要判断
+                # 我们通过检查 event 是否等于 existing 来判断
+                existing = None  # 标记为 leader
 
+        # Follower 路径：等待 leader 完成
+        if existing is not None:
+            # 使用 run_in_executor 将阻塞的 threading.Event.wait() 卸载到线程池，
+            # 避免阻塞当前 event loop（同一 loop 场景）同时保持跨线程安全（多 loop 场景）。
+            loop = asyncio.get_running_loop()
+            notified = await loop.run_in_executor(
+                None, event.wait, self._dedup_timeout
+            )
+            if notified:
+                # Leader 已完成，读取结果
+                with self._inflight_lock:
+                    result = self._inflight_results.get(dedup_key)
+                if result is not None:
+                    if self._dissatisfaction_detector is not None:
+                        self._dissatisfaction_detector.record(
+                            resolved_session_id, query_hash
+                        )
+                    return result
+                self._logger.warning(
+                    "inflight_result_missing_after_wait",
+                    dedup_key=dedup_key,
+                )
+            else:
+                self._logger.warning(
+                    "inflight_dedup_timeout",
+                    dedup_key=dedup_key,
+                    timeout_s=self._dedup_timeout,
+                )
+            # 无论是超时还是结果缺失，清理过期状态并降级为 leader
+            with self._inflight_lock:
+                self._inflight.pop(dedup_key, None)
+                self._inflight_results.pop(dedup_key, None)
+                event = threading.Event()
+                self._inflight[dedup_key] = event
+
+        # Leader 路径：执行实际重写
+        leader_start = time.monotonic()
         try:
             result = await asyncio.wait_for(
                 self._do_rewrite(
@@ -621,7 +683,8 @@ class QueryRewriter:
                 ),
                 timeout=self._pipeline_timeout,
             )
-            self._inflight_results[dedup_key] = result
+            with self._inflight_lock:
+                self._inflight_results[dedup_key] = result
 
             # ── 熔断器：成功通知 ──
             if self._circuit_breaker is not None:
@@ -647,8 +710,10 @@ class QueryRewriter:
                 original_query=query,
                 rewritten_queries=[{"query": query, "strategy": "direct"}],
                 rewrite_model=effective_model,
+                rewrite_time_ms=(time.monotonic() - leader_start) * 1000.0,
             )
-            self._inflight_results[dedup_key] = result
+            with self._inflight_lock:
+                self._inflight_results[dedup_key] = result
             # 超时时也记录（供未来检测）
             if self._dissatisfaction_detector is not None:
                 self._dissatisfaction_detector.record(resolved_session_id, query_hash)
@@ -663,7 +728,7 @@ class QueryRewriter:
         query: str,
         history: list[dict] | None,
         rewrite_model: str,
-        session_id: str,
+        session_id: str | None,
         query_hash: str,
         is_dissatisfaction: bool = False,
     ) -> RewriteResult:
@@ -714,24 +779,14 @@ class QueryRewriter:
                                 cache_level="L2",
                             )
                         elif isinstance(l2_cached, dict) and "result" in l2_cached:
-                            # 结构化 L2 返回（含相似度、知识类型等元数据）
-                            similarity = l2_cached.get("similarity", 1.0)
+                            # 结构化 L2 返回（含知识类型等元数据）。
+                            # 注意：当前 L2 为精确文本匹配，无 similarity 字段；
+                            # 向量语义检索的相似度阈值检查规划为后续迭代。
                             knowledge_type = l2_cached.get("knowledge_type", "general_knowledge")
                             source_session = l2_cached.get("source_session_id")
 
-                            # ── 相似度阈值检查 ──
-                            if similarity < self._l2_similarity_threshold:
-                                # 相似度不足，跳过 L2 缓存，继续正常管线
-                                self._audit_trail.record(  # type: ignore[union-attr]
-                                    "l2_similarity_rejected",
-                                    original_query=query,
-                                    session_id=session_id,
-                                    similarity=similarity,
-                                    threshold=self._l2_similarity_threshold,
-                                )
-                                result = None
                             # ── 知识类型检查：context_dependent 跨会话拦截 ──
-                            elif (
+                            if (
                                 knowledge_type == "context_dependent"
                                 and source_session is not None
                                 and source_session != session_id
@@ -822,6 +877,9 @@ class QueryRewriter:
             strategy_rewrites: list[dict] = []
             current_query = rewritten
             rewrite_input = current_query  # 保存策略输入，供回溯使用
+            # 主策略索引：跟踪 strategy_rewrites 中哪个条目对应 current_query
+            # 默认 -1（顺序路径：最后一条即当前查询）；并行路径会被显式设置
+            primary_strategy_index: int = -1
             protected_terms_list = list(term_map.values()) if term_map else None
 
             # ── 管线预算感知的超时分配 ──
@@ -918,6 +976,8 @@ class QueryRewriter:
 
                         # ── 合并并行结果：normalize 优先（更高优先级）──
                         # normalize 结果作为后续策略的基础输入
+                        # 记录主策略索引：后续保护词还原和质量评估使用此索引，
+                        # 而不是 strategy_rewrites[-1]（并行场景下 -1 可能是 term_align）
                         if norm_result is not None:
                             norm_query = norm_result.get("query", current_query)
                             strategy_rewrites.append(
@@ -930,6 +990,7 @@ class QueryRewriter:
                             )
                             strategies.append("normalize")
                             current_query = norm_query
+                            primary_strategy_index = len(strategy_rewrites) - 1
 
                         if term_result is not None:
                             term_query = term_result.get("query", current_query)
@@ -942,6 +1003,18 @@ class QueryRewriter:
                                 }
                             )
                             strategies.append("term_align")
+
+                        # ── 一致性检查：并行合并后主策略条目与 current_query 对齐 ──
+                        if primary_strategy_index >= 0:
+                            _primary_query = strategy_rewrites[primary_strategy_index]["query"]
+                            if _primary_query != current_query:
+                                self._logger.warning(
+                                    "primary_query_mismatch_after_parallel_merge",
+                                    primary_index=primary_strategy_index,
+                                    primary_query=_primary_query,
+                                    current_query=current_query,
+                                    session_id=session_id,
+                                )
 
                 # ══════════════════════════════════════════════════════════════
                 # Step 4b: 顺序执行剩余策略（按优先级排序）
@@ -1002,6 +1075,7 @@ class QueryRewriter:
                         )
                         current_query = new_query
                         strategies.append(strategy_name)
+                        primary_strategy_index = len(strategy_rewrites) - 1
                     except asyncio.TimeoutError:
                         self._logger.warning(
                             "strategy_hard_timeout",
@@ -1025,7 +1099,10 @@ class QueryRewriter:
 
             if self._postprocessor is not None and strategy_rewrites:
                 # ── 对最终改写结果进行质量评估 ──
-                final_rewrite = strategy_rewrites[-1]["query"]
+                # 使用主策略索引（而非 strategy_rewrites[-1]）以确保并行场景
+                # (normalize + term_align) 下评估的是 effective query
+                _eval_idx = primary_strategy_index if primary_strategy_index >= 0 else -1
+                final_rewrite = strategy_rewrites[_eval_idx]["query"]
 
                 try:
                     eval_result = await self._run_sync_in_thread(
@@ -1109,6 +1186,7 @@ class QueryRewriter:
                                 )
                                 strategies.append(upgrade_strategy_name)
                                 current_query = backtrack_query
+                                primary_strategy_index = len(strategy_rewrites) - 1
 
                                 # ── 对回溯结果再次评估 ──
                                 try:
@@ -1143,6 +1221,7 @@ class QueryRewriter:
                                         current_query = query  # 回退到原始查询
                                         strategy_rewrites = [{"query": query, "strategy": "direct"}]
                                         strategies = []
+                                        primary_strategy_index = 0
                                 except Exception:
                                     # 二次评估异常 → 降级，保守接受回溯结果
                                     self._logger.warning(
@@ -1161,6 +1240,7 @@ class QueryRewriter:
                                 current_query = query
                                 strategy_rewrites = [{"query": query, "strategy": "direct"}]
                                 strategies = []
+                                primary_strategy_index = 0
                                 backtrack_triggered = True
                                 backtrack_strategy = upgrade_strategy_name
                         else:
@@ -1174,6 +1254,7 @@ class QueryRewriter:
                             current_query = query
                             strategy_rewrites = [{"query": query, "strategy": "direct"}]
                             strategies = []
+                            primary_strategy_index = 0
                             backtrack_triggered = True
                     else:
                         # 无可用升级策略或 max_backtrack_attempts == 0
@@ -1181,6 +1262,7 @@ class QueryRewriter:
                         current_query = query
                         strategy_rewrites = [{"query": query, "strategy": "direct"}]
                         strategies = []
+                        primary_strategy_index = 0
                         backtrack_triggered = pre_check_failed or upgrade_strategy_name is not None
 
             # Step 5: 保护词还原
@@ -1188,9 +1270,26 @@ class QueryRewriter:
                 current_query, term_map
             )
 
-            # Update the last strategy rewrite's query to the restored version
+            # 保护词还原后同步 current_query，确保后续一致性检查通过
+            # （primary_strategy_index 修复后仅更新主策略条目，不覆盖辅助条目）
+            current_query = final_query
+
+            # 使用主策略索引更新对应条目（而非 strategy_rewrites[-1]）：
+            # 并行场景下 normalize 是主策略，term_align 仅作辅助记录，
+            # 必须更新 normalize 的条目而非列表末尾的 term_align
+            _update_idx = primary_strategy_index if primary_strategy_index >= 0 else -1
             if strategy_rewrites:
-                strategy_rewrites[-1]["query"] = final_query
+                strategy_rewrites[_update_idx]["query"] = final_query
+
+                # ── 一致性检查：保护词还原后主策略条目与 final_query 对齐 ──
+                if _update_idx >= 0 and strategy_rewrites[_update_idx]["query"] != final_query:
+                    self._logger.warning(
+                        "primary_query_mismatch_after_restore",
+                        primary_index=_update_idx,
+                        entry_query=strategy_rewrites[_update_idx]["query"],
+                        final_query=final_query,
+                        session_id=session_id,
+                    )
             elif strategies:
                 # Context fusion was the only strategy, no Phase 2 strategies executed
                 strategy_rewrites.append({"query": final_query, "strategy": strategies[-1]})
@@ -1198,8 +1297,39 @@ class QueryRewriter:
                 # No strategies at all → direct
                 strategy_rewrites.append({"query": final_query, "strategy": "direct"})
 
+            # ── 一致性约束：确保 effective query 始终位于 rewritten_queries[0] ──
+            # SearchService 使用 rewritten_queries[0] 作为向量检索的 effective query。
+            # 在顺序多策略执行（如 normalize → expand）时，主策略条目可能不在位置 0，
+            # 因此必须将主策略条目移动到列表首位。
+            _reorder_idx = primary_strategy_index if primary_strategy_index >= 0 else -1
+            if strategy_rewrites and _reorder_idx > 0:
+                _main_entry = strategy_rewrites.pop(_reorder_idx)
+                strategy_rewrites.insert(0, _main_entry)
+                primary_strategy_index = 0
+                self._logger.debug(
+                    "reordered_strategy_rewrites",
+                    moved_from=_reorder_idx,
+                    effective_query=_main_entry.get("query"),
+                    session_id=session_id,
+                )
+
             # Step 6: 构建结果
             elapsed_ms = (time.monotonic() - start_time) * 1000
+
+            # ── 一致性检查：构造 RewriteInfo 前确保主策略条目与 current_query 对齐 ──
+            _final_check_idx = primary_strategy_index if primary_strategy_index >= 0 else -1
+            if strategy_rewrites and _final_check_idx >= 0:
+                _entry_query = strategy_rewrites[_final_check_idx].get("query")
+                if _entry_query != current_query:
+                    self._logger.warning(
+                        "primary_query_mismatch_before_result",
+                        primary_index=_final_check_idx,
+                        entry_query=_entry_query,
+                        current_query=current_query,
+                        final_query=final_query,
+                        session_id=session_id,
+                    )
+
             result = RewriteResult(
                 original_query=query,
                 rewritten_queries=strategy_rewrites,
@@ -1227,14 +1357,17 @@ class QueryRewriter:
                 pass
 
             # Step 7a: 写入 L1 缓存（会话绑定，带差异化 TTL）
-            l1_ttl = (
-                self._l1_context_dependent_ttl
-                if knowledge_type == "context_dependent"
-                else self._l1_general_ttl
-            )
-            self._cache_manager.store(  # type: ignore[union-attr]
-                session_id, query_hash, result, ttl_override=l1_ttl
-            )
+            # 仅当 session_id 可确定身份时写入——匿名/不可信请求跳过 L1，
+            # 防止私有缓存被其他匿名请求命中。
+            if session_id is not None:
+                l1_ttl = (
+                    self._l1_context_dependent_ttl
+                    if knowledge_type == "context_dependent"
+                    else self._l1_general_ttl
+                )
+                self._cache_manager.store(  # type: ignore[union-attr]
+                    session_id, query_hash, result, ttl_override=l1_ttl
+                )
 
             # Step 7b: 写入 L2 语义缓存（跨会话，含知识分类标记）
             # 设计决策：上下文依赖答案仅写 L1，不进入 L2 跨会话缓存。

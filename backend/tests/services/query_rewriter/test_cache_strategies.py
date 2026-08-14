@@ -268,9 +268,10 @@ class TestFingerprintStrategies:
         assert cache.l2_size == 0
 
     def test_fingerprint_mismatch_l1_behavior(self):
-        """指纹不一致时 L1 仍应命中（设计决策：L1 不校验指纹）。
+        """指纹不一致时 L1 应惰性淘汰（L1 也校验指纹）。
 
-        设计理由：同一会话内知识库不可能在 5-30 分钟缓存 TTL 内变更。
+        同一会话内可能发生文档上传/删除/替换操作，
+        因此 L1 现同样执行指纹校验。
         """
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
@@ -279,9 +280,8 @@ class TestFingerprintStrategies:
         cache.update_fingerprint("fp_v2")
         found = cache.lookup("sess", "hash")
 
-        # L1 不校验指纹 → 命中
-        assert found is not None
-        assert found.original_query == "test"
+        # L1 校验指纹 → 不匹配，惰性淘汰
+        assert found is None
 
     def test_fingerprint_none_disables_all_validation(self):
         """指纹为 None 时跳过所有校验（向后兼容）。"""
@@ -295,7 +295,7 @@ class TestFingerprintStrategies:
         assert cache.lookup_l2("query") is not None
 
     def test_fingerprint_only_affects_entries_stored_under_fingerprint(self):
-        """L1 不校验指纹，带指纹条目在指纹变更后仍然命中。"""
+        """L1 校验指纹：带指纹条目在指纹变更后被惰性淘汰，无指纹条目不受影响。"""
         cache = CacheManager(max_size=10)
 
         # 无指纹时写入
@@ -309,13 +309,13 @@ class TestFingerprintStrategies:
         # 变更指纹
         cache.update_fingerprint("fp_v2")
 
-        # 无指纹条目应仍然命中
+        # 无指纹条目应仍然命中（存储指纹为 None → 向后兼容）
         found_no_fp = cache.lookup("sess", "hash_no_fp")
         assert found_no_fp is not None
 
-        # L1 不校验指纹 → 带指纹条目也应命中
+        # L1 校验指纹 → 带指纹条目不匹配，惰性淘汰
         found_with_fp = cache.lookup("sess", "hash_with_fp")
-        assert found_with_fp is not None
+        assert found_with_fp is None
 
 
 # ══════════════════════════════════════════════════════════
@@ -339,7 +339,7 @@ class TestSamplingCleanup:
         assert cache.size == 0
 
     def test_sweep_preserves_fingerprint_mismatched_l1_entries(self):
-        """抽样清理对 L1 不检查指纹，保留指纹不匹配条目。"""
+        """抽样清理对 L1 也检查指纹，移除指纹不匹配条目。"""
         cache = CacheManager(max_size=10, ttl_seconds=3600)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash_a", _make_result("a"))
@@ -348,18 +348,18 @@ class TestSamplingCleanup:
         cache.update_fingerprint("fp_v2")
 
         removed = cache._sweep_expired(cache._store, "l1")
-        # L1 不校验指纹 → 不因指纹不匹配移除条目
-        assert removed == 0
-        assert cache.size == 2
+        # L1 校验指纹 → 指纹不匹配的条目被移除
+        assert removed == 2
+        assert cache.size == 0
 
     def test_sweep_removes_expired_only_for_l1(self, monkeypatch):
-        """L1 抽样清理只移除 TTL 过期条目，不检查指纹。"""
+        """L1 抽样清理移除 TTL 过期条目和指纹不匹配条目。"""
         cache = CacheManager(max_size=10, ttl_seconds=3600)
         cache.update_fingerprint("fp_v1")
 
         # 短 TTL（将过期）
         cache.store("sess", "hash_expired", _make_result("expired"), ttl_override=0.01)
-        # 长 TTL 但指纹将不匹配 — L1 不检查指纹，保留
+        # 长 TTL 但指纹将不匹配 — L1 也检查指纹，移除
         cache.store("sess", "hash_fp", _make_result("fp_mismatch"), ttl_override=3600)
 
         _advance_time(monkeypatch, delta=0.02)  # 让短 TTL 先过期
@@ -369,11 +369,10 @@ class TestSamplingCleanup:
 
         removed = cache._sweep_expired(cache._store, "l1")
         # hash_expired: TTL 过期 → 移除
-        # hash_fp: 指纹不匹配但 L1 不校验 → 保留
-        # hash_valid: TTL 有效 + 无过期 → 保留
-        assert removed == 1
-        assert cache.size == 2
-        assert cache.lookup("sess", "hash_fp") is not None
+        # hash_fp: 指纹不匹配 → 移除
+        # hash_valid: TTL 有效 + 指纹匹配 → 保留
+        assert removed == 2
+        assert cache.size == 1
         assert cache.lookup("sess", "hash_valid") is not None
 
     def test_sweep_sampling_limit_respected(self, monkeypatch):

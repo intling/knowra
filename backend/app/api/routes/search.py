@@ -93,6 +93,66 @@ _search_response_cache_disabled: bool = False  # 标记缓存是否被禁用
 _chat_circuit_breaker_singleton: CircuitBreaker | None = None
 
 
+def invalidate_query_rewrite_cache(session_id: str | None = None) -> int:
+    """失效查询重写缓存的 L1 条目。
+
+    当文档状态变更（上传/删除/替换）时由文件操作 API 调用。
+
+    Args:
+        session_id: 要失效的会话标识符。为 ``None`` 时清空全部 L1。
+
+    Returns:
+        移除的条目数。
+    """
+    if _query_rewriter_singleton is not None:
+        cache = _query_rewriter_singleton.cache_manager
+        if session_id is not None:
+            return cache.invalidate_session(session_id)
+        else:
+            before = cache.size
+            cache.clear_l1()
+            return before
+    return 0
+
+
+def invalidate_search_response_cache(session_id: str | None = None) -> int:
+    """失效搜索响应缓存的 L1 条目。
+
+    当文档状态变更（上传/删除/替换）时由文件操作 API 调用。
+
+    Args:
+        session_id: 要失效的会话标识符。为 ``None`` 时清空全部 L1。
+
+    Returns:
+        移除的条目数。
+    """
+    if _search_response_cache_singleton is not None:
+        if session_id is not None:
+            return _search_response_cache_singleton.invalidate_session(session_id)
+        else:
+            before = _search_response_cache_singleton.size
+            _search_response_cache_singleton.clear_l1()
+            return before
+    return 0
+
+
+def invalidate_all_search_caches(session_id: str | None = None) -> dict:
+    """失效所有搜索相关缓存的 L1 条目（便捷函数）。
+
+    同时清除 QueryRewriter 和 SearchResponse 的 L1 缓存。
+
+    Args:
+        session_id: 要失效的会话标识符。为 ``None`` 时清空全部 L1。
+
+    Returns:
+        ``{"query_rewrite_removed": int, "search_response_removed": int}``
+    """
+    return {
+        "query_rewrite_removed": invalidate_query_rewrite_cache(session_id),
+        "search_response_removed": invalidate_search_response_cache(session_id),
+    }
+
+
 def get_search_audit_trail() -> AuditTrail:
     """获取搜索管线的 AuditTrail 单例（含 audit_trail_id 生成能力）。"""
     global _search_audit_trail_singleton

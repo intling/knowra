@@ -82,7 +82,7 @@ export interface SearchResponse {
   total_searched: number
   searched_document_count: number
   search_time_ms: number
-  rewrite_info: RewriteInfo
+  rewrite_info: RewriteInfo | null
   results: SearchResultItem[]
   answer: string
   answer_tokens: AnswerTokens | null

@@ -8,8 +8,9 @@ populated ``SearchResponse``.
 L1 搜索响应缓存（会话绑定精确匹配）：
     当 ``response_cache`` 参数非 None 时，SearchService 会在管线开始前检查缓存，
     命中时直接返回缓存的 SearchResponse（跳过向量搜索和 LLM 生成）。
-    缓存 Key = session_id + query_hash + top_k，确保相同会话内完全相同的查询
-    + 相同 top_k 即时返回，大幅降低 LLM 调用成本与用户等待时间。
+    缓存 Key = session_id + query_hash + top_k + history_digest，
+    确保相同会话 + 相同查询 + 相同 top_k + 相同对话历史 才能命中。
+    不可信身份（无显式 session_id 且无 history）跳过缓存写入，防止私有响应跨用户泄漏。
 """
 
 import asyncio
@@ -154,30 +155,53 @@ class SearchService:
     # ── public API ──────────────────────────────────────────────────
 
     @staticmethod
-    def _make_search_cache_key(session_id: str, query: str, top_k: int) -> str:
-        """生成搜索响应缓存的复合键。
+    def _compute_history_digest(history: list[dict] | None) -> str:
+        """对 history 做确定性规范化后 SHA-256，返回 hex digest。
 
-        缓存键 = SHA-256(session_id + ":" + query + ":" + str(top_k)) 的前 16 字符。
-        三方组合确保：相同会话 + 完全相同查询文本 + 相同 top_k 才能命中。
+        空 history 或无 user/assistant 消息时返回空字符串，
+        此时缓存键中不包含 history 维度（向后兼容无 history 场景）。
         """
-        raw = f"{session_id}:{query}:{top_k}"
-        return hashlib.sha256(raw.encode()).hexdigest()[:16]
-
-    @staticmethod
-    def _resolve_session_id(session_id: str | None, history: list[dict] | None) -> str:
-        """解析会话标识符：显式传入优先，否则从 history 哈希派生，兜底返回 ``"__default__"``。"""
-        if session_id:
-            return session_id
         if not history:
-            return "__default__"
+            return ""
         normalized = [
             f"{msg.get('role', '')}:{msg.get('content', '')}"
             for msg in history
             if msg.get("role") in ("user", "assistant")
         ]
         if not normalized:
-            return "__default__"
+            return ""
         return hashlib.sha256("|".join(normalized).encode()).hexdigest()[:16]
+
+    @staticmethod
+    def _make_search_cache_key(
+        session_id: str, query: str, top_k: int, history_digest: str = ""
+    ) -> str:
+        """生成搜索响应缓存的复合键。
+
+        缓存键 = SHA-256(session_id + ":" + query + ":" + str(top_k)
+                 + (":" + history_digest 若非空)) 的前 16 字符。
+
+        四方组合确保：相同会话 + 完全相同查询文本 + 相同 top_k
+        + 相同对话历史 才能命中。
+        """
+        raw = f"{session_id}:{query}:{top_k}"
+        if history_digest:
+            raw += f":{history_digest}"
+        return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+    @staticmethod
+    def _resolve_session_id(session_id: str | None, history: list[dict] | None) -> str | None:
+        """解析会话标识符：显式传入优先，否则从 history 哈希派生。
+
+        当无法确定可信身份时（无显式 session_id 且无 history）返回 ``None``，
+        调用方应据此跳过私有响应缓存写入。
+
+        复用 ``_compute_history_digest`` 的规范化逻辑，避免重复实现。
+        """
+        if session_id:
+            return session_id
+        digest = SearchService._compute_history_digest(history)
+        return digest if digest else None
 
     def search(
         self,
@@ -215,6 +239,9 @@ class SearchService:
         # 解析会话 ID
         resolved_session_id = self._resolve_session_id(session_id, history)
 
+        # 计算 history digest（用于缓存键，确保不同对话历史产生不同缓存键）
+        history_digest = self._compute_history_digest(history)
+
         # 生成审计追踪 ID（端到端追踪）
         audit_trail_id = (
             self._audit_trail.generate_id()  # type: ignore[union-attr]
@@ -223,8 +250,12 @@ class SearchService:
         )
 
         # -1. L1 搜索响应缓存查找（会话绑定精确匹配）
-        if self._response_cache is not None:
-            cache_key = self._make_search_cache_key(resolved_session_id, query, top_k)
+        #     仅当 resolved_session_id 非 None（可信身份）时使用缓存；
+        #     不可信身份（匿名无 history）跳过缓存，防止私有响应跨用户泄漏。
+        if self._response_cache is not None and resolved_session_id is not None:
+            cache_key = self._make_search_cache_key(
+                resolved_session_id, query, top_k, history_digest
+            )
             cached_response = self._response_cache.lookup(  # type: ignore[union-attr]
                 resolved_session_id, cache_key
             )
@@ -251,7 +282,7 @@ class SearchService:
                 return cached_response
 
         # 0. 查询重写（如果配置了 QueryRewriter）
-        rewrite_info: RewriteInfo
+        rewrite_info: RewriteInfo | None
         query_for_embedding = query
 
         if self._query_rewriter is not None:
@@ -264,7 +295,9 @@ class SearchService:
                 # Use _run_async() for real coroutines, pass through sync results directly.
                 if inspect.isawaitable(rewrite_result):
                     rewrite_result = _run_async(rewrite_result)
-                # 使用改写后的首个查询进行向量化
+                # 使用改写后的首个查询进行向量化（一致性约束：QueryRewriter 保证
+                # rewritten_queries[0] 始终是 effective query，见 query_rewriter.py 中
+                # "确保 effective query 始终位于 rewritten_queries[0]" 的重排序逻辑）
                 if rewrite_result.rewritten_queries:
                     query_for_embedding = rewrite_result.rewritten_queries[0]["query"]
                 rewrite_info = RewriteInfo(
@@ -304,14 +337,8 @@ class SearchService:
                     error=str(exc),
                 )
         else:
-            # 未配置重写时仍返回基本 RewriteInfo，保证前端始终展示
-            rewrite_info = RewriteInfo(
-                original_query=query,
-                rewritten_queries=[],
-                strategies_used=[],
-                rewrite_time_ms=0.0,
-                cache_hit=False,
-            )
+            # 未配置重写时返回 null，前端据此区分"功能未启用"与"重写尝试但无产出"
+            rewrite_info = None
 
         # 1. 查询向量化（使用改写后的查询或原始查询）
         embedding_result = self._embedding_adapter.embed_single(query_for_embedding)
@@ -407,8 +434,12 @@ class SearchService:
         )
 
         # 写入 L1 搜索响应缓存（会话绑定精确匹配）
-        if self._response_cache is not None:
-            cache_key = self._make_search_cache_key(resolved_session_id, query, top_k)
+        # 仅当 resolved_session_id 非 None（可信身份）时写入；
+        # 不可信身份（匿名无 history）跳过存储，防止私有响应跨用户泄漏。
+        if self._response_cache is not None and resolved_session_id is not None:
+            cache_key = self._make_search_cache_key(
+                resolved_session_id, query, top_k, history_digest
+            )
             self._response_cache.store(  # type: ignore[union-attr]
                 resolved_session_id, cache_key, response
             )
@@ -656,6 +687,28 @@ class SearchService:
                 str(gen_error),
             )
 
+        # ── 空内容检查：LLM 成功返回但未产生任何可用文本 ──
+        # 推理类模型（如 deepseek-v4-pro）流式输出时可能把推理过程放进
+        # ``reasoning_content`` 字段，而最终答案 ``content`` 为空；或 token
+        # 预算耗尽导致 answer 为空串。若以 ``generation_error=None`` 返回空
+        # answer，前端 AnswerPanel 会误判为"仍在等待生成"，无限显示
+        # "等待 AI 回答生成..."。这里将其视为一次生成失败并降级。
+        if not answer or not answer.strip():
+            self._logger.warning(
+                "chat_generation_empty_content",
+                user_query=query,
+                context_chunk_count=len(rows),
+            )
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.on_failure()
+            return (
+                _CHAT_FAILED_ANSWER,
+                None,
+                None,
+                [],
+                "LLM returned empty content",
+            )
+
         # ── 通知熔断器：LLM 调用成功 ──
         if self._circuit_breaker is not None:
             self._circuit_breaker.on_success()
@@ -833,7 +886,7 @@ class SearchService:
         query_vector: list[float],
         top_k: int,
         t0: float,
-        rewrite_info: RewriteInfo,
+        rewrite_info: RewriteInfo | None,
         audit_trail_id: str | None = None,
     ) -> SearchResponse:
         """Build a response for the case when **zero** embeddings exist in the DB.
@@ -870,7 +923,7 @@ class SearchService:
         top_k: int,
         t0: float,
         total_searched: int,
-        rewrite_info: RewriteInfo,
+        rewrite_info: RewriteInfo | None,
         audit_trail_id: str | None = None,
     ) -> SearchResponse:
         """Build a response when embeddings exist but no chunks match the query.

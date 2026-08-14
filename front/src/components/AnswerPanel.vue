@@ -237,12 +237,12 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Empty state: no answer yet -->
+    <!-- Empty state: response received but no answer produced -->
     <div
       v-else
       class="flex items-center justify-center py-10"
     >
-      <p class="text-sm text-neutral-400">等待 AI 回答生成...</p>
+      <p class="text-sm text-neutral-400">AI 未生成回答</p>
     </div>
   </div>
 </template>

@@ -316,15 +316,16 @@ def build_phase2_rewriter(
 
 def make_l2_cache_entry(
     result,
-    similarity: float,
     knowledge_type: str = "general_knowledge",
     source_session_id: str | None = "original_session",
 ) -> dict:
     """构建 L2 缓存查询返回值 —— 包含结果与元数据。
 
+    注意：当前 L2 为精确文本匹配实现，不包含 ``similarity`` 字段。
+    向量语义检索的相似度检查已规划为后续迭代。
+
     Args:
         result: 缓存的 RewriteResult。
-        similarity: 语义相似度（0.0–1.0）。
         knowledge_type: 知识类型 —— ``"general_knowledge"`` 或 ``"context_dependent"``。
         source_session_id: 来源会话 ID（仅 context_dependent 需要，
             用于跨会话拦截）。为 ``None`` 时表示未知来源。
@@ -334,7 +335,6 @@ def make_l2_cache_entry(
     """
     return {
         "result": result,
-        "similarity": similarity,
         "knowledge_type": knowledge_type,
         "source_session_id": source_session_id,
     }

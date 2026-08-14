@@ -188,7 +188,7 @@ def test_rewrite_info_error_field_nullable():
 
 
 def test_search_response_has_rewrite_info_field():
-    """SearchResponse 应新增 rewrite_info: RewriteInfo 字段，默认由 factory 提供。"""
+    """SearchResponse 应新增 rewrite_info: RewriteInfo | None 字段，默认为 None。"""
     SearchResponse = _get_search_response_cls()
 
     # 验证字段存在
@@ -196,11 +196,11 @@ def test_search_response_has_rewrite_info_field():
     assert "rewrite_info" in fields, "SearchResponse 缺少 rewrite_info 字段"
 
     field_info = fields["rewrite_info"]
-    assert field_info.default_factory is not None, "rewrite_info 应有 default_factory"
+    assert field_info.default is None, "rewrite_info 应为 default=None"
 
 
 def test_search_response_rewrite_info_null_serialization():
-    """rewrite_info 不传时 SearchResponse 应使用默认 factory 创建。"""
+    """rewrite_info 不传时 SearchResponse 默认为 None。"""
     SearchResponse = _get_search_response_cls()
 
     resp = SearchResponse(
@@ -217,12 +217,11 @@ def test_search_response_rewrite_info_null_serialization():
     )
 
     data = resp.model_dump()
-    assert data["rewrite_info"] is not None
-    assert data["rewrite_info"]["original_query"] == ""
-    # JSON 序列化应成功
+    assert data["rewrite_info"] is None
+    # JSON 序列化应成功（null → null）
     json_str = resp.model_dump_json()
     parsed = json.loads(json_str)
-    assert parsed["rewrite_info"] is not None
+    assert parsed["rewrite_info"] is None
 
 
 def test_search_response_rewrite_info_with_complete_data():

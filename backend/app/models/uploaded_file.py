@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, text
 from sqlmodel import Field, SQLModel
 
 from app.models.user import utc_now
@@ -17,7 +17,8 @@ class UploadedFile(SQLModel, table=True):
             "ix_uploaded_files_dedup",
             "owner_user_id",
             "checksum_sha256",
-            "deleted_at",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
         ),
     )
 

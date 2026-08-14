@@ -7,6 +7,7 @@ from typing import BinaryIO
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
 from app.core.logging import get_logger
@@ -171,6 +172,27 @@ class UploadService:
         try:
             self.session.commit()
             self.session.refresh(record)
+        except IntegrityError:
+            # 并发竞态：另一个请求已插入相同的 (owner_user_id, checksum_sha256)
+            # partial unique index 保证了数据库级唯一性，回滚本次插入并返回已有记录
+            self.session.rollback()
+            self.storage.delete(storage_key)
+            existing = self._find_active_duplicate(current_user.id, stored_file.checksum_sha256)
+            if existing is not None:
+                logger.info(
+                    "并发上传竞态：返回已有记录",
+                    existing_upload_id=str(existing.id),
+                    checksum_sha256=stored_file.checksum_sha256,
+                )
+                return existing, False
+            # 极端情况：唯一约束冲突但查不到活跃记录（如被并发软删除）
+            # 此时无法恢复，向上抛出
+            logger.error(
+                "并发上传竞态：唯一约束冲突但无法找到活跃记录",
+                upload_id=str(upload_id),
+                checksum_sha256=stored_file.checksum_sha256,
+            )
+            raise UploadMetadataError("Duplicate upload conflict, existing record not found") from None
         except Exception as exc:
             self.session.rollback()
             self.storage.delete(storage_key)

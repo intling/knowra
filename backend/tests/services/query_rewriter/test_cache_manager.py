@@ -703,7 +703,7 @@ class TestFingerprintValidation:
         assert found.original_query == "test"
 
     def test_fingerprint_mismatch_l1_still_hits(self):
-        """L1 不校验指纹，指纹变更后 L1 缓存仍应命中。"""
+        """指纹变更后 L1 条目应被惰性淘汰（返回 None）。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
@@ -711,11 +711,11 @@ class TestFingerprintValidation:
         # 改变指纹
         cache.update_fingerprint("fp_v2")
         found = cache.lookup("sess", "hash")
-        assert found is not None
-        assert found.original_query == "test"
+        # 指纹不匹配 → 惰性淘汰，视为 miss
+        assert found is None
 
     def test_fingerprint_mismatch_l1_entry_preserved(self):
-        """指纹变更后 L1 条目保留不被删除。"""
+        """指纹变更后 L1 条目被惰性淘汰删除。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
@@ -723,10 +723,11 @@ class TestFingerprintValidation:
         cache.update_fingerprint("fp_v2")
         cache.lookup("sess", "hash")
 
-        assert cache.size == 1
+        # 指纹不匹配，lookup 在返回 None 前已删除条目
+        assert cache.size == 0
 
     def test_fingerprint_mismatch_l1_no_counter_increment(self):
-        """L1 不校验指纹，fingerprint_mismatches 计数器不应递增。"""
+        """L1 校验指纹，fingerprint_mismatches 计数器应递增，视为 miss。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
@@ -735,8 +736,10 @@ class TestFingerprintValidation:
         cache.lookup("sess", "hash")
 
         stats = cache.get_stats()
-        assert stats["fingerprint_mismatches"] == 0
-        assert stats["hits"] == 1
+        # L1 指纹校验启用后，不匹配的条目计入 fingerprint_mismatches
+        assert stats["fingerprint_mismatches"] == 1
+        assert stats["misses"] == 1
+        assert stats["hits"] == 0
 
     def test_no_fingerprint_set_all_hits_pass(self):
         """未设置指纹时（向后兼容），所有查找应正常通过。"""
@@ -762,20 +765,20 @@ class TestFingerprintValidation:
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
         cache.update_fingerprint("fp_v2")
-        # L1 不校验指纹 → 仍命中
-        assert cache.lookup("sess", "hash") is not None
+        # L1 校验指纹 → 不匹配，惰性淘汰
+        assert cache.lookup("sess", "hash") is None
 
         # 重新存入 fp_v1 的条目
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("test"))
 
-        # 设为 None → 也命中（向后兼容）
+        # 设为 None → 跳过校验，命中（向后兼容）
         cache.update_fingerprint(None)
         found = cache.lookup("sess", "hash")
         assert found is not None
 
     def test_multiple_entries_different_fingerprints(self):
-        """不同指纹的 L1 条目在指纹变更后仍然命中（L1 不校验指纹）。"""
+        """指纹变更后旧条目被惰性淘汰，新条目正常命中。"""
         cache = CacheManager(max_size=10)
 
         cache.update_fingerprint("fp_v1")
@@ -785,11 +788,10 @@ class TestFingerprintValidation:
         cache.update_fingerprint("fp_v2")
         cache.store("sess", "hash_c", _make_result("v2_c"))
 
-        # L1 不校验指纹，所有条目均应命中
-        assert cache.lookup("sess", "hash_a") is not None
-        assert cache.lookup("sess", "hash_a").original_query == "v1_a"
-        assert cache.lookup("sess", "hash_b") is not None
-        assert cache.lookup("sess", "hash_b").original_query == "v1_b"
+        # 旧指纹的条目应被惰性淘汰
+        assert cache.lookup("sess", "hash_a") is None
+        assert cache.lookup("sess", "hash_b") is None
+        # 新指纹的条目正常命中
         assert cache.lookup("sess", "hash_c") is not None
         assert cache.lookup("sess", "hash_c").original_query == "v2_c"
 
@@ -850,7 +852,7 @@ class TestL2FingerprintValidation:
         assert found is not None
 
     def test_l1_l2_independent_fingerprint_validation(self):
-        """L1 不校验指纹（仍命中），L2 校验指纹（miss）。"""
+        """L1 和 L2 均校验指纹：指纹变更后两者均 miss。"""
         cache = CacheManager(max_size=10)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash", _make_result("l1_v1"))
@@ -858,9 +860,9 @@ class TestL2FingerprintValidation:
 
         cache.update_fingerprint("fp_v2")
 
-        # L1 不校验指纹 → 仍命中
-        assert cache.lookup("sess", "hash") is not None
-        assert cache.size == 1
+        # L1 校验指纹 → miss，条目被惰性淘汰
+        assert cache.lookup("sess", "hash") is None
+        assert cache.size == 0
         # L2 校验指纹 → miss
         assert cache.lookup_l2("test query") is None
         assert cache.l2_size == 0
@@ -870,7 +872,7 @@ class TestFingerprintSweep:
     """验证 _sweep_expired 在指纹不匹配时的行为。"""
 
     def test_sweep_l1_preserves_fingerprint_mismatched(self):
-        """_sweep_expired 对 L1 不检查指纹不匹配（设计决策），应保留条目。"""
+        """_sweep_expired 对 L1 也应检查指纹不匹配，移除过期条目。"""
         cache = CacheManager(max_size=10, ttl_seconds=3600)
         cache.update_fingerprint("fp_v1")
         cache.store("sess", "hash_a", _make_result("a"))
@@ -879,8 +881,9 @@ class TestFingerprintSweep:
         cache.update_fingerprint("fp_v2")
 
         removed = cache._sweep_expired(cache._store, "l1")
-        assert removed == 0
-        assert cache.size == 2
+        # 指纹不匹配的条目应被移除
+        assert removed == 2
+        assert cache.size == 0
 
     def test_sweep_removes_fingerprint_mismatched_l2(self):
         """_sweep_expired 应移除指纹不匹配的 L2 条目。"""

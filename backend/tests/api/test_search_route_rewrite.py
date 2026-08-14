@@ -250,12 +250,12 @@ def test_search_response_json_rewritten_query_strategy_nullable(search_client: T
     assert ri["cache_hit"] is True
 
 
-# ── 2. rewrite_info 重写未启用时包含基本信息 ──────────────────────────
+# ── 2. rewrite_info 重写未启用时为 null ──────────────────────────
 
 
 # 当重写未启用（get_query_rewriter 返回 None）时，JSON 响应中的 rewrite_info
-# 应包含原始查询和空改写列表（不再为 null）。
-def test_search_response_rewrite_info_not_null_when_no_rewriter(search_client: TestClient):
+# 应为 null，前端据此区分"功能未启用"与"重写尝试但无产出"。
+def test_search_response_rewrite_info_null_when_no_rewriter(search_client: TestClient):
     # Override get_query_rewriter to return None, simulating disabled rewriter
     search_routes = import_module("app.api.routes.search")
     search_client.app.dependency_overrides[search_routes.get_query_rewriter] = lambda: None
@@ -268,18 +268,12 @@ def test_search_response_rewrite_info_not_null_when_no_rewriter(search_client: T
     assert response.status_code == 200
     payload = response.json()
 
-    # rewrite_info 应始终非 null
+    # rewrite_info 应为 null（未启用重写）
     assert "rewrite_info" in payload
-    assert payload["rewrite_info"] is not None
-    ri = payload["rewrite_info"]
-    assert ri["original_query"] == "正常查询"
-    assert ri["rewritten_queries"] == []
-    assert ri["strategies_used"] == []
-    assert ri["rewrite_time_ms"] == 0.0
-    assert ri["cache_hit"] is False
+    assert payload["rewrite_info"] is None
 
 
-# rewrite_info 始终非 null 时，其余搜索字段应完整正常返回。
+# rewrite_info 为 null 时，其余搜索字段应完整正常返回。
 def test_search_response_has_all_fields_when_rewriter_disabled(search_client: TestClient):
     # Override get_query_rewriter to return None
     search_routes = import_module("app.api.routes.search")
@@ -302,9 +296,8 @@ def test_search_response_has_all_fields_when_rewriter_disabled(search_client: Te
     assert isinstance(payload["results"], list)
     assert len(payload["results"]) >= 1
     assert len(payload["answer"]) > 0
-    # rewrite_info 始终非 null
-    assert payload["rewrite_info"] is not None
-    assert payload["rewrite_info"]["original_query"] == "正常查询"
+    # rewrite_info 应为 null（未启用重写）
+    assert payload["rewrite_info"] is None
 
 
 # ── 3. 重写失败时降级：rewrite_info 包含 error 字段但搜索正常完成 ──────────

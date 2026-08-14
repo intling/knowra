@@ -4,15 +4,17 @@
     - 缓存 Key 绑定会话 ID：不同会话的相同问题不共享缓存
     - 精确匹配：仅当原始 Query 字符串逐字符完全一致时命中
 
-不同会话的 L2 语义缓存策略（模块二）：
-    - 基于语义向量检索，相似度 > 0.95 时考虑命中
+跨会话 L2 精确缓存策略（模块二）：
+    - 基于规范化文本的精确匹配（逐字符比较）
     - 仅通用知识允许跨会话复用
     - 需经过上下文相关性校验后返回
+    - 注意：当前为精确文本匹配实现，向量语义检索（余弦相似度 > 0.95）已
+      规划为后续迭代（见 OpenSpec query-rewriting-phase2）
 
 知识库指纹校验：
     - 每条缓存条目存储写入时的知识库指纹
-    - L2 跨会话缓存读取时对比当前指纹与存储指纹：不匹配则视为过期（惰性淘汰）
-    - L1 会话绑定缓存不校验指纹（同一会话内 TTL 短，知识库不会在 TTL 内变更）
+    - L1 和 L2 缓存读取时对比当前指纹与存储指纹：不匹配则视为过期（惰性淘汰）
+    - 会话内可能发生文档上传/删除/替换操作，L1 指纹校验确保已删除文档的内容不会通过缓存返回
     - 指纹为 ``None`` 时跳过校验（兼容旧数据）
 
 泛型设计：
@@ -44,7 +46,7 @@ from app.core.logging import get_logger
 
 
 class CacheManager:
-    """类型无关的内存精确匹配（L1）缓存（会话绑定） + L2 语义缓存 + 知识库指纹校验。
+    """类型无关的内存精确匹配（L1）缓存（会话绑定） + L2 精确文本缓存 + 知识库指纹校验。
 
     基于 OrderedDict 实现 LRU 淘汰策略，每条缓存条目有独立的 TTL。
     适用于 FastAPI 单线程异步事件循环模型；如需并发访问，请在外部
@@ -58,6 +60,7 @@ class CacheManager:
         每条缓存条目在写入时携带当前知识库指纹，读取时校验。
         指纹不匹配 → 惰性淘汰（视为过期），无需手动清除。
         指纹为 ``None`` 时跳过校验（向后兼容、测试场景）。
+        L1 和 L2 均执行指纹校验——会话内可能发生文档变更（上传/删除/替换）。
 
     泛型使用：
         存储和返回类型为 ``Any``，调用方负责类型转换。
@@ -123,8 +126,7 @@ class CacheManager:
         """返回 *session_id + query_hash* 对应的缓存值，未命中时返回 ``None``。
 
         过期的条目在访问时惰性淘汰。
-
-        NOTE: L1 不校验知识库指纹（会话绑定 + 短 TTL，指纹校验仅作用于 L2）。
+        知识库指纹不匹配的条目同样视为过期（会话内发生文档变更时自动失效）。
 
         Args:
             session_id: 会话标识符（用于会话绑定缓存键）。
@@ -154,9 +156,21 @@ class CacheManager:
             )
             return None
 
-        # NOTE: L1 不校验知识库指纹（设计决策：同一会话内知识库
-        # 不可能在 5-30 分钟的缓存 TTL 内发生变更，无需指纹保护）。
-        # 指纹校验仅作用于 L2 跨会话缓存（见 lookup_l2）。
+        # ── 指纹校验 ──
+        # 同一会话内可能发生文档上传/删除/替换操作，
+        # 导致知识库指纹变化。指纹不匹配 → 惰性淘汰（视为过期）。
+        if not self._fingerprint_matches(stored_fp):
+            del self._store[composite_key]
+            self._stats["fingerprint_mismatches"] += 1
+            self._stats["misses"] += 1
+            self._logger.debug(
+                "cache_invalidated_by_fingerprint",
+                session_id=session_id,
+                query_hash=query_hash,
+                stored_fp=stored_fp,
+                current_fp=self._fingerprint,
+            )
+            return None
 
         # LRU：移到末尾（最近使用）
         self._store.move_to_end(composite_key)
@@ -226,6 +240,41 @@ class CacheManager:
         self._store.clear()
         self._l2_store.clear()
 
+    def clear_l1(self) -> None:
+        """清空所有 L1 缓存条目（保留 L2 语义缓存）。
+
+        文档状态变更（上传/删除/替换）时调用，确保已删除文档的
+        内容不会通过会话缓存被返回。L2 由指纹校验机制独立保护。
+        """
+        self._store.clear()
+
+    def invalidate_session(self, session_id: str) -> int:
+        """清除指定会话的所有 L1 缓存条目（事件驱动失效）。
+
+        当文档状态变更（上传/删除/替换）时由文件操作 API 调用，
+        防止已删除文档的内容通过 L1 会话缓存被返回。
+
+        仅清除 L1（会话绑定缓存），L2（跨会话语义缓存）由指纹校验
+        机制独立处理。
+
+        Args:
+            session_id: 要失效的会话标识符。
+
+        Returns:
+            移除的 L1 条目数。
+        """
+        prefix = f"{session_id}:"
+        keys_to_remove = [k for k in self._store if k.startswith(prefix)]
+        for key in keys_to_remove:
+            del self._store[key]
+        if keys_to_remove:
+            self._logger.debug(
+                "cache_session_invalidated",
+                session_id=session_id,
+                removed_count=len(keys_to_remove),
+            )
+        return len(keys_to_remove)
+
     # ── L2 语义缓存（跨会话）────────────────────────────────────────────
 
     def store_l2(
@@ -238,16 +287,19 @@ class CacheManager:
         ttl_override: float | None = None,
         zero_vector: bool = False,
     ) -> None:
-        """将重写结果存入 L2 语义缓存（跨会话）。
+        """将重写结果存入 L2 精确文本缓存（跨会话）。
 
-        使用规范化后的查询文本作为 Key（生产环境中将替换为向量检索）。
+        使用规范化后的查询文本作为 Key 进行精确匹配（逐字符比较）。
+        当前实现为精确文本匹配；向量语义检索（余弦相似度 > 0.95）
+        已规划为后续迭代。
+
         knowledge_type 区分 ``"general_knowledge"``（可跨会话复用）和
         ``"context_dependent"``（仅限同会话 L1 复用）。
 
         写入时携带当前知识库指纹（若已注入）。
 
         Args:
-            query_text: 查询文本（用于语义检索，后续升级为向量）。
+            query_text: 查询文本（当前用于精确文本匹配 Key）。
             result: 缓存的重写结果。
             knowledge_type: ``"general_knowledge"`` 或 ``"context_dependent"``。
             session_id: 来源会话 ID（仅 context_dependent 需要，用于跨会话拦截）。
@@ -291,18 +343,18 @@ class CacheManager:
         )
 
     def lookup_l2(self, query_text: str) -> dict | None:
-        """在 L2 语义缓存中查找与 *query_text* 最匹配的条目。
+        """在 L2 精确文本缓存中查找与 *query_text* 匹配的条目。
 
-        当前实现为精确文本匹配（规范化后逐字符比较），返回固定相似度 1.0。
-        生产环境中将替换为向量余弦相似度检索 + EmbeddingAdapter。
+        当前实现为规范化后的精确文本匹配（逐字符比较）。
+        向量语义检索（余弦相似度 > 0.95）已规划为后续迭代。
 
         指纹不匹配的条目被视为过期（知识库已变更 → 旧跨会话缓存无效）。
 
         Args:
-            query_text: 查询文本（后续升级为向量检索）。
+            query_text: 查询文本（用于精确文本匹配）。
 
         Returns:
-            ``{"result": ..., "similarity": ..., "knowledge_type": ..., "source_session_id": ...}``
+            ``{"result": ..., "knowledge_type": ..., "source_session_id": ...}``
             或 ``None``（未命中）。
         """
         normalized = self._normalize_text(query_text)
@@ -347,7 +399,6 @@ class CacheManager:
         )
         return {
             "result": result,
-            "similarity": 1.0,  # 精确文本匹配 → 1.0；向量检索时替换
             "knowledge_type": knowledge_type,
             "source_session_id": session_id,
         }
@@ -380,7 +431,7 @@ class CacheManager:
     def _maybe_sweep(self) -> None:
         """每 N 次写入触发一次随机抽样清理过期条目。
 
-        检查 L1（仅 TTL 过期）和 L2（TTL 过期 + 指纹不匹配）两个存储的随机样本。
+        检查 L1 和 L2（TTL 过期 + 指纹不匹配）两个存储的随机样本。
         """
         if self._write_count % self._CLEANUP_TRIGGER_EVERY_N != 0:
             return
@@ -388,10 +439,7 @@ class CacheManager:
         self._sweep_expired(self._l2_store, "l2")
 
     def _sweep_expired(self, store: OrderedDict, label: str) -> int:
-        """随机抽样清理 *store* 中的过期条目（TTL 过期；L2 额外含指纹不匹配）。
-
-        L1 仅移除 TTL 过期条目，不校验指纹（设计决策）。
-        L2 同时移除 TTL 过期和指纹不匹配条目。
+        """随机抽样清理 *store* 中的过期条目（TTL 过期 + 指纹不匹配）。
 
         Args:
             store: 要清理的 OrderedDict（L1 或 L2）。
@@ -421,8 +469,7 @@ class CacheManager:
             entry_ttl = unpacked[1]
             stored_fp = unpacked[-1]
             expired = now - inserted_at > entry_ttl
-            # L1 不校验指纹（设计决策），L2 校验
-            fp_mismatch = False if label == "l1" else not self._fingerprint_matches(stored_fp)
+            fp_mismatch = not self._fingerprint_matches(stored_fp)
             if expired or fp_mismatch:
                 del store[key]
                 removed += 1

@@ -27,6 +27,9 @@ export interface ChatBubble {
   fileNames: string[]
   response: SearchResponse | null
   error: string | null
+  /** 在途气泡的加载阶段（searching → generating），完成后置 null。
+   *  持久化以支持切换对话后仍能显示正确的加载文案。 */
+  stage?: "searching" | "generating" | null
 }
 
 export interface Conversation {
