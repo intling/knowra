@@ -173,7 +173,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <header>
   <h1>知寻 knowra — 混合检索方案设计</h1>
-  <div class="subtitle">向量语义检索（pgvector HNSW） + 关键词检索（PostgreSQL tsvector + ts_rank_cd）→ RRF 融合</div>
+  <div class="subtitle">向量语义检索（pgvector HNSW） + BM25 关键词检索（ParadeDB pg_search）→ RRF 融合</div>
   <div class="meta">
     <span>📅 2026-08-12</span>
     <span>📋 暂不实现：独立 Recall 阶段、精排 Reranker</span>
@@ -195,14 +195,14 @@
   </div>
 
   <h3>1.2 目标</h3>
-  <p>本方案<strong>并非"不改动现有向量检索路径"</strong>——现有向量检索为 pgvector <code>cosine_distance</code> 全表扫描（无索引），<strong>基于 HNSW 的向量语义检索尚未实现</strong>。因此本方案同时：<strong>① 新增 pgvector HNSW 向量索引</strong>（向量检索从全表扫描升级为近似最近邻，见 §3.0）；<strong>② 新增关键词检索（tsvector + ts_rank_cd）</strong>作为第二通路；<strong>③ 通过 RRF（Reciprocal Rank Fusion）融合双路结果</strong>，弥补向量检索对精确关键词匹配的盲区。</p>
+  <p>本方案<strong>并非"不改动现有向量检索路径"</strong>——现有向量检索为 pgvector <code>cosine_distance</code> 全表扫描（无索引），<strong>基于 HNSW 的向量语义检索尚未实现</strong>。因此本方案同时：<strong>① 新增 pgvector HNSW 向量索引</strong>（向量检索从全表扫描升级为近似最近邻，见 §3.0）；<strong>② 新增 BM25 关键词检索（ParadeDB pg_search）</strong>作为第二通路；<strong>③ 通过 RRF（Reciprocal Rank Fusion）融合双路结果</strong>，弥补向量检索对精确关键词匹配的盲区。</p>
 
   <table>
     <tr><th>目标</th><th>描述</th><th>优先级</th></tr>
     <tr><td>向量语义检索（HNSW）</td><td>在已有 <code>embedding_vector</code> 列上新建 HNSW 索引，<code>cosine_distance</code> 全表扫描 → 近似最近邻</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>双路并行召回</td><td>向量语义 + 关键词检索同时触发（各自独立 Session，经线程池并行 I/O）</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>RRF 融合</td><td>无超参融合双路结果，输出统一 Top-K</td><td><span class="badge badge-red">P0</span></td></tr>
-    <tr><td>中文分词</td><td>Jieba 分词 + PG tsvector GIN 索引，支持中英混合</td><td><span class="badge badge-red">P0</span></td></tr>
+    <tr><td>中文分词</td><td>Jieba 分词 + ParadeDB pg_search BM25 索引，支持中英混合</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>关键词索引构建</td><td>分块完成后立即构建（与分块同源）</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>优雅降级</td><td>关键词通路不可用时自动回退纯向量检索</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>无缝集成</td><td>SearchService 内部双路合并，对外 API 不变</td><td><span class="badge badge-red">P0</span></td></tr>
@@ -237,16 +237,21 @@
 │                              │                                       │
 │                              ▼                                       │
 │                   rewritten_query                                    │
-│                    ┌─────────────┴─────────────┐                       │
-│                    │   并行召回：两路同时触发     │                       │
+│                              │                                       │
+│                              ▼                                       │
+│              FilterExtractor → RetrievalFilter                       │
+│        (时间范围 / 文档类型 / 权限等结构化白名单条件)                 │
+│                              │                                       │
+│                    ┌─────────┴─────────┐                             │
+│                    │   并行召回：两路同时触发     │                  │
 │                    └─────────────┬─────────────┘                       │
 │            ┌─────────────────────┴─────────────────────┐               │
 │            ▼                                           ▼               │
 │  ┌───────────────────────────┐       ┌───────────────────────────┐    │
 │  │ 1. 向量通路（扩展）        │       │ 2. 关键词通路（新模块）    │    │
 │  │ EmbeddingAPI.embed_single │       │ Jieba tokenize (搜索模式) │    │
-│  │ → pgvector HNSW（新增）   │       │ → to_tsquery OR 语义      │    │
-│  │ → cosine_distance         │       │ → ts_rank_cd 排序         │    │
+│  │ → pgvector HNSW（新增）   │       │ → pg_search query OR 语义      │    │
+│  │ → cosine_distance         │       │ → BM25 排序         │    │
 │  │ → Top-(k×multiplier)      │       │ → Top-(k×multiplier)      │    │
 │  │ (asyncio.to_thread)       │       │ (asyncio.to_thread)       │    │
 │  └────────────┬──────────────┘       └────────────┬──────────────┘    │
@@ -254,7 +259,7 @@
 │                                  ▼                                    │
 │              ┌───────────────────────────┐                           │
 │              │ 3. RRF Fusion（新模块）    │                           │
-│              │ score(d) = Σ 1/(k+rankᵢ)  │                           │
+│              │ rrf_score(d) = Σ 1/(k+rankᵢ)  │                           │
 │              │ 加权合并 + 去重            │                           │
 │              │ k = RRF_K                 │                           │
 │              └────────────┬──────────────┘                           │
@@ -264,9 +269,9 @@
 │  │   Unified Top-K Chunks       │ → LLM Prompt → Answer            │
 │  └──────────────────────────────┘                                   │
 │                                                                      │
-│  ★ 对外 API：SearchRequest / SearchResponse 结构不变（score 语义变更，见 §5.3）         │
+│  ★ 对外 API：SearchRequest / SearchResponse 结构不变（SearchResult 新增 rrf_score，见 §5.3）         │
 │  ★ 两路召回各自独立 Session，经 asyncio.to_thread 调度到线程池并行 I/O              │
-│  ★ SearchResult.score 改为 RRF 融合分数（越大越相关），原始双路分数降级为可选透传字段            │
+│  ★ SearchResult.rrf_score 为 RRF 融合分数（越大越相关），原始双路分数降级为可选透传字段            │
 └──────────────────────────────────────────────────────────────────────┘
   </div>
 
@@ -283,8 +288,8 @@
       │         ┌──────────┴───────────┐              │
       │         │ ① 向量检索            ② 关键词检索   │
       │         │ embed → HNSW（新增）  tokenize       │
-      │         │ → cosine_distance     → to_tsquery  │
-      │         │ → Top-(k×multiplier)  → ts_rank_cd  │
+      │         │ → cosine_distance     → pg_search query  │
+      │         │ → Top-(k×multiplier)  → BM25  │
       │         └──────────┬───────────┘              │
       │         vector results  +  keyword results    │
       │         ┌──────────┴───────────┐              │
@@ -334,10 +339,13 @@
   <div class="code-block">
 # search.py — _vector_search()：现状为全表扫描，扩展后走 HNSW 索引 + 候选池放大
 
-def _vector_search(self, query_vector: list[float], candidate_pool: int):
-    """pgvector cosine-distance 向量检索（HNSW 近似最近邻）。
-
-    相比现状的三处扩展：
+def _vector_search(
+    self,
+    query_vector: list[float],
+    candidate_pool: int,
+    filters: RetrievalFilter,
+):
+    """pgvector cosine-distance HNSW 检索；先应用元数据范围过滤。"""
     1. HNSW 索引（§4.0）——建在 document_embeddings.embedding_vector 上，
        PostgreSQL 对 `ORDER BY distance LIMIT n` 自动走 ANN 索引，
        SQL 主体不变，检索从全表扫描 O(N) 变为近似最近邻 O(log N)。
@@ -345,6 +353,8 @@ def _vector_search(self, query_vector: list[float], candidate_pool: int):
        控制召回率/延迟权衡（默认 40，建议 50-200，见 §4.0）。
     3. candidate_pool——LIMIT 由 top_k 放大为 top_k × multiplier，
        为 RRF 融合预留候选（§5.1 / §6）。
+    4. filters——在 ANN 排序前添加时间/类型等结构化 WHERE 条件，
+       只在满足用户范围的集合内检索。
     """
     # 会话级 ef_search：仅本次事务生效，不影响其他并发检索
     self._session.execute(
@@ -360,7 +370,7 @@ def _vector_search(self, query_vector: list[float], candidate_pool: int):
             DocumentChunk,
             ParsedDocument,
             UploadedFile.original_filename.label("document_name"),
-            distance_expr.label("score"),
+            distance_expr.label("vector_score"),
         )
         .join(DocumentChunk, DocumentEmbedding.chunk_id == DocumentChunk.id)
         .join(
@@ -371,10 +381,9 @@ def _vector_search(self, query_vector: list[float], candidate_pool: int):
             UploadedFile,
             ParsedDocument.uploaded_file_id == UploadedFile.id,
         )
-        .where(UploadedFile.deleted_at.is_(None))
-        .order_by(distance_expr.asc())
-        .limit(candidate_pool)   # 由 top_k 放大（现状为 limit(top_k)）
     )
+    stmt = apply_retrieval_filters(stmt, filters)
+    stmt = stmt.order_by(distance_expr.asc()).limit(candidate_pool)   # 由 top_k 放大（现状为 limit(top_k)）
 
     return self._session.exec(stmt).all()
   </div>
@@ -386,7 +395,7 @@ def _vector_search(self, query_vector: list[float], candidate_pool: int):
     <tr><td>检索算子</td><td><code>cosine_distance</code>（越小越相似），与现状一致，语义不变</td></tr>
     <tr><td>查询时调参</td><td><code>SET LOCAL hnsw.ef_search</code> 会话级配置（默认 100），召回率/延迟权衡</td></tr>
     <tr><td>候选池</td><td><code>top_k × vector_search_top_k_multiplier</code>（默认 ×2），供 RRF 融合</td></tr>
-    <tr><td>过滤</td><td>排除软删除文件（<code>UploadedFile.deleted_at IS NULL</code>）；<code>similarity_threshold</code> / <code>min_score_threshold</code> 为通路内门（§7.2）</td></tr>
+    <tr><td>过滤</td><td>排除软删除文件（<code>UploadedFile.deleted_at IS NULL</code>）；共享 <code>RetrievalFilter</code> 在 HNSW 排序前应用时间范围、文档类型等条件；<code>similarity_threshold</code> / <code>min_score_threshold</code> 为通路内门（§7.2）</td></tr>
   </table>
 
   <div class="note">
@@ -397,12 +406,51 @@ def _vector_search(self, query_vector: list[float], candidate_pool: int):
     它让向量通路在放大候选池（×2）的同时，检索延迟反而下降一个量级（§9.1）。
   </div>
 
+  <div class="note">
+    <strong>元数据过滤必须先于 ANN/BM25 排序执行。</strong> HNSW 与 pg_search 都只负责“在候选集合内找相似内容”，不能替代业务范围约束；检索请求应先由 QueryRewriter/FilterExtractor 产出结构化 <code>RetrievalFilter</code>，再把同一组参数下推到两路 SQL。这样“去年的财报”会被解析为<strong>报告类型=财报、时间范围=去年</strong>，而不是召回今年仅提到“去年”的文档。
+  </div>
+
+  <h3>3.0.1 统一元数据过滤（HNSW 与 pg_search 共享） <span class="badge badge-red">P0</span></h3>
+
+  <p>过滤条件由查询理解层生成，应用层只允许白名单字段和显式范围，不把自然语言直接拼进 SQL。过滤在两路检索中保持一致，避免一侧召回了被另一侧排除的文档，确保 RRF 的候选集合可比较。</p>
+
+  <div class="code-block">
+@dataclass(frozen=True)
+class RetrievalFilter:
+    """两路检索共享的结构化过滤条件；None 表示用户未提出该约束。"""
+    created_at_from: datetime | None = None
+    created_at_to: datetime | None = None       # 半开区间 [from, to)
+    document_types: tuple[str, ...] = ()         # pdf/docx/xlsx...（白名单）
+    filename_patterns: tuple[str, ...] = ()      # 可选的受控类型/名称映射
+
+# “去年的财报” →
+# RetrievalFilter(created_at_from=2025-01-01T00:00:00Z,
+#                 created_at_to=2026-01-01T00:00:00Z,
+#                 document_types=("financial_report",))
+
+
+def apply_retrieval_filters(stmt, filters: RetrievalFilter):
+    """对向量和关键词 stmt 复用同一套 WHERE 条件。"""
+    stmt = stmt.where(UploadedFile.deleted_at.is_(None))
+    if filters.created_at_from is not None:
+        stmt = stmt.where(UploadedFile.created_at >= filters.created_at_from)
+    if filters.created_at_to is not None:
+        stmt = stmt.where(UploadedFile.created_at < filters.created_at_to)
+    if filters.document_types:
+        stmt = stmt.where(UploadedFile.document_type.in_(filters.document_types))
+    return stmt
+  </div>
+
+  <div class="warn-note">
+    <strong>过滤字段映射需以真实 schema 为准。</strong>时间范围优先使用 <code>uploaded_files.created_at</code>；文档类型可使用已有结构化列或 <code>metadata_json</code> 中的白名单键（例如 <code>source_format</code>），不得用文件正文中的词命中来代替类型过滤。未能可靠解析的过滤条件应记录可观测性事件并采用“不过滤/询问用户”的显式策略，不能静默猜测。
+  </div>
+
   <!-- ── 3.1 Jieba 分词器 ── -->
   <h3>3.1 Jieba 分词器 <span class="badge badge-blue">新模块</span></h3>
 
   <p><span class="file-ref">backend/app/services/tokenizer.py</span></p>
 
-  <p>轻量封装 Jieba 分词，负责将中文文本转换为空格分隔的 token 序列，供 PostgreSQL <code>to_tsvector</code> 消费。</p>
+  <p>轻量封装 Jieba 分词，负责将中文文本转换为空格分隔的 token 序列，供 ParadeDB pg_search BM25 索引消费。</p>
 
   <div class="code-block">
 # tokenizer.py — Jieba 分词器封装（不可变快照 + 写时复制）
@@ -412,8 +460,8 @@ import jieba
 class ChineseTokenizer:
     """中英混合文本分词器，输出空格连接的 token 序列。
 
-    PostgreSQL tsvector 原生不支持中文分词（仅按单字处理），
-    因此需要应用层分词后再写入 tsvector 列。
+    PostgreSQL BM25 索引 原生不支持中文分词（仅按单字处理），
+    因此需要应用层分词后再写入 ParadeDB BM25 索引。
 
     并发模型：每个实例持有一个**不可变分词器快照**（独立的
     jieba.Tokenizer 实例），构造后**冻结**——绝不调用 add_word /
@@ -489,10 +537,9 @@ DocumentChunkingService._run_job()
 │         ├─ 读内存 chunk.text / contextualized_text / heading_path
 │         │                              # 不读落库后的 DocumentChunk 字段，
 │         │                              #   也不碰 *_storage_key
-│         ├─ setweight 四档加权：A 标题 / B 上下文 / C 正文
+│         ├─ 将 heading_path / contextualized_text / text 按字段分别分词并写入 BM25 索引字段
 │         └─ → UPDATE document_chunks
-│               SET keyword_search_vector =
-│                   setweight(to_tsvector('simple', heading), 'A') || ...
+│               SET keyword_search_text = :keyword_text
 │               WHERE id = chunk_id
 │
 ├─ session.commit()
@@ -501,8 +548,8 @@ DocumentChunkingService._run_job()
 └─ ...
   </div>
 
-  <h4>索引文本选择（与分块遍历同源 + setweight 四档权重）</h4>
-  <p>关键词索引必须在<strong>分块阶段的同一遍历内</strong>、用<strong>chunker 刚吐出的内存 <code>chunk</code> 对象</strong>构建——<strong>在 <code>_save_chunk</code> 拿到 <code>stored.text</code> 之前</strong>直接读取内存中的 <code>chunk.text</code> / <code>contextualized_text</code> / <code>heading_path</code>。<strong>绝不读落库后的 <code>DocumentChunk</code> 字段，也绝不碰 <code>*_storage_key</code></strong>——超限分块落库后 <code>text</code>/<code>contextualized_text</code> 已是 NULL（正文被卸载到磁盘），读它们是多余且易漂移的二次路径。同时按字段重要性施加 <code>setweight</code> 四档权重区分字段贡献：</p>
+  <h4>索引文本选择（与分块遍历同源 + 字段 boost）</h4>
+  <p>关键词索引必须在<strong>分块阶段的同一遍历内</strong>、用<strong>chunker 刚吐出的内存 <code>chunk</code> 对象</strong>构建——<strong>在 <code>_save_chunk</code> 拿到 <code>stored.text</code> 之前</strong>直接读取内存中的 <code>chunk.text</code> / <code>contextualized_text</code> / <code>heading_path</code>。<strong>绝不读落库后的 <code>DocumentChunk</code> 字段，也绝不碰 <code>*_storage_key</code></strong>——超限分块落库后正文可能为 NULL。同时将三个字段写入 ParadeDB BM25 索引的独立字段，通过字段 boost 区分标题、上下文与正文贡献：</p>
   <div class="code-block">
 def _build_keyword_index_for_chunk(
     self, chunk, chunk_id, tokenizer: ChineseTokenizer
@@ -513,15 +560,10 @@ def _build_keyword_index_for_chunk(
     DocumentChunk。落库后的 DocumentChunk.text 在正文 > inline_text_max_bytes
     （默认 2048 字节）时为 NULL——ChunkArtifactStorage._store_one 会把超限正文
     写到磁盘并返回 (None, storage_key)。若读落库字段，恰是最该被索引的大分块
-    会被静默构建成空 tsvector。因此必须在这里、在 stored.text 之前，用内存
+    会被静默构建成空 BM25 索引。因此必须在这里、在 stored.text 之前，用内存
     chunk.text/contextualized_text 分词，确保与向量化消费的是同一份权威原文。
 
-    评分改用 ts_rank_cd 后，调参面不再暴露 BM25 的 k1/b，转而
-    暴露 PG 原生 setweight 四档权重（A/B/C/D），按字段重要性加权拼接：
-      A — 标题路径 heading_path（最高权重）
-      B — contextualized_text（含标题路径与上下文摘要）
-      C — 正文 text
-      D — 保留（默认不启用）
+    ParadeDB pg_search 的 BM25 索引使用独立字段保存标题、上下文和正文，并通过字段 boost 区分权重；k1/b 与长度归一化由 BM25 索引配置管理。
     """
     parts: list[tuple[str, str]] = [
         (w, tokenizer.tokenize(text))
@@ -534,20 +576,19 @@ def _build_keyword_index_for_chunk(
     ]
     if not parts:
         return
-    # setweight(to_tsvector('simple', ...), weight) || ... 拼接为加权 tsvector。
-    # simple 配置避免英文词干化——分词已由 Jieba 完成，词边界已确定。
-    expr = " || ".join(
-        f"setweight(to_tsvector('simple', :t{i}), '{w}')"
-        for i, (w, _) in enumerate(parts)
-    )
-    from sqlalchemy import text as sa_text
+    # 将分词后的标题、上下文和正文分别写入 pg_search BM25 索引字段，
+    # 字段 boost 在 ParadeDB BM25 索引配置中声明。
+    keyword_text = {
+        "heading": parts.get("heading", ""),
+        "context": parts.get("context", ""),
+        "body": parts.get("body", ""),
+    }
     self.session.execute(
         sa_text(
-            "UPDATE document_chunks "
-            f"SET keyword_search_vector = {expr} "
+            "UPDATE document_chunks SET keyword_search_text = :keyword_text "
             "WHERE id = :chunk_id"
         ),
-        {f"t{i}": t for i, (_, t) in enumerate(parts)} | {"chunk_id": chunk_id},
+        {"keyword_text": keyword_text, "chunk_id": chunk_id},
     )
   </div>
 
@@ -567,12 +608,8 @@ def _build_keyword_index_for_chunk(
   </div>
 
   <div class="note">
-    <strong>为什么暴露 <code>setweight</code> 四档权重、而非 BM25 的 k1/b？</strong><br>
-    既然评分函数已确定为 <code>ts_rank_cd</code>（并非 BM25），就不存在 k1/b 这类 BM25 专属的长度归一化
-    调参面——继续暴露 k1/b 只会让调参方向系统性跑偏。PG 原生的 <code>setweight(tsvector, weight)</code> 才是
-    <code>ts_rank_cd</code> 真实可用的排序调参面：A &gt; B &gt; C &gt; D 四档权重按字段重要性加权后拼接进
-    tsvector，<code>ts_rank_cd</code> 会天然偏好高权重字段的命中（标题命中 &gt; 上下文命中 &gt; 正文命中）。
-    四档权重为<strong>固定字段映射</strong>（A 标题 / B 上下文 / C 正文 / D 保留），无需暴露为运行时可调参数。
+    <strong>ParadeDB BM25 参数与字段权重</strong><br>
+    ParadeDB pg_search 的 BM25 支持标准的 k1/b 长度归一化参数，并通过字段 boost 区分标题、上下文与正文权重。
   </div>
 
   <div class="note">
@@ -610,24 +647,14 @@ _CHINESE_STOPWORDS: frozenset[str] = frozenset({
 class KeywordSearchResult:
     """单条关键词检索结果。"""
     chunk_id: UUID
-    score: float          # ts_rank_cd 归一化分数
+    keyword_score: float          # BM25 原始分数（越大越相关）
 
 
 class KeywordSearchService:
-    """基于 PostgreSQL tsvector + ts_rank_cd 的关键词检索。
+    """基于 ParadeDB pg_search BM25 索引的关键词检索。
 
-    评分函数使用 ts_rank_cd（cover density 排名），它是基于
-    tf-idf 变体的排名函数。注意：ts_rank_cd 并非 BM25——缺少
-    IDF 与 BM25 k1/b 长度归一化项，本方案不再使用"BM25"措辞
-    。
-
-    查询语义：使用 OR（|）连接 token 而非 AND（&）。
-    原因见 §3.3.1「plainto_tsquery 的 AND 语义陷阱」。
-
-    相关性门：停用词过滤在查询构造阶段完成
-    （_build_or_tsquery），最少命中 token 数门槛在结果后置过滤
-    阶段完成（search）。二者共同构成关键词通路的通路内门，避免
-    单 token 噪声污染 RRF 融合。
+    查询使用 OR 语义，BM25 负责按词频、逆文档频率和文档长度归一化排序。
+    字段 boost 在 BM25 索引配置中声明，查询阶段直接调用 ParadeDB BM25，不使用 PostgreSQL 全文检索函数。
     """
 
     def __init__(self, session: Session, tokenizer: ChineseTokenizer):
@@ -637,21 +664,22 @@ class KeywordSearchService:
     # ── 查询构造：OR 语义避免零结果 + 显式停用词过滤 ──
 
     @staticmethod
-    def _build_or_tsquery(tokenized: str) -> str:
-        """将空格分隔的 token 转为 OR 语义的 tsquery 字符串。
+    def _build_or_BM25 查询(tokenized: str) -> str:
+        """将空格分隔的 token 转为 OR 语义的 BM25 查询 字符串。
 
         "向量 语义 检索 实现" → "'向量' | '语义' | '检索' | '实现'"
 
-        使用 OR（|）而非 plainto_tsquery 的 AND（&），原因：
-        - AND 语义下，5+ 个 token 时任何单一 token 缺失即零结果
-        - OR 语义配合 ts_rank_cd 实现"软 AND"——匹配越多 token 的文档排名越高
-        - ts_rank_cd 的 cover density 天然偏好高覆盖匹配，不会因 OR 而引入噪声
+        使用 OR 语义而非默认 AND 语义，原因：
+        - 多 token 查询中任一 token 缺失不会导致零结果
+        - BM25 按匹配 token 数量和相关性自然排序
+        - 查询解析由 ParadeDB pg_search 完成
 
         清洗规则（显式、可测试、禁用字符属性判断）：
         1. 去掉空白 token；
         2. 丢弃停用词集合内的 token；
-        3. 单字符 token 仅保留 CJK 汉字或 ASCII 字母/数字（显式区间判断），
-           其余（单个标点、全角符号）丢弃。
+        3. 最小 Token 长度阈值为 2：长度不足 2 的 token 直接丢弃，避免单字低区分度噪声；
+           如需支持单字专名，通过显式白名单例外放行；
+        4. 长度不少于 2 的 token 保留，随后按需做字符安全校验。
         """
         tokens = tokenized.split()
         if not tokens:
@@ -663,17 +691,12 @@ class KeywordSearchService:
                 continue
             if t in _CHINESE_STOPWORDS:            # 规则 2：停用词
                 continue
-            if len(t) == 1:                        # 规则 3：单字符显式类型判断
-                cp = ord(t[0])
-                if not (
-                    0x4E00 <= cp <= 0x9FFF         # CJK 统一汉字
-                    or ("A" <= t <= "Z")
-                    or ("a" <= t <= "z")
-                    or ("0" <= t <= "9")
-                ):
-                    continue
+            if len(t) < 2:                           # 规则 3：最小长度阈值，过滤单字噪声
+                continue
+            # 长度不少于 2 的 token 进入 OR 查询；单字专名如需支持，
+            # 应通过显式白名单在此规则之前放行。
             meaningful.append(t)
-        # 去重保留顺序：减少 tsquery 膨胀（Jieba cut_for_search 含子词切分常产生重复）
+        # 去重保留顺序：减少 BM25 查询 膨胀（Jieba cut_for_search 含子词切分常产生重复）
         seen = set()
         unique = []
         for t in meaningful:
@@ -688,6 +711,7 @@ class KeywordSearchService:
         query: str,
         candidate_pool: int,                 # 候选池大小 = top_k × KEYWORD_MULTIPLIER（无默认值）
         *,
+        filters: RetrievalFilter,
         min_token_match: int = 2,            # 相关性门基线：多 token 查询至少命中 2 个不同 token
     ) -> list[KeywordSearchResult]:
         """对 *query* 执行关键词检索，返回候选池大小的结果。
@@ -703,8 +727,8 @@ class KeywordSearchService:
         if not tokenized:
             return []
 
-        tsquery = self._build_or_tsquery(tokenized)
-        if not tsquery:
+        BM25 查询 = self._build_or_BM25 查询(tokenized)
+        if not BM25 查询:
             return []
 
         # 删除"有意义 token 数不足即判空"的查询侧早退。
@@ -712,8 +736,8 @@ class KeywordSearchService:
         # 单 token 精确查询（缩写/专名：RAG、LLM、BERT、向量…）一票否决——
         # 而这类查询恰恰是关键词通路相对向量检索最该补的盲区（§1.1）。
         # 改为：结果侧门槛随查询长度自适应 min(min_token_match, meaningful_count)，
-        # 单 token 查询门槛自动降为 1（命中即收，交 ts_rank_cd + 候选池排序）。
-        meaningful_count = len(tsquery.split(" | "))
+        # 单 token 查询门槛自动降为 1（命中即收，交 BM25 + 候选池排序）。
+        meaningful_count = len(BM25 查询.split(" | "))
         required_match = min(min_token_match, meaningful_count)
 
         rows = self._session.execute(
@@ -722,63 +746,68 @@ class KeywordSearchService:
                     SELECT
                         dc.id AS chunk_id,
                         dc.parsed_document_id,
-                        ts_rank_cd(
-                            dc.keyword_search_vector,
-                            to_tsquery('simple', :query)
-                        ) AS score,
-                        (
-                            SELECT count(*)
-                            FROM unnest(dc.keyword_search_vector) AS lex
-                            WHERE to_tsvector('simple', lex.lexeme)
-                                  @@ to_tsquery('simple', :query)
-                        ) AS matched_terms
+                        BM25(
+                            dc.keyword_search_text,
+                            :query
+                        ) AS keyword_score,
+                        dc.keyword_search_text
                     FROM document_chunks dc
-                    WHERE dc.keyword_search_vector IS NOT NULL
-                      AND dc.keyword_search_vector @@
-                          to_tsquery('simple', :query)
+                    JOIN parsed_documents pd ON pd.id = dc.parsed_document_id
+                    JOIN uploaded_files uf ON uf.id = pd.uploaded_file_id
+                    WHERE dc.keyword_search_text IS NOT NULL
+                      AND dc.keyword_search_text @@@ paradedb.term(:query)
+                      AND uf.deleted_at IS NULL
+                      AND (:created_at_from IS NULL OR uf.created_at >= :created_at_from)
+                      AND (:created_at_to IS NULL OR uf.created_at < :created_at_to)
+                      AND (
+                          :document_types IS NULL
+                          OR pd.metadata_json ->> 'source_format' = ANY(:document_types)
+                      )
                 )
-                SELECT m.chunk_id, m.score
+                SELECT m.chunk_id, m.keyword_score
                 FROM matched m
-                JOIN uploaded_files uf
-                    ON uf.id = (
-                        SELECT pd.uploaded_file_id
-                        FROM parsed_documents pd
-                        WHERE pd.id = m.parsed_document_id
-                    )
-                WHERE m.matched_terms >= :required_match
-                  AND uf.deleted_at IS NULL
-                ORDER BY m.score DESC
+                ORDER BY m.keyword_score DESC
                 LIMIT :candidate_pool
             """),
             {
-                "query": tsquery,
+                "query": BM25 查询,
                 "candidate_pool": candidate_pool,
-                "required_match": required_match,
+                "created_at_from": filters.created_at_from,
+                "created_at_to": filters.created_at_to,
+                "document_types": list(filters.document_types) or None,
             },
         ).all()
 
         return [
-            KeywordSearchResult(chunk_id=row.chunk_id, score=row.score)
+            KeywordSearchResult(chunk_id=row.chunk_id, keyword_score=row.keyword_score)
             for row in rows
         ]
   </div>
 
   <table class="decision-table">
     <tr><th>属性</th><th>值</th></tr>
-    <tr><td>检索函数</td><td><code>to_tsquery('simple', OR_tokenized_query)</code> — 将空格分隔的 token 转为 <code>|</code> 连接（OR 语义），避免 AND 语义在高 token 数时的零结果陷阱。配合 <code>ts_rank_cd</code> 实现"软 AND"——匹配更多 token 的文档自然排名更高</td></tr>
-    <tr><td>评分函数</td><td><code>ts_rank_cd()</code> — cover density 排名，PG 内置的 tf-idf 变体，无需额外扩展（注意：非 BM25）。配合索引端 <code>setweight</code> 四档权重（A 标题 / B 上下文 / C 正文 / D 保留）区分字段重要性，替换 BM25 的 k1/b 调参面（暴露 setweight，不暴露 k1/b）</td></tr>
-    <tr><td>索引</td><td><code>GIN</code> 索引 on <code>keyword_search_vector</code>，支持高效 <code>@@</code> 匹配</td></tr>
+    <tr><td>检索函数</td><td><code>paradedb.term(:query)</code> — 将分词后的 token 组成 OR 查询，交给 ParadeDB pg_search BM25 索引执行匹配</td></tr>
+    <tr><td>评分函数</td><td><code>paradedb.score(id)</code> / BM25 评分 — 使用 IDF、k1/b 和长度归一化，按 <code>keyword_score</code> 降序返回候选；字段 boost 在索引配置中声明</td></tr>
+    <tr><td>索引</td><td>ParadeDB pg_search BM25 索引 on <code>keyword_search_text</code>，支持高效 <code>@@@</code> 匹配</td></tr>
     <tr><td>相关性门</td><td>停用词过滤（查询构造阶段）+ 结果至少命中 <code>min(2, meaningful_count)</code> 个不同 token（结果过滤阶段，随查询长度自适应），二者构成关键词通路的通路内门</td></tr>
-    <tr><td>结果集</td><td>仅返回 <code>chunk_id + score</code>，完整元数据由融合层在融合前经统一 <code>HybridCandidate</code> 契约补齐</td></tr>
-    <tr><td>过滤</td><td>排除软删除文件（JOIN uploaded_files + deleted_at IS NULL）、排除未构建索引的分块</td></tr>
+    <tr><td>结果集</td><td>仅返回 <code>chunk_id + keyword_score</code>，完整元数据由融合层在融合前经统一 <code>HybridCandidate</code> 契约补齐</td></tr>
+    <tr><td>过滤</td><td>排除软删除文件、未构建索引的分块；与向量通路共享 <code>RetrievalFilter</code>，在 BM25 排序前应用时间范围与文档类型条件</td></tr>
   </table>
 
-  <!-- ── 3.3.1 plainto_tsquery 的 AND 语义陷阱与 OR 方案 ── -->
-  <h4>3.3.1 plainto_tsquery 的 AND 语义陷阱 <span class="badge badge-red">关键设计决策</span></h4>
+  <!-- ── 3.3.1 ParadeDB pg_search 查询语义与 OR 方案 ── -->
+  <h4>3.3.1 ParadeDB pg_search 查询语义与 OR 方案 <span class="badge badge-red">关键设计决策</span></h4>
+
+  <div class="note">
+    <strong>应用层查询预处理</strong>：当前已通过
+    <code>_CHINESE_STOPWORDS</code> 停用词表过滤高频无意义词，再执行单字 Token 的字符类型检查。
+    为进一步降低低区分度噪声，建议在拼接 OR 查询前增加<strong>最小 Token 长度阈值 2</strong>：长度不足 2 的
+    单字 Token（包括单字标点、单个 ASCII 字母/数字）直接丢弃，长度为 2 及以上的中文术语、ASCII 缩写和数字标识符正常保留。
+    若业务必须支持单字专名，应通过白名单例外放行。具体落点为下方 <code>_build_or_BM25 查询()</code> 的规则 1-3（约第 677-711 行）。
+  </div>
 
   <div class="problem-note">
-    <strong>问题：plainto_tsquery 的 AND 语义对中文查询是灾难性的。</strong><br>
-    <code>plainto_tsquery('simple', '向量 语义 检索 如何 实现')</code> 生成 <code>'向量' & '语义' & '检索' & '如何' & '实现'</code>——<strong>所有 5 个 token 必须同时出现在同一分块中</strong>，缺一不可。这在英文场景下或许可行（查询通常 2-5 个词），但 Jieba 搜索模式（<code>cut_for_search</code>）对 10 字中文查询可产出 8-15 个 token。每个 token 都是一个 AND 条件，任意一个 token 不在某分块中 → 该分块被排除。
+    <strong>问题：默认 AND 语义对中文查询是灾难性的。</strong><br>
+    <code>plainpg_search query('simple', '向量 语义 检索 如何 实现')</code> 生成 <code>'向量' & '语义' & '检索' & '如何' & '实现'</code>——<strong>所有 5 个 token 必须同时出现在同一分块中</strong>，缺一不可。这在英文场景下或许可行（查询通常 2-5 个词），但 Jieba 搜索模式（<code>cut_for_search</code>）对 10 字中文查询可产出 8-15 个 token。每个 token 都是一个 AND 条件，任意一个 token 不在某分块中 → 该分块被排除。
   </div>
 
   <h5>概率分析：AND 语义有多容易零结果？</h5>
@@ -804,43 +833,43 @@ n=12 (长查询):   p=0.25 → P ≈ 0.25¹² ≈ 6×10⁻⁸  基本不可能�
   <table>
     <tr><th>方案</th><th>语法</th><th>语义</th><th>中文适配</th><th>推荐度</th></tr>
     <tr>
-      <td><strong>plainto_tsquery</strong></td>
-      <td><code>plainto_tsquery('simple', query)</code></td>
+      <td><strong>ParadeDB pg_search</strong></td>
+      <td>BM25 查询 + OR 组合 token</td>
       <td>AND（&）——所有 token 必须匹配</td>
       <td><span class="badge badge-red">❌ 不适用</span><br>多 token 查询近乎零召回</td>
       <td>不推荐</td>
     </tr>
     <tr>
-      <td><strong>phraseto_tsquery</strong></td>
-      <td><code>phraseto_tsquery('simple', query)</code></td>
+      <td><strong>phrasepg_search query</strong></td>
+      <td><code>phrasepg_search query('simple', query)</code></td>
       <td>短语匹配（&lt;-&gt;）——token 必须按顺序相邻出现</td>
       <td><span class="badge badge-red">❌ 不适用</span><br>比 AND 更严格，中文分块极少保留原始词序</td>
       <td>不推荐</td>
     </tr>
     <tr>
-      <td><strong>websearch_to_tsquery</strong></td>
-      <td><code>websearch_to_tsquery('simple', query)</code></td>
+      <td><strong>websearch_pg_search query</strong></td>
+      <td><code>websearch_pg_search query('simple', query)</code></td>
       <td>混合——未引号部分为 OR，引号部分为短语</td>
       <td><span class="badge badge-orange">△ 部分适用</span><br>中文查询通常不含引号，退化为 OR；但依赖 PG ≥11 且对 Jieba token 的运算符处理不可控</td>
       <td>备选</td>
     </tr>
     <tr>
-      <td><strong>to_tsquery + OR（✅ 推荐）</strong></td>
-      <td><code>to_tsquery('simple', 'token1 | token2 | ...')</code></td>
-      <td>OR（|）——任意 token 匹配即可<br><strong>配合 ts_rank_cd：</strong>匹配越多 token 的文档分数越高 = "软 AND"</td>
-      <td><span class="badge badge-green">✅ 最佳</span><br>零结果概率趋近于零；ts_rank_cd 天然偏好高覆盖匹配</td>
+      <td><strong>pg_search query + OR（✅ 推荐）</strong></td>
+      <td><code>pg_search query('simple', 'token1 | token2 | ...')</code></td>
+      <td>OR（|）——任意 token 匹配即可<br><strong>配合 BM25：</strong>匹配越多 token 的文档分数越高 = "软 AND"</td>
+      <td><span class="badge badge-green">✅ 最佳</span><br>零结果概率趋近于零；BM25 天然偏好高覆盖匹配</td>
       <td><strong>采用</strong></td>
     </tr>
   </table>
 
-  <h5>为什么 OR + ts_rank_cd = "软 AND"？</h5>
+  <h5>为什么 OR + BM25 = "软 AND"？</h5>
 
   <p>这是关键洞察。切换到 OR 语义后，检索条件变得极其宽松——只要分块中包含<strong>任意一个</strong>查询 token 就能匹配。这解决了零结果问题，但也引入了一个新问题：会不会返回大量仅匹配单个无关 token 的噪声结果？</p>
 
   <p><strong>不会。</strong>原因有二：</p>
 
   <ol>
-    <li><strong>ts_rank_cd 是天然的排序器：</strong>PG 的 <code>ts_rank_cd</code> 基于 cover density（覆盖密度）计算分数。包含 5 个匹配 token 的分块分数远高于仅包含 1 个的分块。OR 语义下 ts_rank_cd 自动实现了"匹配越多 token 排名越高"的软 AND 效果。</li>
+    <li><strong>BM25 是原生相关性排序器：</strong>ParadeDB pg_search 使用词频、逆文档频率和文档长度归一化计算分数。包含更多查询 token 的分块通常排名更高，OR 语义因此具备"软 AND"效果。</li>
     <li><strong>候选池裁剪 + 相关性门：</strong>即使 OR 匹配了大量分块，只有候选池大小（<code>top_k × multiplier</code>）个最高分进入 RRF 融合；再叠加 §3.3.2 的最少命中 token 门槛，把仅命中 1 个 token 的噪声结果直接过滤。低质量单 token 匹配不会污染最终结果。</li>
   </ol>
 
@@ -850,16 +879,16 @@ Jieba cut_for_search → ["向量", "语义", "检索", "实现", "方案",
                         "向量语义", "语义检索", "检索的", "实现方案"]
 去重后 → 9 个独立 token
 
-AND (plainto_tsquery):
+OR (ParadeDB pg_search BM25):
   '向量' & '语义' & '检索' & '实现' & '方案' &
   '向量语义' & '语义检索' & '检索的' & '实现方案'
   → 分块必须包含全部 9 个 token → 几乎必然零结果
 
-OR (to_tsquery + |):
+OR (pg_search query + |):
   '向量' | '语义' | '检索' | '实现' | '方案' |
   '向量语义' | '语义检索' | '检索的' | '实现方案'
   → 任意 token 命中即可匹配
-  → ts_rank_cd 按匹配密度排序
+  → BM25 按匹配密度排序
   → 包含 "向量语义检索" 的分块（命中 3+ token）排在首位
   → 仅含 "方案" 的分块排在末尾，被候选池截断 + 相关性门过滤
   </div>
@@ -868,20 +897,20 @@ OR (to_tsquery + |):
 
   <p>Jieba <code>cut_for_search</code> 的搜索模式会产出包含子词切分的 token 列表。例如"向量化检索"切为 "向量" "量化" "向量化" "检索"，其中"向量化"已经作为完整 token 存在。如果不做去重：</p>
   <ul>
-    <li>重复 token 增加 tsquery 表达式复杂度（虽不影响语义）</li>
-    <li>PG 的 GIN 索引对重复 token 的查询效率略低于去重版本</li>
+    <li>重复 token 增加 BM25 查询 表达式复杂度（虽不影响语义）</li>
+    <li>PG 的 pg_search BM25 索引 索引对重复 token 的查询效率略低于去重版本</li>
   </ul>
-  <p><code>_build_or_tsquery</code> 中的 <code>set</code> 去重 + <code>list</code> 保序策略在 O(n) 内完成，零额外开销。</p>
+  <p><code>_build_or_BM25 查询</code> 中的 <code>set</code> 去重 + <code>list</code> 保序策略在 O(n) 内完成，零额外开销。</p>
 
   <h5>安全性：SQL 注入防护</h5>
 
-  <p><code>to_tsquery('simple', user_input)</code> 本身是安全的——tsquery 解析器只识别 <code>& | ! ( ) &lt;-&gt;</code> 作为运算符，其他所有字符（包括 SQL 关键字、注释符、引号）都被当作普通词素处理。Jieba 分词产出的中文 token 不含 tsquery 运算符字符，因此直接拼接 <code>|</code> 是安全的。但为了防御性编程，如果将来支持英文混合查询，应对 token 做字面量转义或使用参数化查询（当前已用 <code>:query</code> 参数绑定）。</p>
+  <p><code>pg_search query('simple', user_input)</code> 本身是安全的——BM25 查询 解析器只识别 <code>& | ! ( ) &lt;-&gt;</code> 作为运算符，其他所有字符（包括 SQL 关键字、注释符、引号）都被当作普通词素处理。Jieba 分词产出的中文 token 不含 BM25 查询 运算符字符，因此直接拼接 <code>|</code> 是安全的。但为了防御性编程，如果将来支持英文混合查询，应对 token 做字面量转义或使用参数化查询（当前已用 <code>:query</code> 参数绑定）。</p>
 
   <!-- ── 3.3.2 关键词通路相关性门 ── -->
   <h4>3.3.2 关键词通路的相关性门 <span class="badge badge-red">关键设计决策</span></h4>
 
   <div class="problem-note">
-    <strong>问题：ts_rank_cd + 候选池裁剪 不是"相关性门"。</strong><br>
+    <strong>问题：BM25 + 候选池裁剪 不是"相关性门"。</strong><br>
     排序函数只负责<strong>排序</strong>，LIMIT 只负责<strong>裁剪数量</strong>——二者都不能判定"这条结果是否相关"。
     若查询经停用词过滤后仅剩 1 个高词频 token，关键词通路仍会返回大量仅命中该 token 的弱相关结果，
     污染 RRF 融合。
@@ -892,7 +921,7 @@ OR (to_tsquery + |):
     <tr><th>门</th><th>位置</th><th>机制</th><th>作用</th></tr>
     <tr>
       <td><strong>停用词过滤</strong></td>
-      <td>查询构造阶段（<code>_build_or_tsquery</code>）</td>
+      <td>查询构造阶段（<code>_build_or_BM25 查询</code>）</td>
       <td>显式停用词集合 <code>_CHINESE_STOPWORDS</code> 丢弃"的/如何/为什么"等无区分度虚词</td>
       <td>从源头移除不贡献区分度的 token，避免它们计入"命中 token 数"</td>
     </tr>
@@ -923,12 +952,12 @@ OR (to_tsquery + |):
   </div>
 
   <div class="note">
-    <strong>no-match 的最终裁判仍是余弦距离，而非"融合结果非空"</strong>：<br>
-    关键词命中的分块可能是"包含该词、但语义离题"的块（例如一个含 <code>RAG</code> 却讲别的事的分块），
-    而 OR 语义下关键词通路几乎必回非空——若以 <code>fused 非空</code> 判定 no-match，等于让关键词命中
-    <strong>绕过</strong>向量阈值、把幻觉风险原样放回。因此融合后的 no-match 判定锚定在
-    <strong>向量命中分块的最小 cosine_distance ≤ similarity_threshold</strong>：关键词命中只提升排名，
-    不单独制造相关；<code>min_score_threshold</code> 那道"最优分块仍太远→拒绝生成"的防线保留在向量侧。
+    <strong>no-match 的最终裁判采用“RRF 排序 + 最低证据门”，不再只依赖 vector_score：</strong><br>
+    <code>rrf_score</code> 只反映两路结果的排名贡献，适合确定最终顺序，但不是跨查询可比较的相关性概率，不能单独用固定值判空。
+    因此融合后先按 <code>rrf_score</code> 取 Top-K，再检查 Top-K 是否存在可靠证据：向量命中必须满足
+    <code>vector_score ≤ similarity_threshold</code>；仅关键词命中则必须同时满足关键词通路的最少命中 token 门槛和经评测校准的
+    <code>keyword_score</code> 下限。两者均不满足时才判定 no-match。这样保留向量阈值对幻觉的安全防线，也不会因
+    关键词结果没有 <code>vector_score</code> 而被误判为空；<code>rrf_score</code> 负责排序，原始分数负责证据校验，各自职责清晰。
   </div>
 
   <!-- ── 3.4 RRF 融合 ── -->
@@ -938,17 +967,22 @@ OR (to_tsquery + |):
 
   <h4>公式</h4>
   <div class="diagram">
-                1               1
-RRF(d) = ───────────── + ───────────── + ...
-          k + rank₁(d)     k + rank₂(d)
+                w_vector                  w_keyword
+RRF(d) = ──────────────── + ──────────────── + ...
+          k + rank_vector(d)       k + rank_keyword(d)
 
 其中:
   • d       = 候选文档 (chunk)
   • rank_i  = 文档在第 i 个检索器结果中的排名 (1-indexed)
+  • w_i     = 第 i 路排名权重（默认均为 1.0，即等权基线）
   • k       = 平滑常数，默认 60（学术界标准）
 
+当 w_vector = w_keyword = 1.0 时，公式退化为等权 RRF；权重只作用于排名贡献，
+不应直接把未经校准的 cosine distance 与 BM25 原始分数相加。权重应通过离线标注集
+或线上 A/B 验证后调整，并支持按查询意图覆盖。
+
 属性:
-  • 免归一化：不同量纲的分数（cosine distance vs ts_rank_cd）无需归一化
+  • 免归一化：不同量纲的分数（cosine distance vs BM25）无需归一化
   • 单调性：排名越靠前的文档分数越高
   • 多列表自然融合：同一文档出现在多个列表中时分数自动叠加
   </div>
@@ -969,8 +1003,8 @@ class HybridCandidate:
     """
     chunk_id: UUID
     source: Literal["vector", "keyword", "both"]  # 来源标记（便于调试与加权扩展）
-    vector_score: float | None = None     # cosine_distance（越小越相似），仅向量通路有值
-    keyword_score: float | None = None    # ts_rank_cd 分数，仅关键词通路有值
+    vector_score: float | None = None     # 原始余弦距离（cosine_distance，越小越相似），仅向量通路有值
+    keyword_score: float | None = None    # 原始 BM25 分数（越大越相关），仅关键词通路有值
     # 融合前补齐的完整元数据
     parsed_document_id: UUID | None = None
     document_name: str = ""
@@ -987,6 +1021,8 @@ def _rrf_fusion(
     keyword_candidates: list[HybridCandidate],
     *,
     rrf_k: int = 60,                # RRF 平滑常数，独立参数
+    vector_weight: float = 1.0,    # 默认等权；通过评测后再调整
+    keyword_weight: float = 1.0,
     final_top_k: int,               # 最终返回条数，单一真相（来自请求 top_k）
 ) -> list[HybridCandidate]:
     """RRF 融合向量检索与关键词检索结果。
@@ -1000,15 +1036,15 @@ def _rrf_fusion(
     # 2. 收集所有出现过的 chunk_id
     all_chunk_ids = set(vector_ranks) | set(keyword_ranks)
 
-    # 3. 计算 RRF 分数
+    # 3. 计算 RRF 融合分数（rrf_score）
     rrf_scores: dict[UUID, float] = {}
     for chunk_id in all_chunk_ids:
-        score = 0.0
+        rrf_score = 0.0
         if chunk_id in vector_ranks:
-            score += 1.0 / (rrf_k + vector_ranks[chunk_id])
+            rrf_score += vector_weight / (rrf_k + vector_ranks[chunk_id])
         if chunk_id in keyword_ranks:
-            score += 1.0 / (rrf_k + keyword_ranks[chunk_id])
-        rrf_scores[chunk_id] = score
+            rrf_score += keyword_weight / (rrf_k + keyword_ranks[chunk_id])
+        rrf_scores[chunk_id] = rrf_score
 
     # 4. 排序并取最终 top_k
     ordered = sorted(rrf_scores.items(), key=lambda kv: kv[1], reverse=True)
@@ -1103,16 +1139,16 @@ WITH (m = 16, ef_construction = 200);
     knowra 个人知识库场景（&lt;10K 向量）建议 <code>ef_search=100</code>，召回率接近 100%。
   </div>
 
-  <h3>4.1 新增列 <code>keyword_search_vector</code> 与 HNSW 索引（合并迁移）</h3>
+  <h3>4.1 新增列 <code>keyword_search_text</code> 与 pg_search BM25 索引</h3>
 
   <table>
     <tr><th>表</th><th>列名</th><th>类型</th><th>索引</th><th>说明</th></tr>
     <tr>
       <td><code>document_chunks</code></td>
-      <td><code>keyword_search_vector</code></td>
-      <td><code>tsvector</code></td>
-      <td>GIN</td>
-      <td>存储 Jieba 分词后的文本向量，供 <code>ts_rank_cd</code> 评分检索</td>
+      <td><code>keyword_search_text</code></td>
+      <td><code>text</code>（JSONB 字段）</td>
+      <td>ParadeDB pg_search BM25 索引</td>
+      <td>存储 Jieba 分词后的标题、上下文和正文，供 BM25 评分检索</td>
     </tr>
     <tr>
       <td><code>document_embeddings</code></td>
@@ -1124,14 +1160,14 @@ WITH (m = 16, ef_construction = 200);
   </table>
 
   <h4>迁移文件（HNSW 与关键词索引合并为一条迁移）</h4>
-  <p><span class="file-ref">backend/alembic/versions/20260816_0001_add_hybrid_retrieval.py</span></p>
+  <p><span class="file-ref">backend/alembic/versions/20260817_0001_add_hybrid_retrieval.py</span></p>
 
   <div class="code-block">
-"""add hybrid retrieval: HNSW index + keyword_search_vector column and GIN index
+"""add hybrid retrieval: HNSW index + keyword_search_text column and pg_search BM25 索引 index
 
-Revision ID: 20260816_0001
+Revision ID: 20260817_0001
 Revises: 20260812_0002
-Create Date: 2026-08-16
+Create Date: 2026-08-17
 """
 
 from collections.abc import Sequence
@@ -1141,7 +1177,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 
-revision: str = "20260816_0001"
+revision: str = "20260817_0001"
 down_revision: str | Sequence[str] | None = "20260812_0002"  # 链到真实 head
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -1158,32 +1194,29 @@ def upgrade() -> None:
         postgresql_with={"m": 16, "ef_construction": 200},
     )
 
-    # 2. 关键词检索列：原生 TSVECTOR 类型，可空 — 旧数据暂不回溯
+    # 2. 关键词检索字段：JSONB 文档字段，可空 — 旧数据暂不回溯
     op.add_column(
         "document_chunks",
         sa.Column(
-            "keyword_search_vector",
-            postgresql.TSVECTOR(),
+            "keyword_search_text",
+            postgresql.JSONB(),
             nullable=True,
         ),
     )
 
-    # 3. GIN 索引（对称 op.create_index，与 downgrade 的 drop_index 对应）
-    op.create_index(
-        "ix_document_chunks_keyword_search_vector",
-        "document_chunks",
-        ["keyword_search_vector"],
-        postgresql_using="gin",
-    )
+    # 3. ParadeDB pg_search BM25 索引（字段 boost 在索引配置中声明）
+    op.execute("""
+        CREATE INDEX ix_document_chunks_keyword_search_text
+        ON document_chunks
+        USING bm25 (keyword_search_text)
+        WITH (key_field = 'id')
+    """)
 
 
 def downgrade() -> None:
     # 与 upgrade 严格对称：按相反顺序 drop
-    op.drop_index(
-        "ix_document_chunks_keyword_search_vector",
-        table_name="document_chunks",
-    )
-    op.drop_column("document_chunks", "keyword_search_vector")
+    op.execute("DROP INDEX ix_document_chunks_keyword_search_text")
+    op.drop_column("document_chunks", "keyword_search_text")
     op.drop_index(
         "ix_document_embeddings_embedding_vector_hnsw",
         table_name="document_embeddings",
@@ -1194,24 +1227,22 @@ def downgrade() -> None:
   <p><span class="file-ref">backend/app/models/document_chunking.py</span> — <code>DocumentChunk</code> 模型新增字段：</p>
 
   <div class="code-block">
-from sqlalchemy.dialects.postgresql import TSVECTOR
-
-# 新增字段（在 DocumentChunk 类中）——原生 TSVECTOR 类型，不落 Text 再 USING 转换
-keyword_search_vector: str | None = Field(
+# 新增字段：JSONB 文档字段，不使用 TSVECTOR
+keyword_search_text: dict | None = Field(
     default=None,
-    sa_column=Column(TSVECTOR(), nullable=True),
+    sa_column=Column(JSONB(), nullable=True),
 )
   </div>
 
   <div class="warn-note">
-    <strong>⚠️ 存量数据处理（多层缓解策略）</strong>：迁移后，<strong>已存在的分块</strong>不会自动构建 keyword_search_vector（列为 NULL）。
+    <strong>ParadeDB BM25 索引构建</strong>：迁移后，<strong>已存在的分块</strong>不会自动构建 keyword_search_text（列为 NULL）。
     系统采用<strong>多层防御</strong>确保存量数据平滑过渡，而非依赖单点补救：
 
     <table style="margin-top: .75rem;">
       <tr><th style="width:10em;">层级</th><th>机制</th><th>触发时机</th><th>说明</th></tr>
       <tr>
         <td><strong>L0 · 运行时安全网</strong></td>
-        <td><code>WHERE keyword_search_vector IS NOT NULL</code></td>
+        <td><code>WHERE keyword_search_text IS NOT NULL</code></td>
         <td>每次关键词检索</td>
         <td>NULL 分块自动跳过，仅参与向量检索路径，<strong>零用户影响</strong></td>
       </tr>
@@ -1239,8 +1270,8 @@ keyword_search_vector: str | None = Field(
         <td>运维手动触发</td>
         <td>
           覆盖全量存量数据。<br>
-          <strong>性能优化设计</strong>（注：关键词回填<em>不需要</em> Embedding API，仅 Jieba 分词 + <code>to_tsvector</code>）：<br>
-          ①&nbsp;<strong>批量 UPDATE</strong>：每批 500 条收集后，用一条多行 <code>UPDATE … SET keyword_search_vector = CASE WHEN id=… THEN to_tsvector(…) … END</code> 替代 500 次逐行 UPDATE，将 DB 往返从 O(N) 降为 O(N/500)；<br>
+          <strong>性能优化设计</strong>（注：关键词回填<em>不需要</em> Embedding API，仅 Jieba 分词 + ParadeDB BM25 索引）：<br>
+          ①&nbsp;<strong>批量 UPDATE</strong>：每批 500 条收集后，将分词后的字段对象批量写入 <code>keyword_search_text</code>，由 pg_search BM25 索引自动更新，减少 DB 往返；<br>
           ②&nbsp;<strong>并行 Worker</strong>：4 个 worker 各自独立读取→分词→攒批→写入，重叠 DB I/O 等待时间；<br>
           ③&nbsp;<strong>预估吞吐</strong>：单条分词 ~1ms + 批量写入均摊 ~0.5ms/条 → 4 worker 理论 ~2.5K 条/秒；实际受 DB 写入带宽约束，保守预估 ~5K-10K 条/分钟；<br>
           ④&nbsp;<strong>断点续传</strong>：每批次 commit 后记录最后处理的 chunk_id，中断后从此 ID 恢复，无需重跑已完成批次
@@ -1280,8 +1311,8 @@ SearchService.search(query, top_k, history, session_id)
 │    │
 │    │  candidate_pool = top_k × multiplier        # 显式候选池（默认 ×2，见 §6）
 │    │  vector_results, keyword_results = await asyncio.gather(
-│    │      asyncio.to_thread(self._vector_search, query_vector, candidate_pool),
-│    │      asyncio.to_thread(self._keyword_search.search, query, candidate_pool),
+│    │      asyncio.to_thread(self._vector_search, query_vector, vector_pool, filters),
+│    │      asyncio.to_thread(self._keyword_search.search, query, keyword_pool, filters),
 │    │      return_exceptions=True,
 │    │  )  # 两路同时触发、各自独立 Session，真实并行（见 §2）
 │    │
@@ -1294,8 +1325,8 @@ SearchService.search(query, top_k, history, session_id)
 │    └─ 关键词路径 (与向量路径并行执行，独立线程 + 独立 Session)
 │         keyword_search_service.search(query, candidate_pool)
 │         → Jieba tokenize (搜索模式)
-│         → to_tsquery OR 语义 + ts_rank_cd 排序 + 相关性门（通路内门）
-│         → GIN index scan
+│         → pg_search query OR 语义 + BM25 排序 + 相关性门（通路内门）
+│         → pg_search BM25 索引 index scan
 │
 ├─  2. ★ NEW: RRF 融合（加权合并 + 去重）
 │    _rrf_fusion(vector_results, keyword_results, final_top_k=top_k)
@@ -1340,24 +1371,29 @@ SearchService.search(query, top_k, history, session_id)
     <tr>
       <td>_build_results</td>
       <td>接收 rows</td>
-      <td>接收 chunk_id → score 映射 + 批量查询 chunks 元数据</td>
+      <td>接收 chunk_id → rrf_score 映射 + 批量查询 chunks 元数据</td>
       <td>需新增批量查询方法</td>
     </tr>
     <tr>
-      <td>SearchResult.score</td>
-      <td>cosine_distance（越小越相似）</td>
-      <td>改为 RRF 融合分数（越大越相关），作为唯一排序真相；原余弦距离语义迁至 <code>vector_score</code> 可选透传字段</td>
+      <td>SearchResult.rrf_score</td>
+      <td>原 <code>score</code>（余弦距离，越小越相似）</td>
+      <td>RRF 融合分数（越大越相关），作为唯一排序真相；原始余弦距离统一命名为 <code>vector_score</code></td>
       <td>语义变更，<strong>破坏性变更</strong></td>
     </tr>
   </table>
 
   <h3>5.3 SearchResult Schema 扩展</h3>
-  <p><code>score</code> 改为 RRF 融合分数（越大越相关，非空），作为<strong>唯一排序真相</strong>；原始双路分数降级为可选透传字段，仅调试与可视化用：</p>
+  <p><code>rrf_score</code> 为 RRF 融合分数（越大越相关，非空），作为<strong>唯一排序真相</strong>；原始双路分数统一使用 <code>vector_score</code> / <code>keyword_score</code>，仅调试与可视化用：</p>
   <div class="code-block">
 class SearchResult(BaseModel):
     # ... 现有字段不变 ...
     rank: int
-    score: float  # ★ 语义变更：RRF 融合分数（越大越相关），唯一排序真相
+    rrf_score: float  # RRF 融合分数（越大越相关），唯一排序真相
+    score: float | None = Field(
+        default=None,
+        deprecated=True,
+        description="兼容旧客户端的 rrf_score 弃用别名；只读、不参与排序，迁移完成后删除",
+    )
     # ── 原始分数降级为可选透传字段 ──
     vector_score: float | None = Field(
         default=None,
@@ -1365,23 +1401,27 @@ class SearchResult(BaseModel):
     )
     keyword_score: float | None = Field(
         default=None,
-        description="原始关键词检索分数（ts_rank_cd，越大越相关）。仅当该分块出现在关键词检索结果中时有值。仅透传，不参与排序",
+        description="原始关键词检索分数（BM25，越大越相关）。仅当该分块出现在关键词检索结果中时有值。仅透传，不参与排序",
     )
   </div>
 
   <div class="warn-note">
-    <strong><code>score</code> 从"余弦距离"翻转为"RRF 融合分数"。</strong><br>
-    原方案令 <code>score</code> 保持余弦距离语义（非空 <code>float</code>），但混合检索允许
-    <strong>仅关键词命中</strong>的分块进入最终结果——这类分块从未进入向量通路，<strong>根本没有余弦距离</strong>，
-    非空 <code>score</code> 便无从取值。融合分数则不同：它是每个进入最终结果的分块<strong>都必然具备</strong>的值
+    <strong><code>rrf_score</code> 是 RRF 融合分数（越大越相关），不再复用含义含糊的 <code>score</code>。</strong><br>
+    原始余弦距离统一命名为 <code>vector_score</code>（非空 <code>float</code>），但混合检索允许
+    <strong>仅关键词命中</strong>的分块进入最终结果——这类分块从未进入向量通路，<strong>没有 vector_score</strong>。
+    因此融合分数不同：它是每个进入最终结果的分块<strong>都必然具备</strong>的值
     （由 <code>1/(k+rank)</code> 单调映射而来），天然无空缺。
     <br><br>
-    因此：<strong>① 融合后以 RRF 融合分数为唯一排序真相</strong>（<code>score</code>，越大越相关）；
-    <strong>② 原始双路分数降级为可选透传字段</strong>（<code>vector_score</code> / <code>keyword_score</code>），
+    因此：<strong>① 融合后以 rrf_score 为唯一排序真相</strong>（越大越相关）；
+    <strong>② 原始双路分数统一使用可选字段</strong>（<code>vector_score</code> / <code>keyword_score</code>），
     仅当分块出现在对应通路结果中时有值，仅用于调试与可视化，不参与排序。
     <br><br>
-    <strong>⚠ 破坏性变更</strong>：<code>score</code> 的语义方向从"越小越相似"翻转为"越大越相关"，下游消费方需同步调整。
-    注意 no-match 判定等内部逻辑<strong>仍锚定在 <code>vector_score</code></strong>（见 §7.2），不依赖 <code>score</code>。
+    <strong>⚠ 破坏性变更</strong>：新增 <code>rrf_score</code> 替代原 <code>score</code>。为兼容已有前端或下游服务，建议短期保留
+    <code>score</code> 作为标记为 deprecated 的只读别名，并发布迁移通知；完成迁移后删除该别名。
+    <strong>no-match 判定等内部逻辑改为“证据门”</strong>：<code>rrf_score</code> 只负责融合后的排序，不作为固定阈值判空；
+    <code>vector_score</code> 只校验向量证据，<code>keyword_score</code> 只校验已通过关键词通路相关性门的关键词证据。
+    这样既避免仅关键词结果绕过安全校验，也避免仅关键词命中因缺少 <code>vector_score</code> 被误判为 no-match。
+    详见 §7.2。
   </div>
 </section>
 
@@ -1432,6 +1472,18 @@ class SearchResult(BaseModel):
       <td>RRF 平滑常数 k。值越大排名差异影响越小，结果越"扁平"。学术界常用 60。</td>
     </tr>
     <tr>
+      <td><code>RRF_VECTOR_WEIGHT</code> / <code>RRF_KEYWORD_WEIGHT</code></td>
+      <td>float</td>
+      <td><code>1.0 / 1.0</code></td>
+      <td>两路排名贡献权重。默认等权，仅在离线评测或 A/B 证明收益后调整；可由 QueryRewriter intent 覆盖。</td>
+    </tr>
+    <tr>
+      <td><code>KEYWORD_MIN_SCORE</code></td>
+      <td>float</td>
+      <td>按离线评测设定</td>
+      <td>仅关键词命中时的最低 BM25 证据门；必须通过评测校准，避免弱关键词结果单独触发回答。</td>
+    </tr>
+    <tr>
       <td><code>TOKENIZER_USER_DICT_PATH</code></td>
       <td>str</td>
       <td><code>""</code></td>
@@ -1475,7 +1527,7 @@ class SearchResult(BaseModel):
       <td>透明 — 仍返回向量检索 Top-K</td>
     </tr>
     <tr>
-      <td>所有 chunk keyword_search_vector = NULL</td>
+      <td>所有 chunk keyword_search_text = NULL</td>
       <td>关键词检索返回空结果 → RRF 退化为纯向量排名 → 同时触发 L1 机会性自愈（异步回填命中分块）<br><strong>注：</strong>OR 语义下此场景极为罕见（&lt; 1% 查询）。仅在所有 token 均不在知识库中时发生，属于"知识库不包含此主题"的正常情况。</td>
       <td>透明 — 与当前纯向量检索质量相同；高频分块随访问自然完成回填</td>
     </tr>
@@ -1486,7 +1538,7 @@ class SearchResult(BaseModel):
     </tr>
     <tr>
       <td>查询纯英文 / 无中文字符</td>
-      <td>Jieba 对英文按空格分词，token 不变 → tsquery 正常匹配</td>
+      <td>Jieba 对英文按空格分词，token 不变 → BM25 查询 正常匹配</td>
       <td>无 — 中英混合均正常</td>
     </tr>
   </table>
@@ -1511,7 +1563,7 @@ async def _do_hybrid_search(self, query: str, top_k: int):
         try:
             #同步检索经 to_thread 调度到独立线程，真实 I/O 并行
             return await asyncio.to_thread(
-                self._vector_search, query_vector, vector_pool
+                self._vector_search, query_vector, vector_pool, filters
             )
         except Exception as exc:
             # 向量检索失败是严重问题（已有熔断器保护），降级为空，交由 no-match 判定
@@ -1523,7 +1575,7 @@ async def _do_hybrid_search(self, query: str, top_k: int):
             return []
         try:
             return await asyncio.to_thread(
-                self._keyword_search.search, query, keyword_pool
+                self._keyword_search.search, query, keyword_pool, filters
             )
         except Exception as exc:
             self._logger.warning("keyword_search_failed", error=str(exc))
@@ -1541,14 +1593,23 @@ async def _do_hybrid_search(self, query: str, top_k: int):
         final_top_k=top_k,
     )
 
-    # ★ no-match 判定：锚定在余弦距离，而非"融合结果非空"
-    # 关键词命中只提升排名，不单独制造相关；语义相关性的最终裁判仍是
-    # 向量命中分块的最小 cosine_distance 是否 <= similarity_threshold。
-    min_vector_distance = min(
-        (c.vector_score for c in fused if c.vector_score is not None),
-        default=float("inf"),
+    # ★ no-match 判定：RRF 只排序，融合结果必须通过证据门
+    # 向量命中需满足 cosine distance 阈值；仅关键词命中需满足关键词通路
+    # 已完成的 token 门 + 校准后的 BM25 最低分，避免任一路径的弱信号直接生成。
+    has_vector_evidence = any(
+        c.vector_score is not None
+        and (
+            self._similarity_threshold <= 0
+            or c.vector_score <= self._similarity_threshold
+        )
+        for c in fused
     )
-    if not fused or min_vector_distance > self._similarity_threshold:
+    has_keyword_evidence = any(
+        c.keyword_score is not None
+        and c.keyword_score >= self._keyword_min_score
+        for c in fused
+    )
+    if not fused or not (has_vector_evidence or has_keyword_evidence):
         return {}
 
     return {c.chunk_id: c for c in fused}
@@ -1563,13 +1624,13 @@ async def _do_hybrid_search(self, query: str, top_k: int):
 
   <table>
     <tr><th>#</th><th>文件</th><th>操作</th><th>说明</th></tr>
-    <tr><td>0</td><td class="file-ref">backend/alembic/versions/20260816_0001_add_hybrid_retrieval.py</td><td><span class="badge badge-orange">新建</span></td><td>数据库迁移：合并 HNSW 索引 + tsvector 列 + GIN 索引（链到真实 head <code>20260812_0002</code>）</td></tr>
-    <tr><td>1</td><td class="file-ref">backend/app/models/document_chunking.py</td><td><span class="badge badge-blue">修改</span></td><td>DocumentChunk 模型新增 keyword_search_vector 字段（原生 TSVECTOR）</td></tr>
+    <tr><td>0</td><td class="file-ref">backend/alembic/versions/20260817_0001_add_hybrid_retrieval.py</td><td><span class="badge badge-orange">新建</span></td><td>数据库迁移：合并 HNSW 索引 + BM25 索引 列 + pg_search BM25 索引 索引（链到真实 head <code>20260812_0002</code>）</td></tr>
+    <tr><td>1</td><td class="file-ref">backend/app/models/document_chunking.py</td><td><span class="badge badge-blue">修改</span></td><td>DocumentChunk 模型新增 keyword_search_text 字段（原生 TSVECTOR）</td></tr>
     <tr><td>2</td><td class="file-ref">backend/app/services/tokenizer.py</td><td><span class="badge badge-orange">新建</span></td><td>Jieba 分词器封装（不可变快照 + 写时复制）</td></tr>
-    <tr><td>3</td><td class="file-ref">backend/app/services/keyword_search.py</td><td><span class="badge badge-orange">新建</span></td><td>关键词检索服务（tsvector + ts_rank_cd）</td></tr>
-    <tr><td>4</td><td class="file-ref">backend/app/services/document_chunking.py</td><td><span class="badge badge-blue">修改</span></td><td>_run_job() 分块遍历内用 chunker 内存 chunk 对象构建关键词索引（同源同遍历 + setweight 四档权重</td></tr>
+    <tr><td>3</td><td class="file-ref">backend/app/services/keyword_search.py</td><td><span class="badge badge-orange">新建</span></td><td>关键词检索服务（ParadeDB pg_search BM25）</td></tr>
+    <tr><td>4</td><td class="file-ref">backend/app/services/document_chunking.py</td><td><span class="badge badge-blue">修改</span></td><td>_run_job() 分块遍历内用 chunker 内存 chunk 对象构建 ParadeDB BM25 索引（同源同遍历 + 字段 boost）</td></tr>
     <tr><td>5</td><td class="file-ref">backend/app/services/search.py</td><td><span class="badge badge-blue">修改</span></td><td>_vector_search 接入 HNSW 索引 + ef_search 会话配置 + 候选池放大；集成双路并行召回 + RRF 融合 + 降级逻辑</td></tr>
-    <tr><td>6</td><td class="file-ref">backend/app/schemas/search.py</td><td><span class="badge badge-blue">修改</span></td><td>SearchResult.score 改为 RRF 融合分数；新增 vector_score / keyword_score 可选透传字段</td></tr>
+    <tr><td>6</td><td class="file-ref">backend/app/schemas/search.py</td><td><span class="badge badge-blue">修改</span></td><td>SearchResult 新增 <code>rrf_score</code>；原 <code>score</code> 短期保留为弃用别名；新增 <code>vector_score</code> / <code>keyword_score</code> 可选透传字段</td></tr>
     <tr><td>7</td><td class="file-ref">backend/app/core/config.py</td><td><span class="badge badge-blue">修改</span></td><td>新增混合检索配置项</td></tr>
     <tr><td>8</td><td class="file-ref">backend/tests/services/test_keyword_search.py</td><td><span class="badge badge-orange">新建</span></td><td>关键词检索单元测试</td></tr>
     <tr><td>9</td><td class="file-ref">backend/tests/services/test_hybrid_search.py</td><td><span class="badge badge-orange">新建</span></td><td>混合检索 + RRF 融合集成测试</td></tr>
@@ -1579,13 +1640,13 @@ async def _do_hybrid_search(self, query: str, top_k: int):
   <h3>实施顺序</h3>
   <div class="diagram">
 Phase 1: 基础设施
-  ├─ 0. DB 迁移（合并 HNSW + tsvector + GIN）
-  ├─ 1. 模型更新（DocumentChunk.keyword_search_vector，原生 TSVECTOR）
+  ├─ 0. DB 迁移（合并 HNSW + BM25 索引 + pg_search BM25 索引）
+  ├─ 1. 模型更新（DocumentChunk.keyword_search_text，原生 TSVECTOR）
   ├─ 2. 配置项（Settings 新增字段）
   └─ 3. Jieba 分词器（tokenizer.py，不可变快照）
 
 Phase 2: 核心逻辑
-  ├─ 4. 关键词检索服务（keyword_search.py，ts_rank_cd）
+  ├─ 4. 关键词检索服务（keyword_search.py，BM25）
   ├─ 5. 关键词索引构建集成（document_chunking.py）
   ├─ 6. 向量语义检索接入 HNSW 索引（search.py _vector_search：HNSW 索引 + ef_search 会话配置 + 候选池放大，§3.0/§4.0）
   └─ 7. 双路并行召回 + RRF 融合（search.py）
@@ -1610,24 +1671,25 @@ Phase 3: Schema & 测试
     <tr><td>Jieba 分词（查询）</td><td>O(L)，L=查询长度</td><td>~1ms</td><td>单次分词，极轻量</td></tr>
     <tr><td>Jieba 分词（建索引）</td><td>O(N×L)，N=分块数</td><td>~10ms/100 chunks</td><td>仅分块构建时执行一次</td></tr>
     <tr><td>向量检索（pgvector）</td><td>O(log N) 近似，N=向量数</td><td>~5-50ms</td><td>HNSW 索引近似最近邻 + cosine_distance 精排（HNSW 索引为本次新增，见 §3.0/§4.0）</td></tr>
-    <tr><td>关键词检索（GIN）</td><td>O(M)，M=命中 token 的 posting list 总长度</td><td>~5-50ms</td><td>GIN 索引定位 + posting list 扫描 + ts_rank_cd 评分（复杂度与真实 I/O 对齐，非 O(log N)）</td></tr>
+    <tr><td>关键词检索（pg_search BM25 索引）</td><td>O(M)，M=命中 token 的 posting list 总长度</td><td>~5-50ms</td><td>pg_search BM25 索引 索引定位 + posting list 扫描 + BM25 评分（复杂度与真实 I/O 对齐，非 O(log N)）</td></tr>
     <tr><td>RRF 融合</td><td>O(R₁ + R₂)，R=各路结果数</td><td>&lt;1ms</td><td>纯 CPU 计算，零 I/O</td></tr>
     <tr><td><strong>总增量（混合检索相比纯向量）</strong></td><td></td><td><strong>~5-60ms</strong></td><td>两路<strong>并行</strong>总耗时 ≈ max(向量耗时, 关键词耗时) + 融合耗时，而非两者之和；真实增量≈两路中较慢者的额外等待（先测后优化 + 埋点监控验证）</td></tr>
   </table>
 
   <div class="note">
-    <strong>先测后优化 + 埋点监控</strong>：上述复杂度是理论估算，真实耗时受 GIN posting list 长度、HNSW <code>ef_search</code>、磁盘 I/O 等因素影响。
+    <strong>先测后优化 + 埋点监控</strong>：上述复杂度是理论估算，真实耗时受 pg_search BM25 索引 posting list 长度、HNSW <code>ef_search</code>、磁盘 I/O 等因素影响。
     落地时在两路检索与 RRF 融合处埋点（<code>vector_search_ms</code> / <code>keyword_search_ms</code> / <code>rrf_fusion_ms</code>），
-    以真实数据驱动后续优化（如调 <code>ef_search</code>、<code>candidate_pool</code> multiplier），而非依赖静态复杂度推导提前过度设计。
+    并记录结果字段覆盖率（<code>rrf_score_present</code> / <code>vector_score_present</code> / <code>keyword_score_present</code>）与降级原因；
+    同时将 <code>rrf_score</code> 纳入序列化、排序、缓存值校验，避免缓存旧版 <code>score</code> 语义。
   </div>
 
   <h3>9.2 空间复杂度</h3>
   <table>
     <tr><th>数据</th><th>规模估算</th><th>说明</th></tr>
-    <tr><td>keyword_search_vector 列</td><td>~原文的 1.5-2×</td><td>tsvector 存储分词 + 位置信息</td></tr>
-    <tr><td>GIN 索引</td><td>~原文的 2-4×</td><td>倒排索引，与 token 唯一数相关</td></tr>
+    <tr><td>keyword_search_text 列</td><td>~原文的 1.5-2×</td><td>BM25 索引 存储分词 + 位置信息</td></tr>
+    <tr><td>pg_search BM25 索引 索引</td><td>~原文的 2-4×</td><td>倒排索引，与 token 唯一数相关</td></tr>
     <tr><td>HNSW 索引（document_embeddings）</td><td>~向量数据量的 1×（m=16 连接开销）</td><td>本次新增；<code>embedding_vector</code> vector(2560) 列本身已存在，HNSW 索引为其上的额外磁盘开销</td></tr>
-    <tr><td>典型场景（1000 文档、每文档 50 chunks、每 chunk 500 字符）</td><td>text: 25MB → tsvector: ~50MB → GIN: ~100MB</td><td>关键词通路总计约 150MB 增量（不含 HNSW 索引）</td></tr>
+    <tr><td>典型场景（1000 文档、每文档 50 chunks、每 chunk 500 字符）</td><td>text: 25MB → BM25 索引: ~50MB → pg_search BM25 索引: ~100MB</td><td>关键词通路总计约 150MB 增量（不含 HNSW 索引）</td></tr>
   </table>
 
   <div class="success-note">
@@ -1661,12 +1723,12 @@ Phase 3: Schema & 测试
       <td>pgvector HNSW 在 &lt;10K 向量规模下召回率接近 100%；<code>ef_search</code> 可动态调高换精度；检索后还有 RRF 融合与 LLM 生成补偿</td>
     </tr>
     <tr>
-      <td><strong>ts_rank_cd 并非真正的 BM25</strong>：PG 的 ts_rank_cd 是 cover density（tf-idf 变体），与学术 BM25 有细微差异（缺 IDF 全局权重、无 k1/b 长度归一）</td>
+      <td><strong>ParadeDB 原生 BM25</strong>：使用 IDF、k1/b 与文档长度归一化，提供稳定的关键词相关性排序</td>
       <td><span class="badge badge-green">低</span></td>
-      <td>对检索质量影响可忽略；若后续需要精确 BM25，可迁移至 paradeDB/pg_search 扩展，接口不变</td>
+      <td>对检索质量影响可忽略；本方案直接使用 ParadeDB/pg_search 原生 BM25</td>
     </tr>
     <tr>
-      <td><strong>存量数据无索引</strong>：已上传文档的 keyword_search_vector 为 NULL</td>
+      <td><strong>存量数据无索引</strong>：已上传文档的 keyword_search_text 为 NULL</td>
       <td><span class="badge badge-orange">中</span></td>
       <td>五层防御（详见 §4.1 存量数据处理）：<br>
         <strong>L0</strong> · 运行时安全网 — NULL 分块自动跳过，仅参与向量检索；<br>
@@ -1692,14 +1754,14 @@ Phase 3: Schema & 测试
   <table class="decision-table">
     <tr><th>决策</th><th>选择</th><th>理由</th></tr>
     <tr><td>向量索引</td><td>pgvector HNSW（本次新增）</td><td>将全表扫描降为近似最近邻 O(log N)；pgvector 原生支持，无需额外扩展；<code>ef_search</code> 可调精度/速度权衡</td></tr>
-    <tr><td>关键词排序函数</td><td>PG tsvector + ts_rank_cd（cover density，tf-idf 变体）</td><td>零额外基础设施，与现有 PG 深度绑定；ts_rank_cd 对近似度/词距更敏感（明确非 BM25）</td></tr>
-    <tr><td>排名权重</td><td>PG <code>setweight</code> 四档（A 标题 / B 上下文 / C 正文 / D 保留）</td><td>既然非 BM25，就不暴露不存在的 k1/b 调参；改用 PG 原生 <code>setweight</code> 字段权重作为 ts_rank_cd 唯一的排序调参面</td></tr>
+    <tr><td>关键词排序函数</td><td>ParadeDB pg_search BM25</td><td>原生 BM25 提供 IDF、k1/b 和长度归一化；字段 boost 在索引配置中声明，按 BM25 分数降序返回</td></tr>
+    <tr><td>排名权重</td><td>BM25 字段 boost（标题 / 上下文 / 正文）</td><td>通过 ParadeDB 索引字段权重表达内容重要性</td></tr>
     <tr><td>中文分词</td><td>Jieba（应用层）</td><td>纯 Python，无 C 扩展兼容问题；社区成熟</td></tr>
-    <tr><td>融合方法</td><td>RRF（k=60）</td><td>免归一化，学术界标准，零超参调优；以 <code>chunk_id</code> 去重 + 倒数排名加权 + 全局重排，替代简单拼接（§3.4）</td></tr>
+    <tr><td>融合方法</td><td>加权 RRF（默认 k=60、两路权重 1.0）</td><td>免归一化，适合作为无标注数据的冷启动基线；以 <code>chunk_id</code> 去重 + 倒数排名贡献 + 全局重排。权重不直接相加原始分数，后续须用离线评测/A-B 按意图校准（§10.4）</td></tr>
     <tr><td>召回执行方式</td><td>双路并行（<code>asyncio.to_thread</code> + <code>asyncio.gather</code>）</td><td>向量与关键词零数据依赖，各自独立 Session 经线程池并行 I/O，端到端延迟由 max 而非 sum 决定；修正旧版「伪并发」误判——同步函数直接 await 才是伪并发，<code>to_thread</code> 是真实并行</td></tr>
-    <tr><td>SearchResult.score</td><td>RRF 融合分数（越大越相关）</td><td>仅关键词命中的分块无余弦距离，非空 <code>score</code> 无从取值；改以融合分数为唯一排序真相，原始分数降级为可选透传</td></tr>
+    <tr><td>SearchResult.rrf_score</td><td>RRF 融合分数（越大越相关）</td><td>统一采用 <code>rrf_score</code> 作为排序与序列化字段；原 <code>score</code> 仅短期作为弃用别名；<code>vector_score</code> / <code>keyword_score</code> 仅表示两路原始分数</td></tr>
     <tr><td>索引构建时机</td><td>分块完成后立即构建</td><td>与向量化解耦，分块完成即可参与检索</td></tr>
-    <tr><td>tsvector 配置</td><td><code>simple</code></td><td>Jieba 已完成分词，不需 PG 额外词干化</td></tr>
+    <tr><td>BM25 索引 配置</td><td><code>simple</code></td><td>Jieba 已完成分词，不需 PG 额外词干化</td></tr>
   </table>
 
   <h3>10.3 Jieba 分词精度 — 六层递进式缓解措施</h3>
@@ -1840,7 +1902,7 @@ def _extract_domain_terms(self, chunks: list) -> list[str]:
 
   <h4>L3 · 双模式分词（索引精确 + 查询宽泛）</h4>
 
-  <p>Jieba 提供了两种分词模式。经典 IR 策略是<strong>索引端用精确模式、查询端用搜索模式</strong>——索引时 token 少而精（高精度），查询时 token 多而全（高召回），两者在 tsvector/tsquery 的 <code>@@</code> 匹配中自然互补。</p>
+  <p>Jieba 提供了两种分词模式。经典 IR 策略是<strong>索引端用精确模式、查询端用搜索模式</strong>——索引时 token 少而精（高精度），查询时 token 多而全（高召回），两者在 BM25 索引/BM25 查询 的 <code>@@</code> 匹配中自然互补。</p>
 
   <table>
     <tr><th></th><th>模式</th><th>API</th><th>效果示例（"向量化检索"）</th><th>特点</th></tr>
@@ -1849,14 +1911,14 @@ def _extract_domain_terms(self, chunks: list) -> list[str]:
       <td>精确模式</td>
       <td><code>jieba.cut(text)</code></td>
       <td>"向量化" "检索"</td>
-      <td>token 少，tsvector 紧凑，GIN 索引小</td>
+      <td>token 少，BM25 索引 紧凑，pg_search BM25 索引 索引小</td>
     </tr>
     <tr>
       <td><strong>查询端</strong></td>
       <td>搜索模式</td>
       <td><code>jieba.cut_for_search(text)</code></td>
       <td>"向量" "量化" "向量化" "检索"</td>
-      <td>token 多（含子词切分），tsquery 宽泛，提高召回</td>
+      <td>token 多（含子词切分），BM25 查询 宽泛，提高召回</td>
     </tr>
   </table>
 
@@ -1870,16 +1932,16 @@ class KeywordSearchService:
     def search(self, query: str, top_k: int = 10) -> list[KeywordSearchResult]:
         # 查询端：搜索引擎模式（更细粒度 → 更高召回）
         tokenized = self._tokenizer.tokenize_for_search(query)
-        # ... tsquery 匹配 ...
+        # ... BM25 查询 匹配 ...
 
 # tokenizer.py — 提供两种分词接口
 class ChineseTokenizer:
     def tokenize(self, text: str) -> str:
-        """索引端：精确模式。用于写入 tsvector。"""
+        """索引端：精确模式。用于写入 BM25 索引。"""
         return " ".join(jieba.cut(text.strip()))
 
     def tokenize_for_search(self, text: str) -> str:
-        """查询端：搜索模式。用于构造 tsquery。"""
+        """查询端：搜索模式。用于构造 BM25 查询。"""
         return " ".join(jieba.cut_for_search(text.strip()))
   </div>
 
@@ -1888,7 +1950,7 @@ class ChineseTokenizer:
     去重后用 <code>|</code>（OR）连接：<code>'向量' | '量化' | '向量化' | '检索'</code>。
     索引中的 "向量" 命中查询中的 "向量"——即使"向量化"未被正确识别，查询仍能匹配到文档。
     搜索模式自动提供了去重后的大量子词覆盖，OR 语义确保不会因单一 token 缺失而丢失匹配。
-    <strong>注意：</strong>如果使用 AND 语义（plainto_tsquery），"向量 & 量化 & 向量化 & 检索" 要求四个 token 同时存在，
+    <strong>注意：</strong>如果使用 AND 语义，"向量 & 量化 & 向量化 & 检索" 要求四个 token 同时存在；本方案使用 ParadeDB pg_search 的 OR 查询组合，并由 BM25 分数完成软排序。
     在个人知识库中几乎必定零结果。这是采用 OR 语义的核心原因——详见 §3.3.1。
   </div>
 
@@ -1909,7 +1971,7 @@ class KeywordSearchService:
     _MIN_KEYWORD_RESULTS = 2
 
     def search(self, query: str, top_k: int = 10) -> list[KeywordSearchResult]:
-        # 1. 主路径：Jieba 分词 → OR tsquery → ts_rank_cd 排序
+        # 1. 主路径：Jieba 分词 → OR BM25 查询 → BM25 排序
         tokenized = self._tokenizer.tokenize_for_search(query)
         results = self._keyword_search(tokenized, top_k)
 
@@ -1930,7 +1992,7 @@ class KeywordSearchService:
 
     def _ngram_search(self, query: str, top_k: int) -> list[KeywordSearchResult]:
         """字符 bigram 检索：将查询按字符滑动窗口切分为 bigram，
-        作为独立 token 进行 OR tsquery 匹配。"""
+        作为独立 token 进行 OR BM25 查询 匹配。"""
         # "向量化" → ["向量", "量化"]  (bigram)
         bigrams = [query[i:i+2] for i in range(len(query)-1)]
         if not bigrams:
@@ -1942,8 +2004,8 @@ class KeywordSearchService:
   <table class="decision-table">
     <tr><th>属性</th><th>值</th></tr>
     <tr><td>N-gram 粒度</td><td>bigram（2-gram）。中文 2 字组合覆盖绝大多数双字词和复合词边界，3-gram 噪声过大</td></tr>
-    <tr><td>索引端</td><td><strong>无需变更</strong>。N-gram 兜底复用现有 tsvector + GIN 索引，仅查询端生成 bigram token</td></tr>
-    <tr><td>得分</td><td>N-gram 结果的 ts_rank_cd 评分天然低于精确匹配，排在关键词结果之后（符合预期）</td></tr>
+    <tr><td>索引端</td><td><strong>无需变更</strong>。N-gram 兜底复用现有 BM25 索引 + pg_search BM25 索引 索引，仅查询端生成 bigram token</td></tr>
+    <tr><td>得分</td><td>N-gram 结果的 BM25 评分天然低于精确匹配，排在关键词结果之后（符合预期）</td></tr>
     <tr><td>误匹配风险</td><td>低。2 字中文 bigram 的随机共现概率 ≈ 1/5000²，在知识库规模下几乎不产生噪音</td></tr>
     <tr><td>触发频率</td><td>预期 &lt; 1% 查询触发（OR 语义下主路径已保证极高召回）。仅当关键词检索返回 &lt; 2 条结果时激活</td></tr>
   </table>
@@ -1980,7 +2042,7 @@ Jieba tokenize: "向量" "语义" "检索" "如何" "实现"  ← 标准术语�
   <div class="note">
     <strong>基础前提：OR 语义查询构造（§3.3.1）</strong>。以下 L0-L5 六层解决的是"分词精度"问题（token 是否被正确切分），
     而 OR 语义解决的是更根本的"零结果"问题（token 如何组合成查询）。两者正交互补：
-    L0-L5 确保 token 质量（术语被正确切分），OR + ts_rank_cd 确保查询不因 token 数量而失效（任何 token 命中即可贡献分数）。
+    L0-L5 确保 token 质量（术语被正确切分），OR + BM25 确保查询不因 token 数量而失效（任何 token 命中即可贡献分数）。
     <strong>没有 OR 语义，L0-L5 再完善也是徒劳——AND 逻辑会在 token 数达到阈值时数学上必然零结果。</strong>
   </div>
 
@@ -2038,15 +2100,70 @@ Jieba tokenize: "向量" "语义" "检索" "如何" "实现"  ← 标准术语�
 
   <div class="success-note">
     <strong>实施计划</strong>：<br>
-    <strong>基础</strong>：OR 语义查询构造（<code>_build_or_tsquery</code> 方法，~20 行）——在此之前 L0-L5 的效果无法体现<br>
+    <strong>基础</strong>：OR 语义查询构造（<code>_build_or_BM25 查询</code> 方法，~20 行）——在此之前 L0-L5 的效果无法体现<br>
     L0–L5 六层全部在本阶段实现，共需新建 4 个文件、修改 6 个文件、1 条迁移、1 个依赖：<br>
     <strong>L0</strong>：自定义词典支持（<code>ChineseTokenizer</code> 构造时加载 <code>jieba.load_userdict()</code>）<br>
     <strong>L1</strong>：动态词频调整（<code>jieba.add_word()</code> / <code>jieba.suggest_freq()</code>，~10 行）<br>
     <strong>L2</strong>：自动术语发现（手工 TF-IDF + C-value，~60 行，零额外依赖）<br>
     <strong>L3</strong>：双模式分词（<code>tokenize()</code> 索引 / <code>tokenize_for_search()</code> 查询）<br>
-    <strong>L4</strong>：N-gram 兜底（<code>ts_rank_cd</code> + 字符 bigram 降级，~80 行，OR 语义下触发率 &lt; 1%）<br>
+    <strong>L4</strong>：N-gram 兜底（<code>BM25</code> + 字符 bigram 降级，~80 行，OR 语义下触发率 &lt; 1%）<br>
     <strong>L5</strong>：已存在 — <code>TermAlignRewriter</code> 在 <code>query_rewrite_enabled=true</code> 时自动生效<br>
-    <strong>额外</strong>：混合搜索融合（向量 + 关键词 → RRF）、tsvector 迁移与 GIN 索引、搜索 API 响应中新增 <code>vector_score</code> / <code>keyword_score</code> 字段
+    <strong>额外</strong>：混合搜索融合（向量 + 关键词 → RRF）、BM25 索引 迁移与 pg_search BM25 索引 索引、搜索 API 响应中新增 <code>vector_score</code> / <code>keyword_score</code> 字段
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 10.4 排名权重可行性评估                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h3>10.4 向量通路与关键词通路是否应等权融合？</h3>
+
+  <div class="warn-note">
+    <strong>结论先行：当前方案采用的是“等权 RRF 基线”，可行，但不应被视为最终最优权重。</strong>
+    §3.4 的实现对两个结果列表使用完全相同的贡献：<code>1 / (rrf_k + rank)</code>，且没有
+    <code>w_vector</code> / <code>w_keyword</code> 系数。因此它是<strong>按排名信号等权</strong>，不是把
+    cosine distance 与 BM25 原始分数直接相加；两种分数仍然没有被混合，等权的是两路的排名证据。
+  </div>
+
+  <h4>为什么作为第一版可行</h4>
+  <ol>
+    <li><strong>避免分数不可比。</strong> cosine distance 与 BM25 的量纲、方向和分布不同，直接做
+      <code>α·vector_score + β·keyword_score</code> 很容易因归一化、语料规模或查询长度变化而失真。
+      RRF 只依赖名次，天然绕开这一问题。</li>
+    <li><strong>符合混合检索的常见工程基线。</strong>向量擅长语义改写和自然语言问题，BM25 擅长专名、缩写、数字、代码和精确短语；在没有标注数据时，让两路各自提供对称的证据，是低风险的冷启动策略。</li>
+    <li><strong>对分词和模型漂移更稳健。</strong>某一路的绝对分数发生漂移时，不会像线性加权那样改变另一条通路的量级；同一 chunk 同时进入两路时会获得明确的交集奖励。</li>
+    <li><strong>与当前小规模知识库匹配。</strong>knowra 预期规模小于 10K chunks，RRF 的 CPU 成本极低，能够先以统一指标上线，再用真实查询评测调整，而不是凭经验预设权重。</li>
+  </ol>
+
+  <h4>为什么“永久等权”并不充分</h4>
+  <ul>
+    <li>用户查询具有不同意图：<strong>错误码、文件名、API、版本号、专有名词</strong>通常应提高关键词证据；解释概念、同义改写和自然语言问题通常更依赖向量证据。</li>
+    <li>两路的召回质量可能不对称：HNSW 的 <code>ef_search</code>、中文分词质量、字段 boost、索引覆盖率和过滤条件都会改变某一路的可靠性。</li>
+    <li>RRF 的“同时命中奖励”并不等于相关性证明。当前 §7.2 规定关键词不能单独通过 no-match，这是安全的，但也意味着关键词通路目前主要是<strong>向量候选的排序增强</strong>；若产品目标是发现纯关键词命中，还需要独立的相关性校验或 reranker。</li>
+    <li><strong>候选池 ×2 可能过小。</strong>两路只取 <code>top_k × 2</code> 时，某一路的精确命中可能在另一条路的候选不足时无法进入融合；应通过召回率/延迟实验决定，常见起点可测试 ×5～×10，而不是固定假定 ×2。</li>
+  </ul>
+
+  <h4>推荐落地方案：等权冷启动 + 可配置加权 RRF</h4>
+  <div class="code-block">
+# 默认仍为等权，便于灰度、回滚和离线对比
+weighted_rrf(d) =
+    w_vector  * I[d in vector]  / (rrf_k + rank_vector[d]) +
+    w_keyword * I[d in keyword] / (rrf_k + rank_keyword[d])
+
+# 初始配置：w_vector = 1.0, w_keyword = 1.0
+# 只有在离线评测或线上反馈证明某类查询受益时才调整，禁止凭直觉固定 0.7/0.3。
+  </div>
+  <ol>
+    <li>先建立带人工相关性标签或用户反馈的查询集，至少按“概念问答 / 精确术语 / 数字代码 / 中英混合 / 无结果”分桶；记录 Recall@K、MRR/NDCG@K、答案引用命中率、P95 延迟和关键词故障降级率。</li>
+    <li>以等权 RRF 作为 baseline，做离线网格或小流量 A/B：比较 <code>(1,1)</code>、全局偏置权重，以及按 QueryRewriter intent 选择的权重。只有质量显著提升且延迟、误召回可接受时才上线。</li>
+    <li>优先使用<strong>查询意图加权</strong>而非全局固定权重：精确标识符提高 <code>w_keyword</code>，开放式语义问题提高 <code>w_vector</code>；权重必须有上限、可观测并可一键关闭。</li>
+    <li>后续引入 Cross-Encoder/BGE-Reranker 时，把 RRF 作为召回融合层，使用 reranker 统一比较候选内容；不要把未经校准的 BM25 和 cosine 原始分数直接相加。</li>
+  </ol>
+
+  <div class="success-note">
+    <strong>本项目决策：</strong>保留等权 RRF 作为 P0 的默认实现，并将“等权只是可验证基线”写入配置与监控要求；新增
+    <code>RRF_VECTOR_WEIGHT</code>、<code>RRF_KEYWORD_WEIGHT</code>（默认均为 <code>1.0</code>）和按 intent 覆盖的扩展位，
+    但在没有评测证据前不启用偏置。这样既获得混合检索的低风险收益，也避免把偶然的语料分布固化成错误的全局排名规则。
   </div>
 </section>
 
@@ -2070,8 +2187,8 @@ Jieba tokenize: "向量" "语义" "检索" "如何" "实现"  ← 标准术语�
     </tr>
     <tr>
       <td><strong>paradeDB 迁移</strong></td>
-      <td>将 tsvector 方案升级为 paradeDB/pg_search（原生 BM25）</td>
-      <td>ts_rank_cd 评分质量不满足需求时</td>
+      <td>将 BM25 索引 方案升级为 paradeDB/pg_search（原生 BM25）</td>
+      <td>BM25 评分质量不满足需求时</td>
     </tr>
     <tr>
       <td><strong>HyDE 检索</strong></td>
