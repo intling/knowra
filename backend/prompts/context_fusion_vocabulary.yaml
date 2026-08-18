@@ -1,0 +1,703 @@
+# ============================================================================
+# knowra — 上下文融合词汇表 (Context Fusion Vocabulary)
+# ============================================================================
+# 领域术语的上下文变体、同义表达、首字母缩写映射及领域关联。
+#
+# 用途：
+#   1. 上下文融合阶段（ContextRewriter）——当查询含指代词时，借助此词汇表
+#      将对话历史中的领域术语与当前查询中的模糊指代建立关联
+#   2. 术语对齐阶段（TermAlignRewriter）——将用户口语化表达映射为正式术语
+#   3. 质量评估阶段（Postprocessor）——检查改写结果中的关键领域术语留存率
+#
+# 词汇表结构：
+#   - domain_terms:     领域核心术语（含正式名称、缩写、中文译名、上下文同义词）
+#   - acronym_map:      缩写 ↔ 全称双向映射
+#   - synonym_groups:   同义表达组（组内任意两两互为可替换的语义等价表达）
+#   - context_disambiguation: 上下文消歧规则（同一缩写在不同上下文的不同含义）
+#
+# 版本规范：遵循 SemVer (MAJOR.MINOR.PATCH)
+#   MAJOR — 文件结构/加载方式发生不兼容变更
+#   MINOR — 新增术语域或大量术语
+#   PATCH — 修正/补充个别术语
+# ============================================================================
+
+version: "1.0.0"
+description: >-
+  上下文融合词汇表 —— 为多轮对话中的指代消解提供领域术语的上下文变体、
+  同义表达和缩写映射，帮助 LLM 在指代模糊时建立正确的术语关联。
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 一、领域核心术语 (Domain Core Terms)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 每个术语包含：
+#   - formal:        正式名称（规范写法，用于检索）
+#   - acronyms:      首字母缩写列表
+#   - chinese:       中文译名
+#   - context_synonyms: 在不同上下文中的同义表达
+#   - domain:        所属领域标签
+#   - related:       关联术语
+# ═══════════════════════════════════════════════════════════════════════════════
+
+domain_terms:
+
+  # ── RAG / 知识增强检索 ──────────────────────────────────────────────────────
+  - formal: "Retrieval-Augmented Generation"
+    acronyms: ["RAG"]
+    chinese: "检索增强生成"
+    context_synonyms:
+      - "知识增强检索"
+      - "RAG 管线"
+      - "检索增强"
+    domain: "ai"
+    related: ["向量检索", "语义搜索", "大语言模型", "知识库"]
+
+  - formal: "Semantic Search"
+    acronyms: []
+    chinese: "语义搜索"
+    context_synonyms:
+      - "语义检索"
+      - "向量搜索"
+      - "相似度搜索"
+      - "语义匹配"
+    domain: "search"
+    related: ["向量数据库", "Embedding", "余弦相似度", "pgvector"]
+
+  - formal: "Vector Database"
+    acronyms: []
+    chinese: "向量数据库"
+    context_synonyms:
+      - "向量存储"
+      - "向量索引"
+      - "向量检索引擎"
+    domain: "database"
+    related: ["pgvector", "Milvus", "Qdrant", "Pinecone", "Chroma", "FAISS"]
+
+  - formal: "Embedding"
+    acronyms: []
+    chinese: "向量嵌入 / 嵌入向量"
+    context_synonyms:
+      - "向量表示"
+      - "嵌入"
+      - "Embedding 向量"
+      - "文本向量化"
+    domain: "ai"
+    related: ["向量化", "语义表示", "Embedding 模型"]
+
+  - formal: "Tokenization"
+    acronyms: []
+    chinese: "分词 / Token 化"
+    context_synonyms:
+      - "分词"
+      - "切词"
+      - "Token 切割"
+    domain: "nlp"
+    related: ["Token", "Tokenizer", "分块"]
+
+  # ── 文档处理管线 ────────────────────────────────────────────────────────────
+  - formal: "Document Parsing"
+    acronyms: []
+    chinese: "文档解析"
+    context_synonyms:
+      - "文件解析"
+      - "文档提取"
+      - "内容提取"
+    domain: "pipeline"
+    related: ["文档上传", "Docling", "OCR", "PDF 解析"]
+
+  - formal: "Document Chunking"
+    acronyms: []
+    chinese: "文档分块 / 文档切片"
+    context_synonyms:
+      - "文档分割"
+      - "文本分块"
+      - "文档切片"
+      - "内容分段"
+    domain: "pipeline"
+    related: ["分块策略", "上下文窗口", "Token 限制"]
+
+  - formal: "Contextual Retrieval"
+    acronyms: []
+    chinese: "上下文增强检索"
+    context_synonyms:
+      - "上下文检索"
+      - "带上下文的分块检索"
+      - "上下文化检索"
+    domain: "ai"
+    related: ["contextualized_text", "Anthropic", "分块增强"]
+
+  # ── 查询处理 ────────────────────────────────────────────────────────────────
+  - formal: "Query Rewriting"
+    acronyms: []
+    chinese: "查询重写"
+    context_synonyms:
+      - "查询改写"
+      - "查询优化"
+      - "Query 优化"
+      - "问题重写"
+    domain: "query_rewriting"
+    related: ["意图分类", "术语对齐", "规范化重述", "扩展重述"]
+
+  - formal: "Intent Classification"
+    acronyms: []
+    chinese: "意图分类"
+    context_synonyms:
+      - "意图识别"
+      - "查询分类"
+      - "意图判断"
+    domain: "query_rewriting"
+    related: ["复杂度评分", "策略路由"]
+
+  - formal: "Pronoun Resolution"
+    acronyms: []
+    chinese: "指代消解"
+    context_synonyms:
+      - "指代解析"
+      - "指代词消除"
+      - "上下文消歧"
+    domain: "nlp"
+    related: ["上下文融合", "对话历史"]
+
+  - formal: "Context Fusion"
+    acronyms: []
+    chinese: "上下文融合"
+    context_synonyms:
+      - "上下文整合"
+      - "历史融合"
+      - "对话上下文融合"
+    domain: "query_rewriting"
+    related: ["指代消解", "多轮对话"]
+
+  - formal: "Term Alignment"
+    acronyms: []
+    chinese: "术语对齐"
+    context_synonyms:
+      - "术语标准化"
+      - "术语统一"
+      - "用词对齐"
+      - "术语规范化"
+    domain: "query_rewriting"
+    related: ["术语映射", "保护词"]
+
+  - formal: "Query Normalization"
+    acronyms: []
+    chinese: "查询规范化"
+    context_synonyms:
+      - "查询标准化"
+      - "规范化重述"
+      - "书面化改写"
+    domain: "query_rewriting"
+    related: ["口语转书面", "错别字修正"]
+
+  - formal: "Query Expansion"
+    acronyms: []
+    chinese: "查询扩展"
+    context_synonyms:
+      - "查询扩充"
+      - "语义扩展"
+      - "同义词扩展"
+      - "问题扩展"
+    domain: "query_rewriting"
+    related: ["同义词", "上位词", "Multi-Query"]
+
+  # ── 检索 ────────────────────────────────────────────────────────────────────
+  - formal: "Cosine Similarity"
+    acronyms: []
+    chinese: "余弦相似度"
+    context_synonyms:
+      - "余弦距离"
+      - "向量相似度"
+      - "相似度评分"
+    domain: "math"
+    related: ["pgvector", "向量检索", "语义搜索"]
+
+  - formal: "Similarity Threshold"
+    acronyms: []
+    chinese: "相似度阈值"
+    context_synonyms:
+      - "分数阈值"
+      - "相似度门槛"
+      - "匹配阈值"
+      - "最低相似度"
+    domain: "search"
+    related: ["过滤", "噪声分块"]
+
+  - formal: "Top-K Retrieval"
+    acronyms: []
+    chinese: "Top-K 检索"
+    context_synonyms:
+      - "前 K 个结果"
+      - "最相似结果"
+      - "最近邻检索"
+      - "最相关分块"
+    domain: "search"
+    related: ["pgvector", "语义搜索", "向量检索"]
+
+  # ── LLM / 生成 ──────────────────────────────────────────────────────────────
+  - formal: "Large Language Model"
+    acronyms: ["LLM"]
+    chinese: "大语言模型 / 大模型"
+    context_synonyms:
+      - "大模型"
+      - "语言模型"
+      - "AI 模型"
+      - "LLM"
+    domain: "ai"
+    related: ["生成", "Chat Completions", "Prompt", "Token"]
+
+  - formal: "Prompt Engineering"
+    acronyms: []
+    chinese: "提示词工程"
+    context_synonyms:
+      - "Prompt 设计"
+      - "提示词优化"
+      - "提示词编写"
+    domain: "ai"
+    related: ["System Prompt", "User Prompt", "Template"]
+
+  - formal: "Hallucination"
+    acronyms: []
+    chinese: "幻觉"
+    context_synonyms:
+      - "模型幻觉"
+      - "AI 幻觉"
+      - "编造"
+      - "幻觉问题"
+    domain: "ai"
+    related: ["上下文不足", "噪声分块", "内容安全"]
+
+  - formal: "Context Window"
+    acronyms: []
+    chinese: "上下文窗口"
+    context_synonyms:
+      - "Token 限制"
+      - "上下文长度"
+      - "窗口大小"
+      - "最大 Token 数"
+    domain: "ai"
+    related: ["Token", "截断"]
+
+  # ── 系统架构 ────────────────────────────────────────────────────────────────
+  - formal: "Dependency Injection"
+    acronyms: ["DI"]
+    chinese: "依赖注入"
+    context_synonyms:
+      - "DI 注入"
+      - "构造函数注入"
+      - "依赖注入模式"
+    domain: "architecture"
+    related: ["FastAPI", "SearchService", "QueryRewriter"]
+
+  - formal: "Graceful Degradation"
+    acronyms: []
+    chinese: "优雅降级 / 静默降级"
+    context_synonyms:
+      - "降级处理"
+      - "静默降级"
+      - "故障降级"
+      - "回退策略"
+    domain: "architecture"
+    related: ["熔断器", "超时", "兜底策略"]
+
+  - formal: "Circuit Breaker"
+    acronyms: []
+    chinese: "熔断器"
+    context_synonyms:
+      - "断路器"
+      - "熔断机制"
+      - "自动熔断"
+    domain: "architecture"
+    related: ["优雅降级", "半开状态", "冷却期"]
+
+  # ── 缓存 ────────────────────────────────────────────────────────────────────
+  - formal: "Exact Match Cache"
+    acronyms: []
+    chinese: "精确匹配缓存"
+    context_synonyms:
+      - "精确缓存"
+      - "哈希匹配缓存"
+      - "L1 缓存"
+      - "字符串匹配缓存"
+    domain: "cache"
+    related: ["L1 缓存", "会话绑定缓存", "SHA-256"]
+
+  - formal: "Semantic Cache"
+    acronyms: []
+    chinese: "语义缓存"
+    context_synonyms:
+      - "相似度缓存"
+      - "向量缓存"
+      - "L2 缓存"
+    domain: "cache"
+    related: ["余弦相似度", "向量检索", "L2 缓存"]
+
+  # ── knowra 特有概念 ─────────────────────────────────────────────────────────
+  - formal: "Knowra"
+    acronyms: []
+    chinese: "Knowra (本系统)"
+    context_synonyms:
+      - "本系统"
+      - "这个 AI 助手"
+      - "Knowra AI"
+      - "知识助手"
+    domain: "system"
+    related: ["知识库", "RAG", "私有知识问答"]
+
+  - formal: "Protected Term"
+    acronyms: []
+    chinese: "保护词 / 精确词保护"
+    context_synonyms:
+      - "精确词保护"
+      - "术语保护"
+      - "占位符保护"
+    domain: "system"
+    related: ["TermProtector", "占位符", "词汇表"]
+
+  - formal: "Rewrite Pipeline"
+    acronyms: []
+    chinese: "重写管线"
+    context_synonyms:
+      - "重写流程"
+      - "改写流程"
+      - "重写管道"
+      - "重写链"
+    domain: "system"
+    related: ["QueryRewriter", "策略路由", "质量评估"]
+
+  - formal: "Strategy Router"
+    acronyms: []
+    chinese: "策略路由器"
+    context_synonyms:
+      - "策略路由"
+      - "策略选择器"
+      - "路由决策"
+    domain: "system"
+    related: ["意图分类", "复杂度评分"]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 二、缩写 ↔ 全称双向映射 (Acronym Map)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 查询中可能出现缩写或全称，此映射帮助术语对齐时进行双向替换。
+# 格式：acronym → full_form，同时全称也可反向查找缩写。
+
+acronym_map:
+  # ── AI / ML ──
+  RAG: "Retrieval-Augmented Generation"
+  LLM: "Large Language Model"
+  RLHF: "Reinforcement Learning from Human Feedback"
+  CoT: "Chain-of-Thought"
+  HyDE: "Hypothetical Document Embeddings"
+  LoRA: "Low-Rank Adaptation"
+  MLOps: "Machine Learning Operations"
+
+  # ── 数据库 / 存储 ──
+  ACID: "Atomicity, Consistency, Isolation, Durability"
+  CRUD: "Create, Read, Update, Delete"
+  OLTP: "Online Transaction Processing"
+  OLAP: "Online Analytical Processing"
+  ETL: "Extract, Transform, Load"
+  ELT: "Extract, Load, Transform"
+
+  # ── 架构 / 模式 ──
+  CQRS: "Command Query Responsibility Segregation"
+  DDD: "Domain-Driven Design"
+  TDD: "Test-Driven Development"
+  BDD: "Behavior-Driven Development"
+  MVC: "Model-View-Controller"
+  MVVM: "Model-View-ViewModel"
+  SSO: "Single Sign-On"
+  MFA: "Multi-Factor Authentication"
+  RBAC: "Role-Based Access Control"
+  IAM: "Identity and Access Management"
+  CI/CD: "Continuous Integration / Continuous Deployment"
+
+  # ── 网络 / 协议 ──
+  CDN: "Content Delivery Network"
+  WAF: "Web Application Firewall"
+  DDoS: "Distributed Denial of Service"
+  VPC: "Virtual Private Cloud"
+  VPN: "Virtual Private Network"
+  DNS: "Domain Name System"
+  TLS: "Transport Layer Security"
+  SSL: "Secure Sockets Layer"
+  CSP: "Content Security Policy"
+  CORS: "Cross-Origin Resource Sharing"
+
+  # ── 前端 ──
+  SPA: "Single Page Application"
+  SSR: "Server-Side Rendering"
+  SSG: "Static Site Generation"
+  PWA: "Progressive Web Application"
+  SEO: "Search Engine Optimization"
+  CSR: "Client-Side Rendering"
+  ISR: "Incremental Static Regeneration"
+
+  # ── 安全 ──
+  XSS: "Cross-Site Scripting"
+  CSRF: "Cross-Site Request Forgery"
+  SQLi: "SQL Injection"
+  HSTS: "HTTP Strict Transport Security"
+
+  # ── 硬件 / 系统 ──
+  CPU: "Central Processing Unit"
+  GPU: "Graphics Processing Unit"
+  TPU: "Tensor Processing Unit"
+  NPU: "Neural Processing Unit"
+  RAM: "Random Access Memory"
+  SSD: "Solid State Drive"
+  HDD: "Hard Disk Drive"
+  BIOS: "Basic Input Output System"
+  UEFI: "Unified Extensible Firmware Interface"
+  RAID: "Redundant Array of Independent Disks"
+  NUMA: "Non-Uniform Memory Access"
+
+  # ── knowra 系统缩写 ──
+  DI: "Dependency Injection"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 三、同义表达组 (Synonym Groups)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 组内任意两个表达在语义上等价，可在查询扩展和术语对齐中互为替换。
+# 注意：同组表达仅在"概念层面"等价，不保证所有上下文中均可互换。
+
+synonym_groups:
+  # ── 检索相关 ──
+  - group: "搜索/检索"
+    terms:
+      - "搜索"
+      - "检索"
+      - "查找"
+      - "查询"
+      - "语义搜索"
+      - "语义检索"
+      - "向量检索"
+
+  - group: "相似度/匹配度"
+    terms:
+      - "相似度"
+      - "匹配度"
+      - "相关性"
+      - "相关度"
+      - "语义距离"
+      - "余弦距离"
+
+  - group: "命中/匹配"
+    terms:
+      - "命中"
+      - "匹配"
+      - "检索到"
+      - "找到"
+      - "返回结果"
+
+  # ── 文档处理 ──
+  - group: "上传/导入"
+    terms:
+      - "上传"
+      - "导入"
+      - "添加"
+      - "录入"
+      - "提交"
+
+  - group: "解析/提取"
+    terms:
+      - "解析"
+      - "提取"
+      - "识别"
+      - "读取"
+      - "转换"
+
+  - group: "分块/切片"
+    terms:
+      - "分块"
+      - "切片"
+      - "分割"
+      - "划分"
+      - "切分"
+      - "分段"
+
+  # ── 模型/生成 ──
+  - group: "生成/产出"
+    terms:
+      - "生成"
+      - "产出"
+      - "创建"
+      - "产生"
+      - "给出"
+
+  - group: "回答/响应"
+    terms:
+      - "回答"
+      - "回复"
+      - "响应"
+      - "答案"
+      - "输出"
+      - "返回"
+
+  - group: "模型/大模型"
+    terms:
+      - "大模型"
+      - "大语言模型"
+      - "LLM"
+      - "语言模型"
+      - "AI 模型"
+      - "生成模型"
+
+  # ── 质量/评估 ──
+  - group: "准确/精确"
+    terms:
+      - "准确"
+      - "精确"
+      - "精准"
+      - "正确"
+      - "对"
+
+  - group: "质量/效果"
+    terms:
+      - "质量"
+      - "效果"
+      - "表现"
+      - "结果"
+      - "好坏"
+
+  # ── 配置/设置 ──
+  - group: "配置/设置"
+    terms:
+      - "配置"
+      - "设置"
+      - "参数"
+      - "选项"
+      - "开关"
+
+  - group: "启用/开启"
+    terms:
+      - "启用"
+      - "开启"
+      - "打开"
+      - "激活"
+      - "启动"
+      - "使能"
+
+  - group: "禁用/关闭"
+    terms:
+      - "禁用"
+      - "关闭"
+      - "停用"
+      - "关掉"
+      - "去激活"
+
+  # ── 性能/延迟 ──
+  - group: "速度/延迟"
+    terms:
+      - "速度"
+      - "延迟"
+      - "耗时"
+      - "响应时间"
+      - "处理时间"
+      - "快慢"
+
+  - group: "性能/效率"
+    terms:
+      - "性能"
+      - "效率"
+      - "吞吐"
+      - "吞吐量"
+      - "并发"
+      - "QPS"
+
+  # ── 错误/异常 ──
+  - group: "错误/异常"
+    terms:
+      - "错误"
+      - "异常"
+      - "失败"
+      - "故障"
+      - "报错"
+      - "出问题"
+
+  - group: "超时/超限"
+    terms:
+      - "超时"
+      - "超限"
+      - "超时了"
+      - "超过限制"
+      - "超出范围"
+
+  # ── 多轮对话 ──
+  - group: "上下文/历史"
+    terms:
+      - "上下文"
+      - "对话历史"
+      - "上文"
+      - "聊天记录"
+      - "之前聊的"
+      - "前面提到的"
+
+  - group: "接着/继续"
+    terms:
+      - "接着"
+      - "继续"
+      - "然后"
+      - "下一步"
+      - "接下来"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 四、上下文消歧规则 (Context Disambiguation)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 同一缩写/术语在不同上下文中可能有不同含义，此规则帮助根据对话历史消歧。
+
+context_disambiguation:
+  - ambiguous_term: "RAG"
+    contexts:
+      - context_keywords: ["检索", "知识库", "文档", "向量", "生成"]
+        meaning: "Retrieval-Augmented Generation (检索增强生成)"
+      - context_keywords: ["清理", "管道", "排水", "抹布"]
+        meaning: "Rag (抹布/碎布，非技术含义)"
+
+  - ambiguous_term: "模型"
+    contexts:
+      - context_keywords: ["AI", "LLM", "GPT", "训练", "推理", "参数"]
+        meaning: "AI/ML 模型"
+      - context_keywords: ["3D", "三维", "建模", "Blender", "渲染"]
+        meaning: "3D 模型"
+      - context_keywords: ["数据", "数据库", "E-R", "关系"]
+        meaning: "数据模型"
+
+  - ambiguous_term: "向量"
+    contexts:
+      - context_keywords: ["Embedding", "检索", "语义", "相似度", "pgvector"]
+        meaning: "数学/ML 向量表示"
+      - context_keywords: ["物理", "力", "速度", "加速度"]
+        meaning: "物理向量"
+
+  - ambiguous_term: "分块"
+    contexts:
+      - context_keywords: ["文档", "文本", "Token", "上下文", "检索"]
+        meaning: "文档/文本分块"
+      - context_keywords: ["磁盘", "存储", "文件系统", "Block"]
+        meaning: "磁盘块/存储分块"
+      - context_keywords: ["内存", "堆", "GC", "JVM"]
+        meaning: "内存分块/内存块"
+
+  - ambiguous_term: "缓存"
+    contexts:
+      - context_keywords: ["L1", "L2", "精确匹配", "语义", "会话", "Query"]
+        meaning: "查询重写缓存（L1 精确 + L2 语义）"
+      - context_keywords: ["浏览器", "HTTP", "CDN", "前端"]
+        meaning: "HTTP/浏览器缓存"
+      - context_keywords: ["Redis", "Memcached", "内存"]
+        meaning: "内存缓存/分布式缓存"
+
+  - ambiguous_term: "管线"
+    contexts:
+      - context_keywords: ["重写", "Query", "检索", "RAG", "处理"]
+        meaning: "查询重写管线 / RAG 处理管线"
+      - context_keywords: ["CI", "部署", "构建", "DevOps"]
+        meaning: "CI/CD 管线"
+
+  - ambiguous_term: "Token"
+    contexts:
+      - context_keywords: ["LLM", "模型", "上下文", "限制", "消耗"]
+        meaning: "LLM Token（模型输入输出单位）"
+      - context_keywords: ["JWT", "认证", "OAuth", "Session"]
+        meaning: "认证 Token / JWT"
+      - context_keywords: ["区块链", "ERC", "智能合约"]
+        meaning: "加密货币 Token"

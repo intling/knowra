@@ -20,6 +20,7 @@ const props = withDefaults(
     loading?: boolean
     loadingStage?: "searching" | "generating" | null
     files?: AttachedFile[]
+    forceReplace?: boolean
   }>(),
   {
     modelValue: "",
@@ -27,12 +28,14 @@ const props = withDefaults(
     loading: false,
     loadingStage: null,
     files: () => [],
+    forceReplace: false,
   },
 )
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: string): void
   (e: "update:topK", value: number): void
+  (e: "update:forceReplace", value: boolean): void
   (e: "send"): void
   (e: "add-files"): void
   (e: "remove-file", id: string): void
@@ -262,6 +265,19 @@ function handleSend() {
             </svg>
           </button>
         </div>
+      </div>
+
+      <!-- Force replace checkbox: only visible when files are attached -->
+      <div v-if="files.length > 0" class="flex items-center gap-2 px-1">
+        <label class="flex cursor-pointer items-center gap-1.5 text-xs text-neutral-500 select-none">
+          <input
+            type="checkbox"
+            :checked="props.forceReplace"
+            class="size-3.5 rounded border-neutral-300 text-brand-700 focus:ring-brand-600"
+            @change="emit('update:forceReplace', ($event.target as HTMLInputElement).checked)"
+          />
+          替换已存在的同名文件
+        </label>
       </div>
 
       <!-- Top-K slider row -->

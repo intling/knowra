@@ -16,6 +16,43 @@ knowra 关注以下产品目标：
 - **引用与溯源**：回答中的关键结论应能追溯到原始文档、段落或知识片段。
 - **可扩展知识能力**：为 Query Rewrite、HyDE、RAG、知识图谱、检索评测等能力保留清晰扩展空间。
 
+## 2.5 查询重写模块（Query Rewriting）
+
+knowra 实现了完整的查询重写管线，在语义检索前对用户查询进行智能优化，提升检索质量。
+
+**架构概览**：查询重写采用多阶段管线架构，由 `QueryRewriter`（`backend/app/services/query_rewriter.py`）顶层编排：
+
+```text
+L1 缓存查询 → 请求去重 → 精确词保护 → 上下文融合（条件触发）
+→ L2 语义缓存查询 → 意图分类 → 策略路由决策
+→ 策略串联执行（normalize → term_align → expand）
+→ 质量评估（Postprocessor） → 回溯重试（条件触发）
+→ 保护词还原 → 写入缓存 → 审计日志记录
+```
+
+**核心组件**：
+
+| 组件 | 文件 | 职责 |
+|---|---|---|
+| `QueryRewriter` | `backend/app/services/query_rewriter.py` | 顶层管线编排器，协调所有子模块 |
+| `ExactTermProtector` | `backend/app/services/query_rewriter.py` | 精确词保护（用占位符替换术语防 LLM 篡改） |
+| `ContextRewriter` | `backend/app/services/query_rewriter.py` | 上下文融合（基于对话历史的指代词消解） |
+| `IntentRouter` | `backend/app/services/query_rewriter.py` | 意图分类 + 复杂度评分 |
+| `StrategyRouter` | `backend/app/services/strategy_router.py` | 策略路由决策（normalize/term_align/expand） |
+| `Postprocessor` | `backend/app/services/postprocessor.py` | 质量评估 + 回溯重试（5 维评分模型） |
+| `CacheManager` | `backend/app/services/cache_manager.py` | L1 精确缓存（会话绑定）+ L2 语义缓存（跨会话） |
+| `KBFingerprint` | `backend/app/services/kb_fingerprint.py` | 知识库指纹（缓存失效控制） |
+| `CircuitBreaker` | `backend/app/services/circuit_breaker.py` | 熔断器（连续失败自动降级） |
+| `AuditTrail` | `backend/app/services/audit_trail.py` | 审计日志（全链路追踪） |
+
+**配置说明**：所有配置通过 `QUERY_REWRITE_*` 环境变量控制（共 ~20 项），详见 `backend/.env.example`。主要开关为 `QUERY_REWRITE_ENABLED`（默认关闭）。
+
+**API 集成**：`POST /api/search` 的响应体包含 `rewrite_info` 字段（`RewriteInfo`），提供原始查询、改写结果列表、使用策略、耗时、缓存命中、意图分类、质量评分等完整元信息。即使重写未启用，该字段也会返回（含默认空值）。
+
+**测试覆盖**：测试位于 `backend/tests/services/query_rewriter/` 和 `backend/tests/test_query_rewrite_e2e.py`，覆盖单元测试、集成测试和端到端测试。
+
+详细设计见 `openspec/changes/add-query-rewriting/design.md`。
+
 ## 3. 核心用户流程
 
 knowra 的核心工作流是：

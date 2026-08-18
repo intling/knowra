@@ -1,0 +1,646 @@
+# ============================================================================
+# knowra — 规范化重述词汇表 (Query Normalization Vocabulary)
+# ============================================================================
+# 将口语化、碎片化、含错别字的用户查询转为规范、书面化、完整的查询语句。
+#
+# 用途：
+#   - 规范化重述阶段（NormalizeRewriter）——查询重写时执行语言规范化
+#   - 缓存键生成 —— 不同口语表达但语义相同的查询通过规范化收敛到同一形式
+#   - 质量评估阶段（Postprocessor）——检查规范化的清晰度提升效果
+#
+# 词汇表结构：
+#   - filler_words:          无意义语气词/填充词（直接删除）
+#   - redundancy_patterns:   冗余表达模式（精简）
+#   - typo_corrections:      常见错别字修正表
+#   - sentence_normalization: 句式规范化（碎片→完整句）
+#   - punctuation_rules:     标点符号规范化规则
+#   - quantifier_normalization: 模糊量词→精确表达
+#   - temporal_normalization:   时间表达规范化
+#
+# 规范化原则：
+#   1. 去除冗余不改变语义 —— 仅删除语气词、重复词，不删除有信息量的修饰
+#   2. 错别字修正坚持确凿标准 —— 只在置信度极高时修正，防止过度修正
+#   3. 省略补全不引入信息 —— 只补全语法上必需的成分，不脑补用户的意图
+#   4. 保持用户语气风格 —— 不过度正式化（如 "请帮我" 保留，"给爷" 可降调）
+#
+# 版本规范：遵循 SemVer (MAJOR.MINOR.PATCH)
+# ============================================================================
+
+version: "1.0.0"
+description: >-
+  规范化重述词汇表 —— 将口语化查询转为规范书面语，
+  包含填充词过滤、错别字修正、句式补全、标点规范化和量词标准化规则。
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 一、无意义语气词/填充词 (Filler Words — 直接删除)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 这些词/短语在查询中不承载信息，删除后语义不变。
+# 🚫 禁止删除的词：程度副词（很、非常、极其）、否定词（不、没、别）、
+#    疑问词（吗、呢、吧——在句末时承载语气信息）
+
+filler_words:
+  # ── 句首语气词 ──
+  - word: "嗯"
+    position: "sentence_start"
+    action: "delete"
+    example: "\"嗯 怎么配置\" → \"怎么配置\""
+
+  - word: "呃"
+    position: "sentence_start"
+    action: "delete"
+    example: "\"呃 那个 Python\" → \"Python\""
+
+  - word: "额"
+    position: "sentence_start"
+    action: "delete"
+    example: "\"额 报错了\" → \"报错了\""
+
+  - word: "那个"
+    position: "sentence_start"
+    action: "delete"
+    note: "仅在句首作为填充词时删除，句中作为指代词时保留"
+    example: "\"那个 怎么部署\" → \"怎么部署\""
+
+  - word: "就是说"
+    position: "anywhere"
+    action: "delete"
+    note: "口语填充，删除后不影响语义"
+
+  - word: "然后呢"
+    position: "anywhere"
+    action: "replace"
+    replacement: "然后"
+    note: "句末语气词\"呢\"删除"
+
+  - word: "怎么说呢"
+    position: "anywhere"
+    action: "delete"
+    note: "犹豫填充表达"
+
+  - word: "我想想"
+    position: "sentence_start"
+    action: "delete"
+    note: "思考过程的语言化，非信息内容"
+
+  - word: "好像"
+    position: "anywhere"
+    action: "conditional_delete"
+    condition: "当作为填充词而非表达不确定性时"
+    note: "\"好像是 Redis\"——保留（表达不确定）；\"好像那个配置好像改了\" → \"那个配置改了\""
+
+  # ── 冗余重复 ──
+  - word: "等等等等"
+    action: "replace"
+    replacement: "等"
+    note: "叠词冗余 → 单次"
+
+  - word: "什么什么"
+    action: "replace"
+    replacement: "什么"
+    note: "叠词冗余"
+
+  - word: "非常非常"
+    action: "replace"
+    replacement: "非常"
+    note: "程度副词叠用"
+
+  # ── 句末冗余语气词 ──
+  - word: "哈"
+    position: "sentence_end"
+    action: "delete"
+    example: "\"帮我看看哈\" → \"帮我看看\""
+
+  - word: "呗"
+    position: "sentence_end"
+    action: "delete"
+    example: "\"试一下呗\" → \"试一下\""
+
+  - word: "嗷"
+    position: "sentence_end"
+    action: "delete"
+
+  - word: "咯"
+    position: "sentence_end"
+    action: "delete"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 二、冗余表达模式 (Redundancy Patterns — 精简)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+redundancy_patterns:
+  # ── 动词+一下 → 动词 ──
+  - pattern: "(.+?)一下"
+    action: "replace"
+    replacement: "\\1"
+    note: "\"试一下\" → \"试\"（\"测试\"更优）；\"看一下\" → \"看\"（\"查看\"更优）"
+    exception: "当\\1为单字且去掉\"一下\"后显得突兀时，保留或替换为双字动词"
+
+  # ── 给我 + 动词 → 动词 ──
+  - pattern: "给我(.+?)"
+    action: "conditional_replace"
+    condition: "当'给我'为祈使语气填充，而非字面含义时"
+    replacement: "\\1"
+    note: "\"给我查一下\" → \"查询\"；\"给我发邮件\" → 保留（字面含义）"
+
+  # ── 帮我看(下|一下) → 查看 ──
+  - pattern: "帮我(看|查|找)(一下)?"
+    action: "replace"
+    replacement: "查看"
+    note: "\"帮我看看这个报错\" → \"查看这个报错\""
+
+  # ── 能不能/可不可以 + 动词 → 是否 + 动词 ──
+  - pattern: "(能不能|可不可以|是否可以)(.+?)"
+    action: "replace"
+    replacement: "是否\\2"
+    note: "\"能不能配置\" → \"是否可配置\""
+
+  # ── 有没有 + 名词 → 是否存在 + 名词 / 是否支持 + 名词 ──
+  - pattern: "有没有(.+?)"
+    action: "conditional_replace"
+    condition: "根据名词类型选择\"是否存在\"（概念/问题）或\"是否支持\"（功能/特性）"
+    note: "\"有没有这个功能\" → \"是否支持该功能\""
+
+  # ── 是不是 + 描述 → 是否 + 描述 ──
+  - pattern: "是不是(.+?)"
+    action: "replace"
+    replacement: "是否\\1"
+    note: "\"是不是配置问题\" → \"是否是配置问题\""
+
+  # ── 动词 + 掉了 → 已 + 动词 ──
+  - pattern: "(.+?)掉了"
+    action: "replace"
+    replacement: "已\\1"
+    note: "\"删掉了\" → \"已删除\"；\"关掉了\" → \"已关闭\""
+
+  # ── 开始 + 动词 + 了 → 正在 + 动词 ──
+  - pattern: "开始(.+?)了"
+    action: "replace"
+    replacement: "正在\\1"
+    note: "\"开始跑了\" → \"正在运行\"；\"开始部署了\" → \"正在部署\""
+
+  # ── 动词 + 完 + 了 → 已完成 + 动词 ──
+  - pattern: "(.+?)完了"
+    action: "replace"
+    replacement: "已完成\\1"
+    note: "\"跑完了\" → \"已完成运行\"；\"部署完了\" → \"已完成部署\""
+
+  # ── 别/不要 + 动词 → 避免 + 动词 / 禁止 + 动词 ──
+  - pattern: "(别|不要)(.+?)"
+    action: "replace"
+    replacement: "避免\\2"
+    note: "\"别用这个\" → \"避免使用该方案\"；\"不要删\" → \"避免删除\""
+
+  # ── 怎么 + 动词 → 如何 + 动词 ──
+  - pattern: "怎么(.+?)"
+    action: "replace"
+    replacement: "如何\\1"
+    note: "\"怎么配置\" → \"如何配置\""
+    exception: "\"怎么回事\" → \"原因是什么\""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 三、常见错别字修正 (Typo Corrections)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 仅修正确凿的常见错误，避免过度修正（不修正方言表达、个人语言习惯）。
+# 修正优先级：高频错误 > 中频错误 > 低频错误
+# 🚫 不应修正的：方言变体（如\"咋\"→\"怎么\"属于口语规范化，非错别字）
+
+typo_corrections:
+  # ── 高频（TOP 20 中文输入法常见错误）──
+  - wrong: "在吗"
+    correct: "在吗"
+    note: "正确写法，不需修正。\"在么\"才是错误写法。"
+    confidence: "high"
+
+  - wrong: "在么"
+    correct: "在吗"
+    confidence: "high"
+
+  - wrong: "按装"
+    correct: "安装"
+    confidence: "high"
+
+  - wrong: "部署"
+    correct: "部署"
+    note: "常见误写为\"布署\""
+    confidence: "high"
+
+  - wrong: "布署"
+    correct: "部署"
+    confidence: "high"
+
+  - wrong: "重起"
+    correct: "重启"
+    confidence: "high"
+
+  - wrong: "配值"
+    correct: "配置"
+    confidence: "high"
+
+  - wrong: "配制"
+    correct: "配置"
+    note: "仅在技术上下文中修正。\"化学配制\"保留。"
+    confidence: "medium"
+    context: ["技术配置", "服务器", "参数"]
+
+  - wrong: "链结"
+    correct: "连接"
+    confidence: "high"
+
+  - wrong: "联接"
+    correct: "连接"
+    confidence: "high"
+
+  - wrong: "须要"
+    correct: "需要"
+    confidence: "high"
+
+  - wrong: "毕需"
+    correct: "必须"
+    confidence: "high"
+
+  - wrong: "必需"
+    correct: "必须"
+    note: "仅在作为\"必须\"之义时修正。\"必需品\"中的\"必需\"保留。"
+    confidence: "medium"
+
+  - wrong: "已后"
+    correct: "以后"
+    confidence: "high"
+
+  - wrong: "己经"
+    correct: "已经"
+    confidence: "high"
+
+  - wrong: "以经"
+    correct: "已经"
+    confidence: "high"
+
+  - wrong: "既使"
+    correct: "即使"
+    confidence: "high"
+
+  - wrong: "固意"
+    correct: "故意"
+    confidence: "high"
+
+  - wrong: "计术"
+    correct: "技术"
+    confidence: "high"
+
+  # ── 中频编程/技术常见错误 ──
+  - wrong: "变数"
+    correct: "变量"
+    confidence: "high"
+    note: "繁简转换/台湾用语差异"
+
+  - wrong: "函式"
+    correct: "函数"
+    confidence: "high"
+    note: "繁简转换/台湾用语差异"
+
+  - wrong: "物件"
+    correct: "对象"
+    confidence: "high"
+    note: "繁简转换/台湾用语差异"
+
+  - wrong: "档案"
+    correct: "文件"
+    confidence: "high"
+    note: "繁简转换/台湾用语差异"
+
+  - wrong: "资料"
+    correct: "数据"
+    confidence: "high"
+    note: "繁简转换/台湾用语差异"
+
+  - wrong: "汇出"
+    correct: "导出"
+    confidence: "high"
+    note: "繁简转换"
+
+  - wrong: "汇入"
+    correct: "导入"
+    confidence: "high"
+    note: "繁简转换"
+
+  - wrong: "巨集"
+    correct: "宏"
+    confidence: "high"
+    note: "繁简转换"
+
+  - wrong: "执行档"
+    correct: "可执行文件"
+    confidence: "high"
+    note: "繁简转换"
+
+  - wrong: "行数"
+    correct: "行数"
+    note: "\"行号\"在部分上下文中可保留"
+    confidence: "low"
+
+  # ── AI/ML 领域常见拼写错误 ──
+  - wrong: "enbedding"
+    correct: "embedding"
+    confidence: "high"
+
+  - wrong: "retrival"
+    correct: "retrieval"
+    confidence: "high"
+
+  - wrong: "hallucination"
+    correct: "hallucination"
+    note: "常见误写为\"halucination\""
+    confidence: "high"
+
+  - wrong: "halucination"
+    correct: "hallucination"
+    confidence: "high"
+
+  - wrong: "promt"
+    correct: "prompt"
+    confidence: "high"
+
+  - wrong: "tocken"
+    correct: "token"
+    confidence: "high"
+
+  - wrong: "tokennizer"
+    correct: "tokenizer"
+    confidence: "high"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 四、句式规范化 (Sentence Normalization)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 将碎片化的查询补全为语法完整的查询语句。
+
+sentence_normalization:
+  # ── 纯关键词 → 完整疑问句 ──
+  - pattern: "仅由名词/短语组成的碎片查询（无动词、无疑问词、无完整主谓结构）"
+    action: "expand_to_query"
+    rules:
+      - "若为技术概念名 → 补充\"如何使用\"或\"配置方式\""
+      - "若为错误信息片段 → 补充\"原因及解决方案\""
+      - "若为工具/框架名 → 补充\"使用方法\"或\"配置方式\""
+    examples:
+      - input: "Nginx 反向代理"
+        output: "如何配置 Nginx 反向代理"
+      - input: "NullPointerException"
+        output: "NullPointerException 的原因及解决方案"
+      - input: "Docker Compose"
+        output: "Docker Compose 的使用方法"
+
+  # ── 缺少主语 → 补全主语 ──
+  - pattern: "谓语开头但缺少主语的查询"
+    action: "infer_subject"
+    rules:
+      - "从上下文（对话历史）推断主语"
+      - "无法推断时使用泛指主语\"系统\"或\"服务\""
+    examples:
+      - input: "报错了"
+        output: "系统报错"
+        note: "若无上下文，使用泛指"
+      - input: "启动不了"
+        output: "服务启动失败"
+        note: "若无上下文，使用\"服务\"作为主语"
+
+  # ── 缺少宾语 → 补全宾语 ──
+  - pattern: "及物动词后缺少宾语"
+    action: "infer_object"
+    rules:
+      - "从上下文推断宾语"
+      - "无法推断时使用泛指\"该功能\"或\"该配置\""
+    examples:
+      - input: "怎么配置"
+        output: "如何配置"
+        note: "宾语已隐含在上下文中（对话历史），无需补充；若无上下文，补全为\"如何配置系统\""
+
+  # ── 祈使句 → 疑问句 ──
+  # 当用户使用命令式但实际意图是询问时
+  - pattern: "^给(我|爷|咱)"
+    action: "deflate_tone"
+    replacement: "请"
+    note: "\"给我查一下\" → \"请查询\"（\"一下\"同时去除）"
+    exception: "\"给我发邮件\"——字面含义，保留"
+
+  - pattern: "^快(点|些)"
+    action: "replace"
+    replacement: "请尽快"
+    note: "\"快点部署\" → \"请尽快部署\""
+
+  # ── 疑问句结构优化 ──
+  - pattern: "(.+)吗？?$"
+    action: "keep_or_refine"
+    note: "\"吗\"字疑问句在书面语中完全可接受，保留。"
+    refinement: "仅在与其他规则冲突时调整（如同时含填充词）"
+
+  - pattern: "有没有(.+)的？?$"
+    action: "replace"
+    replacement: "是否有\\1"
+    note: "\"有没有好用的工具\" → \"是否有推荐的工具\""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 五、标点符号规范化 (Punctuation Rules)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+punctuation_rules:
+  # ── 多余标点精简 ──
+  - pattern: "[!！]{2,}"
+    action: "replace"
+    replacement: "！"
+    note: "多个感叹号合并为一个"
+
+  - pattern: "[?？]{2,}"
+    action: "replace"
+    replacement: "？"
+    note: "多个问号合并为一个"
+
+  - pattern: "[.。]{2,}"
+    action: "replace"
+    replacement: "。"
+    note: "多个句号合并为一个"
+
+  - pattern: "~{2,}"
+    action: "replace"
+    replacement: "~"
+    note: "多个波浪号合并为一个"
+
+  # ── 标点补全 ──
+  - pattern: "疑问句末尾缺少问号"
+    action: "append"
+    punctuation: "？"
+    triggers: ["吗", "呢", "什么", "怎么", "如何", "为什么", "是否"]
+
+  - pattern: "英文单词后缺少空格"
+    action: "normalize_spacing"
+    note: "在英文单词与中文字符之间插入空格，提高可读性"
+    examples:
+      - input: "Python怎么用"
+        output: "Python 怎么用"
+
+  # ── 全角/半角统一 ──
+  - pattern: "英文标点在中文语境中"
+    action: "normalize_to_fullwidth"
+    note: "英文查询保留半角标点，中文查询将英文标点转为全角（, → ，. → 。? → ？）"
+    exceptions:
+      - "代码块中的标点保持原样"
+      - "URL 中的标点保持原样"
+      - "JSON/XML 中的标点保持原样"
+      - "版本号中的 . 保持原样（3.10.0）"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 六、模糊量词 → 精确表达 (Quantifier Normalization)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+quantifier_normalization:
+  - colloquial: "几个"
+    formal: "多个"
+    note: "当不确定具体数量时保持\"多个\""
+
+  - colloquial: "一些"
+    formal: "若干 / 部分"
+    note: "\"一些配置项\" → \"若干配置项\""
+
+  - colloquial: "一大堆"
+    formal: "大量"
+    note: "\"一大堆报错\" → \"大量报错\""
+
+  - colloquial: "一堆"
+    formal: "多个 / 大量"
+    note: "根据上下文选择量级"
+
+  - colloquial: "好多个"
+    formal: "许多 / 大量"
+    note: ""
+
+  - colloquial: "不少"
+    formal: "较多"
+    note: "\"不少人遇到\" → \"较多用户遇到\""
+
+  - colloquial: "差不多"
+    formal: "大约 / 近似"
+    note: "\"差不多一样\" → \"近似 / 几乎相同\""
+
+  - colloquial: "一点点"
+    formal: "少量 / 略微"
+    note: "\"慢了一点点\" → \"略有延迟\""
+
+  - colloquial: "挺多"
+    formal: "较多"
+    note: ""
+
+  - colloquial: "老多"
+    formal: "大量"
+    note: "方言色彩强"
+
+  - colloquial: "贼多"
+    formal: "极多 / 非常多"
+    note: "北方方言"
+
+  - colloquial: "蛮多"
+    formal: "较多"
+    note: "南方口语"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 七、时间表达规范化 (Temporal Normalization)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+temporal_normalization:
+  - colloquial: "刚才"
+    formal: "刚才 / 上一轮对话中"
+    note: "在查询重写中保留，用于触发上下文融合"
+
+  - colloquial: "刚刚"
+    formal: "刚刚"
+    note: "可保留，也可根据上下文替换为具体引用"
+
+  - colloquial: "待会"
+    formal: "稍后"
+    note: ""
+
+  - colloquial: "等会"
+    formal: "稍后"
+    note: ""
+
+  - colloquial: "回头"
+    formal: "稍后 / 之后"
+    note: "\"回头再说\" → \"稍后处理\""
+
+  - colloquial: "过阵子"
+    formal: "一段时间后"
+    note: ""
+
+  - colloquial: "改天"
+    formal: "之后 / 后续"
+    note: ""
+
+  - colloquial: "上次"
+    formal: "上一次 / 上一轮对话中"
+    note: "上下文融合时参考对话历史中的具体指代"
+
+  - colloquial: "上回"
+    formal: "上一次"
+    note: ""
+
+  - colloquial: "这次"
+    formal: "本次 / 当前"
+    note: "上下文融合时参考当前查询的具体上下文"
+
+  - colloquial: "每次"
+    formal: "每次 / 每当"
+    note: "保留，已是书写表达"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 八、综合规范化示例 (Normalization Examples)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 展示完整的规范化过程：从原始口语查询 → 规范化查询
+
+examples:
+  - input: "嗯 那个 nginx 咋配啊"
+    steps:
+      - "删除句首语气词\"嗯\""
+      - "删除句首填充词\"那个\""
+      - "\"咋\" → \"如何\""
+      - "\"配\" → \"配置\""
+      - "删除句末语气词\"啊\""
+      - "英文单词前后加空格"
+    output: "如何配置 Nginx"
+
+  - input: "就是说我那个程序老是报错，帮我看看咋回事呗"
+    steps:
+      - "删除填充词\"就是说\""
+      - "\"老是\" → \"频繁\""
+      - "\"帮我看看\" → \"查看\""
+      - "\"咋回事\" → \"原因是什么\""
+      - "删除句末语气词\"呗\""
+    output: "程序频繁报错，请查看原因"
+
+  - input: "有没有好用的日志库啊，最好能结构化输出那种"
+    steps:
+      - "\"有没有\" → \"是否有\""
+      - "删除句末语气词\"啊\""
+      - "\"那种\" → 去除，由\"结构化输出\"补全"
+    output: "是否有推荐的结构化日志库"
+
+  - input: "docker compose 跑不起来 咋整！！"
+    steps:
+      - "\"跑不起来\" → \"无法启动\""
+      - "\"咋整\" → \"如何解决\""
+      - "多个感叹号合并"
+    output: "Docker Compose 无法启动，如何解决！"
+
+  - input: "额 就是想问下 k8s 的那个 pod 重启策略 是不是可以自定义的"
+    steps:
+      - "删除句首填充词\"额\""
+      - "\"就是想问下\" → 去除冗余修饰"
+      - "\"是不是可以\" → \"是否支持\""
+      - "\"K8s\" → \"Kubernetes\"（别名→标准写法）"
+      - "\"的\"字冗余去除"
+    output: "Kubernetes Pod 重启策略是否支持自定义"
+
+  - input: "代码崩了 怎么debug啊 急"
+    steps:
+      - "\"崩了\" → \"异常终止\""
+      - "\"怎么\" → \"如何\""
+      - "删除句末语气词\"啊\""
+      - "\"急\" → 可附加\"紧急\"前缀或去除（取决于语境）"
+    output: "代码异常终止，如何进行调试"

@@ -43,3 +43,16 @@ def skip_document_model_bootstrap_for_global_app():
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)
+
+
+@pytest.fixture
+def db_session() -> Generator[Session]:
+    """Provide a real SQLite session for the dependency override."""
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as test_session:
+        yield test_session

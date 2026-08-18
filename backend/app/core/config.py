@@ -82,20 +82,67 @@ class Settings(BaseSettings):
     chat_model: str = "qwen3.5-plus"
     chat_temperature: float = 0.1
     chat_max_tokens: int = 1024
-    chat_request_timeout: float = 60.0
-    chat_max_retries: int = 3
+    # 搜推分离超时：检索（向量搜索）通常在百毫秒内完成，其结果是用户可见的核心价值；
+    # 答案生成为"锦上添花"，应快速超时降级为"仅返回检索结果 + 降级提示"。
+    # 15s 单次 HTTP 超时 + 1 次重试 = 最坏 30s，由 search.py 的 asyncio.wait_for(20s) 兜底。
+    chat_request_timeout: float = 15.0
+    chat_max_retries: int = 1
+    # 流式生成首 token 超时（秒）：首个 token 未在此时间内到达则判定服务不可用，
+    # 快速降级返回检索结果。一旦首 token 到达即表明模型在工作，后续收集不受此限制。
+    chat_first_token_timeout: float = 10.0
+    # ── 对话生成熔断器（Circuit Breaker）──
+    # 连续 N 次 LLM 生成失败后自动断开，期间跳过 LLM 调用直接返回降级文本
+    chat_circuit_breaker_threshold: int = 5
+    # 熔断冷却时间（秒），期满后半开探测
+    chat_circuit_breaker_cooldown_seconds: float = 30.0
+    # 查询重写（Query Rewriting）配置
+    query_rewrite_enabled: bool = False
+    query_rewrite_model: str = "qwen3.5-plus"
+    query_rewrite_temperature: float = 0.1
+    query_rewrite_max_tokens: int = 512
+    query_rewrite_timeout: float = 15.0
+    query_rewrite_max_retries: int = 3
+    query_rewrite_api_base_url: str = "https://newapi.bytcloud.org/v1"
+    query_rewrite_api_key: str = ""
+    # 查询重写管线总超时（安全兜底，应大于内部各步骤超时之和）
+    # 典型耗时：router 8s + 1~3 个策略各 5~10s，30s 可覆盖绝大多数场景
+    query_rewrite_pipeline_timeout: float = 30.0
+    # 单个重写策略（normalize/term_align/expand）的 LLM 调用超时
+    # 默认 15s，给 LLM 充足的响应时间 + 重试余量
+    query_rewrite_strategy_timeout: float = 15.0
+    # ── 熔断器（Circuit Breaker）──
+    # 连续 N 次重写失败后自动断开，期间所有请求跳过重写
+    query_rewrite_circuit_breaker_threshold: int = 5
+    # 熔断冷却时间（秒），期满后半开探测
+    query_rewrite_circuit_breaker_cooldown_seconds: float = 30.0
+    # ── 查询重写缓存 TTL（与 CacheManager 集成）──
+    # L1 精确缓存 TTL（同一会话内精确匹配，通用知识默认 30min）
+    query_rewrite_cache_ttl_seconds: float = 1800.0
+    # context_dependent 条目 L1 TTL（上下文依赖结果更短的缓存时间）
+    query_rewrite_context_dependent_ttl_seconds: float = 300.0
+    # L2 语义缓存 TTL（跨会话语义匹配，默认 1h）
+    query_rewrite_l2_cache_ttl_seconds: float = 3600.0
+    # L2 context_dependent 条目 TTL（跨会话上下文依赖结果，保守缓存 10min）
+    query_rewrite_l2_context_dependent_ttl_seconds: float = 600.0
     # 语义搜索相似度阈值（余弦距离，0-2。0=完全相同，2=完全相反）
     # 仅当分块与查询的余弦距离 <= 此阈值时才纳入检索结果。
     # 设 0 表示禁用过滤。推荐值 0.4-0.6（取决于嵌入模型）。
-    # 较低的值 = 更严格 = 更少幻觉，但可能漏掉部分相关内容。
-    search_similarity_threshold: float = 0.5
+    # 应与 search_min_score_threshold 保持 0.1-0.15 差距，确保两道防线分工明确。
+    search_similarity_threshold: float = 0.55
 
     # 语义搜索最低分数阈值（余弦距离，0-2）。
     # 检索结果中最优分块（最低余弦距离）必须 <= 此阈值，否则视为"无相关结果"，
     # 返回空结果且不调用 LLM。这是防止 LLM 基于弱相关内容产生幻觉的第二道防线。
     # 应设置得比 search_similarity_threshold 更严格（值更小）。
     # 设 0 表示禁用此检查。
-    search_min_score_threshold: float = 0.4
+    search_min_score_threshold: float = 0.45
+    # 搜索响应 L1 缓存（内存 LRU，会话绑定精确匹配）
+    # 缓存完整的 SearchResponse（含自然语言回答、引用文档片段、模型版本、
+    # Token 消耗、生成耗时、审计追踪 ID），相同会话内完全相同的查询直接返回缓存结果。
+    # 设 False 可完全禁用；TTL 和 max_size 仅在启用时生效。
+    search_cache_enabled: bool = True
+    search_cache_ttl_seconds: float = 600.0  # 10 分钟
+    search_cache_max_size: int = 100
     document_model_bootstrap_enabled: bool = True
     document_model_bootstrap_strategy: str = "download_missing"
     document_model_bootstrap_failure_policy: str = "degraded"

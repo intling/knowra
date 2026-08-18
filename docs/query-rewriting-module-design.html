@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知寻 knowra — 查询优化重写模块设计方案</title>
+<style>
+  :root {
+    --bg: #faf9f7;
+    --card-bg: #ffffff;
+    --text: #2d2d2d;
+    --text-muted: #6b6b6b;
+    --border: #e6e4e0;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --warn: #d97706;
+    --warn-soft: #fffbeb;
+    --success: #059669;
+    --success-soft: #ecfdf5;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --code-bg: #f4f3f0;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 2rem;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 2.5rem 3rem;
+    margin-bottom: 2.5rem;
+  }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -.02em; }
+  header .subtitle { margin-top: .5rem; color: #94a3b8; font-size: 1rem; }
+  header .meta { margin-top: 1.25rem; display: flex; gap: 2rem; font-size: .85rem; color: #94a3b8; }
+
+  /* Sections */
+  section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    padding-bottom: .6rem;
+    border-bottom: 2px solid var(--border);
+    letter-spacing: -.01em;
+  }
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 650;
+    margin: 1.5rem 0 .75rem;
+    color: #1e293b;
+  }
+  h4 {
+    font-size: .95rem;
+    font-weight: 650;
+    margin: 1rem 0 .5rem;
+    color: #475569;
+  }
+
+  /* Diagrams */
+  .diagram {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+    font-family: "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
+    font-size: .82rem;
+    line-height: 1.5;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* Code / Prompts */
+  .prompt-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 1rem 1.25rem;
+    margin: .75rem 0;
+    font-family: "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
+    font-size: .8rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+  }
+  .prompt-block.small { font-size: .75rem; padding: .75rem 1rem; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .9rem; }
+  th, td { padding: .65rem .85rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--code-bg); font-weight: 650; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+  tr:last-child td { border-bottom: none; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: .15rem .55rem;
+    border-radius: 4px;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+  .tag-blue { background: var(--accent-soft); color: var(--accent); }
+  .tag-amber { background: var(--warn-soft); color: var(--warn); }
+  .tag-green { background: var(--success-soft); color: var(--success); }
+  .tag-red { background: var(--danger-soft); color: var(--danger); }
+
+  /* Cards grid */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+  .card h4 { margin-top: 0; }
+
+  /* Lists */
+  ul, ol { padding-left: 1.5rem; margin: .5rem 0; }
+  li { margin: .3rem 0; }
+
+  /* Flow steps */
+  .flow-step {
+    display: flex; align-items: flex-start; gap: .75rem;
+    padding: .6rem 0; border-bottom: 1px dashed var(--border);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num {
+    flex-shrink: 0; width: 28px; height: 28px;
+    background: var(--accent); color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .78rem; font-weight: 700;
+  }
+
+  /* Callouts */
+  .callout {
+    padding: .85rem 1.1rem; border-radius: 6px; margin: .75rem 0;
+    font-size: .9rem; border-left: 3px solid;
+  }
+  .callout-info { background: var(--accent-soft); border-color: var(--accent); }
+  .callout-warn { background: var(--warn-soft); border-color: var(--warn); }
+  .callout-tip { background: var(--success-soft); border-color: var(--success); }
+
+  /* Decision tree */
+  .decision-tree { margin: 1rem 0; }
+  .decision-tree .node {
+    padding: .45rem .85rem; margin: .25rem 0 .25rem 1.5rem;
+    border-left: 2px solid var(--border); font-size: .9rem;
+  }
+  .decision-tree .node.root { margin-left: 0; border-left: none; font-weight: 650; }
+
+  /* TOC */
+  .toc { columns: 2; column-gap: 2rem; margin: 1rem 0; }
+  .toc a { display: block; padding: .2rem 0; color: var(--accent); text-decoration: none; font-size: .9rem; }
+  .toc a:hover { text-decoration: underline; }
+
+  @media (max-width: 768px) {
+    body { padding: 1rem; }
+    section { padding: 1.25rem; }
+    header { padding: 1.5rem; }
+    .toc { columns: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<header>
+  <h1>📋 查询优化重写模块 — 设计方案</h1>
+  <p class="subtitle">知寻 knowra · Query Rewriting &amp; Optimization for RAG</p>
+  <div class="meta">
+    <span>📦 版本 v1.1</span>
+    <span>🎯 纯 Prompt 驱动 · 零外部依赖</span>
+  </div>
+  <div class="callout callout-info" style="margin-top: 1.25rem; color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2);">
+    <strong>📌 模块边界说明：</strong>本文档<strong>仅聚焦于查询优化重写模块</strong>（Query Rewriting Module）。向量检索、结果融合（RRF）、检索质量评估、LLM 生成回答等属于<strong>检索与生成模块</strong>，将在单独的设计文档中详述。本文档中涉及上述环节的图示以虚线或标注标示，表示"重写模块的输出将交付给检索模块"。
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="toc-section">
+  <h2>📑 目录</h2>
+  <div class="toc">
+    <a href="#overview">1. 概览与设计目标</a>
+    <a href="#architecture">2. 模块架构</a>
+    <a href="#pipeline">3. 查询处理管线 (Pipeline)</a>
+    <a href="#decision-flow">4. 决策流 — 分层策略路由</a>
+    <a href="#strategies">5. 重写策略详解</a>
+    <a href="#s1">　5.1 规范化重述</a>
+    <a href="#s2">　5.2 扩展重述</a>
+    <a href="#s3">　5.3 术语对齐</a>
+    <a href="#s4">　5.4 HyDE 策略</a>
+    <a href="#s5">　5.5 多查询生成</a>
+    <a href="#s6">　5.6 子问题分解</a>
+    <a href="#s7">　5.7 后退提示词</a>
+    <a href="#s8">　5.8 上下文依赖处理</a>
+    <a href="#s9">　5.9 精确词保护</a>
+    <a href="#s10">　5.10 意图分类与路由</a>
+    <a href="#s11">　5.11 自省式迭代检索</a>
+    <a href="#s12">　5.12 对比式重写</a>
+    <a href="#s13">　5.13 知识图谱增强</a>
+    <a href="#s14">　5.14 查询扩展 (Query2Doc)</a>
+    <a href="#s15">　5.15 质量评估与回溯</a>
+    <a href="#integration">6. 与现有系统的集成</a>
+    <a href="#frontend-preview">　6.1 前端预览：查询重写结果展示</a>
+    <a href="#caching">7. 缓存与去重机制</a>
+    <a href="#observability">8. 可观测性与效果评估</a>
+    <a href="#config">9. 配置项设计</a>
+    <a href="#summary">10. 策略矩阵总览</a>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="overview">
+  <h2>1. 概览与设计目标</h2>
+
+  <h3>当前状态</h3>
+  <p>知寻当前的 RAG 管线将用户原始查询 <strong>直接送入向量化+检索流程</strong>，缺少查询预处理环节：</p>
+  <div class="diagram">
+ 用户查询 ──▶ <span style="color: #dc2626; font-weight: 700;">【本文档聚焦 — 查询重写模块】</span>
+                │
+                │ 原始口语化查询，未经任何预处理
+                │
+                ▼
+           (交付给检索模块 → 向量化 → 检索 → LLM 生成)
+           ┊ 虚线部分属于检索与生成模块，不在本文档范围内</div>
+
+  <h3>核心问题</h3>
+  <table>
+    <tr><th>问题场景</th><th>示例</th><th>检索后果</th></tr>
+    <tr><td>口语化/模糊表达</td><td>"那个上次说的性能优化方案是啥来着"</td><td>向量偏离文档中的正式表述</td></tr>
+    <tr><td>术语不匹配</td><td>"怎么让电脑跑得更快"</td><td>知识库中存的可能是"系统性能调优"</td></tr>
+    <tr><td>多意图纠缠</td><td>"A 和 B 的区别是什么，怎么选"</td><td>单一向量无法同时覆盖比较+选型</td></tr>
+    <tr><td>过度简短</td><td>"Redis"</td><td>向量语义空洞，检索结果散乱</td></tr>
+    <tr><td>多跳推理</td><td>"导致上次事故的根因是什么"</td><td>需要先检索"事故"，再检索"根因"</td></tr>
+    <tr><td>对话上下文缺失</td><td>"它的配置怎么改"（上文提过 Nginx）</td><td>丢失指代对象，完全无法检索</td></tr>
+  </table>
+
+  <h3>设计原则</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>🎯 Prompt 驱动</h4>
+      <p>所有重写逻辑通过精心设计的 Prompt 实现，不引入额外的模型训练或复杂 NLP 管线。相同的 LLM 基础设施同时用于重写和回答生成。</p>
+    </div>
+    <div class="card">
+      <h4>⚡ 分层渐进</h4>
+      <p>低成本策略优先（直接改写），按需升级至高成本策略（HyDE / Multi-Query）。避免为简单查询浪费计算资源。</p>
+    </div>
+    <div class="card">
+      <h4>🔄 异步非阻塞</h4>
+      <p>原始查询快速返回基础结果；高级重写在后台异步执行，结果到达后进行融合，保证首字节响应时间不受影响。</p>
+    </div>
+    <div class="card">
+      <h4>📊 可观测</h4>
+      <p>每次重写的输入/输出/耗时/策略选择均记录结构化日志，支持后续效果评估与策略迭代。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="architecture">
+  <h2>2. 模块架构</h2>
+
+  <div class="diagram">
+ ┌──────────────────────────────────────────────────────────────────────┐
+ │                        QueryRewriter (顶层编排)                       │
+ │                                                                      │
+ │  ┌──────────────┐   ┌────────────────┐   ┌───────────────────────┐  │
+ │  │ Preprocessor │   │ StrategyRouter │   │  RewriteStrategies    │  │
+ │  │              │   │                │   │                       │  │
+ │  │ · 术语保护   │──▶│ · 意图分类     │──▶│ · NormalizeRewriter   │  │
+ │  │ · 上下文融合 │   │ · 复杂度评分   │   │ · ExpandRewriter      │  │
+ │  │ · 缓存查询   │   │ · 策略选择     │   │ · TermAlignRewriter   │  │
+ │  └──────────────┘   └────────────────┘   │ · HyDERewriter        │  │
+ │                                          │ · MultiQueryRewriter  │  │
+ │  ┌──────────────┐   ┌────────────────┐   │ · DecomposeRewriter   │  │
+ │  │ Postprocessor│   │  CacheManager  │   │ · StepBackRewriter    │  │
+ │  │              │   │                │   │ · ContextRewriter     │  │
+ │  │ · 去重合并   │◀──│ · L1: 精确缓存 │   │ · ContrastRewriter    │  │
+ │  │ · 置信度评估 │   │ · L2: 语义缓存 │   │ · Query2DocRewriter   │  │
+ │  │ · 回溯触发   │   │ · L3: 热点统计 │   │ · SelfReflectRewriter │  │
+ │  └──────────────┘   └────────────────┘   └───────────────────────┘  │
+ │                                                                      │
+ │  ┌──────────────────────────────────────────────────────────────┐    │
+ │  │                   AuditTrail (审计日志)                       │    │
+ │  │  · 每次重写的 trace_id → rewrite_input → rewrite_output      │    │
+ │  │  · strategy_used → latency_ms → token_cost → quality_score   │    │
+ │  └──────────────────────────────────────────────────────────────┘    │
+ └──────────────────────────────────────────────────────────────────────┘
+  </div>
+
+  <h3>核心组件职责</h3>
+  <table>
+    <tr><th>组件</th><th>职责</th><th>关键输入/输出</th></tr>
+    <tr>
+      <td><strong>Preprocessor</strong></td>
+      <td>查询前的预处理：识别并保护专有名词、融合对话上下文、检查缓存</td>
+      <td>raw_query + history → protected_query + context</td>
+    </tr>
+    <tr>
+      <td><strong>StrategyRouter</strong></td>
+      <td>意图分类 + 复杂度评分 → 选择最优重写策略组合</td>
+      <td>query → intent_label + complexity_score + strategy_list</td>
+    </tr>
+    <tr>
+      <td><strong>RewriteStrategies</strong></td>
+      <td>各策略的具体 Prompt 模板 + LLM 调用</td>
+      <td>query → rewritten_query(s)</td>
+    </tr>
+    <tr>
+      <td><strong>CacheManager</strong></td>
+      <td>三级缓存：精确匹配 → 语义相似匹配 → 热点统计</td>
+      <td>query_hash → cached_result | None</td>
+    </tr>
+    <tr>
+      <td><strong>Postprocessor</strong></td>
+      <td>多查询结果的去重合并、置信度评估、回溯触发</td>
+      <td>results[] → merged_results + confidence</td>
+    </tr>
+    <tr>
+      <td><strong>AuditTrail</strong></td>
+      <td>所有重写操作的结构化日志，支撑后续评测与策略优化</td>
+      <td>trace_id → structured_log_entry</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="pipeline">
+  <h2>3. 查询处理管线</h2>
+
+  <div class="diagram">
+                           用户输入 (raw_query + conversation_history)
+                                         │
+                          ┌──────────────▼──────────────┐
+                          │  Step 0: 精确词保护          │
+                          │  识别并标记专有名词/技术术语  │
+                          │  "JVM", "Spring", "K8s" ...  │
+                          └──────────────┬──────────────┘
+                                         │
+                          ┌──────────────▼──────────────┐
+                          │  Step 1: 缓存检查            │
+                          │  L1 精确 → L2 语义 → 命中?   │
+                          └──────────────┬──────────────┘
+                              ┌──────────┴──────────┐
+                          命中│                      │未命中
+                              ▼                      ▼
+                     ┌──────────────┐    ┌──────────────────────┐
+                     │ 返回缓存结果  │    │  Step 2: 上下文融合   │
+                     └──────────────┘    │  多轮对话指代消解      │
+                                         └──────────┬───────────┘
+                                                    │
+                                         ┌──────────▼───────────┐
+                                         │  Step 3: 意图分类     │
+                                         │  事实型/分析型/比较型  │
+                                         │  /操作型/闲聊/模糊    │
+                                         └──────────┬───────────┘
+                                                    │
+                                         ┌──────────▼───────────┐
+                                         │  Step 4: 复杂度评分   │
+                                         │  简单(0-2)/中等(3-5)  │
+                                         │  /复杂(6-10)          │
+                                         └──────────┬───────────┘
+                                                    │
+                          ┌─────────────────────────┼─────────────────────────┐
+                          │                         │                         │
+                    简单(skip)                 中等(改写)                复杂(HyDE/Multi)
+                          │                         │                         │
+                          ▼                         ▼                         ▼
+              ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐
+              │ 直接原始查询检索  │    │ Step 5a: 改写     │    │ Step 5b: 高级策略     │
+              │ (零额外成本)     │    │ · 规范化重述     │    │ · HyDE               │
+              └──────────────────┘    │ · 术语对齐       │    │ · Multi-Query        │
+                                      │ · 扩展重述       │    │ · Decomposition      │
+                                      └────────┬─────────┘    │ · Step-Back          │
+                                               │               └──────────┬───────────┘
+                                               └──────────────┬────────────┘
+                                                              │
+                                               ┌──────────────▼───────────┐
+                                               │  Step 6: 输出改写结果     │
+                                               │  原始 query + 各改写结果   │
+                                               │  作为列表交付给检索模块    │
+                                               └──────────────┬───────────┘
+                                                              │
+                                              ╔═══════════════╪═══════════════╗
+                                              ║  ── 模块边界：以下属于检索与生成模块 ──  ║
+                                              ║               │               ║
+                                              ║  ┌────────────▼───────────┐  ║
+                                              ║  │  向量检索               │  ║
+                                              ║  │  (原始 query + 各改写结果│  ║
+                                              ║  │   并发检索)              │  ║
+                                              ║  └────────────┬───────────┘  ║
+                                              ║               │               ║
+                                              ║  ┌────────────▼───────────┐  ║
+                                              ║  │  结果融合 (RRF)          │  ║
+                                              ║  │  Reciprocal Rank Fusion  │  ║
+                                              ║  └────────────┬───────────┘  ║
+                                              ║               │               ║
+                                              ║  ┌────────────▼───────────┐  ║
+                                              ║  │  检索质量检查            │  ║
+                                              ║  │  检索结果是否充分?        │  ║
+                                              ║  └────────────┬───────────┘  ║
+                                              ║      ┌────────┴──────┐      ║
+                                              ║  充分│                │不充分 ║
+                                              ║      ▼                  ▼      ║
+                                              ║ ┌──────────┐  ┌─────────────┐ ║
+                                              ║ │ LLM 生成  │  │ 触发回溯:    │ ║
+                                              ║ │ 回答     │  │ 升级策略重试  │ ║
+                                              ║ └──────────┘  │ (通知重写模块)│ ║
+                                              ║                └──────────────┘ ║
+                                              ╚══════════════════════════════════╝
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="decision-flow">
+  <h2>4. 决策流 — 分层策略路由</h2>
+
+  <h3>意图分类 Prompt</h3>
+  <div class="prompt-block">
+你是一个查询意图分类器。分析用户查询，输出 JSON 格式的分类结果。
+
+## 分类维度
+
+### intent (意图类型)
+- "factual": 查询具体事实、数据、定义（如 "Redis 默认端口是多少"）
+- "analytical": 需要分析、推理、解释原因（如 "为什么系统在高并发下会崩溃"）
+- "comparative": 比较两个或多个事物（如 "Postgres 和 MySQL 的区别"）
+- "procedural": 询问操作步骤、配置方法（如 "如何配置 Nginx 反向代理"）
+- "exploratory": 开放探索性问题（如 "有哪些方法可以优化数据库性能"）
+- "chitchat": 闲聊、问候（如 "你好"）
+- "ambiguous": 意图不明确，过于简短或模糊
+
+### complexity (1-10)
+- 1-2: 简单事实查询，单术语，明确的关键词
+- 3-5: 中等复杂度，需要一定推理或涉及 1-2 个概念
+- 6-8: 复杂查询，多概念、多跳、需要比较或分析
+- 9-10: 高度复杂，包含多重意图、需要深度推理和多步检索
+
+### is_multi_hop (boolean)
+是否需要在不同知识点之间进行多步推理才能得到答案
+
+### has_pronouns (boolean)
+查询是否含有指代词（它、那个、这个、其等），需要结合上下文才能理解
+
+### protected_terms (string[])
+查询中包含的技术术语、专有名词列表，这些词在重写时必须原样保留
+
+## 用户查询
+{query}
+
+## 对话历史（可能为空）
+{history}
+
+## 输出格式 (严格 JSON)
+```json
+{
+  "intent": "factual",
+  "complexity": 2,
+  "is_multi_hop": false,
+  "has_pronouns": false,
+  "protected_terms": ["Redis"],
+  "reasoning": "简短说明分类理由"
+}
+```</div>
+
+  <h3>策略路由规则</h3>
+  <table>
+    <tr><th>条件</th><th>策略</th><th>说明</th></tr>
+    <tr>
+      <td>complexity ≤ 2 且 intent = "factual"</td>
+      <td><span class="tag tag-green">直接检索</span></td>
+      <td>意图明确的简单查询，改写无增益</td>
+    </tr>
+    <tr>
+      <td>complexity ≤ 2 且 intent = "chitchat"</td>
+      <td><span class="tag tag-green">直接回复</span></td>
+      <td>无需检索知识库</td>
+    </tr>
+    <tr>
+      <td>has_pronouns = true</td>
+      <td><span class="tag tag-blue">上下文融合</span> → 重新分类</td>
+      <td>先消解指代，再判断后续策略</td>
+    </tr>
+    <tr>
+      <td>intent = "ambiguous" 或 complexity ≤ 5</td>
+      <td><span class="tag tag-blue">规范重述 + 术语对齐</span></td>
+      <td>口语→书面、模糊→明确</td>
+    </tr>
+    <tr>
+      <td>complexity 6-8 且 intent = "comparative"</td>
+      <td><span class="tag tag-amber">多查询生成 (Multi-Query)</span></td>
+      <td>从不同角度检索</td>
+    </tr>
+    <tr>
+      <td>complexity 6-8 且 is_multi_hop = true</td>
+      <td><span class="tag tag-amber">子问题分解 (Decomposition)</span></td>
+      <td>拆分子问题逐步检索</td>
+    </tr>
+    <tr>
+      <td>complexity ≥ 8 或 intent = "analytical"</td>
+      <td><span class="tag tag-red">HyDE + 后退提示词</span></td>
+      <td>生成假设文档/抽象问题</td>
+    </tr>
+    <tr>
+      <td>complexity ≥ 9</td>
+      <td><span class="tag tag-red">全策略融合</span></td>
+      <td>改写 + HyDE + Multi-Query + Decompose 并发</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-tip">
+    <strong>💡 渐进式升级：</strong>如果某策略检索结果不理想（结果数 &lt; 阈值 或 最优相似度 &gt; 阈值），自动升级到下一级策略。这是一个"尽力而为、逐级增强"的过程。
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="strategies">
+  <h2>5. 重写策略详解</h2>
+  <p>以下每个策略都通过 <strong>单一 Prompt 模板</strong> 实现。策略之间独立、可组合、可单独开关。</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s1">
+  <h2>5.1 规范化重述 (Normalize Rewriter)</h2>
+  <p><strong>目标：</strong>将口语化、碎片化的查询转为书面化、完整、标准化的表述。</p>
+  <p><strong>适用：</strong>complexity ≤ 5、口语化表达、省略式提问。</p>
+  <p><strong>成本：</strong>⭐ (极低 — 1 次轻量 LLM 调用)</p>
+
+  <div class="prompt-block">
+你是一个查询规范化助手。你的任务是将用户的口语化查询重写为书面化、标准化的完整查询语句。
+
+## 重写规则
+1. **补全省略**：将省略的主语、宾语、定语补全，形成完整句子
+2. **书面化**：将口语词汇替换为书面表达（如 "咋整" → "如何处理"）
+3. **去冗余**：删除无意义的语气词、重复表达、口头禅
+4. **保持核心语义**：不添加用户未提及的信息，不改变查询意图
+5. **保护专有名词**：以下词汇必须原样保留，不得替换或翻译：
+   {protected_terms}
+
+## 示例
+输入: "那个数据库怎么搞快点"
+输出: "如何提升数据库的性能"
+
+输入: "上次说的那个bug修复了没"
+输出: "之前的软件缺陷是否已修复"
+
+输入: "大模型在医疗这块有啥用"
+输出: "大语言模型在医疗领域有哪些应用"
+
+## 对话历史（用于理解上下文，可能为空）
+{history}
+
+## 用户查询
+{query}
+
+## 输出 (仅输出重写后的查询文本，不需要任何解释)
+重写查询：</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s2">
+  <h2>5.2 扩展重述 (Expand Rewriter)</h2>
+  <p><strong>目标：</strong>对模糊查询进行语义扩展，补充同义词、上位概念、专业术语及相关维度。</p>
+  <p><strong>适用：</strong>查询过于简短、术语单一、可能遗漏相关知识领域。</p>
+  <p><strong>成本：</strong>⭐⭐ (低)</p>
+
+  <div class="prompt-block">
+你是一个查询扩展助手。用户的查询可能过于简短或只覆盖了问题的一个方面，你需要对其进行语义扩展。
+
+## 扩展规则
+1. **同义词补充**：为核心概念添加同义词或近义表达
+2. **上位概念**：将具体术语扩展到更广泛的概念层级
+3. **相关维度**：补充与查询相关的其他重要维度（如查询"性能"时补充"延迟、吞吐量、资源利用率"）
+4. **多角度表述**：从不同角度重新表述同一问题
+5. **不改变原意**：扩展应围绕原始查询意图，不引入无关概念
+6. **保护专有名词**：以下词汇必须原样保留：{protected_terms}
+
+## 示例
+输入: "微服务"
+输出: "微服务架构的设计原则、服务拆分策略、服务间通信方式（REST/gRPC/消息队列）、服务治理（注册发现、负载均衡、熔断降级）、分布式事务处理"
+
+输入: "Python性能优化"
+输出: "Python程序性能优化方法，包括：代码层面优化（算法选择、数据结构、内置函数）、解释器优化（PyPy/JIT编译）、并发并行（多线程/多进程/异步编程）、内存管理、性能分析工具（cProfile/line_profiler）、C扩展"
+
+## 用户查询
+{query}
+
+## 输出 (仅输出扩展后的查询文本，以原始查询开头，用逗号或分号分隔扩展内容)
+扩展查询：</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s3">
+  <h2>5.3 术语对齐 (Term Alignment Rewriter)</h2>
+  <p><strong>目标：</strong>将用户的口语化/非正式表达替换为知识库中使用的正式专业术语。</p>
+  <p><strong>适用：</strong>用户使用了非正式表达、行业黑话、缩写、或知识库可能使用不同术语的场景。</p>
+  <p><strong>成本：</strong>⭐⭐ (低，可结合知识库术语表做本地映射)</p>
+
+  <div class="prompt-block">
+你是一个术语对齐助手。你需要将用户查询中的口语化、非正式表达替换为正式的专业术语，使其与知识库中的用词一致。
+
+## 对齐规则
+1. **口语 → 术语**：将日常用语替换为领域标准术语（如 "跑程序" → "执行/运行程序"）
+2. **缩写展开**：将常见缩写扩展为全称（根据上下文判断是否需要同时保留缩写）
+3. **同义词标准化**：将多种表述统一为知识库中最可能使用的标准表述
+4. **保留原词**：对于可能存在多种理解的情况，在替换后以括号保留原词
+5. **保护专有名词**：以下词汇必须原样保留：{protected_terms}
+
+## 常见术语对齐表 (可配置扩展)
+| 用户表达 | 正式术语 |
+|---------|---------|
+| 电脑 | 计算机 / 个人电脑 |
+| 跑起来 | 运行 / 执行 / 启动 |
+| 挂了 / 崩了 | 崩溃 / 故障 / 服务不可用 |
+| 卡 | 延迟高 / 响应慢 / 阻塞 |
+| 占内存 | 内存占用 / 内存消耗 |
+| 加速 | 性能优化 / 加速 |
+| 存数据 | 数据持久化 / 数据存储 |
+| 接口 | API / 接口 |
+| 集群 | 集群 / 分布式集群 |
+| 热备 | 热备份 / 高可用 |
+| AI | 人工智能 / AI |
+| 大模型 | 大语言模型 (LLM) |
+| 向量库 | 向量数据库 |
+
+## 对话历史
+{history}
+
+## 用户查询
+{query}
+
+## 输出 (仅输出术语对齐后的查询文本)
+对齐查询：</div>
+
+  <div class="callout callout-info">
+    <strong>💡 两阶段优化：</strong>第一阶段：本地术语表精确匹配替换（零 LLM 成本、零延迟）；第二阶段：对于本地未命中但疑似存在术语不匹配的查询，使用 LLM 进行对齐。本地术语表可以从知识库中定期抽取高频术语自动构建。
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s4">
+  <h2>5.4 HyDE 策略 (Hypothetical Document Embeddings)</h2>
+  <p><strong>目标：</strong>让 LLM 生成一个假设的"理想答案文档片段"，用这个片段的向量去检索，而不是用原始查询向量。</p>
+  <p><strong>核心原理：</strong>假设答案的向量分布更接近真实答案文档的向量分布，比短查询向量更容易匹配到相关内容。</p>
+  <p><strong>适用：</strong>complexity ≥ 6、analytical 意图、抽象概念查询。</p>
+  <p><strong>成本：</strong>⭐⭐⭐ (中高 — 需要 1 次生成 + 1 次向量化)</p>
+
+  <div class="prompt-block">
+你是一个技术文档撰写助手。请根据用户的问题，撰写一段假设的知识库文档片段，就像你真的在知识库中找到了相关内容一样。
+
+## 写作要求
+1. **文档风格**：使用正式、客观的技术文档写作风格
+2. **内容结构**：包含概念定义、关键要点、技术细节或操作步骤
+3. **长度**：200-400 字的中文段落
+4. **信息密度**：尽可能包含与问题相关的关键术语、概念和事实
+5. **不要编造**：不要凭空编造不存在的数据或事实；如果有不确定的地方，使用通用的、教科书级别的描述
+6. **不要回答用户问题**：你写的是一段"文档"，不是对用户问题的直接回答
+
+## 保护术语（必须原样保留）
+{protected_terms}
+
+## 用户问题
+{query}
+
+## 输出 (仅输出假设文档内容，无需标记或说明)
+</div>
+
+  <h3>HyDE 分层启用条件</h3>
+  <table>
+    <tr><th>条件</th><th>是否启用 HyDE</th><th>理由</th></tr>
+    <tr><td>简单事实查询 (complexity ≤ 2)</td><td>❌ 跳过</td><td>直接检索即可满足</td></tr>
+    <tr><td>包含具体实体名称/编号</td><td>❌ 跳过</td><td>精确匹配更有效</td></tr>
+    <tr><td>分析/推理性查询</td><td>✅ 启用</td><td>HyDE 擅长补全推理链条</td></tr>
+    <tr><td>抽象概念查询（如"怎么设计高可用系统"）</td><td>✅ 启用</td><td>短查询向量语义稀疏</td></tr>
+    <tr><td>情感/观点类查询</td><td>✅ 启用</td><td>主观内容更难用关键词匹配</td></tr>
+    <tr><td>普通改写后检索结果不足</td><td>✅ 回溯启用</td><td>作为 fallback 策略</td></tr>
+  </table>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s5">
+  <h2>5.5 多查询生成 (Multi-Query Rewriter)</h2>
+  <p><strong>目标：</strong>从不同角度生成 3-5 个查询变体，分别检索后融合结果，覆盖原始查询的不同侧面。</p>
+  <p><strong>适用：</strong>complexity 6-8、comparative 意图、多概念查询。</p>
+  <p><strong>成本：</strong>⭐⭐⭐ (中高 — 1 次 LLM 生成 + N 次向量检索)</p>
+
+  <div class="prompt-block">
+你是一个查询扩展助手。针对用户的复杂问题，从不同角度生成多个查询变体，每个变体侧重问题的不同侧面。
+
+## 生成规则
+1. 生成 3-5 个查询变体
+2. 每个变体应是独立的、可直接用于检索的完整查询
+3. 变体之间应覆盖不同的角度、维度或侧重点
+4. 有些变体可以更具体（聚焦细节），有些可以更宽泛（覆盖背景）
+5. 所有变体必须围绕原始问题的核心意图
+6. **保护专有名词**：以下词汇在所有变体中必须原样保留：{protected_terms}
+
+## 示例
+原始查询: "微服务架构的优缺点"
+变体:
+1. "微服务架构相比单体架构的优势有哪些"
+2. "微服务架构在实践中的挑战和缺点"
+3. "微服务架构的适用场景和局限性"
+4. "从单体迁移到微服务需要考虑哪些因素"
+
+原始查询: "如何保证系统的高可用性"
+变体:
+1. "高可用系统设计的基本原则和策略"
+2. "故障转移和容灾恢复的最佳实践"
+3. "负载均衡和健康检查机制的实现方案"
+4. "分布式系统中的数据一致性和可用性权衡"
+
+## 用户查询
+{query}
+
+## 输出格式 (每行一个变体，以 "- " 开头，纯文本即可)
+- 变体1
+- 变体2
+- ...</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s6">
+  <h2>5.6 子问题分解 (Decomposition Rewriter)</h2>
+  <p><strong>目标：</strong>将复杂的多跳问题拆分为 2-4 个简单的子问题，每个子问题可独立检索，然后按依赖顺序或并行执行。</p>
+  <p><strong>适用：</strong>is_multi_hop = true、需要多步推理的问题。</p>
+  <p><strong>成本：</strong>⭐⭐⭐⭐ (高 — N 次 LLM 调用 + N × M 次检索)</p>
+
+  <div class="prompt-block">
+你是一个问题分解助手。将用户的复杂问题拆分为 2-4 个简单子问题，每个子问题可以独立检索和回答，最终合并得到完整答案。
+
+## 拆分规则
+1. **原子性**：每个子问题应足够简单，可以通过一次检索 + 一次回答解决
+2. **完整性**：所有子问题合起来应能完整覆盖原始问题的全部意图
+3. **依赖标注**：如果子问题之间存在先后依赖关系，请标注顺序
+4. **独立性**：无依赖的子问题应可并行处理
+5. **保护专有名词**：以下词汇在所有子问题中必须原样保留：{protected_terms}
+
+## 示例
+原始查询: "导致上次生产环境事故的根因是什么，我们应该怎么预防类似问题"
+子问题:
+1. [优先级1, 无依赖] "生产环境最近发生的事故详情和影响范围"
+2. [优先级2, 依赖:1] "分析该事故的根本原因和技术层面触发条件"
+3. [优先级3, 依赖:2] "针对该根因的预防措施和监控改进方案"
+4. [优先级3, 依赖:2] "类似场景的自动化检测和告警机制设计"
+
+原始查询: "对比 React 和 Vue 的响应式原理，并说明在大型项目中应该如何选择"
+子问题:
+1. [无依赖] "React 的响应式更新原理（虚拟DOM、Fiber 协调、状态管理）"
+2. [无依赖] "Vue 的响应式原理（Proxy 响应式系统、依赖追踪、组件更新）"
+3. [依赖:1,2] "React 和 Vue 在大型项目中的选型考量因素（性能、生态、团队、可维护性）"
+
+## 用户查询
+{query}
+
+## 输出格式
+- [优先级N, 依赖:N或"无依赖"] "子问题描述"</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s7">
+  <h2>5.7 后退提示词 (Step-Back Rewriter)</h2>
+  <p><strong>目标：</strong>从具体问题中"后退"一步，抽象出更高层级的基础原理或通用规则，先检索这些基础概念，再结合具体问题进行推理。</p>
+  <p><strong>适用：</strong>complexity ≥ 7、需要先理解基础概念才能回答的具体问题。</p>
+  <p><strong>成本：</strong>⭐⭐⭐ (中)</p>
+
+  <div class="prompt-block">
+你是一个问题抽象助手。用户的查询是一个具体问题，请"后退"一步，识别这个问题背后涉及的基础原理、通用规则或核心概念，生成一个更抽象、更通用的查询。
+
+## 后退规则
+1. **识别问题背后的基础原理**：用户问具体问题 → 你识别出背后的通用概念
+2. **抽象层级上移**：从"怎么做X"退到"X的基本原理是什么"
+3. **保持相关性**：抽象后的问题必须与原始问题相关，不是无目的的泛化
+4. **生成检索用查询**：抽象后的问题应该是适合在技术文档中检索的标准化表述
+
+## 示例
+原始查询: "为什么我的 Spring Boot 应用在 K8s 上 OOM 了"
+后退查询: "Java 应用在 Kubernetes 容器环境中的内存管理机制和 OOM 原因分析"
+
+原始查询: "这段 Python 代码用了 asyncio 但还是慢，怎么优化"
+后退查询: "Python asyncio 异步编程的性能瓶颈分析方法和优化策略"
+
+原始查询: "GPT-4 和 Claude 在代码生成上哪个更强"
+后退查询: "大语言模型代码生成能力的评估维度和基准测试方法"
+
+## 用户查询
+{query}
+
+## 保护术语（必须原样保留）
+{protected_terms}
+
+## 输出 (仅输出后退后的抽象查询)
+后退查询：</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s8">
+  <h2>5.8 上下文依赖处理 (Context Rewriter)</h2>
+  <p><strong>目标：</strong>在多轮对话中，将用户含有指代词或省略主题的查询改写为独立、完整的查询。</p>
+  <p><strong>适用：</strong>has_pronouns = true、多轮对话场景。</p>
+  <p><strong>成本：</strong>⭐ (极低)</p>
+
+  <div class="prompt-block">
+你是一个对话理解助手。用户的当前查询可能含有指代词（它、那个、这个、其等）或省略了上文提到的主题。请结合对话历史，将当前查询改写为一个独立、完整、不依赖任何上下文的查询。
+
+## 改写规则
+1. **指代消解**：将所有指代词替换为对话历史中对应的具体实体
+2. **主题补全**：如果用户省略了当前讨论的主题，从历史中补全
+3. **保持意图**：不要改变用户的原始意图和问题方向
+4. **不要添加历史中不存在的信息**
+5. **如果当前查询已经是独立完整的，原样返回**
+
+## 对话历史
+{history}
+
+## 当前用户查询
+{query}
+
+## 输出 (仅输出改写后的独立查询)
+独立查询：</div>
+
+  <h3>上下文压缩策略（长对话优化）</h3>
+  <div class="prompt-block small">
+你是一个对话摘要助手。以下是一段较长的多轮对话历史。请将对话压缩为简洁的上下文摘要，
+保留与当前查询可能相关的关键信息（讨论的主题、提到的实体、达成的共识、未解决的问题）。
+
+## 压缩规则
+1. 保留所有专有名词、技术术语、产品名称
+2. 保留用户明确关注的问题领域
+3. 省略寒暄、过渡性对话
+4. 摘要不超过 300 字
+
+## 对话历史
+{history}
+
+## 输出 (简洁的上下文摘要)</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s9">
+  <h2>5.9 精确词保护 (Exact Term Protector)</h2>
+  <p><strong>目标：</strong>在重写前后自动识别并保护技术术语、专有名词、代码标识符，防止被 LLM 意外替换或翻译。</p>
+  <p><strong>实现方式：</strong>正则匹配 + 本地词汇表 → 标记化 → 重写后还原，不依赖 LLM。</p>
+
+  <h3>保护流程</h3>
+  <div class="diagram">
+ 原始查询
+     │
+     ▼
+ ┌─────────────────────────────────────┐
+ │ 1. 正则匹配 + 词汇表匹配             │
+ │    识别：版本号、IP、路径、类名、     │
+ │    方法名、品牌名、协议名、缩写       │
+ │    匹配结果: ["JVM", "Spring", ...]  │
+ └────────────────┬────────────────────┘
+                  │
+                  ▼
+ ┌─────────────────────────────────────┐
+ │ 2. 占位符替换                       │
+ │    "JVM 参数调优" → "[[TERM_0]] 参数调优" │
+ │    保护映射: {[[TERM_0]]: "JVM"}    │
+ └────────────────┬────────────────────┘
+                  │
+                  ▼
+ ┌─────────────────────────────────────┐
+ │ 3. LLM 重写 (占位符对 LLM 透明)      │
+ │    输入: "[[TERM_0]] 参数调优"       │
+ │    输出: "如何优化 [[TERM_0]] 的启动参数" │
+ └────────────────┬────────────────────┘
+                  │
+                  ▼
+ ┌─────────────────────────────────────┐
+ │ 4. 占位符还原                       │
+ │    "如何优化 JVM 的启动参数"         │
+ └─────────────────────────────────────┘
+  </div>
+
+  <h3>保护词匹配规则</h3>
+  <table>
+    <tr><th>类别</th><th>匹配模式</th><th>示例</th></tr>
+    <tr><td>版本号</td><td><code>\d+\.\d+(\.\d+)?</code></td><td>3.2.1, 2.7</td></tr>
+    <tr><td>IP 地址</td><td><code>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}</code></td><td>192.168.1.1</td></tr>
+    <tr><td>代码标识符</td><td><code>[a-zA-Z_][a-zA-Z0-9_]*</code> (结合上下文)</td><td>maxConnections, get_user</td></tr>
+    <tr><td>全大写缩写</td><td><code>\b[A-Z]{2,8}\b</code></td><td>JVM, K8s, OOM, JWT</td></tr>
+    <tr><td>驼峰命名</td><td><code>\b[A-Z][a-z]+(?:[A-Z][a-z]+)+\b</code></td><td>SpringBoot, KafkaStreams</td></tr>
+    <tr><td>@ 标注</td><td><code>@[a-zA-Z_][a-zA-Z0-9_]*</code></td><td>@Autowired, @Override</td></tr>
+    <tr><td>路径/URL</td><td><code>/(?:[a-zA-Z0-9._-]+/)*[a-zA-Z0-9._-]*</code></td><td>/api/users, /etc/nginx/</td></tr>
+    <tr><td>自定义词汇表</td><td>配置文件中维护的白名单</td><td>用户自定义的关键术语</td></tr>
+  </table>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s10">
+  <h2>5.10 意图分类与路由 (新增策略)</h2>
+  <p><strong>目标：</strong>在重写之前先对查询进行意图分类，根据类别选择最适合的重写路径，避免"一刀切"。</p>
+  <p><strong>创新点：</strong>将分类和路由作为独立的前置步骤，实现"查询分流"。</p>
+
+  <div class="callout callout-info">
+    <strong>💡 为什么需要意图分类？</strong><br>
+    不同类型的查询对检索的需求完全不同：事实型查询需要精确匹配，分析型查询需要覆盖推理链，操作型查询需要找到步骤说明。使用相同的重写策略处理所有查询，就像用同一把钥匙开所有锁。
+  </div>
+
+  <h3>意图 → 策略映射表</h3>
+  <table>
+    <tr><th>意图</th><th>主策略</th><th>辅助策略</th><th>skip 改写条件</th></tr>
+    <tr><td>factual (事实)</td><td>术语对齐</td><td>扩展重述</td><td>查询含精确实体名时</td></tr>
+    <tr><td>analytical (分析)</td><td>HyDE + 后退提示词</td><td>子问题分解</td><td>—</td></tr>
+    <tr><td>comparative (比较)</td><td>多查询生成</td><td>子问题分解</td><td>—</td></tr>
+    <tr><td>procedural (操作)</td><td>扩展重述</td><td>术语对齐</td><td>查询已经具体明确时</td></tr>
+    <tr><td>exploratory (探索)</td><td>多查询 + Query2Doc</td><td>扩展重述</td><td>—</td></tr>
+    <tr><td>chitchat (闲聊)</td><td>直接回复</td><td>—</td><td>不触发 RAG</td></tr>
+    <tr><td>ambiguous (模糊)</td><td>HyDE</td><td>扩展重述</td><td>—</td></tr>
+  </table>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s11">
+  <h2>5.11 自省式迭代重写 (Self-Reflective Rewriting) (新增策略 · 跨模块协作)</h2>
+<p><strong>目标：</strong>重写模块支持接收来自检索模块的"回溯"信号——当检索结果不充分时，升级策略重新改写。这是<strong>重写模块与检索模块之间的协作接口</strong>。</p>
+<p><strong>适用：</strong>所有策略的最后防线，作为质量保障的"安全网"。</p>
+<p><strong>成本：</strong>⭐⭐ (仅在检索模块触发回溯时产生额外改写成本)</p>
+
+<div class="callout callout-info">
+<strong>📌 模块分工说明：</strong><br>
+<strong>检索模块负责：</strong>检索后评估结果质量（相关性、完整性、可回答性），判断是否触发回溯。<br>
+<strong>重写模块负责：</strong>收到回溯信号后，根据建议升级策略（如从规范重述升级为 HyDE），生成新的改写结果返回给检索模块。
+</div>
+
+<div class="diagram">
+┌────────────── 重写模块 ──────────────┐      ┌────────── 检索模块（不在本文档范围） ──────────┐
+│                                      │      │                                              │
+│  原始改写结果 ──────────────────────────▶  检索 → 质量评估 → ┬─ sufficient → LLM 生成       │
+│                                      │      │               │                              │
+│  收到回溯 ◀────────────────────────────── │               └─ insufficient → 触发回溯       │
+│     │                                  │      │       │                                    │
+│     ▼                                  │      │       ├─ 改写不足 → 建议启用 HyDE          │
+│  升级策略重写:                          │      │       ├─ 覆盖不足 → 建议启用 Multi-Query   │
+│  ├─ 规范重述 → HyDE                    │      │       ├─ 多跳不足 → 建议启用 Decomposition │
+│  ├─ ＋多查询生成                        │      │       └─ 上下文不足 → 建议启用 Step-Back   │
+│  └─ ＋子问题分解                        │      │                                              │
+│     │                                  │      │                                              │
+│     ▼                                  │      │                                              │
+│  新改写结果 ──────────────────────────────▶  重新检索 → ...                                │
+│                                      │      │                                              │
+└──────────────────────────────────────┘      └──────────────────────────────────────────────┘
+</div>
+
+<div class="callout callout-tip">
+<strong>💡 回溯信号接口设计：</strong>检索模块通过结构化回溯请求通知重写模块，包含：失败原因（<code>fallback_reason</code>）、建议升级策略（<code>suggested_strategies</code>）、原始改写结果（供对比参考）。重写模块据此选择更强策略重新生成，避免重复尝试已失败的策略。
+</div>
+
+<section id="s12">
+  <h2>5.12 对比式重写 (Contrastive Rewriter) (新增策略)</h2>
+  <p><strong>目标：</strong>对于比较类查询，从"共同点"和"差异点"两个方向生成检索查询，确保检索完整覆盖对比的两个维度。</p>
+  <p><strong>适用：</strong>intent = comparative。</p>
+  <p><strong>创新点：</strong>传统重写往往只关注"差异"，忽略了"共性基础"对于公平比较的重要性。</p>
+
+  <div class="prompt-block">
+你是一个查询分解助手。用户的查询涉及两个或多个事物的比较。请从以下两个维度生成检索查询：
+
+## 生成维度
+1. **共性基础查询** (1-2个)：聚焦比较对象的共同基础概念、原理或背景
+2. **差异对比查询** (2-3个)：聚焦各对象的关键差异、各自的优劣势
+
+## 示例
+原始查询: "Kafka 和 RabbitMQ 的区别"
+共性基础: "消息队列的基本概念、使用场景和核心指标（吞吐量、延迟、可靠性）"
+差异对比:
+- "Kafka 的架构设计、性能特点和适用场景"
+- "RabbitMQ 的架构设计、性能特点和适用场景"
+- "Kafka 与 RabbitMQ 在吞吐量、延迟、消息可靠性方面的对比"
+
+## 用户查询
+{query}
+
+## 保护术语: {protected_terms}
+
+## 输出
+共性基础查询：
+- ...
+
+差异对比查询：
+- ...</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s13">
+  <h2>5.13 知识图谱增强重写 (KG-Enhanced Rewriter) (新增策略 · 远期)</h2>
+  <p><strong>目标：</strong>利用知识图谱中的实体关系和同义词表，对查询中的实体进行关系扩展。</p>
+  <p><strong>适用：</strong>知识图谱构建完成后，对含有已知实体的查询进行增强。</p>
+  <p><strong>当前状态：</strong>🟡 远期规划，依赖知识图谱模块建设。</p>
+
+  <div class="diagram">
+  查询: "JVM 内存模型"
+     │
+     ▼
+  实体识别 → "JVM" (实体: Java虚拟机), "内存模型" (概念: Memory Model)
+     │
+     ▼
+  图谱查询 → 关联实体: [堆, 栈, 方法区, 元空间, GC, 对象分配, ...]
+     │
+     ▼
+  查询扩展 → "JVM 内存模型 堆 栈 方法区 元空间 GC 对象分配"
+  </div>
+
+  <div class="callout callout-warn">
+    <strong>⚠️ 远期规划：</strong>本策略依赖知识图谱模块（README 中标注为"仍待建设"）。当前可先通过本地术语表 + 同义词词典实现简化版。
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s14">
+  <h2>5.14 Query2Doc 策略 (新增策略)</h2>
+  <p><strong>目标：</strong>与 HyDE 类似但侧重点不同——生成一段"伪文档摘要"而非"假设答案"。Query2Doc 更关注文档的结构化描述（标题、要点、元数据），在某些场景下比 HyDE 更有效。</p>
+  <p><strong>与 HyDE 的区别：</strong>HyDE 生成"假设答案"，Query2Doc 生成"假设文档的结构和内容提要"。后者更接近知识库中文档的实际形态。</p>
+
+  <div class="prompt-block">
+你是一个知识库文档模拟器。请根据用户查询，生成一段模拟的知识库文档条目，格式如下：
+
+## 输出格式
+【文档标题】
+（生成一个可能存在于知识库中的文档标题）
+
+【章节】
+- 第1节: （章节标题 + 1-2句内容摘要）
+- 第2节: （章节标题 + 1-2句内容摘要）
+- 第3节: （章节标题 + 1-2句内容摘要）
+
+【关键术语】
+（列出5-10个该文档可能涉及的关键术语，用逗号分隔）
+
+【内容片段】
+（写一段150-300字的文档正文片段，模拟知识库中可能存在的真实内容风格）
+
+## 用户查询
+{query}
+
+## 保护术语: {protected_terms}
+
+## 输出 (按上述格式输出，不要额外解释)
+</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<section id="s15">
+  <h2>5.15 改写质量评估与回溯 (新增策略)</h2>
+  <p><strong>目标：</strong>对改写结果进行质量评分，低于阈值的改写自动丢弃或触发回溯。确保改写不会"越改越差"。</p>
+
+  <div class="prompt-block">
+你是一个查询改写质量评估器。请对比原始查询和改写后的查询，评估改写质量。
+
+## 评估维度 (每个 1-5 分)
+1. **语义保留度**：改写是否完整保留了原始查询的核心意图和语义？
+2. **清晰度提升**：改写后的查询是否比原始查询更清晰、更具体、更容易检索？
+3. **信息增量**：改写添加的扩展信息是否相关且有用？（注意：过度扩展是减分项）
+4. **术语准确性**：专业术语使用是否准确？是否有不当替换？
+5. **可检索性**：改写后的查询是否更适合在向量数据库中进行语义检索？
+
+## 原始查询
+{original_query}
+
+## 改写查询
+{rewritten_query}
+
+## 改写策略
+{strategy_name}
+
+## 输出 JSON
+```json
+{
+  "semantic_preservation": 5,
+  "clarity_improvement": 4,
+  "information_gain": 3,
+  "term_accuracy": 5,
+  "retrievability": 4,
+  "total_score": 21,
+  "verdict": "good",
+  "issues": []
+}
+```
+
+## 判断规则
+- total_score ≥ 20 → verdict: "excellent"
+- total_score 15-19 → verdict: "good"
+- total_score 10-14 → verdict: "marginal" (建议回溯)
+- total_score < 10 → verdict: "poor" (丢弃改写，回退原始查询)
+- semantic_preservation < 3 → 自动 verdict: "poor"（语义偏离是不可接受的）</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="integration">
+  <h2>6. 与现有系统的集成</h2>
+
+  <h3>集成点：SearchService.search()</h3>
+  <p>在现有的 <code>SearchService.search()</code> 方法中，在 Step 1（查询向量化）<strong>之前</strong>插入 QueryRewriter 管线：</p>
+
+  <div class="diagram">
+ SearchService.search(query, top_k)
+     │
+     ├── (NEW) QueryRewriter.rewrite(query, history)         ← 【本文档范围】
+     │       │
+     │       ├── Preprocessor.protect_terms(query)
+     │       ├── ContextRewriter.rewrite(query, history)   [如有指代词]
+     │       ├── CacheManager.lookup(query_hash)
+     │       ├── StrategyRouter.route(query)                [意图分类+策略选择]
+     │       ├── Strategy.execute(query)                    [执行选定策略]
+     │       ├── Postprocessor.merge(rewrites[])
+     │       └── return RewriteResult(original, rewrites[], metadata)
+     │
+     │   ╔═══ 模块边界：重写模块输出改写结果，交付给检索模块 ═══╗
+     │   ║                                                    ║
+     ├───╫─ (EXISTING) EmbeddingAdapter.embed_single(query)   ║ [检索模块]
+     ├───╫─ 对各 rewrite 并行向量化 + 检索                     ║ [检索模块]
+     ├───╫─ ResultFusion.rrf(all_results)  (RRF 融合)         ║ [检索模块]
+     ├───╫─ (EXISTING) _assemble_prompt(query, fused_rows)    ║ [检索模块]
+     ├───╫─ (EXISTING) ChatAdapter.generate(messages)         ║ [检索模块]
+     └───╫─ return SearchResponse                             ║ [检索模块]
+         ╚════════════════════════════════════════════════════╝
+  </div>
+
+  <h3>SearchResponse Schema 扩展</h3>
+  <table>
+    <tr><th>新增字段</th><th>类型</th><th>说明</th></tr>
+    <tr><td><code>rewrite_info</code></td><td>object | null</td><td>重写元信息</td></tr>
+    <tr><td><code>rewrite_info.original_query</code></td><td>string</td><td>原始查询</td></tr>
+    <tr><td><code>rewrite_info.rewritten_queries</code></td><td>string[]</td><td>改写后的查询列表</td></tr>
+    <tr><td><code>rewrite_info.strategies_used</code></td><td>string[]</td><td>使用的策略列表</td></tr>
+    <tr><td><code>rewrite_info.rewrite_time_ms</code></td><td>float</td><td>重写耗时</td></tr>
+    <tr><td><code>rewrite_info.fusion_method</code></td><td>string</td><td>（检索模块字段）结果融合方法（如 "rrf"）</td></tr>
+    <tr><td><code>rewrite_info.cache_hit</code></td><td>boolean</td><td>是否命中缓存</td></tr>
+  </table>
+
+  <h3 id="frontend-preview">6.1 前端预览：查询重写结果展示</h3>
+  <p>前端应在回答区域上方提供一个可折叠的<strong>「查询重写详情」面板</strong>，让用户能看到原始查询如何被改写，增强透明度与信任感，也便于调试和反馈。</p>
+
+  <div class="callout callout-warn">
+    <strong>⚠️ 风格一致性要求：</strong>该面板的视觉风格<strong>必须</strong>与现有的「提示词预览」(<code>PromptPreview.vue</code>) 和「检索结果」(<code>ResultsPanel.vue</code>) 面板保持一致，遵循 knowra v2.0 设计系统规范。具体包括：
+    <ul style="margin-top: 0.5rem;">
+      <li><strong>折叠交互：</strong>使用相同的 <code>flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-neutral-50</code> 切换按钮</li>
+      <li><strong>标题样式：</strong><code>font-display text-sm font-semibold text-neutral-700</code> + emoji 图标前缀</li>
+      <li><strong>徽章样式：</strong><code>rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500</code></li>
+      <li><strong>展开图标：</strong>SVG chevron，<code>size-4 text-neutral-400 transition-transform</code>，展开时 <code>rotate-180</code></li>
+      <li><strong>分隔线：</strong><code>border-t border-neutral-100</code></li>
+      <li><strong>列表项分隔：</strong><code>divide-y divide-neutral-100</code></li>
+      <li><strong>次要文字：</strong><code>text-xs text-neutral-400/500</code></li>
+      <li><strong>按钮样式：</strong><code>rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 transition hover:border-neutral-400 hover:text-neutral-700</code></li>
+      <li><strong>品牌色：</strong>使用 <code>brand-700</code> (#1e3a7a) 作为强调色、<code>brand-100</code> (#d9e2f2) 作为浅色背景</li>
+      <li><strong>排版：</strong>标题用 Newsreader 衬线体 (<code>font-display</code>)，正文用 Inter 无衬线体，代码/数据用 JetBrains Mono 等宽体</li>
+    </ul>
+  </div>
+
+  <h4>UI 布局建议</h4>
+  <div class="diagram">
+ ┌──────────────────────────────────────────────────────────────┐
+ │  💬 用户消息气泡（brand-700 深蓝底白字，rounded-xl rounded-br-sm）│
+ │  "怎么让电脑跑更快"                                            │
+ └──────────────────────────────────────────────────────────────┘
+ ┌──────────────────────────────────────────────────────────────┐
+ │  🔄 查询重写详情             3 条改写  [复制]          [▼]    │  ← 折叠按钮行
+ │                                                              │     (px-5 py-3, hover:bg-neutral-50)
+ │  ═══════════════════════════════════════════════════════════ │  ← border-t border-neutral-100
+ │  ┌──────────────────────────────────────────────────────────┐│
+ │  │ 原始查询                                                  ││
+ │  │ "怎么让电脑跑更快"                           text-neutral-500││
+ │  │                                                          ││
+ │  │ 重写结果 (divide-y divide-neutral-100)                    ││
+ │  │ ┌──────────────────────────────────────────────────────┐ ││
+ │  │ │ 📝 规范化重述  "如何提升计算机的性能"     ⭐ 4.5 ✓   │ ││  ← 每行一条改写
+ │  │ │                tag-blue 标签  font-mono 等宽数字     │ ││
+ │  │ ├──────────────────────────────────────────────────────┤ ││
+ │  │ │ 📖 术语对齐    "如何优化计算机的运行速度"  ⭐ 4.2 ✓   │ ││
+ │  │ ├──────────────────────────────────────────────────────┤ ││
+ │  │ │ 🔍 扩展重述    "计算机性能优化方法，包括CPU、 ⭐ 3.8 ✓ │ ││
+ │  │ │               内存、磁盘、系统配置等方面"              │ ││
+ │  │ └──────────────────────────────────────────────────────┘ ││
+ │  │                                                          ││
+ │  │ 使用策略: [规范化重述] [术语对齐] [扩展重述]               ││  ← tag 样式标签
+ │  │ 重写耗时: 320ms    ·    缓存命中: 否                       ││  ← text-xs text-neutral-400
+ │  └──────────────────────────────────────────────────────────┘│
+ └──────────────────────────────────────────────────────────────┘
+ ┌──────────────────────────────────────────────────────────────┐
+ │  🤖 AI 回答 (AnswerPanel: prose-knowra)                      │
+ │  ...                                                         │
+ └──────────────────────────────────────────────────────────────┘</div>
+
+  <h4>组件设计要点</h4>
+  <table>
+    <tr><th>要素</th><th>说明</th><th>Tailwind / CSS 实现</th></tr>
+    <tr>
+      <td><strong>默认状态</strong></td>
+      <td>默认折叠，避免干扰普通用户；有改写发生时显示摘要徽章</td>
+      <td>折叠时仅显示 toggle 行，徽章: <code>rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500</code></td>
+    </tr>
+    <tr>
+      <td><strong>折叠按钮</strong></td>
+      <td>与 PromptPreview / ResultsPanel 完全一致的 toggle header</td>
+      <td><code>flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-neutral-50</code></td>
+    </tr>
+    <tr>
+      <td><strong>标题</strong></td>
+      <td>emoji 图标 + Newsreader 衬线标题</td>
+      <td><code>font-display text-sm font-semibold text-neutral-700</code>，图标用 <code>span class="mr-1.5"</code></td>
+    </tr>
+    <tr>
+      <td><strong>展开/收起图标</strong></td>
+      <td>右侧 SVG chevron，展开时旋转 180°</td>
+      <td><code>size-4 text-neutral-400 transition-transform :class="{ 'rotate-180': isExpanded }"</code></td>
+    </tr>
+    <tr>
+      <td><strong>原始查询</strong></td>
+      <td>展示用户原始输入，灰色引用样式</td>
+      <td><code>text-sm text-neutral-500 italic</code> 或引用块样式</td>
+    </tr>
+    <tr>
+      <td><strong>改写结果列表</strong></td>
+      <td>每条改写结果单独一行，标注策略名称 + 质量评分</td>
+      <td><code>divide-y divide-neutral-100</code>，每行 <code>px-5 py-3</code></td>
+    </tr>
+    <tr>
+      <td><strong>策略标签</strong></td>
+      <td>用颜色区分策略类型，保持与设计文档中的 tag 样式一致</td>
+      <td>基础策略: <code>bg-brand-100 text-brand-700</code>；按需策略: <code>bg-amber-100 text-amber-700</code>；安全网: <code>bg-emerald-100 text-emerald-700</code></td>
+    </tr>
+    <tr>
+      <td><strong>质量评分</strong></td>
+      <td>展示每条改写的质量评分（来自 5.15 节质量评估）</td>
+      <td>≥20: <code>text-emerald-600</code>；15-19: <code>text-amber-600</code>；&lt;15: <code>text-red-600</code>；数字用 <code>font-mono tabular-nums</code></td>
+    </tr>
+    <tr>
+      <td><strong>性能指标</strong></td>
+      <td>展示 rewrite_time_ms 和 cache_hit 状态</td>
+      <td><code>text-xs text-neutral-400</code>，缓存命中时显示 ⚡ 图标 + <code>text-emerald-500</code></td>
+    </tr>
+    <tr>
+      <td><strong>无改写时</strong></td>
+      <td>当策略判定直接检索（如简单事实查询），不渲染该面板</td>
+      <td><code>v-if="rewriteInfo && rewriteInfo.rewritten_queries.length > 0"</code></td>
+    </tr>
+    <tr>
+      <td><strong>异步更新</strong></td>
+      <td>快速通道先返回原始结果（无改写），增强通道完成后通过 SSE 推送更新</td>
+      <td>使用 Vue Transition 动画: <code>fade</code> 过渡，<code>opacity 0.4s ease-out</code></td>
+    </tr>
+    <tr>
+      <td><strong>复制功能</strong></td>
+      <td>折叠按钮行右侧提供复制按钮，hover 时可见</td>
+      <td><code>rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 transition hover:border-neutral-400 hover:text-neutral-700</code></td>
+    </tr>
+  </table>
+
+  <h4>数据流</h4>
+  <div class="diagram">
+ 后端 SearchResponse.rewrite_info
+         │
+         ▼
+ 前端解析 rewrite_info
+         │
+         ├── rewrite_info === null  →  不显示重写面板（简单查询 / 未启用）
+         │
+         ├── rewritten_queries.length > 0  →  显示重写面板（默认折叠，徽章提示）
+         │
+         └── 异步模式: SSE/WebSocket 推送增强结果
+              │
+              ├── 初次渲染: 无改写面板（快速通道直接检索的结果）
+              └── 收到 SSE 更新: 面板渐入，展示改写详情
+  </div>
+
+  <h4>前端所需 API 契约（已覆盖）</h4>
+  <div class="callout callout-info">
+    <strong>✅ 现有 SearchResponse.rewrite_info 字段已满足前端预览需求：</strong><br>
+    <code>original_query</code>（原始查询）、<code>rewritten_queries</code>（改写列表）、<code>strategies_used</code>（策略列表）、<code>rewrite_time_ms</code>（耗时）、<code>cache_hit</code>（缓存命中）—— 这些字段足以支撑上述 UI。质量评分需从审计日志中获取，建议后续在 <code>rewrite_info</code> 中增加 <code>quality_scores</code> 字段。
+  </div>
+
+  <h3>结果融合算法：RRF (Reciprocal Rank Fusion)</h3>
+  <div class="callout callout-info">
+    <strong>📌 属于检索模块：</strong>RRF (Reciprocal Rank Fusion) 用于将多个改写查询的检索结果进行融合排序，属于<strong>检索与生成模块</strong>的职责范围。重写模块的输出为改写后的查询列表，交由检索模块进行并发检索和 RRF 融合。RRF 的详细设计将在检索模块设计文档中给出。
+  </div>
+  <div class="prompt-block small">
+def reciprocal_rank_fusion(
+    result_sets: list[list[SearchResult]],  # 每个查询的检索结果
+    k: int = 60,                             # RRF 平滑常数
+    top_k: int = 5,                          # 最终返回数量
+) -> list[SearchResult]:
+    """将多个查询的检索结果进行 RRF 融合。
+
+    每个文档的最终得分 = Σ 1/(k + rank_i)
+    其中 rank_i 是该文档在第 i 个结果集中的排名。
+    k=60 是经过大量实验验证的最优默认值（参考 TREC 评估）。
+    
+    注意：此算法属于检索模块，此处仅作为接口约定展示。
+    """
+    scores: dict[str, float] = {}
+    doc_map: dict[str, SearchResult] = {}
+
+    for result_set in result_sets:
+        for rank, doc in enumerate(result_set, start=1):
+            key = str(doc.chunk_id)
+            scores[key] = scores.get(key, 0.0) + 1.0 / (k + rank)
+            if key not in doc_map:
+                doc_map[key] = doc
+
+    # 按融合分数降序排列
+    sorted_ids = sorted(scores, key=scores.get, reverse=True)
+    return [doc_map[id] for id in sorted_ids[:top_k]]</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="caching">
+  <h2>7. 缓存与去重机制</h2>
+
+  <h3>三级缓存架构</h3>
+  <table>
+    <tr><th>层级</th><th>缓存类型</th><th>命中条件</th><th>存储</th><th>TTL</th></tr>
+    <tr>
+      <td><strong>L1</strong></td>
+      <td>精确匹配缓存</td>
+      <td>query_hash 完全一致</td>
+      <td>内存 LRU (128MB)</td>
+      <td>1 小时</td>
+    </tr>
+    <tr>
+      <td><strong>L2</strong></td>
+      <td>语义相似缓存</td>
+      <td>query 向量余弦距离 ≤ 0.05</td>
+      <td>内存 LRU (256MB)</td>
+      <td>6 小时</td>
+    </tr>
+    <tr>
+      <td><strong>L3</strong></td>
+      <td>热点统计缓存</td>
+      <td>被访问 ≥ 5 次/小时</td>
+      <td>Redis / 内存</td>
+      <td>24 小时</td>
+    </tr>
+  </table>
+
+  <h3>微批请求去重</h3>
+  <div class="diagram">
+ 时间窗口 T (默认 100ms) 内到达的请求:
+
+   Req A: "如何优化数据库性能"
+   Req B: "如何优化数据库性能"  ← 与 A 完全相同 → 合并, 等待 A 的结果
+   Req C: "数据库怎么加速"      ← 与 A 语义相似 (cosine < 0.05) → 合并
+   Req D: "Python 性能优化"     ← 与 A 无关 → 独立处理
+
+   合并结果: A、B、C 共享同一份检索结果，避免重复计算。
+  </div>
+
+  <h3>缓存 Key 设计</h3>
+  <div class="prompt-block small">
+# L1 缓存 key: 查询文本哈希
+l1_key = f"qrew:l1:{hashlib.sha256(query.encode()).hexdigest()[:16]}"
+
+# L2 缓存 key: 查询向量聚类 ID (向量量化后的桶 ID)
+# 使用 pgvector 或本地向量量化
+l2_key = f"qrew:l2:{quantize(query_vector, n_buckets=1024)}"
+
+# L3 缓存 key: 带时间窗口的热点 key
+l3_key = f"qrew:l3:{date}:{l1_key}"</div>
+
+  <h3>异步改写策略</h3>
+  <div class="diagram">
+ 用户请求到达
+      │
+      ├──▶ 路径 A (同步快速通道): 原始查询 ──▶ 交付检索模块 → 快速返回 (~200ms)
+      │                                       (不经重写，零额外延迟)
+      │
+      └──▶ 路径 B (异步增强通道): 查询重写 ──▶ 输出改写结果 ──▶ 交付检索模块
+                │                                    │
+                │  策略路由 → 执行改写 → 质量评估     │
+                │  (后台执行 ~500ms-2s)               │
+                │                                    │
+                └────────────────────────────────────┘
+                                                          │
+                                                如果 B 完成时:
+                                                - 前端还在等待 → 检索模块可使用增强结果
+                                                - 前端已收到基础结果 → 通过 SSE/WebSocket 推送更新
+                                                
+  ═══════════════════════════════════════════════════════════════
+  注：虚线以下（检索、融合、生成回答）属于检索与生成模块，不在本文档范围。
+  </div>
+
+  <div class="callout callout-tip">
+    <strong>💡 用户体验最佳实践：</strong>重写模块设计支持异步模式——快速通道不经重写直接将原始查询交付检索模块（让用户感知"系统响应了"），增强通道在后台完成重写后将结果交付检索模块进行增强检索。这比等待所有重写完成再返回（用户盯着空白页面 2 秒）的体验好得多。
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="observability">
+  <h2>8. 可观测性与效果评估</h2>
+
+  <h3>审计日志结构</h3>
+  <div class="prompt-block small">
+{
+  "trace_id": "uuid",
+  "timestamp": "ISO8601",
+  "original_query": "...",
+  "query_hash": "sha256[:16]",
+  "protected_terms": ["JVM", "Spring"],
+  "context_used": true,
+  "intent": "analytical",
+  "complexity": 7,
+  "strategies_executed": ["normalize", "hyde", "multi_query"],
+  "rewrites": [
+    {"strategy": "normalize", "output": "...", "time_ms": 120, "tokens": 45},
+    {"strategy": "hyde", "output": "...", "time_ms": 350, "tokens": 180},
+    {"strategy": "multi_query", "output": ["...", "..."], "time_ms": 280, "tokens": 95}
+  ],
+  "total_rewrite_time_ms": 750,
+  "cache_hit": false,
+  "quality_check": {
+    "semantic_preservation": 5,
+    "total_score": 22,
+    "verdict": "excellent"
+  }
+  // 以下字段由检索模块补充：
+  // "fusion_method": "rrf",
+  // "retrieval_quality": { "result_count": 5, "best_score": 0.12, "is_sufficient": true },
+  "quality_check": {
+    "semantic_preservation": 5,
+    "total_score": 22,
+    "verdict": "excellent"
+  }
+}</div>
+
+  <h3>效果评估指标体系</h3>
+  <table>
+    <tr><th>指标</th><th>计算方式</th><th>目标值</th></tr>
+    <tr><td>改写采纳率</td><td>改写后被用于检索的比例</td><td>≥ 85%</td></tr>
+    <tr><td>检索质量提升率</td><td>（检索模块指标）使用改写后 best_score 降低的比例</td><td>≥ 15%</td></tr>
+    <tr><td>改写平均延迟</td><td>rewrite_time_ms 的 P50/P95</td><td>P50 &lt; 400ms</td></tr>
+    <tr><td>缓存命中率</td><td>cache_hit = true 的比例</td><td>≥ 30%</td></tr>
+    <tr><td>回溯触发率</td><td>quality.verdict ≠ "excellent" 的比例</td><td>≤ 10%</td></tr>
+    <tr><td>用户满意度</td><td>前端埋点（点赞/点踩/复制/追问率）</td><td>点赞率 ≥ 70%</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="config">
+  <h2>9. 配置项设计</h2>
+
+  <div class="prompt-block small">
+# ── Query Rewriting 配置 ──────────────────────────────────────────
+
+# 是否启用查询重写模块
+QUERY_REWRITE_ENABLED=true
+
+# 重写使用的 LLM (可与回答生成共用或独立)
+QUERY_REWRITE_MODEL=qwen3.5-plus
+QUERY_REWRITE_API_BASE_URL=https://newapi.bytcloud.org/v1
+QUERY_REWRITE_API_KEY=
+QUERY_REWRITE_TEMPERATURE=0.1
+QUERY_REWRITE_MAX_TOKENS=512
+QUERY_REWRITE_TIMEOUT=5.0
+
+# 策略开关 (可独立控制每个策略)
+QUERY_REWRITE_STRATEGY_NORMALIZE=true
+QUERY_REWRITE_STRATEGY_EXPAND=true
+QUERY_REWRITE_STRATEGY_TERM_ALIGN=true
+QUERY_REWRITE_STRATEGY_HYDE=true
+QUERY_REWRITE_STRATEGY_MULTI_QUERY=true
+QUERY_REWRITE_STRATEGY_DECOMPOSE=true
+QUERY_REWRITE_STRATEGY_STEP_BACK=true
+QUERY_REWRITE_STRATEGY_CONTEXT=true
+QUERY_REWRITE_STRATEGY_CONTRAST=true
+QUERY_REWRITE_STRATEGY_QUERY2DOC=true
+
+# HyDE 分层策略阈值
+QUERY_REWRITE_HYDE_MIN_COMPLEXITY=6
+QUERY_REWRITE_HYDE_SKIP_FACTUAL=true
+QUERY_REWRITE_HYDE_SKIP_WITH_ENTITIES=true
+
+# Multi-Query 配置
+QUERY_REWRITE_MULTI_QUERY_COUNT=4
+
+# Decomposition 配置
+QUERY_REWRITE_DECOMPOSE_MAX_SUB_QUESTIONS=4
+
+# 简洁查询跳过改写阈值
+QUERY_REWRITE_SKIP_MAX_COMPLEXITY=2
+QUERY_REWRITE_SKIP_SINGLE_TERM=true
+
+# 缓存配置
+QUERY_REWRITE_CACHE_L1_ENABLED=true
+QUERY_REWRITE_CACHE_L1_MAX_SIZE=128
+QUERY_REWRITE_CACHE_L1_TTL_SECONDS=3600
+QUERY_REWRITE_CACHE_L2_ENABLED=true
+QUERY_REWRITE_CACHE_L2_SIMILARITY_THRESHOLD=0.05
+QUERY_REWRITE_CACHE_L2_TTL_SECONDS=21600
+QUERY_REWRITE_CACHE_L3_ENABLED=true
+QUERY_REWRITE_CACHE_L3_MIN_FREQUENCY=5
+QUERY_REWRITE_CACHE_L3_TTL_SECONDS=86400
+
+# 异步改写
+QUERY_REWRITE_ASYNC_ENABLED=true
+QUERY_REWRITE_ASYNC_FALLBACK_TIMEOUT_MS=2000
+
+# 请求去重
+QUERY_REWRITE_DEDUP_ENABLED=true
+QUERY_REWRITE_DEDUP_WINDOW_MS=100
+
+# 质量评估
+QUERY_REWRITE_QUALITY_CHECK_ENABLED=true
+QUERY_REWRITE_QUALITY_MIN_TOTAL_SCORE=15
+
+# RRF 融合（属于检索模块配置，此处仅作为接口约定）
+# QUERY_REWRITE_RRF_K=60
+# QUERY_REWRITE_RRF_TOP_K=5
+
+# 精确词保护
+QUERY_REWRITE_PROTECT_TERMS_ENABLED=true
+QUERY_REWRITE_PROTECT_TERMS_CUSTOM_LIST=[]</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="summary">
+  <h2>10. 策略矩阵总览</h2>
+
+  <table>
+    <tr>
+      <th>策略</th>
+      <th>类型</th>
+      <th>成本</th>
+      <th>延迟</th>
+      <th>适用场景</th>
+      <th>与现有系统耦合度</th>
+    </tr>
+    <tr>
+      <td>精确词保护</td>
+      <td><span class="tag tag-green">基础</span></td>
+      <td>零</td>
+      <td>≈0ms</td>
+      <td>所有查询</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td>缓存检查</td>
+      <td><span class="tag tag-green">基础</span></td>
+      <td>零</td>
+      <td>≈0ms</td>
+      <td>所有查询</td>
+      <td>无</td>
+    </tr>
+    <tr>
+      <td>上下文融合</td>
+      <td><span class="tag tag-blue">必须</span></td>
+      <td>⭐</td>
+      <td>~100ms</td>
+      <td>多轮对话</td>
+      <td>低 (仅需对话历史)</td>
+    </tr>
+    <tr>
+      <td>意图分类</td>
+      <td><span class="tag tag-blue">必须</span></td>
+      <td>⭐</td>
+      <td>~150ms</td>
+      <td>所有查询</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>规范化重述</td>
+      <td><span class="tag tag-blue">常用</span></td>
+      <td>⭐</td>
+      <td>~120ms</td>
+      <td>口语化查询</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>术语对齐</td>
+      <td><span class="tag tag-blue">常用</span></td>
+      <td>⭐⭐</td>
+      <td>~100ms</td>
+      <td>非正式表达</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>扩展重述</td>
+      <td><span class="tag tag-blue">常用</span></td>
+      <td>⭐⭐</td>
+      <td>~150ms</td>
+      <td>模糊简短查询</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>HyDE</td>
+      <td><span class="tag tag-amber">按需</span></td>
+      <td>⭐⭐⭐</td>
+      <td>~350ms</td>
+      <td>分析/抽象查询</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>多查询生成</td>
+      <td><span class="tag tag-amber">按需</span></td>
+      <td>⭐⭐⭐</td>
+      <td>~300ms</td>
+      <td>比较/多概念</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>子问题分解</td>
+      <td><span class="tag tag-red">复杂</span></td>
+      <td>⭐⭐⭐⭐</td>
+      <td>~500ms+</td>
+      <td>多跳推理</td>
+      <td>中 (需递进式检索)</td>
+    </tr>
+    <tr>
+      <td>后退提示词</td>
+      <td><span class="tag tag-amber">按需</span></td>
+      <td>⭐⭐⭐</td>
+      <td>~200ms</td>
+      <td>需要基础原理</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>对比式重写</td>
+      <td><span class="tag tag-amber">按需</span></td>
+      <td>⭐⭐</td>
+      <td>~200ms</td>
+      <td>比较类查询</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>Query2Doc</td>
+      <td><span class="tag tag-amber">按需</span></td>
+      <td>⭐⭐⭐</td>
+      <td>~350ms</td>
+      <td>替代/补充 HyDE</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>质量评估与回溯</td>
+      <td><span class="tag tag-blue">安全网</span></td>
+      <td>⭐⭐</td>
+      <td>~150ms</td>
+      <td>所有策略后</td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td>KG 增强</td>
+      <td><span class="tag tag-red">远期</span></td>
+      <td>⭐⭐⭐</td>
+      <td>~100ms</td>
+      <td>含已知实体</td>
+      <td>高 (依赖 KG 模块)</td>
+    </tr>
+  </table>
+
+  <h3>推荐实施路线</h3>
+
+  <div class="callout callout-tip" style="margin-bottom: 1rem;">
+    <strong>🎯 当前 Sprint 目标：</strong>集中交付 <strong>Phase 1 + Phase 2</strong>（覆盖 80% 日常查询场景）。Phase 3/4 纳入后续迭代规划。
+  </div>
+
+  <div class="diagram">
+ ╔══════════════════════════════════════════════════════════════════════════════════════════╗
+ ║                        查询重写模块 — 分阶段实施路线图                                   ║
+ ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+ ║                                                                                          ║
+ ║  ┌─────────────────────────────────────┐                                                ║
+ ║  │   🎯 本次 Sprint: Phase 1 + Phase 2  │                                                ║
+ ║  ├─────────────────────────────────────┤                                                ║
+ ║  │                                     │                                                ║
+ ║  │  Phase 1              Phase 2            集成联调 + 验收                             ║
+ ║  │  ┌──────────────┐    ┌──────────────────┐  ┌──────────────────┐                     ║
+ ║  │  │ · 精确词保护  │    │ · 意图分类+路由  │  │ · 质量评估+回溯  │                     ║
+ ║  │  │ · 上下文融合  │──▶│ · 规范化重述     │──▶│ · SearchService   │                     ║
+ ║  │  │ · L1 精确缓存 │    │ · 术语对齐       │  │   集成           │                     ║
+ ║  │  │ · 请求去重    │    │ · 扩展重述       │  │ · 内部验收       │                     ║
+ ║  │  │ · 审计日志    │    │ · L2 语义缓存    │  │ · Demo 准备      │                     ║
+ ║  │  └──────────────┘    └──────────────────┘  └──────────────────┘                     ║
+ ║  │  复杂度: 低              复杂度: 中           复杂度: 低                              ║
+ ║  │  收益: 基础保障          收益: 覆盖80%场景    收益: 交付就绪                           ║
+ ║  └─────────────────────────────────────┘                                                ║
+ ║                                          │                                               ║
+ ║                                          ▼                                               ║
+ ║  ┌─────────────────────────────────────┐                                                ║
+ ║  │   📅 下一版本: Phase 3 — 高级策略    │                                                ║
+ ║  ├─────────────────────────────────────┤                                                ║
+ ║  │ · HyDE (分层启用)     · 多查询生成   │                                                ║
+ ║  │ · 子问题分解           · 后退提示词   │                                                ║
+ ║  │ · Query2Doc            · 对比式重写   │                                                ║
+ ║  │ · RRF 融合                          │                                                ║
+ ║  ├─────────────────────────────────────┤                                                ║
+ ║  │ 复杂度: 中高          收益: 解决复杂查询                                             ║
+ ║  └─────────────────────────────────────┘                                                ║
+ ║                                          │                                               ║
+ ║                                          ▼                                               ║
+ ║  ┌─────────────────────────────────────┐                                                ║
+ ║  │   🔮 远期规划: Phase 4 — 极致体验    │                                                ║
+ ║  ├─────────────────────────────────────┤                                                ║
+ ║  │ · 异步改写            · L3 热点缓存  │                                                ║
+ ║  │ · KG 增强             · A/B 评测框架 │                                                ║
+ ║  │ · 模型蒸馏                          │                                                ║
+ ║  ├─────────────────────────────────────┤                                                ║
+ ║  │ 复杂度: 高            收益: 极致体验                                                  ║
+ ║  └─────────────────────────────────────┘                                                ║
+ ║                                                                                          ║
+ ╚══════════════════════════════════════════════════════════════════════════════════════════╝
+  </div>
+
+  <h3>Sprint 里程碑节点</h3>
+  <table>
+    <tr><th>阶段</th><th>里程碑</th><th>交付物</th><th>验收标准</th></tr>
+    <tr>
+      <td>Phase 1</td>
+      <td><span class="tag tag-green">M1: 基础能力就绪</span></td>
+      <td>精确词保护、上下文融合、L1 缓存、请求去重、审计日志</td>
+      <td>单元测试通过；审计日志可查看</td>
+    </tr>
+    <tr>
+      <td>Phase 2 核心</td>
+      <td><span class="tag tag-blue">M2: 核心策略完成</span></td>
+      <td>意图分类+路由、规范化重述、术语对齐、扩展重述、L2 语义缓存</td>
+      <td>Demo 场景端到端跑通</td>
+    </tr>
+    <tr>
+      <td>Phase 2 收尾</td>
+      <td><span class="tag tag-amber">M3: 集成联调完成</span></td>
+      <td>质量评估+回溯、与 SearchService 集成</td>
+      <td>集成测试通过；rewrite_info 字段正确返回</td>
+    </tr>
+    <tr>
+      <td>最终验收</td>
+      <td><span class="tag tag-red">M4: Demo 就绪</span></td>
+      <td>内部验收通过、Demo 演示脚本就绪</td>
+      <td>演示场景验收通过</td>
+    </tr>
+  </table>
+
+  <h3>推荐路径（与用户需求对齐）</h3>
+  <div class="diagram">
+ 用户查询
+     │
+     ▼
+ ┌─────────────────┐
+ │ 0. 精确词保护    │  ← 正则 + 词汇表，零成本
+ └────────┬────────┘
+          │
+     ┌────▼────┐
+     │ 缓存命中? │── 是 ──▶ 返回缓存结果
+     └────┬────┘
+          │ 否
+          ▼
+ ┌─────────────────┐
+ │ 1. 上下文融合    │  ← 多轮对话指代消解
+ └────────┬────────┘
+          │
+          ▼
+ ┌─────────────────┐
+ │ 2. 意图分类      │  ← 确定查询类型和复杂度
+ └────────┬────────┘
+          │
+    ┌─────┼─────────────────────────────────┐
+    │     │                                 │
+ 简单  中等                              复杂
+ (1-2) (3-5)                            (6-10)
+    │     │                                 │
+    ▼     ▼                                 ▼
+  跳过  ┌──────────────┐          ┌──────────────────┐
+  改写  │ 3a. 直接改写  │          │ 3b. 按需选择:     │
+        │ · 规范化重述  │          │ · HyDE           │
+        │ · 术语对齐    │          │ · Multi-Query    │
+        │ · 扩展重述    │          │ · Decomposition  │
+        └──────┬───────┘          │ · Step-Back      │
+               │                  └────────┬─────────┘
+               └──────────┬───────────────┘
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │ 4. 输出改写结果   │
+                 │  原始 + 改写列表  │
+                 └────────┬────────┘
+                          │
+              ╔═══════════╪═══════════╗
+              ║  ── 模块边界：交付给检索模块 ──  ║
+              ║           ▼           ║
+              ║  ┌─────────────────┐  ║
+              ║  │ 向量检索 + RRF   │  ║
+              ║  └────────┬────────┘  ║
+              ║           ▼           ║
+              ║  ┌─────────────────┐  ║
+              ║  │ 质量检查 + 回溯   │  ║
+              ║  └────────┬────────┘  ║
+              ║           ▼           ║
+              ║  ┌─────────────────┐  ║
+              ║  │ LLM 生成回答     │  ║
+              ║  └─────────────────┘  ║
+              ╚═══════════════════════╝
+  </div>
+
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>📋 附录：关键 Prompt 调用清单</h2>
+  <table>
+    <tr><th>#</th><th>Prompt 名称</th><th>触发条件</th><th>LLM 调用次数</th><th>输出格式</th></tr>
+    <tr><td>1</td><td>意图分类</td><td>每次查询（除非缓存命中）</td><td>1</td><td>JSON</td></tr>
+    <tr><td>2</td><td>上下文融合</td><td>has_pronouns = true</td><td>1</td><td>纯文本</td></tr>
+    <tr><td>3</td><td>规范化重述</td><td>complexity 3-5</td><td>1</td><td>纯文本</td></tr>
+    <tr><td>4</td><td>扩展重述</td><td>intent ∈ {ambiguous, exploratory}</td><td>1</td><td>纯文本</td></tr>
+    <tr><td>5</td><td>术语对齐</td><td>complexity ≤ 5</td><td>0-1 (优先本地)</td><td>纯文本</td></tr>
+    <tr><td>6</td><td>HyDE 假设文档</td><td>complexity ≥ 6 + 非 factual</td><td>1</td><td>纯文本</td></tr>
+    <tr><td>7</td><td>多查询生成</td><td>complexity 6-8</td><td>1</td><td>列表</td></tr>
+    <tr><td>8</td><td>子问题分解</td><td>is_multi_hop = true</td><td>1</td><td>列表</td></tr>
+    <tr><td>9</td><td>后退提示词</td><td>complexity ≥ 7</td><td>1</td><td>纯文本</td></tr>
+    <tr><td>10</td><td>对比式重写</td><td>intent = comparative</td><td>1</td><td>分组列表</td></tr>
+    <tr><td>11</td><td>Query2Doc</td><td>HyDE 的替代/补充策略</td><td>1</td><td>结构化</td></tr>
+    <tr><td>12</td><td>质量评估</td><td>每次改写后</td><td>1</td><td>JSON</td></tr>
+    <tr><td>13</td><td>检索质量评估</td><td>（检索模块）初次检索结果不足时</td><td>0-1</td><td>JSON</td></tr>
+    <tr><td>14</td><td>上下文压缩</td><td>对话历史 > 2000 tokens</td><td>0-1</td><td>纯文本</td></tr>
+  </table>
+</section>
+
+</div>
+</body>
+</html>

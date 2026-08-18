@@ -398,14 +398,62 @@ citations back to document name / heading path / page numbers.
 
 ### API endpoint
 
-- `POST /api/search` — body: `query` (1–2000 chars), `top_k` (1–50, default 5).
-  Returns the ranked chunks, the generated `answer`, token usage
-  (`answer_tokens`), the exact `prompt_messages` sent to the LLM (for
-  debugging/preview), and `generation_error` when generation degraded instead
-  of failing outright.
+- `POST /api/search` — body: `query` (1–2000 chars), `top_k` (1–50, default 5),
+  optional `history` (dialogue context for query rewriting, max 20 turns), optional
+  `session_id` (for L1 cache binding). Returns the ranked chunks, the generated
+  `answer`, token usage (`answer_tokens`), the exact `prompt_messages` sent to the
+  LLM (for debugging/preview), `rewrite_info` (query rewriting metadata), and
+  `generation_error` when generation degraded instead of failing outright.
   - `404` — no vectorised documents exist yet
   - `502` — query embedding call failed
   - `503` — chat model or API key not configured
+
+### Search response — `rewrite_info`
+
+When query rewriting is enabled (`QUERY_REWRITE_ENABLED=true`), the response
+includes a `rewrite_info` object with the following fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `original_query` | `string` | The original query text sent by the user |
+| `rewritten_queries` | `RewrittenQuery[]` | Array of rewritten query variants, each with `query`, `strategy`, `duration_ms`, `tokens` |
+| `strategies_used` | `string[]` | Names of the rewrite strategies executed (e.g. `normalize`, `term_align`, `expand`) |
+| `rewrite_time_ms` | `number` | Total rewrite pipeline duration in milliseconds |
+| `cache_hit` | `boolean` | Whether the rewrite result came from cache (L1 exact match or L2 semantic match) |
+| `cache_level` | `"L1" \| "L2" \| null` | Which cache tier produced the hit, or `null` on cache miss |
+| `error` | `string \| null` | Error message if rewriting failed (graceful degradation — search proceeds with original query) |
+| `intent` | `string \| null` | Classified query intent (factual/analytical/comparative/procedural/exploratory/chitchat/ambiguous) |
+| `complexity` | `int \| null` | Query complexity score (1–10) |
+| `rewrite_model` | `string \| null` | The LLM model used for rewriting |
+| `quality_scores` | `QualityScores \| null` | 5-dimension rewrite quality evaluation (semantic_preservation, clarity_improvement, information_gain, term_accuracy, retrievability, plus total_score and verdict) |
+| `backtrack_triggered` | `boolean` | Whether automatic backtrack retry was triggered when quality was insufficient |
+| `backtrack_strategy` | `string \| null` | The upgraded strategy used for backtrack retry (e.g. `expand`), or `null` |
+
+When rewriting is disabled or the rewrite module is not configured, `rewrite_info`
+still appears in the response with `original_query`, empty `rewritten_queries`
+and `strategies_used`, `rewrite_time_ms=0`, and `cache_hit=false`.
+
+### Query rewriting configuration
+
+Query rewriting enhances search quality by protecting technical terms,
+resolving pronoun references from dialogue history, and expanding queries
+for better retrieval. See `.env.example` for the full list of
+`QUERY_REWRITE_*` variables (~20 items).
+
+Key env variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `QUERY_REWRITE_ENABLED` | `false` | Master switch for query rewriting |
+| `QUERY_REWRITE_API_BASE_URL` | (required) | OpenAI-compatible API base URL for the rewrite LLM |
+| `QUERY_REWRITE_API_KEY` | (required) | API key for the rewrite service |
+| `QUERY_REWRITE_MODEL` | `qwen3.5-plus` | Model used for rewriting |
+| `QUERY_REWRITE_PIPELINE_TIMEOUT` | `30.0` | Total pipeline timeout in seconds (graceful degradation on timeout) |
+| `QUERY_REWRITE_STRATEGY_TIMEOUT` | `15.0` | Per-strategy LLM call timeout in seconds |
+| `QUERY_REWRITE_CIRCUIT_BREAKER_THRESHOLD` | `5` | Consecutive failures before circuit breaker opens |
+| `QUERY_REWRITE_CIRCUIT_BREAKER_COOLDOWN_SECONDS` | `30.0` | Cooldown period before half-open probe |
+| `QUERY_REWRITE_CACHE_TTL_SECONDS` | `1800.0` | L1 exact-match cache TTL (session-bound, 30 min) |
+| `QUERY_REWRITE_L2_CACHE_TTL_SECONDS` | `3600.0` | L2 semantic cache TTL (cross-session, 1 hour) |
 
 ### Search configuration
 
@@ -431,8 +479,8 @@ anti-hallucination guard, not an error.
   before real multi-user/team support ships.
 - Streaming responses are not implemented (`ChatAdapter.generate(stream=True)`
   raises `NotImplementedError`); the endpoint always returns a complete answer.
-- No query rewriting, HyDE, or reranking — the raw query embedding is matched
-  directly against chunk embeddings.
+- Query rewriting is supported (see "Query rewriting configuration" above),
+  but HyDE and reranking are not yet implemented.
 
 ## Quality gates
 

@@ -1,0 +1,709 @@
+# ============================================================================
+# knowra — 术语对齐表 (Term Alignment Table)
+# ============================================================================
+# 将用户查询中的口语化、非正式表达映射为正式专业术语，
+# 确保改写后的查询用词与知识库文档中的正式术语一致。
+#
+# 用途：
+#   - 术语对齐阶段（TermAlignRewriter）——查询重写时进行术语替换
+#   - 质量评估阶段（Postprocessor）——检查改写结果的术语准确性
+#   - Prompt 构建阶段——可作为 few-shot 示例注入模板
+#
+# 对齐表结构：
+#   - general_alignments:   通用口语→正式语映射（跨领域通用）
+#   - domain_alignments:    按领域分类的专业术语对齐
+#   - technical_alignments: 技术口语→标准术语映射
+#   - alias_to_canonical:   别名/俗称→标准写法（多对一归并）
+#   - negative_patterns:    反模式——不应替换的惯用表达（防止过度规范化）
+#
+# 术语对齐原则：
+#   1. 优先与知识库中的正式术语对齐（知识库用词优先）
+#   2. 保留用户未提及的领域信息（不引入新概念）
+#   3. 英文专业术语保留原样，不强行翻译（API、SDK、CI/CD 等）
+#   4. 不改变查询语义意图（对齐 = 标准化，≠ 改写意图）
+#
+# 版本规范：遵循 SemVer (MAJOR.MINOR.PATCH)
+# ============================================================================
+
+version: "1.0.0"
+description: >-
+  术语对齐表 —— 将用户口语化、非正式表达映射为正式专业术语，
+  确保改写结果与知识库文档用词一致，提升检索命中率。
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 一、通用口语 → 正式语映射 (General Alignments)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 跨领域通用的口语→书面语映射，适用于所有查询场景。
+
+general_alignments:
+  # ── 操作类 ──
+  - colloquial: "跑"
+    formal: "运行"
+    note: "\"跑程序\" → \"运行程序\""
+
+  - colloquial: "跑起来"
+    formal: "启动运行"
+    note: "\"让服务跑起来\" → \"启动运行服务\""
+
+  - colloquial: "装"
+    formal: "安装"
+    note: "\"装一个库\" → \"安装一个库\""
+
+  - colloquial: "搭"
+    formal: "搭建 / 构建"
+    note: "\"搭个环境\" → \"搭建环境\""
+
+  - colloquial: "搞"
+    formal: "实现 / 处理 / 配置"
+    note: "根据上下文选择：\"搞个接口\"→\"实现接口\"，\"搞不定\"→\"无法处理\""
+
+  - colloquial: "弄"
+    formal: "处理 / 操作 / 设置"
+    note: "\"弄一下配置\" → \"修改配置\""
+
+  - colloquial: "写"
+    formal: "编写 / 实现"
+    note: "\"写个脚本\" → \"编写脚本\"，\"写代码\"保持原样（已成标准表达）"
+
+  - colloquial: "改"
+    formal: "修改 / 调整"
+    note: "\"改一下参数\" → \"调整参数\""
+
+  - colloquial: "删"
+    formal: "删除"
+    note: "保持原样已足够正式，可补充宾语"
+
+  - colloquial: "查"
+    formal: "查询 / 检索 / 查找"
+    note: "\"查一下文档\" → \"检索文档\""
+
+  - colloquial: "看"
+    formal: "查看 / 检查"
+    note: "\"看一下日志\" → \"查看日志\""
+
+  - colloquial: "测"
+    formal: "测试 / 验证"
+    note: "\"测一下接口\" → \"测试接口\""
+
+  - colloquial: "调"
+    formal: "调试 / 调用 / 调整"
+    note: "多义：\"调bug\"→\"调试\"，\"调接口\"→\"调用\"，\"调参数\"→\"调整\""
+
+  - colloquial: "配"
+    formal: "配置"
+    note: "\"配一下环境变量\" → \"配置环境变量\""
+
+  # ── 状态描述 ──
+  - colloquial: "挂了"
+    formal: "崩溃 / 停止响应 / 宕机"
+    note: "\"服务挂了\" → \"服务停止响应\""
+
+  - colloquial: "崩了"
+    formal: "崩溃 / 异常终止"
+    note: "\"程序崩了\" → \"程序异常终止\""
+
+  - colloquial: "卡了"
+    formal: "响应缓慢 / 卡顿 / 阻塞"
+    note: "\"界面卡了\" → \"界面响应缓慢\""
+
+  - colloquial: "凉了"
+    formal: "失效 / 不可用"
+    note: "\"这个方法凉了\" → \"该方法已废弃/不可用\""
+
+  - colloquial: "炸了"
+    formal: "严重故障 / 不可用"
+    note: "\"服务器炸了\" → \"服务器发生严重故障\""
+
+  - colloquial: "出问题了"
+    formal: "出现异常 / 发生错误"
+    note: "通用故障描述，根据上下文选择更精确的表达"
+
+  - colloquial: "不对"
+    formal: "不正确 / 不符合预期"
+    note: "\"结果不对\" → \"结果不符合预期\""
+
+  - colloquial: "不行"
+    formal: "不生效 / 无法正常工作"
+    note: "\"配置不行\" → \"配置不生效\""
+
+  # ── 程度/修饰 ──
+  - colloquial: "好多"
+    formal: "大量 / 许多"
+    note: "\"好多报错\" → \"大量报错\""
+
+  - colloquial: "很慢"
+    formal: "响应延迟高 / 性能低下"
+    note: "\"查询很慢\" → \"查询响应延迟高\""
+
+  - colloquial: "很快"
+    formal: "低延迟 / 高性能"
+    note: "\"响应很快\" → \"低延迟响应\""
+
+  - colloquial: "太大"
+    formal: "超出限制 / 规模过大"
+    note: "\"文件太大\" → \"文件大小超出限制\""
+
+  # ── 疑问表达 ──
+  - colloquial: "咋"
+    formal: "如何 / 怎样"
+    note: "\"咋配置\" → \"如何配置\""
+
+  - colloquial: "咋样"
+    formal: "怎么样 / 效果如何"
+    note: "\"性能咋样\" → \"性能表现如何\""
+
+  - colloquial: "啥"
+    formal: "什么"
+    note: "\"啥意思\" → \"什么意思 / 含义是什么\""
+
+  - colloquial: "为啥"
+    formal: "为什么 / 原因是什么"
+    note: "\"为啥报错\" → \"为什么出现错误 / 报错原因是什么\""
+
+  - colloquial: "咋整"
+    formal: "如何处理 / 解决方案是什么"
+    note: "\"这咋整\" → \"这如何处理\""
+
+  - colloquial: "咋回事"
+    formal: "原因是什么 / 发生了什么"
+    note: "\"报错咋回事\" → \"报错原因是什么\""
+
+  - colloquial: "有没有"
+    formal: "是否存在 / 是否支持"
+    note: "\"有没有这个功能\" → \"是否支持该功能\""
+
+  - colloquial: "能不能"
+    formal: "是否可以 / 是否支持"
+    note: "\"能不能做到\" → \"是否可以实现\""
+
+  - colloquial: "行不行"
+    formal: "是否可行 / 是否有效"
+    note: "\"这个方案行不行\" → \"这个方案是否可行\""
+
+  # ── 指代/连接 ──
+  - colloquial: "那个"
+    formal: "[具体实体]"
+    note: "上下文融合消解，替换为对话历史中的具体实体"
+
+  - colloquial: "这个"
+    formal: "[具体实体]"
+    note: "上下文融合消解，替换为对话历史中的具体实体"
+
+  # ── 常见错别字/网络用语修正 ──
+  - colloquial: "有咩有"
+    formal: "有没有"
+    note: "常见输入错误"
+
+  - colloquial: "神马"
+    formal: "什么"
+    note: "网络用语"
+
+  - colloquial: "酱紫"
+    formal: "这样"
+    note: "网络用语"
+
+  - colloquial: "表"
+    formal: "不要"
+    note: "仅在\"表+动词\"模式（如\"表用\"→\"不要用\"），不替换作为名词的\"表\""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 二、按领域分类的专业术语对齐 (Domain Alignments)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+domain_alignments:
+
+  # ── 软件工程 / 编程 ──────────────────────────────────────────────────────────
+  software_engineering:
+    - colloquial: "跑代码"
+      formal: "运行代码"
+      note: ""
+
+    - colloquial: "跑程序"
+      formal: "运行程序"
+      note: ""
+
+    - colloquial: "编译不过"
+      formal: "编译失败"
+      note: ""
+
+    - colloquial: "报错"
+      formal: "抛出异常 / 返回错误"
+      note: "\"接口报错\" → \"接口返回错误\""
+
+    - colloquial: "抛异常"
+      formal: "抛出异常"
+      note: "已是正式表达，保持原样"
+
+    - colloquial: "空指针"
+      formal: "空指针异常 / NullPointerException"
+      note: ""
+
+    - colloquial: "打日志"
+      formal: "记录日志 / 输出日志"
+      note: ""
+
+    - colloquial: "打点"
+      formal: "埋点 / 指标上报"
+      note: "多义：\"打点监测\"→\"埋点\"，\"打点记录\"→\"记录\""
+
+    - colloquial: "调接口"
+      formal: "调用 API 接口"
+      note: ""
+
+    - colloquial: "撸代码"
+      formal: "编写代码 / 开发"
+      note: ""
+
+    - colloquial: "重构一把"
+      formal: "重构"
+      note: "\"一把\"为冗余语气词，去除"
+
+    - colloquial: "上生产"
+      formal: "部署到生产环境"
+      note: ""
+
+    - colloquial: "发版"
+      formal: "发布版本 / Release"
+      note: ""
+
+    - colloquial: "回滚一下"
+      formal: "回滚 / 版本回退"
+      note: ""
+
+    - colloquial: "加个锁"
+      formal: "添加锁机制 / 加锁"
+      note: ""
+
+    - colloquial: "打个包"
+      formal: "构建 / 打包"
+      note: ""
+
+    - colloquial: "拉代码"
+      formal: "拉取代码 / git pull"
+      note: ""
+
+    - colloquial: "推代码"
+      formal: "推送代码 / git push"
+      note: ""
+
+    - colloquial: "合代码"
+      formal: "合并代码 / Merge"
+      note: ""
+
+    - colloquial: "rebase 一下"
+      formal: "执行 git rebase"
+      note: "\"一下\"去除"
+
+    - colloquial: "cherry-pick 过来"
+      formal: "cherry-pick 到当前分支"
+      note: ""
+
+  # ── 数据库 / 存储 ────────────────────────────────────────────────────────────
+  database:
+    - colloquial: "查库"
+      formal: "查询数据库"
+      note: ""
+
+    - colloquial: "写库"
+      formal: "写入数据库"
+      note: ""
+
+    - colloquial: "落库"
+      formal: "持久化到数据库"
+      note: ""
+
+    - colloquial: "入库"
+      formal: "写入数据库 / 存储到数据库"
+      note: ""
+
+    - colloquial: "慢查询"
+      formal: "慢查询 / 低效查询"
+      note: "已是正式术语，但需注意知识库可能用\"性能低下的查询\""
+
+    - colloquial: "全表扫"
+      formal: "全表扫描"
+      note: ""
+
+    - colloquial: "走索引"
+      formal: "使用索引 / 索引命中"
+      note: ""
+
+    - colloquial: "加索引"
+      formal: "创建索引"
+      note: ""
+
+    - colloquial: "建表"
+      formal: "创建数据表"
+      note: ""
+
+    - colloquial: "分表"
+      formal: "分库分表 / 表分区"
+      note: "根据规模选择"
+
+    - colloquial: "读写分离"
+      formal: "读写分离架构"
+      note: "已是正式术语，可补充\"架构\"使表达更完整"
+
+    - colloquial: "主从"
+      formal: "主从复制 / 主从架构"
+      note: ""
+
+    - colloquial: "主备"
+      formal: "主备切换 / 主备架构"
+      note: ""
+
+    - colloquial: "切库"
+      formal: "数据库切换 / 故障转移"
+      note: ""
+
+    - colloquial: "数据一致性"
+      formal: "数据一致性"
+      note: "已是正式术语，保持原样"
+
+  # ── 运维 / DevOps ────────────────────────────────────────────────────────────
+  devops:
+    - colloquial: "上云"
+      formal: "迁移到云平台 / 云部署"
+      note: ""
+
+    - colloquial: "上 k8s"
+      formal: "部署到 Kubernetes"
+      note: ""
+
+    - colloquial: "容器化"
+      formal: "容器化部署"
+      note: "已是正式术语"
+
+    - colloquial: "搭集群"
+      formal: "搭建集群"
+      note: ""
+
+    - colloquial: "扩容"
+      formal: "水平扩展 / 扩容"
+      note: "已是正式术语"
+
+    - colloquial: "缩容"
+      formal: "缩减规模 / 缩容"
+      note: "已是正式术语"
+
+    - colloquial: "加机器"
+      formal: "增加服务器节点 / 水平扩展"
+      note: ""
+
+    - colloquial: "重启一下"
+      formal: "重启服务"
+      note: "\"一下\"去除"
+
+    - colloquial: "看监控"
+      formal: "查看监控指标"
+      note: ""
+
+    - colloquial: "配监控"
+      formal: "配置监控"
+      note: ""
+
+    - colloquial: "加告警"
+      formal: "配置告警规则"
+      note: ""
+
+    - colloquial: "收告警"
+      formal: "接收告警通知"
+      note: ""
+
+    - colloquial: "巡检"
+      formal: "系统巡检"
+      note: "已是正式术语"
+
+    - colloquial: "切流量"
+      formal: "流量切换 / 流量调度"
+      note: ""
+
+    - colloquial: "灰度"
+      formal: "灰度发布 / 金丝雀发布"
+      note: "已是正式术语"
+
+    - colloquial: "全量"
+      formal: "全量发布 / 全量上线"
+      note: ""
+
+  # ── AI / 机器学习 ────────────────────────────────────────────────────────────
+  ai_ml:
+    - colloquial: "跑模型"
+      formal: "运行模型 / 执行模型推理"
+      note: ""
+
+    - colloquial: "训模型"
+      formal: "训练模型"
+      note: ""
+
+    - colloquial: "调参"
+      formal: "超参数调优"
+      note: ""
+
+    - colloquial: "过拟合了"
+      formal: "模型过拟合"
+      note: "\"了\"去除"
+
+    - colloquial: "欠拟合"
+      formal: "模型欠拟合"
+      note: "可补充\"模型\"主语"
+
+    - colloquial: "embedding 一下"
+      formal: "生成向量嵌入"
+      note: "\"一下\"去除"
+
+    - colloquial: "生成 embedding"
+      formal: "生成向量嵌入"
+      note: "中英混用，统一为中文或保留 Embedding"
+
+    - colloquial: "做 RAG"
+      formal: "实现检索增强生成"
+      note: ""
+
+    - colloquial: "幻觉了"
+      formal: "产生幻觉 / 模型幻觉"
+      note: "\"了\"去除"
+
+    - colloquial: "prompt 一下"
+      formal: "编写提示词 / 设计 Prompt"
+      note: "\"一下\"去除"
+
+  # ── 前端 / UI ────────────────────────────────────────────────────────────────
+  frontend:
+    - colloquial: "切图"
+      formal: "UI 实现 / 页面还原"
+      note: "历史用语，现代前端多用\"页面实现\""
+
+    - colloquial: "写样式"
+      formal: "编写 CSS 样式"
+      note: ""
+
+    - colloquial: "调样式"
+      formal: "调整样式"
+      note: ""
+
+    - colloquial: "写组件"
+      formal: "开发组件"
+      note: ""
+
+    - colloquial: "搞个弹窗"
+      formal: "实现弹窗组件"
+      note: ""
+
+    - colloquial: "适配移动端"
+      formal: "移动端适配 / 响应式适配"
+      note: "已是正式术语"
+
+    - colloquial: "改 UI"
+      formal: "修改用户界面"
+      note: ""
+
+    - colloquial: "加个按钮"
+      formal: "添加按钮组件"
+      note: "可补充具体的交互含义"
+
+  # ── 安全 ────────────────────────────────────────────────────────────────────
+  security:
+    - colloquial: "漏洞"
+      formal: "安全漏洞"
+      note: ""
+
+    - colloquial: "被人打了"
+      formal: "遭受攻击"
+      note: ""
+
+    - colloquial: "被黑了"
+      formal: "被入侵 / 遭受安全攻击"
+      note: ""
+
+    - colloquial: "加密一下"
+      formal: "加密"
+      note: "\"一下\"去除"
+
+    - colloquial: "脱敏"
+      formal: "数据脱敏"
+      note: "已是正式术语"
+
+    - colloquial: "鉴权"
+      formal: "身份认证 / 权限验证"
+      note: "根据上下文：\"用户鉴权\"→\"身份认证\"，\"接口鉴权\"→\"权限验证\""
+
+    - colloquial: "渗透"
+      formal: "渗透测试"
+      note: "\"做渗透\" → \"进行渗透测试\""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 三、技术口语 → 标准术语映射 (Technical Colloquial → Standard)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 开发者在日常交流中使用的非正式技术俚语 → 对应的标准技术术语。
+# 此表侧重仅技术人员能理解的"行话"。
+
+technical_alignments:
+  - colloquial: "银弹"
+    formal: "通用解决方案 / 万灵药"
+    note: "Fred Brooks 的经典比喻"
+
+  - colloquial: "语法糖"
+    formal: "语法糖 / 便捷语法"
+    note: "已是正式术语，但非技术人员可能不理解"
+
+  - colloquial: "黑魔法"
+    formal: "非常规技巧 / 底层技巧"
+    note: "\"用了点黑魔法\" → \"使用了底层优化技巧\""
+
+  - colloquial: "脏活"
+    formal: "底层实现细节 / 繁琐的工作"
+    note: "\"框架帮你干了脏活\" → \"框架封装了底层实现细节\""
+
+  - colloquial: "八股文"
+    formal: "面试常见题 / 标准问答"
+    note: "程序员面试黑话"
+
+  - colloquial: "造轮子"
+    formal: "重复实现已有功能 / 重新开发"
+    note: ""
+
+  - colloquial: "不要重复造轮子"
+    formal: "应优先使用现有解决方案而非重新开发"
+    note: ""
+
+  - colloquial: "祖传代码"
+    formal: "遗留代码 / 历史遗留代码"
+    note: ""
+
+  - colloquial: "屎山"
+    formal: "难以维护的遗留代码 / 技术债务"
+    note: "贬义表达，正式化为\"技术债务\"或\"代码质量低下\""
+
+  - colloquial: "胶水代码"
+    formal: "集成代码 / 适配代码"
+    note: ""
+
+  - colloquial: "面条代码"
+    formal: "结构混乱的代码 / 意大利面条式代码"
+    note: ""
+
+  - colloquial: "硬核"
+    formal: "技术要求高 / 底层 / 难度大"
+    note: "\"很硬核\" → \"技术难度高\""
+
+  - colloquial: "氪金"
+    formal: "付费使用 / 商业版"
+    note: "\"这个功能要氪金\" → \"该功能需要付费使用\""
+
+  - colloquial: "白嫖"
+    formal: "免费使用 / 不付费"
+    note: "\"能不能白嫖\" → \"是否有免费方案\""
+
+  - colloquial: "摸鱼"
+    formal: "[非技术表达，不替换]"
+    note: "与技术查询无关，保持原样"
+
+  - colloquial: "画饼"
+    formal: "承诺 / 规划"
+    note: "\"又在画饼\" → \"承诺的功能尚未实现\""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 四、别名/俗称 → 标准写法 (Alias → Canonical)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 多对一归并：将同一事物的多种俗称统一为标准写法。
+# 注意：标准写法应与知识库中实际使用的名称一致。
+
+alias_to_canonical:
+  # ── 版本控制系统 ──
+  - canonical: "GitHub"
+    aliases: ["github", "gh", "GitHub.com"]
+
+  - canonical: "GitLab"
+    aliases: ["gitlab", "gl"]
+
+  # ── 编程语言 ──
+  - canonical: "JavaScript"
+    aliases: ["js", "JS", "javascript"]
+
+  - canonical: "TypeScript"
+    aliases: ["ts", "TS", "typescript"]
+
+  # ── 框架 ──
+  - canonical: "Spring Boot"
+    aliases: ["springboot", "SpringBoot", "spring-boot"]
+
+  - canonical: "Vue.js"
+    aliases: ["vue", "Vue", "VUE", "VueJS"]
+
+  # ── 数据库 ──
+  - canonical: "PostgreSQL"
+    aliases: ["postgres", "pg", "Postgres", "PG"]
+
+  - canonical: "MongoDB"
+    aliases: ["mongo", "mongodb", "Mongo"]
+
+  # ── 操作系统 ──
+  - canonical: "Windows"
+    aliases: ["windows", "win", "Win"]
+
+  # ── 编辑器/IDE ──
+  - canonical: "VS Code"
+    aliases: ["VSCode", "vscode", "Visual Studio Code", "code"]
+
+  # ── 容器/编排 ──
+  - canonical: "Kubernetes"
+    aliases: ["K8s", "k8s", "kubernetes", "kube", "Kube"]
+
+  - canonical: "Docker Compose"
+    aliases: ["docker-compose", "docker compose", "compose"]
+
+  # ── 语言模型 ──
+  - canonical: "GPT-4"
+    aliases: ["gpt4", "GPT4", "gpt-4"]
+
+  # ── 工具 ──
+  - canonical: "structlog"
+    aliases: ["structlog", "struct-log"]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 五、反模式 —— 不应替换的惯用表达 (Negative Patterns)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 这些表达虽然在形式上看起来是口语，但在技术语境中已是约定俗成的惯用表达，
+# 替换反而会降低可读性和检索效果。术语对齐阶段应跳过这些模式。
+
+negative_patterns:
+  - pattern: "hello world"
+    reason: "编程入门示例的约定俗成表达"
+    example: "\"写个 hello world\" — 不应替换为 \"编写一个问候世界的程序\""
+
+  - pattern: "bug"
+    reason: "软件开发中约定俗成的缺陷描述，不需替换为\"软件缺陷\""
+    example: "\"修 bug\" — 保持原样"
+
+  - pattern: "debug"
+    reason: "已是正式术语，不需替换为\"排除故障\""
+    example: "\"debug 一下\" — 去除冗余语气词即可"
+
+  - pattern: "fix"
+    reason: "版本控制/开发中的约定俗成表达"
+    example: "\"fix 这个 issue\" — 保持原样"
+
+  - pattern: "hotfix"
+    reason: "已是正式术语"
+    example: "\"打个 hotfix\" — 去除冗余词即可"
+
+  - pattern: "patch"
+    reason: "已是正式术语"
+    example: "\"应用 patch\" — 保持原样"
+
+  - pattern: "commit"
+    reason: "Git 的标准术语"
+    example: "\"提交一个 commit\" — 保持原样"
+
+  - pattern: "pull request"
+    reason: "GitHub/GitLab 的标准术语"
+    example: "\"提个 PR\" — \"PR\" 展开为 \"Pull Request\" 即可"
+
+  - pattern: "搞快点"
+    reason: "明确的性能优化意图，不应替换为模糊的\"尽快完成\""
+    example: "\"查询搞快点\" 应理解为 \"优化查询性能 / 降低查询延迟\""
+
+  - pattern: "调通"
+    reason: "技术调试的约定俗成表达，替换为\"调试使其正常运行\"损失信息密度"
+    example: "\"接口调通了\" — 可保持或替换为 \"接口调试成功\""
