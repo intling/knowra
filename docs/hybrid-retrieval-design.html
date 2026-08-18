@@ -199,7 +199,7 @@
 
   <table>
     <tr><th>目标</th><th>描述</th><th>优先级</th></tr>
-    <tr><td>向量语义检索（HNSW）</td><td>在已有 <code>embedding_vector</code> 列上新建 HNSW 索引，<code>cosine_distance</code> 全表扫描 → 近似最近邻</td><td><span class="badge badge-red">P0</span></td></tr>
+    <tr><td>向量语义检索（HNSW）</td><td>在 <code>document_chunks.embedding</code> 上新建 HNSW 索引，<code>cosine_distance</code> 全表扫描 → 近似最近邻</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>双路并行召回</td><td>向量语义 + 关键词检索同时触发（各自独立 Session，经线程池并行 I/O）</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>RRF 融合</td><td>无超参融合双路结果，输出统一 Top-K</td><td><span class="badge badge-red">P0</span></td></tr>
     <tr><td>中文分词</td><td>Jieba 分词 + ParadeDB pg_search BM25 索引，支持中英混合</td><td><span class="badge badge-red">P0</span></td></tr>
@@ -327,7 +327,7 @@
   <p><span class="file-ref">backend/app/services/search.py</span> — <code>SearchService._vector_search()</code></p>
 
   <div class="warn-note">
-    <strong>现状澄清</strong>：向量语义检索<strong>并非全新通路</strong>——<code>DocumentEmbedding.embedding_vector</code>
+    <strong>现状澄清</strong>：向量语义检索<strong>并非全新通路</strong>——<code>DocumentChunk.embedding</code>
     （<code>vector(2560)</code>）与 <code>cosine_distance</code> 精确检索<strong>已存在</strong>，
     但当前为<strong>全表扫描</strong>（无 ANN 索引，<code>README</code> 亦标注 "no ANN index yet"）。
     本方案新增 <strong>pgvector HNSW 近似最近邻索引</strong>，检索复杂度从 O(N) 降为 O(log N)。
@@ -346,7 +346,7 @@ def _vector_search(
     filters: RetrievalFilter,
 ):
     """pgvector cosine-distance HNSW 检索；先应用元数据范围过滤。"""
-    1. HNSW 索引（§4.0）——建在 document_embeddings.embedding_vector 上，
+    1. HNSW 索引（§4.0）——建在 document_chunks.embedding 上，
        PostgreSQL 对 `ORDER BY distance LIMIT n` 自动走 ANN 索引，
        SQL 主体不变，检索从全表扫描 O(N) 变为近似最近邻 O(log N)。
     2. ef_search 会话配置——检索前 `SET LOCAL hnsw.ef_search = :ef`，
@@ -362,20 +362,18 @@ def _vector_search(
         {"ef": self._settings.hnsw_ef_search},
     )
 
-    distance_expr = DocumentEmbedding.embedding_vector.cosine_distance(query_vector)
+    distance_expr = DocumentChunk.embedding.cosine_distance(query_vector)
 
     stmt = (
         select(
-            DocumentEmbedding,
             DocumentChunk,
             ParsedDocument,
             UploadedFile.original_filename.label("document_name"),
             distance_expr.label("vector_score"),
         )
-        .join(DocumentChunk, DocumentEmbedding.chunk_id == DocumentChunk.id)
         .join(
             ParsedDocument,
-            DocumentEmbedding.parsed_document_id == ParsedDocument.id,
+            DocumentChunk.parsed_document_id == ParsedDocument.id,
         )
         .join(
             UploadedFile,
@@ -390,7 +388,7 @@ def _vector_search(
 
   <table class="decision-table">
     <tr><th>属性</th><th>值</th></tr>
-    <tr><td>向量列</td><td><code>document_embeddings.embedding_vector</code>，<code>vector(2560)</code>（已存在，见 <code>DocumentEmbedding</code> 模型）</td></tr>
+    <tr><td>向量列</td><td><code>document_chunks.embedding</code>，<code>vector(2560)</code>（核心文本块主表字段）</td></tr>
     <tr><td>索引</td><td>HNSW（<code>vector_cosine_ops</code>），<code>m=16</code> / <code>ef_construction=200</code>（本次新增，见 §4.0）</td></tr>
     <tr><td>检索算子</td><td><code>cosine_distance</code>（越小越相似），与现状一致，语义不变</td></tr>
     <tr><td>查询时调参</td><td><code>SET LOCAL hnsw.ef_search</code> 会话级配置（默认 100），召回率/延迟权衡</td></tr>
@@ -1089,40 +1087,38 @@ def _rrf_fusion(
 <section>
   <h2>4. 数据库 Schema 变更</h2>
 
-  <h3>4.0 向量列 HNSW 索引（已有向量列 · HNSW 索引为本次新增）</h3>
+  <h3>4.0 `document_chunks` 双索引：embedding 上的 HNSW</h3>
 
-  <p>向量语义检索依赖 <code>document_embeddings</code> 表上的 <code>embedding_vector</code> 列
-  （类型 <code>vector(2560)</code>，见 <code>DocumentEmbedding</code> 模型）。
-  为将全表扫描的 O(N) 降为近似最近邻的 O(log N)，需在该列上创建 <strong>HNSW 索引</strong>。</p>
+  <p>向量语义检索依赖核心主表 <code>document_chunks</code> 上的 <code>embedding</code> 列
+  （类型 <code>vector(2560)</code>）。为将全表扫描的 O(N) 降为近似最近邻的 O(log N)，
+  在该列上创建 <strong>HNSW 索引</strong>。BM25 索引也位于同一张表，两个索引共享同一个 chunk 主键和过滤边界。</p>
 
   <table>
     <tr><th>表</th><th>列名</th><th>类型</th><th>索引</th><th>说明</th></tr>
     <tr>
-      <td><code>document_embeddings</code></td>
-      <td><code>embedding_vector</code></td>
+      <td><code>document_chunks</code></td>
+      <td><code>embedding</code></td>
       <td><code>vector(2560)</code></td>
       <td>HNSW</td>
-      <td>向量语义检索的 HNSW 近似最近邻索引，配合 <code>cosine_distance</code> 算子使用</td>
+      <td>向量语义检索的 cosine 近似最近邻索引，直接对应最终返回的 chunk 行</td>
     </tr>
   </table>
 
   <div class="note">
-    <strong>对齐真实 schema。</strong>向量列的真实位置是
-    <code>document_embeddings.embedding_vector</code>（<code>Vector(2560)</code>，独立表），
-    并非 <code>document_chunks</code>。HNSW 索引必须建在 <code>document_embeddings</code> 上，
-    否则会引用不存在的列。<strong>注意：该索引为本次新增</strong>——当前列上无任何 ANN 索引，
-    检索仍为全表扫描（§3.0）。检索服务侧的接入方式见 §3.0，此处仅记录 DDL。
+    <strong>统一检索主表。</strong>embedding 是 <code>document_chunks</code> 核心业务记录的一部分，
+    不是独立检索表的数据。<code>document_embeddings</code> 如继续保留，仅用于 embedding 作业历史、模型审计或回填来源，
+    不作为 HNSW 索引归属表，也不用于最终结果回查。迁移应确保同一行同时拥有文本、embedding、租户/权限和过滤元数据。
   </div>
 
   <div class="code-block">
--- 在已有 embedding_vector 列上创建 HNSW 索引
-CREATE INDEX IF NOT EXISTS ix_document_embeddings_embedding_vector_hnsw
-ON document_embeddings
-USING hnsw (embedding_vector vector_cosine_ops)
+-- 在 document_chunks.embedding 上创建 HNSW 索引
+CREATE INDEX IF NOT EXISTS ix_document_chunks_embedding_hnsw
+ON document_chunks
+USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 200);
 
 -- 检索时配置 ef_search（越大越精确，越慢）
--- SET LOCAL hnsw.ef_search = 100;  -- pgvector 默认 40；本项目经 HNSW_EF_SEARCH 配置默认 100，建议 50-200（见 §6）
+-- SET LOCAL hnsw.ef_search = 100;
   </div>
 
   <table class="decision-table">
@@ -1139,25 +1135,45 @@ WITH (m = 16, ef_construction = 200);
     knowra 个人知识库场景（&lt;10K 向量）建议 <code>ef_search=100</code>，召回率接近 100%。
   </div>
 
-  <h3>4.1 新增列 <code>keyword_search_text</code> 与 pg_search BM25 索引</h3>
+  <h3>4.1 <code>document_chunks</code> 主表上的 BM25 与 HNSW 索引</h3>
 
   <table>
-    <tr><th>表</th><th>列名</th><th>类型</th><th>索引</th><th>说明</th></tr>
+    <tr><th>表</th><th>字段</th><th>类型</th><th>索引</th><th>说明</th></tr>
+    <tr>
+      <td><code>document_chunks</code></td>
+      <td><code>chunk_id</code>、<code>document_id</code>、<code>tenant_id</code>、文本、权限及过滤字段</td>
+      <td>业务字段</td>
+      <td>主表字段及现有业务索引</td>
+      <td>文本块核心业务数据；检索结果直接从该表返回内容与元数据</td>
+    </tr>
     <tr>
       <td><code>document_chunks</code></td>
       <td><code>keyword_search_text</code></td>
-      <td><code>text</code>（JSONB 字段）</td>
-      <td>ParadeDB pg_search BM25 索引</td>
-      <td>存储 Jieba 分词后的标题、上下文和正文，供 BM25 评分检索</td>
+      <td><code>JSONB</code></td>
+      <td>ParadeDB pg_search BM25 倒排索引</td>
+      <td>存储 Jieba 分词后的标题、上下文和正文，供关键词候选集召回与 BM25 评分</td>
     </tr>
     <tr>
-      <td><code>document_embeddings</code></td>
-      <td><code>embedding_vector</code></td>
+      <td><code>document_chunks</code></td>
+      <td><code>embedding</code></td>
       <td><code>vector(2560)</code></td>
-      <td>HNSW</td>
-      <td>向量检索的 HNSW 近似最近邻索引（见 §4.0）</td>
+      <td>HNSW（<code>vector_cosine_ops</code>）</td>
+      <td>向量候选集召回；与 BM25 索引共用同一主表，不拆分为独立向量表</td>
+    </tr>
+    <tr>
+      <td><code>document_chunks</code></td>
+      <td>BM25 候选集 + 向量候选集</td>
+      <td>—</td>
+      <td>RRF 或加权融合</td>
+      <td>两条检索路径分别召回候选集，融合后按权限和过滤条件返回同一主表中的内容与元数据</td>
     </tr>
   </table>
+
+  <div class="note">
+    <strong>共表混合检索</strong>：<code>document_chunks</code> 同时保存文本块核心业务数据与衍生的
+    <code>keyword_search_text</code>、<code>embedding</code> 字段；BM25 倒排索引和向量 HNSW 索引均建立在这张主表上。
+    因此无需维护两张独立检索表，也无需在融合后再回查另一张表。
+  </div>
 
   <h4>迁移文件（HNSW 与关键词索引合并为一条迁移）</h4>
   <p><span class="file-ref">backend/alembic/versions/20260817_0001_add_hybrid_retrieval.py</span></p>
@@ -1174,6 +1190,8 @@ from collections.abc import Sequence
 
 from alembic import op
 import sqlalchemy as sa
+from pgvector.sqlalchemy import Vector
+
 from sqlalchemy.dialects import postgresql
 
 
@@ -1184,17 +1202,21 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # 1. HNSW 索引 on document_embeddings.embedding_vector
+    # 1. 在 document_chunks 上创建 embedding HNSW 索引
+    op.add_column(
+        "document_chunks",
+        sa.Column("embedding", Vector(2560), nullable=True),
+    )
     op.create_index(
-        "ix_document_embeddings_embedding_vector_hnsw",
-        "document_embeddings",
-        ["embedding_vector"],
+        "ix_document_chunks_embedding_hnsw",
+        "document_chunks",
+        ["embedding"],
         postgresql_using="hnsw",
-        postgresql_ops={"embedding_vector": "vector_cosine_ops"},
+        postgresql_ops={"embedding": "vector_cosine_ops"},
         postgresql_with={"m": 16, "ef_construction": 200},
     )
 
-    # 2. 关键词检索字段：JSONB 文档字段，可空 — 旧数据暂不回溯
+    # 2. 关键词检索字段：可空 — 旧数据暂不回溯
     op.add_column(
         "document_chunks",
         sa.Column(
@@ -1218,8 +1240,8 @@ def downgrade() -> None:
     op.execute("DROP INDEX ix_document_chunks_keyword_search_text")
     op.drop_column("document_chunks", "keyword_search_text")
     op.drop_index(
-        "ix_document_embeddings_embedding_vector_hnsw",
-        table_name="document_embeddings",
+        "ix_document_chunks_embedding_hnsw",
+        table_name="document_chunks",
     )
   </div>
 
@@ -1227,7 +1249,12 @@ def downgrade() -> None:
   <p><span class="file-ref">backend/app/models/document_chunking.py</span> — <code>DocumentChunk</code> 模型新增字段：</p>
 
   <div class="code-block">
-# 新增字段：JSONB 文档字段，不使用 TSVECTOR
+# 新增字段：embedding 与 BM25 源字段均属于 document_chunks 主表
+embedding: list[float] | None = Field(
+    default=None,
+    sa_column=Column(Vector(2560), nullable=True),
+)
+
 keyword_search_text: dict | None = Field(
     default=None,
     sa_column=Column(JSONB(), nullable=True),
@@ -1688,7 +1715,7 @@ Phase 3: Schema & 测试
     <tr><th>数据</th><th>规模估算</th><th>说明</th></tr>
     <tr><td>keyword_search_text 列</td><td>~原文的 1.5-2×</td><td>BM25 索引 存储分词 + 位置信息</td></tr>
     <tr><td>pg_search BM25 索引 索引</td><td>~原文的 2-4×</td><td>倒排索引，与 token 唯一数相关</td></tr>
-    <tr><td>HNSW 索引（document_embeddings）</td><td>~向量数据量的 1×（m=16 连接开销）</td><td>本次新增；<code>embedding_vector</code> vector(2560) 列本身已存在，HNSW 索引为其上的额外磁盘开销</td></tr>
+    <tr><td>HNSW 索引（document_chunks）</td><td>~向量数据量的 1×（m=16 连接开销）</td><td>本次新增；<code>document_chunks.embedding</code> vector(2560) 列与其 HNSW 索引共同位于核心主表</td></tr>
     <tr><td>典型场景（1000 文档、每文档 50 chunks、每 chunk 500 字符）</td><td>text: 25MB → BM25 索引: ~50MB → pg_search BM25 索引: ~100MB</td><td>关键词通路总计约 150MB 增量（不含 HNSW 索引）</td></tr>
   </table>
 
