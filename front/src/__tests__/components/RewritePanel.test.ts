@@ -341,7 +341,7 @@ describe("RewritePanel", () => {
       })
 
       // Panel should be in the DOM
-      expect(wrapper.find('[data-testid="rewrite-panel"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="rewrite"]').exists()).toBe(true)
       // The toggle button should be visible
       expect(
         wrapper.find('[data-testid="rewrite-toggle"]').exists(),
@@ -355,7 +355,7 @@ describe("RewritePanel", () => {
       })
 
       // Panel should always render, even when there are no rewritten queries
-      expect(wrapper.find('[data-testid="rewrite-panel"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="rewrite"]').exists()).toBe(true)
       // Toggle should be visible
       expect(
         wrapper.find('[data-testid="rewrite-toggle"]').exists(),
@@ -627,10 +627,10 @@ describe("RewritePanel", () => {
       expect(toggle.classes()).toContain("w-full")
       expect(toggle.classes()).toContain("items-center")
       expect(toggle.classes()).toContain("justify-between")
-      expect(toggle.classes()).toContain("px-5")
-      expect(toggle.classes()).toContain("py-3")
+      expect(toggle.classes()).toContain("px-4")
+      expect(toggle.classes()).toContain("py-2.5")
       expect(toggle.classes()).toContain("text-left")
-      expect(toggle.classes()).toContain("transition")
+      expect(toggle.classes()).toContain("transition-colors")
       expect(toggle.classes()).toContain("hover:bg-neutral-50")
     })
 
@@ -731,7 +731,7 @@ describe("RewritePanel", () => {
       })
 
       // Panel should always render
-      expect(wrapper.find('[data-testid="rewrite-panel"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="rewrite"]').exists()).toBe(true)
 
       // Expand to see empty state
       await wrapper

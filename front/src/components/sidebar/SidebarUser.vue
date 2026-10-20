@@ -4,9 +4,7 @@
  *
  * 固定在侧边栏底部，展示当前用户头像与基本信息。
  *
- * 视觉签名：头像使用品牌渐变底色 + Newsreader 衬线体首字母，
- * 与顶部 knowra wordmark 形成视觉呼应——侧边栏从上到下的字体节奏。
- * 这是大多数类 ChatGPT 应用不会做的细节。
+ * 头像回退使用品牌底色 + 衬线首字母，与顶部字标呼应；仅展示，不可操作。
  */
 import { onMounted } from "vue"
 import { useUserStore } from "../../stores/user"
@@ -30,7 +28,7 @@ function initials(name: string): string {
 <template>
   <footer
     data-testid="sidebar-user"
-    class="shrink-0 border-t border-neutral-200"
+    class="shrink-0 border-t border-line"
   >
     <!-- 加载骨架 — 用户信息加载中 -->
     <div
@@ -75,9 +73,7 @@ function initials(name: string): string {
     <div
       v-else-if="userStore.currentUser"
       data-testid="sidebar-user-info"
-      class="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-neutral-50"
-      role="button"
-      tabindex="0"
+      class="flex items-center gap-3 px-4 py-3"
     >
       <!-- Avatar -->
       <div class="relative shrink-0">
@@ -86,12 +82,12 @@ function initials(name: string): string {
           v-if="userStore.currentUser.avatar_url"
           :src="userStore.currentUser.avatar_url"
           :alt="userStore.currentUser.display_name"
-          class="size-8 rounded-full object-cover ring-2 ring-brand-200/60"
+          class="size-8 rounded-full object-cover ring-1 ring-line"
         />
         <!-- 品牌渐变 + 衬线体首字母（无头像时的回退） -->
         <div
           v-else
-          class="flex size-8 items-center justify-center rounded-full brand-gradient text-xs font-semibold text-white shadow-sm shadow-brand-200/30"
+          class="flex size-8 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white"
           aria-hidden="true"
         >
           <span class="font-display translate-y-px">

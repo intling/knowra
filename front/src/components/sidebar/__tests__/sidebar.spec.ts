@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from "pinia"
-import { mount } from "@vue/test-utils"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { flushPromises, mount } from "@vue/test-utils"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // ── Mock logger ────────────────────────────────────────────────────────────
 
@@ -62,6 +62,13 @@ vi.mock("../../../stores/user", () => ({
   useUserStore: () => mockUserStore,
 }))
 
+// 资料库分区只读调用已解析文档接口；此处固定返回 2 条，避免测试访问网络
+const mockListParsedDocuments = vi.fn()
+
+vi.mock("../../../api/documentParsing", () => ({
+  listParsedDocuments: (...args: unknown[]) => mockListParsedDocuments(...args),
+}))
+
 // ── Test helpers ───────────────────────────────────────────────────────────
 
 function resetStores() {
@@ -76,6 +83,8 @@ function resetStores() {
   mockUserStore.isUserLoading = false
   mockUserStore.userError = null
   mockUserStore.loadCurrentUser = vi.fn()
+  mockListParsedDocuments.mockReset()
+  mockListParsedDocuments.mockResolvedValue([{ id: "pd-1" }, { id: "pd-2" }])
 }
 
 // ── Tests: AppSidebar ──────────────────────────────────────────────────────
@@ -287,5 +296,220 @@ describe("ConversationItem", () => {
       const deleteBtn = wrapper.find('[data-testid="delete-conversation-btn"]')
       expect(deleteBtn.exists()).toBe(true)
     })
+  })
+})
+
+// ── 重构 RED：侧边栏资料库分区、分区顺序、可访问的对话条目与删除确认 ─────────
+
+describe("AppSidebar 资料库分区", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    resetStores()
+  })
+
+  // 验证侧边栏包含资料库分区，并展示已解析文档数量
+  it("渲染资料库分区并显示已解析资料数量", async () => {
+    const { default: AppSidebar } = await import("../AppSidebar.vue")
+    const wrapper = mount(AppSidebar)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="knowledge-info"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="knowledge-count"]').text()).toContain("2 份已解析资料")
+  })
+
+  // 验证分区顺序：头部 → 资料库 → 最近对话（资料库在对话列表之前，主线"先有资料再提问"）
+  it("资料库分区位于对话列表之前", async () => {
+    const { default: AppSidebar } = await import("../AppSidebar.vue")
+    const wrapper = mount(AppSidebar)
+    await flushPromises()
+
+    const html = wrapper.html()
+    expect(html.indexOf('data-testid="knowledge-info"')).toBeGreaterThan(-1)
+    expect(html.indexOf('data-testid="knowledge-info"')).toBeLessThan(
+      html.indexOf('data-testid="conversation-list"'),
+    )
+  })
+
+  // 验证侧边栏字标显示中文品牌名「知寻」
+  it("头部显示「知寻」字标", async () => {
+    const { default: AppSidebar } = await import("../AppSidebar.vue")
+    const wrapper = mount(AppSidebar)
+
+    expect(wrapper.find('[data-testid="sidebar-header"]').text()).toContain("知寻")
+  })
+})
+
+describe("ConversationList 分区标题顺序", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    resetStores()
+  })
+
+  // 验证空状态下「最近对话」标题出现在「暂无对话」之前（此前标题渲染在空状态之后）
+  it("无对话时标题位于空状态之前", async () => {
+    mockChatStore.conversations = []
+    const { default: ConversationList } = await import("../ConversationList.vue")
+    const wrapper = mount(ConversationList)
+
+    const text = wrapper.text()
+    expect(text.indexOf("最近对话")).toBeGreaterThan(-1)
+    expect(text.indexOf("最近对话")).toBeLessThan(text.indexOf("暂无对话"))
+  })
+
+  // 验证有对话时标题位于第一个对话条目之前
+  it("有对话时标题位于条目之前", async () => {
+    mockChatStore.conversations = [
+      {
+        id: "c1",
+        title: "第一章复习",
+        messages: [],
+        bubbles: [],
+        createdAt: "2026-07-01T00:00:00Z",
+        updatedAt: "2026-07-01T00:00:00Z",
+      },
+    ]
+    const { default: ConversationList } = await import("../ConversationList.vue")
+    const wrapper = mount(ConversationList)
+
+    const text = wrapper.text()
+    expect(text.indexOf("最近对话")).toBeLessThan(text.indexOf("第一章复习"))
+  })
+})
+
+describe("ConversationItem 可访问性与删除确认", () => {
+  const conversation = {
+    id: "c-del",
+    title: "待删除的对话",
+    messages: [],
+    bubbles: [],
+    createdAt: "2026-07-01T00:00:00Z",
+    updatedAt: "2026-07-01T00:00:00Z",
+  }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    resetStores()
+  })
+
+  const mounted: { unmount: () => void }[] = []
+
+  afterEach(() => {
+    mounted.splice(0).forEach((w) => w.unmount())
+    document.body.innerHTML = ""
+  })
+
+  async function mountItem() {
+    const { default: ConversationItem } = await import("../ConversationItem.vue")
+    const w = mount(ConversationItem, {
+      props: { conversation },
+      attachTo: document.body,
+    })
+    mounted.push(w)
+    return w
+  }
+
+  function dialog() {
+    return document.querySelector('[data-testid="confirm-dialog-overlay"]')
+  }
+
+  // 验证条目主体是原生按钮（键盘可聚焦、Enter/Space 可选中），点击时切换对话
+  it("条目主体为原生按钮并可选中对话", async () => {
+    const wrapper = await mountItem()
+
+    const select = wrapper.find('[data-testid="conversation-select"]')
+    expect(select.element.tagName).toBe("BUTTON")
+    await select.trigger("click")
+    expect(mockChatStore.setActiveConversation).toHaveBeenCalledWith("c-del")
+  })
+
+  // 验证当前对话用 aria-current 标记，读屏用户可知道所在位置
+  it("当前对话带 aria-current=page，非当前对话不带", async () => {
+    mockChatStore.activeConversationId = "c-del"
+    const active = await mountItem()
+    expect(active.find('[data-testid="conversation-select"]').attributes("aria-current")).toBe("page")
+
+    mockChatStore.activeConversationId = "other"
+    const inactive = await mountItem()
+    expect(inactive.find('[data-testid="conversation-select"]').attributes("aria-current")).toBeUndefined()
+  })
+
+  // 验证操作按钮有明确的中文可访问名称
+  it("重命名与删除按钮带中文 aria-label", async () => {
+    const wrapper = await mountItem()
+
+    expect(wrapper.find('[data-testid="rename-conversation-btn"]').attributes("aria-label")).toBe("重命名对话")
+    expect(wrapper.find('[data-testid="delete-conversation-btn"]').attributes("aria-label")).toBe("删除对话")
+  })
+
+  // 验证操作按钮在键盘聚焦条目时可见（focus-within），而不仅仅是鼠标悬停
+  it("操作按钮容器在键盘聚焦时可见", async () => {
+    const wrapper = await mountItem()
+
+    const actions = wrapper.find('[data-testid="conversation-actions"]')
+    expect(actions.classes()).toContain("group-focus-within:opacity-100")
+  })
+
+  // 验证点击删除先弹出确认框，此时不会删除
+  it("点击删除弹出确认框且尚未删除", async () => {
+    const wrapper = await mountItem()
+
+    await wrapper.find('[data-testid="delete-conversation-btn"]').trigger("click")
+
+    expect(dialog()).not.toBeNull()
+    expect(dialog()!.textContent).toContain("待删除的对话")
+    expect(mockChatStore.deleteConversation).not.toHaveBeenCalled()
+    expect(mockChatStore.setActiveConversation).not.toHaveBeenCalled()
+  })
+
+  // 验证确认后才真正删除该对话
+  it("确认后删除对话", async () => {
+    const wrapper = await mountItem()
+
+    await wrapper.find('[data-testid="delete-conversation-btn"]').trigger("click")
+    const confirm = document.querySelector<HTMLButtonElement>('[data-testid="confirm-dialog-confirm-btn"]')
+    confirm!.click()
+    await wrapper.vm.$nextTick()
+
+    expect(mockChatStore.deleteConversation).toHaveBeenCalledWith("c-del")
+    expect(dialog()).toBeNull()
+  })
+
+  // 验证取消后关闭确认框且不删除
+  it("取消后不删除并关闭确认框", async () => {
+    const wrapper = await mountItem()
+
+    await wrapper.find('[data-testid="delete-conversation-btn"]').trigger("click")
+    document.querySelector<HTMLButtonElement>('[data-testid="confirm-dialog-cancel-btn"]')!.click()
+    await wrapper.vm.$nextTick()
+
+    expect(mockChatStore.deleteConversation).not.toHaveBeenCalled()
+    expect(dialog()).toBeNull()
+  })
+
+  // 验证按 Esc 等同于取消
+  it("按 Esc 取消删除", async () => {
+    const wrapper = await mountItem()
+
+    await wrapper.find('[data-testid="delete-conversation-btn"]').trigger("click")
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(mockChatStore.deleteConversation).not.toHaveBeenCalled()
+    expect(dialog()).toBeNull()
+  })
+
+  // 验证关闭确认框后焦点回到触发它的删除按钮
+  it("取消后焦点回到删除按钮", async () => {
+    const wrapper = await mountItem()
+
+    const del = wrapper.find('[data-testid="delete-conversation-btn"]')
+    ;(del.element as HTMLElement).focus()
+    await del.trigger("click")
+    await wrapper.vm.$nextTick()
+    document.querySelector<HTMLButtonElement>('[data-testid="confirm-dialog-cancel-btn"]')!.click()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(document.activeElement).toBe(del.element)
   })
 })

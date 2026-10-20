@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import type { RewriteInfo } from "../api/search"
+import PanelSection from "./shared/PanelSection.vue"
 
-const props = defineProps<{
-  rewriteInfo: RewriteInfo
-}>()
+const props = withDefaults(
+  defineProps<{
+    rewriteInfo: RewriteInfo
+    variant?: "card" | "flat"
+  }>(),
+  { variant: "card" },
+)
 
-// ── Collapse toggle ──
-const isExpanded = ref(false)
+// ── 评分维度折叠（面板整体折叠由 PanelSection 管理）──
 const isDimensionsExpanded = ref(false)
-
-function toggleExpand() {
-  isExpanded.value = !isExpanded.value
-}
 
 function toggleDimensions() {
   isDimensionsExpanded.value = !isDimensionsExpanded.value
 }
-
 // ── Computed helpers ──
 const hasRewrites = () =>
-  props.rewriteInfo.rewritten_queries && props.rewriteInfo.rewritten_queries.length > 0
+  props.rewriteInfo.rewritten_queries &&
+  props.rewriteInfo.rewritten_queries.length > 0
 
 const hasError = () =>
   props.rewriteInfo.error != null && props.rewriteInfo.error.length > 0
@@ -54,23 +54,23 @@ function strategyColorClasses(strategy: string | null | undefined): string {
 }
 
 // ── Phase 2: Intent configuration (task 8.2.2) ──
-const INTENT_CONFIG: Record<string, { emoji: string; label: string }> = {
-  factual: { emoji: "📋", label: "事实型" },
-  analytical: { emoji: "🔍", label: "分析型" },
-  comparative: { emoji: "⚖️", label: "比较型" },
-  procedural: { emoji: "📝", label: "操作型" },
-  exploratory: { emoji: "🔎", label: "探索型" },
-  chitchat: { emoji: "💬", label: "闲聊" },
-  ambiguous: { emoji: "❓", label: "模糊" },
+const INTENT_LABELS: Record<string, string> = {
+  factual: "事实型",
+  analytical: "分析型",
+  comparative: "比较型",
+  procedural: "操作型",
+  exploratory: "探索型",
+  chitchat: "闲聊",
+  ambiguous: "模糊",
 }
 
 function intentDisplay(): string | null {
   if (!props.rewriteInfo.intent) return null
   const intent = props.rewriteInfo.intent
-  const config = INTENT_CONFIG[intent]
-  if (!config) return null
+  const label = INTENT_LABELS[intent]
+  if (!label) return null
   const complexity = props.rewriteInfo.complexity
-  const parts = [`${config.emoji} ${config.label}`]
+  const parts = [`意图：${label}`]
   if (complexity != null) {
     parts.push(` · 复杂度 ${complexity}`)
   }
@@ -123,70 +123,53 @@ function hasQualityScores(): boolean {
 
 <template>
   <!-- 始终显示查询重写详情面板（无触发条件） -->
-  <div
-    data-testid="rewrite-panel"
+  <PanelSection
+    title="查询重写详情"
+    collapsible
+    :default-expanded="false"
+    testid="rewrite"
+    :variant="variant"
   >
-    <!-- Collapse toggle button -->
-    <button
-      data-testid="rewrite-toggle"
-      class="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-neutral-50"
-      type="button"
-      @click="toggleExpand"
-    >
-      <div class="flex items-center gap-2">
-        <span class="mr-1.5" aria-hidden="true">🗒️</span>
-        <h3
-          data-testid="rewrite-title"
-          class="font-display text-sm font-semibold text-neutral-700"
-        >
-          查询重写详情
-        </h3>
-        <span
-          data-testid="rewrite-count-badge"
-          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
-        >
-          {{ rewriteInfo.rewritten_queries.length }}
-        </span>
-        <span
-          v-if="intentDisplay()"
-          data-testid="intent-badge"
-          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
-        >
-          {{ intentDisplay() }}
-        </span>
-      </div>
-      <div class="flex items-center gap-2">
-        <svg
-          data-testid="rewrite-chevron"
-          class="size-4 text-neutral-400 transition-transform"
-          :class="{ 'rotate-180': isExpanded }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </div>
-    </button>
+    <template #icon>
+      <svg
+        class="size-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" />
+      </svg>
+    </template>
+    <template #badge>
+      <span
+        data-testid="rewrite-count-badge"
+        class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
+      >
+        {{ rewriteInfo.rewritten_queries.length }}
+      </span>
+      <span
+        v-if="intentDisplay()"
+        data-testid="intent-badge"
+        class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
+      >
+        {{ intentDisplay() }}
+      </span>
+    </template>
 
-    <!-- Expanded content area -->
-    <div
-      v-if="isExpanded"
-      data-testid="rewrite-content"
-      class="border-t border-neutral-100"
-    >
+    <div data-testid="rewrite-content">
       <!-- Original query -->
-      <div class="px-5 py-3">
-        <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+      <div class="px-4 py-3">
+        <p
+          class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400"
+        >
           原始查询
         </p>
-        <p
-          data-testid="original-query"
-          class="text-sm text-neutral-500 italic"
-        >
+        <p data-testid="original-query" class="text-sm text-neutral-500 italic">
           {{ rewriteInfo.original_query }}
         </p>
       </div>
@@ -201,7 +184,7 @@ function hasQualityScores(): boolean {
           v-for="(item, idx) in rewriteInfo.rewritten_queries"
           :key="idx"
           data-testid="rewritten-query-item"
-          class="px-5 py-3"
+          class="px-4 py-3"
         >
           <!-- Strategy tag (Phase 2: color-coded by strategy) -->
           <div class="mb-1.5 flex items-center gap-2">
@@ -225,16 +208,13 @@ function hasQualityScores(): boolean {
       </div>
 
       <!-- Empty / disabled state -->
-      <div
-        v-else
-        data-testid="rewrite-empty-state"
-        class="px-5 py-4"
-      >
-        <p
-          data-testid="rewrite-empty-message"
-          class="text-sm text-neutral-400"
-        >
-          {{ hasError() ? `⚠️ 重写失败：${rewriteInfo.error}` : '未启用查询重写或未产生改写结果，使用原始查询检索。' }}
+      <div v-else data-testid="rewrite-empty-state" class="px-4 py-4">
+        <p data-testid="rewrite-empty-message" class="text-sm text-neutral-400">
+          {{
+            hasError()
+              ? `⚠️ 重写失败：${rewriteInfo.error}`
+              : "未启用查询重写或未产生改写结果，使用原始查询检索。"
+          }}
         </p>
       </div>
 
@@ -242,7 +222,7 @@ function hasQualityScores(): boolean {
       <div
         v-if="hasQualityScores()"
         data-testid="quality-score-container"
-        class="border-t border-neutral-100 px-5 py-3"
+        class="border-t border-neutral-100 px-4 py-3"
       >
         <!-- Total score + verdict row -->
         <div class="mb-2 flex items-center gap-2">
@@ -265,7 +245,7 @@ function hasQualityScores(): boolean {
             type="button"
             @click="toggleDimensions"
           >
-            {{ isDimensionsExpanded ? '收起详情' : '评分详情' }}
+            {{ isDimensionsExpanded ? "收起详情" : "评分详情" }}
           </button>
         </div>
 
@@ -295,7 +275,13 @@ function hasQualityScores(): boolean {
                 data-testid="quality-dimension-bar-fill"
                 class="h-1.5 rounded-full bg-emerald-500"
                 :style="{
-                  width: ((rewriteInfo.quality_scores![dim.key as keyof typeof rewriteInfo.quality_scores] as number) / 5) * 100 + '%',
+                  width:
+                    ((rewriteInfo.quality_scores![
+                      dim.key as keyof typeof rewriteInfo.quality_scores
+                    ] as number) /
+                      5) *
+                      100 +
+                    '%',
                 }"
               />
             </div>
@@ -303,7 +289,11 @@ function hasQualityScores(): boolean {
               data-testid="quality-dimension-score"
               class="w-4 text-right font-mono tabular-nums text-xs text-neutral-600"
             >
-              {{ rewriteInfo.quality_scores![dim.key as keyof typeof rewriteInfo.quality_scores] }}
+              {{
+                rewriteInfo.quality_scores![
+                  dim.key as keyof typeof rewriteInfo.quality_scores
+                ]
+              }}
             </span>
           </div>
         </div>
@@ -319,19 +309,20 @@ function hasQualityScores(): boolean {
       </div>
 
       <!-- Performance metrics -->
-      <div class="flex items-center gap-4 px-5 py-3">
-        <p
-          data-testid="rewrite-time"
-          class="text-xs text-neutral-400"
-        >
+      <div
+        class="flex items-center gap-4 border-t border-neutral-100 px-4 py-3"
+      >
+        <p data-testid="rewrite-time" class="text-xs text-neutral-400">
           耗时 {{ rewriteInfo.rewrite_time_ms }} ms
         </p>
         <p
           data-testid="cache-hit"
           class="text-xs"
-          :class="rewriteInfo.cache_hit ? 'text-emerald-500' : 'text-neutral-400'"
+          :class="
+            rewriteInfo.cache_hit ? 'text-emerald-500' : 'text-neutral-400'
+          "
         >
-          {{ rewriteInfo.cache_hit ? '⚡ 缓存命中' : '缓存未命中' }}
+          {{ rewriteInfo.cache_hit ? "⚡ 缓存命中" : "缓存未命中" }}
         </p>
         <p
           v-if="cacheLevelLabel()"
@@ -342,5 +333,5 @@ function hasQualityScores(): boolean {
         </p>
       </div>
     </div>
-  </div>
+  </PanelSection>
 </template>

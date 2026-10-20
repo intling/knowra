@@ -1,0 +1,180 @@
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts (16 tests | 2 failed) 1277ms
+     × 发送追问后消息容器滚动到最新一轮问答 31ms
+     × 回答返回时不再额外滚动 24ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 发送后滚动 > 发送追问后消息容器滚动到最新一轮问答
+AssertionError: expected "vi.fn()" to be called at least once
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:341:23
+    339|     await flushPromises()
+    340|
+    341|     expect(scrollSpy).toHaveBeenCalled()
+       |                       ^
+    342|     const container = scrollSpy.mock.contexts.at(-1) as HTMLElement
+    343|     expect(container.dataset.testid).toBe("chat-scroll")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 发送后滚动 > 回答返回时不再额外滚动
+AssertionError: expected 0 to be greater than 0
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:364:28
+    362|     await flushPromises()
+    363|
+    364|     expect(callsAfterSend).toBeGreaterThan(0)
+       |                            ^
+    365|     expect(scrollSpy.mock.calls.length).toBe(callsAfterSend)
+    366|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 9 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "检索阶段在回答占位区显示阶段文案并禁用发送". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "回答下方直接显示来源列表，顺序为 回答 → 来源 → 检索详情". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "检索详情默认折叠，诊断面板不直接展示". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "引用统计按引用文档去重计数". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "零结果时显示无资料依据提示". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "（回归守护）请求失败显示具体错误". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "（回归守护）多轮请求携带 history 与同一 session_id". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "（回归守护）多轮请求携带 history 与同一 session_id". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: el.scrollIntoView is not a function
+ ❯ revealTurn src/components/layout/ChatArea.vue:43:6
+     41|   if (!container || !el) return
+     42|   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)…
+     43|   el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smo…
+       |      ^
+     44| }
+     45| const forceReplace = ref(false)
+
+This error originated in "src/components/layout/__tests__/ChatArea.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "（回归守护）Top-K 设置影响下一次请求". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 14 passed (16)
+     Errors  9 errors
+   Start at  11:32:08
+   Duration  2.20s (transform 723ms, setup 0ms, import 209ms, tests 1.28s, environment 555ms)

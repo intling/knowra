@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "viewports": [
+    390,
+    320
+  ],
+  "promptWidth390": 364,
+  "pageErrors": []
+}

@@ -14,19 +14,19 @@ defineProps<{
   >
     <div
       data-testid="user-message-bubble"
-      class="max-w-[85%] space-y-2 rounded-xl rounded-br-sm bg-brand-700 px-4 py-2.5 text-sm leading-6 text-white"
+      class="max-w-[85%] min-w-0 space-y-2 rounded-xl rounded-br-sm bg-brand-700 px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap text-white [overflow-wrap:anywhere]"
     >
       <!-- 附带的文件标签 -->
       <div
         v-if="fileNames && fileNames.length > 0"
         data-testid="user-message-files"
-        class="flex flex-wrap gap-1.5"
+        class="flex flex-wrap gap-1.5 whitespace-normal"
       >
         <span
           v-for="name in fileNames"
           :key="name"
           data-testid="user-message-file-chip"
-          class="inline-flex items-center gap-1 rounded-md bg-white/15 px-2 py-0.5 text-xs"
+          class="inline-flex max-w-full items-center gap-1 rounded-md bg-white/15 px-2 py-0.5 text-xs"
         >
           <svg
             class="size-3 shrink-0"

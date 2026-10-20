@@ -1,22 +1,25 @@
 <script setup lang="ts">
 import { ref } from "vue"
 
+import PanelSection from "./shared/PanelSection.vue"
+
 const props = withDefaults(
   defineProps<{
     messages?: Record<string, unknown>[]
+    variant?: "card" | "flat"
   }>(),
   {
     messages: () => [],
+    variant: "card",
   },
 )
 
-// ── Collapse toggle ──
+// ── 展开状态（仅用于控制“复制”按钮的可见性；面板折叠由 PanelSection 管理）──
 const isExpanded = ref(false)
 
-function toggleExpand() {
-  isExpanded.value = !isExpanded.value
+function handleToggle(expanded: boolean) {
+  isExpanded.value = expanded
 }
-
 // ── Copy ──
 const copyLabel = ref("复制")
 
@@ -86,65 +89,57 @@ function totalChars(): number {
 </script>
 
 <template>
-  <div>
-    <!-- Toggle header -->
-    <button
-      data-testid="prompt-toggle"
-      class="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-neutral-50"
-      type="button"
-      @click="toggleExpand"
-    >
-      <div class="flex items-center gap-2">
-        <h3 class="font-display text-sm font-semibold text-neutral-700">
-          <span class="mr-1.5" aria-hidden="true">💬</span>提示词预览
-        </h3>
-        <span
-          v-if="messages.length > 0"
-          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
-        >
-          {{ messages.length }} messages · {{ totalChars().toLocaleString() }} 字符
-        </span>
-      </div>
-      <div class="flex items-center gap-2">
-        <button
-          v-if="isExpanded && messages.length > 0"
-          data-testid="copy-prompt-button"
-          class="rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 transition hover:border-neutral-400 hover:text-neutral-700"
-          type="button"
-          @click.stop="handleCopy"
-        >
-          {{ copyLabel }}
-        </button>
-        <svg
-          class="size-4 text-neutral-400 transition-transform"
-          :class="{ 'rotate-180': isExpanded }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </div>
-    </button>
-
-    <!-- Expanded content -->
-    <div v-if="isExpanded" class="border-t border-neutral-100">
-      <div
-        v-if="messages.length === 0"
-        class="px-5 py-10 text-center"
+  <PanelSection
+    title="提示词预览"
+    collapsible
+    :default-expanded="false"
+    testid="prompt"
+    :variant="variant"
+    @toggle="handleToggle"
+  >
+    <template #icon>
+      <svg
+        class="size-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
       >
+        <path d="m16 18 6-6-6-6" />
+        <path d="m8 6-6 6 6 6" />
+      </svg>
+    </template>
+    <template #badge>
+      <span
+        v-if="messages.length > 0"
+        class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
+      >
+        {{ messages.length }} messages ·
+        {{ totalChars().toLocaleString() }} 字符
+      </span>
+    </template>
+    <template #actions>
+      <button
+        v-if="isExpanded && messages.length > 0"
+        data-testid="copy-prompt-button"
+        class="rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 transition hover:border-neutral-400 hover:text-neutral-700"
+        type="button"
+        @click.stop="handleCopy"
+      >
+        {{ copyLabel }}
+      </button>
+    </template>
+
+    <div>
+      <div v-if="messages.length === 0" class="px-4 py-10 text-center">
         <p class="text-sm text-neutral-400">暂无提示词数据</p>
       </div>
 
       <div v-else class="divide-y divide-neutral-100">
-        <div
-          v-for="(msg, i) in messages"
-          :key="i"
-          class="px-5 py-3"
-        >
+        <div v-for="(msg, i) in messages" :key="i" class="px-4 py-3">
           <!-- Role badge -->
           <div class="mb-2 flex items-center gap-2">
             <span
@@ -161,9 +156,10 @@ function totalChars(): number {
           <!-- Content -->
           <pre
             class="overflow-x-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 text-neutral-700"
-          >{{ messageContent(msg) }}</pre>
+            >{{ messageContent(msg) }}</pre
+          >
         </div>
       </div>
     </div>
-  </div>
+  </PanelSection>
 </template>

@@ -1,0 +1,1868 @@
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts (30 tests | 13 failed) 833ms
+     × 渲染资料库分区并显示已解析资料数量 21ms
+     × 资料库分区位于对话列表之前 24ms
+     × 头部显示「知寻」字标 9ms
+     × 无对话时标题位于空状态之前 3ms
+     × 条目主体为原生按钮并可选中对话 10ms
+     × 当前对话带 aria-current=page，非当前对话不带 4ms
+     × 重命名与删除按钮带中文 aria-label 4ms
+     × 操作按钮容器在键盘聚焦时可见 4ms
+     × 点击删除弹出确认框且尚未删除 12ms
+     × 确认后删除对话 7ms
+     × 取消后不删除并关闭确认框 9ms
+     × 按 Esc 取消删除 9ms
+     × 取消后焦点回到删除按钮 17ms
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts (12 tests | 12 failed) 1396ms
+     × 菜单按钮渲染在顶栏内部 901ms
+     × 抽屉关闭时带 inert 与 aria-hidden=true 72ms
+     × 打开抽屉后焦点进入抽屉 66ms
+     × 按 Esc 关闭抽屉并把焦点还给菜单按钮 43ms
+     × 点击遮罩关闭后焦点回到菜单按钮 49ms
+     × 抽屉内关闭按钮可关闭抽屉 36ms
+     × 在抽屉中新建对话后自动收起 77ms
+     × 在抽屉中选择历史对话后自动收起 28ms
+     × 在抽屉中选择当前对话也会收起 30ms
+     × 抽屉打开时 Tab / Shift+Tab 在抽屉内循环 54ms
+     × 移动端只请求一次已解析文档接口 22ms
+     × 桌面端只请求一次已解析文档接口且不渲染移动抽屉 15ms
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts (14 tests | 8 failed) 1447ms
+     × 点击推荐问题填入输入框并聚焦，不发送 844ms
+     × 点击欢迎页上传按钮打开文件选择器 45ms
+     × 检索阶段在回答占位区显示阶段文案并禁用发送 40ms
+     × 生成阶段显示「正在生成回答…」 21ms
+     × 回答下方直接显示来源列表，顺序为 回答 → 来源 → 检索详情 108ms
+     × 检索详情默认折叠，诊断面板不直接展示 61ms
+     × 引用统计按引用文档去重计数 45ms
+     × 零结果时显示无资料依据提示 45ms
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts (30 tests | 6 failed) 308ms
+     × 设置按钮显示当前 Top-K 数值 9ms
+     × 设置弹层带 role=dialog 与中文 aria-label 6ms
+     × 按 Esc 关闭设置弹层并把焦点还给设置按钮 11ms
+     × 暴露 focus() 使文本框获得焦点 3ms
+     × 加载中发送按钮保留可访问名称与阶段读屏文本 5ms
+     × 文本框独占一行，附件/设置/发送位于下方工具栏 4ms
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts (21 tests | 5 failed) 173ms
+     × 具备 role=dialog、aria-modal 与 aria-labelledby 13ms
+     × 打开时焦点落在取消按钮 15ms
+     × 按 Esc emit cancel 4ms
+     × Tab 与 Shift+Tab 焦点在对话框内循环 8ms
+     × 两个实例的 aria-labelledby 互不相同 6ms
+ ❯ src/components/__tests__/AnswerPanel.spec.ts (5 tests | 3 failed) 149ms
+     × Token 统计可见文本只显示总数 72ms
+     × Token 明细出现在 title 悬停提示中 24ms
+     × 回答正文使用 prose-knowra 且不含无效的 prose 类 12ms
+ ❯ src/components/__tests__/ResultsPanel.spec.ts (3 tests | 3 failed) 139ms
+     × 距离 0.2 的分数条宽度为 80% 71ms
+     × 距离 0.2 与 0.6 分别为 80% 与 40% 16ms
+     × 超出范围的距离被限制在 0% 到 100% 49ms
+ ❯ src/__tests__/style-contract.test.ts (20 tests | 17 failed) 124ms
+     × font-display 工具类输出 font-family: var(--font-display) 11ms
+     × --font-display 含中文衬线字体并以 serif 兜底 2ms
+     × --font-sans 含中文无衬线字体并以 sans-serif 兜底 2ms
+     × .bg-paper 生成 background-color 声明 2ms
+     × .bg-paper-deep 生成 background-color 声明 1ms
+     × .bg-surface 生成 background-color 声明 1ms
+     × .text-ink 生成 color 声明 2ms
+     × .text-ink-muted 生成 color 声明 2ms
+     × .text-ink-faint 生成 color 声明 1ms
+     × .border-line 生成 border-color 声明 1ms
+     × .text-cite 生成 color 声明 1ms
+     × ul 使用 list-style-type: disc 7ms
+     × ol 使用 list-style-type: decimal 1ms
+     × ul / ol 设置左内边距以容纳列表标记 1ms
+     × 表格单元格有边框且表格可横向滚动 4ms
+     × 包含 prefers-reduced-motion: reduce 媒体查询并压缩过渡时长 1ms
+     × index.html 不引用外部字体服务 7ms
+ ❯ src/components/chat/__tests__/SourceList.spec.ts (15 tests | 15 failed) 135ms
+     × 按文档聚合并按首次出现顺序编号 80ms
+     × 标题显示来源文档数量 7ms
+     × 合并去重排序页码 8ms
+     × 无页码时不显示页码 2ms
+     × 显示该文档所有片段的分块编号 5ms
+     × 同名不同 ID 的文档分开显示 3ms
+     × 文档名为空时显示「未命名文档」 3ms
+     × 默认显示首个片段预览且处于折叠状态 2ms
+     × 点击展开后显示全部片段原文并保留换行 2ms
+     × 展开按钮的 aria-controls 指向展开区域 4ms
+     × 再次点击收起原文 3ms
+     × 无结果时提示回答缺少资料依据 4ms
+     × 多个实例中同一文档的 aria-controls ID 唯一 4ms
+     × 展开原文与 API 返回文本完全一致 2ms
+     × 展开后显示每个片段的原始排名 2ms
+ ❯ src/components/chat/__tests__/welcome-user-message.spec.ts (18 tests | 6 failed) 189ms
+     × 渲染上传资料、提问、核对来源三个步骤 20ms
+     × 点击上传资料按钮 emit upload 事件 8ms
+     × 推荐问题不少于三条且点击 emit pick-suggestion 而不发送 6ms
+     × 推荐问题不包含具体文档名或伪造内容 8ms
+     × 气泡使用 whitespace-pre-wrap 保留换行 7ms
+     × 气泡启用 overflow-wrap: anywhere 防止长串撑破布局 6ms
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts (7 tests | 7 failed) 70ms
+     × 挂载时调用 listParsedDocuments 一次 34ms
+     × 请求进行中显示加载状态 15ms
+     × 有资料时显示已解析数量 7ms
+     × 资料库为空时显示空状态与上传引导 4ms
+     × 加载失败时显示错误与重试按钮 3ms
+     × 点击重试再次请求并在成功后显示数量 3ms
+     × 提供流程验证入口链接 2ms
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts (9 tests | 9 failed) 86ms
+     × 默认折叠且不渲染任何诊断面板 45ms
+     × 折叠状态显示片段数和检索耗时摘要 5ms
+     × 展开后显示改写、检索结果与提示词面板 5ms
+     × 按钮 aria-controls 指向展开区域 3ms
+     × rewrite_info 为 null 且无提示词时只显示检索结果面板 6ms
+     × 零结果时不渲染检索结果面板 6ms
+     × 展开后检索结果子面板仍默认折叠 5ms
+     × 两个实例的 aria-controls 互不相同 7ms
+     × 展开提示词面板后不存在嵌套按钮 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 104 ⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 字体令牌（Tailwind v4 命名空间） > font-display 工具类输出 font-family: var(--font-display)
+AssertionError: expected '' to contain 'font-family: var(--font-display)'
+
+- Expected
++ Received
+
+- font-family: var(--font-display)
+
+ ❯ src/__tests__/style-contract.test.ts:86:51
+     84|   // 验证 font-display 工具类真实生成 font-family，修复 --font-family-* 命名导致令牌失效的问题
+     85|   it("font-display 工具类输出 font-family: var(--font-display)", () => {
+     86|     expect(declarationsFor(css, ".font-display")).toContain("font-fami…
+       |                                                   ^
+     87|   })
+     88|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 字体令牌（Tailwind v4 命名空间） > --font-display 含中文衬线字体并以 serif 兜底
+AssertionError: 编译产物中未定义 --font-display，标题字体令牌不会生效: expected null not to be null
+ ❯ src/__tests__/style-contract.test.ts:97:61
+     95|   it("--font-display 含中文衬线字体并以 serif 兜底", () => {
+     96|     const value = readVar(css, "--font-display")
+     97|     expect(value, "编译产物中未定义 --font-display，标题字体令牌不会生效").not.toBeNull()
+       |                                                             ^
+     98|     expect(value!).toMatch(/Songti SC|Noto Serif SC|Source Han Serif S…
+     99|     expect(value!.trim().endsWith("serif")).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 字体令牌（Tailwind v4 命名空间） > --font-sans 含中文无衬线字体并以 sans-serif 兜底
+AssertionError: expected 'ui-sans-serif, system-ui, sans-serif,…' to match /PingFang SC|Microsoft YaHei|Noto Sans…/
+
+- Expected:
+/PingFang SC|Microsoft YaHei|Noto Sans SC|Hiragino Sans GB/
+
++ Received:
+"ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\",
+      \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\""
+
+ ❯ src/__tests__/style-contract.test.ts:106:20
+    104|     const value = readVar(css, "--font-sans")
+    105|     expect(value, "编译产物中未定义 --font-sans").not.toBeNull()
+    106|     expect(value!).toMatch(/PingFang SC|Microsoft YaHei|Noto Sans SC|H…
+       |                    ^
+    107|     expect(value!.trim().endsWith("sans-serif")).toBe(true)
+    108|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .bg-paper 生成 background-color 声明
+AssertionError: .bg-paper 未生成样式，说明语义令牌缺失: expected '' to contain 'background-color:'
+
+- Expected
++ Received
+
+- background-color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .bg-paper-deep 生成 background-color 声明
+AssertionError: .bg-paper-deep 未生成样式，说明语义令牌缺失: expected '' to contain 'background-color:'
+
+- Expected
++ Received
+
+- background-color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .bg-surface 生成 background-color 声明
+AssertionError: .bg-surface 未生成样式，说明语义令牌缺失: expected '' to contain 'background-color:'
+
+- Expected
++ Received
+
+- background-color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .text-ink 生成 color 声明
+AssertionError: .text-ink 未生成样式，说明语义令牌缺失: expected '' to contain 'color:'
+
+- Expected
++ Received
+
+- color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .text-ink-muted 生成 color 声明
+AssertionError: .text-ink-muted 未生成样式，说明语义令牌缺失: expected '' to contain 'color:'
+
+- Expected
++ Received
+
+- color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .text-ink-faint 生成 color 声明
+AssertionError: .text-ink-faint 未生成样式，说明语义令牌缺失: expected '' to contain 'color:'
+
+- Expected
++ Received
+
+- color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .border-line 生成 border-color 声明
+AssertionError: .border-line 未生成样式，说明语义令牌缺失: expected '' to contain 'border-color:'
+
+- Expected
++ Received
+
+- border-color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 语义色彩令牌 > .text-cite 生成 color 声明
+AssertionError: .text-cite 未生成样式，说明语义令牌缺失: expected '' to contain 'color:'
+
+- Expected
++ Received
+
+- color:
+
+ ❯ src/__tests__/style-contract.test.ts:133:74
+    131|     [".text-cite", "color"],
+    132|   ])("%s 生成 %s 声明", (selector, property) => {
+    133|     expect(declarationsFor(css, selector), `${selector} 未生成样式，说明语义令牌缺失…
+       |                                                                          ^
+    134|       `${property}:`,
+    135|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > prose-knowra 回答排版 > ul 使用 list-style-type: disc
+AssertionError: expected '\n    margin-top: 1rem;\n    margin-b…' to contain 'list-style-type: disc'
+
+- Expected
++ Received
+
+- list-style-type: disc
++
++     margin-top: 1rem;
++     margin-bottom: 1rem;
++
+
+ ❯ src/__tests__/style-contract.test.ts:142:54
+    140|   // 验证无序列表恢复圆点标记（浏览器实测此前为 list-style-type: none）
+    141|   it("ul 使用 list-style-type: disc", () => {
+    142|     expect(declarationsFor(css, ".prose-knowra ul")).toContain("list-s…
+       |                                                      ^
+    143|   })
+    144|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > prose-knowra 回答排版 > ol 使用 list-style-type: decimal
+AssertionError: expected '\n    margin-top: 1rem;\n    margin-b…' to contain 'list-style-type: decimal'
+
+- Expected
++ Received
+
+- list-style-type: decimal
++
++     margin-top: 1rem;
++     margin-bottom: 1rem;
++
+
+ ❯ src/__tests__/style-contract.test.ts:147:54
+    145|   // 验证有序列表恢复数字序号
+    146|   it("ol 使用 list-style-type: decimal", () => {
+    147|     expect(declarationsFor(css, ".prose-knowra ol")).toContain("list-s…
+       |                                                      ^
+    148|   })
+    149|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > prose-knowra 回答排版 > ul / ol 设置左内边距以容纳列表标记
+AssertionError: expected '\n    margin-top: 1rem;\n    margin-b…' to match /padding-left|padding-inline-start/
+
+- Expected:
+/padding-left|padding-inline-start/
+
++ Received:
+"
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  "
+
+ ❯ src/__tests__/style-contract.test.ts:152:54
+    150|   // 验证列表有左内边距，否则标记会被裁到容器外
+    151|   it("ul / ol 设置左内边距以容纳列表标记", () => {
+    152|     expect(declarationsFor(css, ".prose-knowra ul")).toMatch(/padding-…
+       |                                                      ^
+    153|     expect(declarationsFor(css, ".prose-knowra ol")).toMatch(/padding-…
+    154|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > prose-knowra 回答排版 > 表格单元格有边框且表格可横向滚动
+AssertionError: expected '\n    padding: .625rem 1rem;\n  ' to match /border-bottom/
+
+- Expected:
+/border-bottom/
+
++ Received:
+"
+    padding: .625rem 1rem;
+  "
+
+ ❯ src/__tests__/style-contract.test.ts:158:54
+    156|   // 验证表格单元格有分隔线，窄屏可横向滚动不撑破页面
+    157|   it("表格单元格有边框且表格可横向滚动", () => {
+    158|     expect(declarationsFor(css, ".prose-knowra td")).toMatch(/border-b…
+       |                                                      ^
+    159|     expect(declarationsFor(css, ".prose-knowra table")).toContain("ove…
+    160|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 可访问性基础 > 包含 prefers-reduced-motion: reduce 媒体查询并压缩过渡时长
+AssertionError: 未找到 prefers-reduced-motion 规则: expected null not to be null
+ ❯ src/__tests__/style-contract.test.ts:172:56
+    170|   it("包含 prefers-reduced-motion: reduce 媒体查询并压缩过渡时长", () => {
+    171|     const block = css.match(/@media \(prefers-reduced-motion: reduce\)…
+    172|     expect(block, "未找到 prefers-reduced-motion 规则").not.toBeNull()
+       |                                                        ^
+    173|     expect(block![1]).toMatch(/transition-duration/)
+    174|     expect(block![1]).toMatch(/animation-duration/)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/104]⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 入口 HTML > index.html 不引用外部字体服务
+AssertionError: 仍引用外网字体：https://fonts.googleapis.com, https://fonts.gstatic.com, https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&family=JetBrains+Mono:ital,wght@0,400..500;1,400..500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap: expected [ Array(3) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "https://fonts.googleapis.com",
++   "https://fonts.gstatic.com",
++   "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&family=JetBrains+Mono:ital,wght@0,400..500;1,400..500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap",
++ ]
+
+ ❯ src/__tests__/style-contract.test.ts:184:56
+    182|     const hrefs = [...html.matchAll(/<link[^>]+href="([^"]+)"/g)].map(…
+    183|     const external = hrefs.filter((h) => /fonts\.googleapis\.com|fonts…
+    184|     expect(external, `仍引用外网字体：${external.join(", ")}`).toEqual([])
+       |                                                        ^
+    185|   })
+    186| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/104]⎯
+
+ FAIL  src/components/__tests__/AnswerPanel.spec.ts > AnswerPanel 回答底栏 > Token 统计可见文本只显示总数
+AssertionError: token-stats 内应有仅含总数的可见元素 token-total（明细放在 title / sr-only）: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/__tests__/AnswerPanel.spec.ts:17:92
+     15|     const stats = wrapper.find('[data-testid="token-stats"]')
+     16|     const visible = stats.find('[data-testid="token-total"]')
+     17|     expect(visible.exists(), "token-stats 内应有仅含总数的可见元素 token-total（明细放…
+       |                                                                                            ^
+     18|     expect(visible.text()).toContain("700")
+     19|     expect(visible.text()).toContain("tokens")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/104]⎯
+
+ FAIL  src/components/__tests__/AnswerPanel.spec.ts > AnswerPanel 回答底栏 > Token 明细出现在 title 悬停提示中
+AssertionError: expected '' to contain '500'
+
+- Expected
++ Received
+
+- 500
+
+ ❯ src/components/__tests__/AnswerPanel.spec.ts:31:19
+     29|
+     30|     const title = wrapper.find('[data-testid="token-stats"]').attribut…
+     31|     expect(title).toContain("500")
+       |                   ^
+     32|     expect(title).toContain("200")
+     33|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/104]⎯
+
+ FAIL  src/components/__tests__/AnswerPanel.spec.ts > AnswerPanel 回答底栏 > 回答正文使用 prose-knowra 且不含无效的 prose 类
+AssertionError: expected [ 'prose', 'prose-sm', 'prose-knowra' ] to not include 'prose'
+ ❯ src/components/__tests__/AnswerPanel.spec.ts:62:25
+     60|     const classes = wrapper.find('[data-testid="answer-content"]').cla…
+     61|     expect(classes).toContain("prose-knowra")
+     62|     expect(classes).not.toContain("prose")
+       |                         ^
+     63|     expect(classes).not.toContain("prose-sm")
+     64|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/104]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 设置按钮显示当前 Top-K 数值
+AssertionError: expected '' to contain '12'
+
+- Expected
++ Received
+
+- 12
+
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:454:68
+    452|     })
+    453|
+    454|     expect(wrapper.find('[data-testid="settings-button"]').text()).toC…
+       |                                                                    ^
+    455|   })
+    456|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/104]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 设置弹层带 role=dialog 与中文 aria-label
+AssertionError: expected undefined to be 'dialog' // Object.is equality
+
+- Expected:
+"dialog"
+
++ Received:
+undefined
+
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:466:40
+    464|     await wrapper.find('[data-testid="settings-button"]').trigger("cli…
+    465|     const popover = wrapper.find('[data-testid="settings-popover"]')
+    466|     expect(popover.attributes("role")).toBe("dialog")
+       |                                        ^
+    467|     expect(popover.attributes("aria-label")).toBe("检索设置")
+    468|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/104]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 按 Esc 关闭设置弹层并把焦点还给设置按钮
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:481:71
+    479|     await wrapper.find('[data-testid="settings-popover"]').trigger("ke…
+    480|
+    481|     expect(wrapper.find('[data-testid="settings-popover"]').exists()).…
+       |                                                                       ^
+    482|     expect(document.activeElement).toBe(wrapper.find('[data-testid="se…
+    483|     expect(wrapper.find('[data-testid="settings-button"]').attributes(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/104]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 暴露 focus() 使文本框获得焦点
+TypeError: wrapper.vm.focus is not a function
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:495:55
+    493|     })
+    494|
+    495|     ;(wrapper.vm as unknown as { focus: () => void }).focus()
+       |                                                       ^
+    496|
+    497|     expect(document.activeElement).toBe(wrapper.find('[data-testid="ch…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/104]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 加载中发送按钮保留可访问名称与阶段读屏文本
+AssertionError: 图标按钮应以 sr-only 文本向读屏提供加载阶段: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:512:59
+    510|     expect(send.attributes("disabled")).toBeDefined()
+    511|     const srText = send.find(".sr-only")
+    512|     expect(srText.exists(), "图标按钮应以 sr-only 文本向读屏提供加载阶段").toBe(true)
+       |                                                           ^
+    513|     expect(srText.text()).toContain("生成回答中")
+    514|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/104]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 文本框独占一行，附件/设置/发送位于下方工具栏
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:524:30
+    522|
+    523|     const toolbar = wrapper.find('[data-testid="chat-input-toolbar"]')
+    524|     expect(toolbar.exists()).toBe(true)
+       |                              ^
+    525|     expect(toolbar.find('[data-testid="chat-input"]').exists()).toBe(f…
+    526|     expect(toolbar.find('[data-testid="attach-button"]').exists()).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/104]⎯
+
+ FAIL  src/components/__tests__/ResultsPanel.spec.ts > ResultsPanel 相似度分数条 > 距离 0.2 的分数条宽度为 80%
+AssertionError: 每条结果都应渲染 data-testid=result-score-bar 的分数条: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ barWidths src/components/__tests__/ResultsPanel.spec.ts:14:69
+     12|   await wrapper.find('[data-testid="results-toggle"]').trigger("click")
+     13|   const bars = wrapper.findAll('[data-testid="result-score-bar"]')
+     14|   expect(bars.length, "每条结果都应渲染 data-testid=result-score-bar 的分数条").to…
+       |                                                                     ^
+     15|   return wrapper
+     16|     .findAll('[data-testid="result-score-bar"]')
+ ❯ src/components/__tests__/ResultsPanel.spec.ts:23:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/104]⎯
+
+ FAIL  src/components/__tests__/ResultsPanel.spec.ts > ResultsPanel 相似度分数条 > 距离 0.2 与 0.6 分别为 80% 与 40%
+AssertionError: 每条结果都应渲染 data-testid=result-score-bar 的分数条: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ barWidths src/components/__tests__/ResultsPanel.spec.ts:14:69
+     12|   await wrapper.find('[data-testid="results-toggle"]').trigger("click")
+     13|   const bars = wrapper.findAll('[data-testid="result-score-bar"]')
+     14|   expect(bars.length, "每条结果都应渲染 data-testid=result-score-bar 的分数条").to…
+       |                                                                     ^
+     15|   return wrapper
+     16|     .findAll('[data-testid="result-score-bar"]')
+ ❯ src/components/__tests__/ResultsPanel.spec.ts:28:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/104]⎯
+
+ FAIL  src/components/__tests__/ResultsPanel.spec.ts > ResultsPanel 相似度分数条 > 超出范围的距离被限制在 0% 到 100%
+AssertionError: 每条结果都应渲染 data-testid=result-score-bar 的分数条: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ barWidths src/components/__tests__/ResultsPanel.spec.ts:14:69
+     12|   await wrapper.find('[data-testid="results-toggle"]').trigger("click")
+     13|   const bars = wrapper.findAll('[data-testid="result-score-bar"]')
+     14|   expect(bars.length, "每条结果都应渲染 data-testid=result-score-bar 的分数条").to…
+       |                                                                     ^
+     15|   return wrapper
+     16|     .findAll('[data-testid="result-score-bar"]')
+ ❯ src/components/__tests__/ResultsPanel.spec.ts:33:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 默认折叠且不渲染任何诊断面板
+Error: Cannot call element on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:34:19
+     32|
+     33|     const toggle = wrapper.find('[data-testid="retrieval-details-toggl…
+     34|     expect(toggle.element.tagName).toBe("BUTTON")
+       |                   ^
+     35|     expect(toggle.attributes("aria-expanded")).toBe("false")
+     36|     expect(wrapper.find('[data-testid="rewrite"]').exists()).toBe(fals…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 折叠状态显示片段数和检索耗时摘要
+Error: Cannot call text on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:50:19
+     48|
+     49|     const toggle = wrapper.find('[data-testid="retrieval-details-toggl…
+     50|     expect(toggle.text()).toContain("检索详情")
+       |                   ^
+     51|     expect(toggle.text()).toContain("5 个片段")
+     52|     expect(toggle.text()).toContain("120 ms")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 展开后显示改写、检索结果与提示词面板
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:59:67
+     57|     const wrapper = await mountDetails(makeResponse({ rewrite_info: re…
+     58|
+     59|     await wrapper.find('[data-testid="retrieval-details-toggle"]').tri…
+       |                                                                   ^
+     60|
+     61|     expect(wrapper.find('[data-testid="retrieval-details-toggle"]').at…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 按钮 aria-controls 指向展开区域
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:72:18
+     70|
+     71|     const toggle = wrapper.find('[data-testid="retrieval-details-toggl…
+     72|     await toggle.trigger("click")
+       |                  ^
+     73|
+     74|     const controls = toggle.attributes("aria-controls")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > rewrite_info 为 null 且无提示词时只显示检索结果面板
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:83:67
+     81|     const wrapper = await mountDetails(makeResponse({ rewrite_info: nu…
+     82|
+     83|     await wrapper.find('[data-testid="retrieval-details-toggle"]').tri…
+       |                                                                   ^
+     84|
+     85|     expect(wrapper.find('[data-testid="rewrite"]').exists()).toBe(fals…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 零结果时不渲染检索结果面板
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:94:67
+     92|     const wrapper = await mountDetails(makeResponse({ results: [] }))
+     93|
+     94|     await wrapper.find('[data-testid="retrieval-details-toggle"]').tri…
+       |                                                                   ^
+     95|
+     96|     expect(wrapper.find('[data-testid="results"]').exists()).toBe(fals…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 展开后检索结果子面板仍默认折叠
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:104:67
+    102|     const wrapper = await mountDetails()
+    103|
+    104|     await wrapper.find('[data-testid="retrieval-details-toggle"]').tri…
+       |                                                                   ^
+    105|
+    106|     expect(wrapper.find('[data-testid="results-content"]').exists()).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 两个实例的 aria-controls 互不相同
+Error: Cannot call attributes on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:114:67
+    112|     const b = await mountDetails()
+    113|
+    114|     const idA = a.find('[data-testid="retrieval-details-toggle"]').att…
+       |                                                                   ^
+    115|     expect(idA).toBeTruthy()
+    116|     expect(idA).not.toBe(b.find('[data-testid="retrieval-details-toggl…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/104]⎯
+
+ FAIL  src/components/chat/__tests__/RetrievalDetails.spec.ts > RetrievalDetails 检索详情收纳 > 展开提示词面板后不存在嵌套按钮
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/RetrievalDetails.spec.ts:123:67
+    121|     const wrapper = await mountDetails()
+    122|
+    123|     await wrapper.find('[data-testid="retrieval-details-toggle"]').tri…
+       |                                                                   ^
+    124|     await wrapper.find('[data-testid="prompt-toggle"]').trigger("click…
+    125|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 按文档聚合并按首次出现顺序编号
+AssertionError: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:51:19
+     49|
+     50|     const items = wrapper.findAll('[data-testid="source-item"]')
+     51|     expect(items).toHaveLength(2)
+       |                   ^
+     52|     expect(items[0]!.find('[data-testid="source-index"]').text()).toBe…
+     53|     expect(items[0]!.find('[data-testid="source-doc-name"]').text()).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 标题显示来源文档数量
+Error: Cannot call text on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:62:61
+     60|     const wrapper = await mountSourceList(threeResultsTwoDocs())
+     61|
+     62|     expect(wrapper.find('[data-testid="source-list-title"]').text()).t…
+       |                                                             ^
+     63|     expect(wrapper.find('[data-testid="source-list-title"]').text()).t…
+     64|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 合并去重排序页码
+TypeError: Cannot read properties of undefined (reading 'find')
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:71:18
+     69|
+     70|     const first = wrapper.findAll('[data-testid="source-item"]')[0]!
+     71|     expect(first.find('[data-testid="source-pages"]').text()).toBe("第 …
+       |                  ^
+     72|   })
+     73|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[41/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 无页码时不显示页码
+TypeError: Cannot read properties of undefined (reading 'find')
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:79:19
+     77|
+     78|     const second = wrapper.findAll('[data-testid="source-item"]')[1]!
+     79|     expect(second.find('[data-testid="source-pages"]').exists()).toBe(…
+       |                   ^
+     80|   })
+     81|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[42/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 显示该文档所有片段的分块编号
+TypeError: Cannot read properties of undefined (reading 'text')
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:87:18
+     85|
+     86|     const first = wrapper.findAll('[data-testid="source-item"]')[0]!
+     87|     expect(first.text()).toContain("分块 #12")
+       |                  ^
+     88|     expect(first.text()).toContain("分块 #15")
+     89|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[43/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 同名不同 ID 的文档分开显示
+AssertionError: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:98:60
+     96|     ])
+     97|
+     98|     expect(wrapper.findAll('[data-testid="source-item"]')).toHaveLengt…
+       |                                                            ^
+     99|   })
+    100|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[44/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 文档名为空时显示「未命名文档」
+Error: Cannot call text on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:105:59
+    103|     const wrapper = await mountSourceList([makeResult({ document_name:…
+    104|
+    105|     expect(wrapper.find('[data-testid="source-doc-name"]').text()).toB…
+       |                                                           ^
+    106|   })
+    107|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[45/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 默认显示首个片段预览且处于折叠状态
+TypeError: Cannot read properties of undefined (reading 'find')
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:113:18
+    111|
+    112|     const first = wrapper.findAll('[data-testid="source-item"]')[0]!
+    113|     expect(first.find('[data-testid="source-preview"]').text()).toCont…
+       |                  ^
+    114|     expect(first.find('[data-testid="source-toggle"]').attributes("ari…
+    115|     expect(first.find('[data-testid="source-chunk"]').exists()).toBe(f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[46/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 点击展开后显示全部片段原文并保留换行
+TypeError: Cannot read properties of undefined (reading 'find')
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:123:17
+    121|
+    122|     const first = wrapper.findAll('[data-testid="source-item"]')[0]!
+    123|     await first.find('[data-testid="source-toggle"]').trigger("click")
+       |                 ^
+    124|
+    125|     expect(first.find('[data-testid="source-toggle"]').attributes("ari…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[47/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 展开按钮的 aria-controls 指向展开区域
+TypeError: Cannot read properties of undefined (reading 'find')
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:138:26
+    136|
+    137|     const first = wrapper.findAll('[data-testid="source-item"]')[0]!
+    138|     const toggle = first.find('[data-testid="source-toggle"]')
+       |                          ^
+    139|     await toggle.trigger("click")
+    140|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[48/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 再次点击收起原文
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:151:18
+    149|
+    150|     const toggle = wrapper.find('[data-testid="source-toggle"]')
+    151|     await toggle.trigger("click")
+       |                  ^
+    152|     await toggle.trigger("click")
+    153|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[49/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 无结果时提示回答缺少资料依据
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:163:28
+    161|
+    162|     const empty = wrapper.find('[data-testid="sources-empty"]')
+    163|     expect(empty.exists()).toBe(true)
+       |                            ^
+    164|     expect(empty.text()).toContain("没有检索到相关资料")
+    165|     expect(empty.text()).toContain("缺少资料依据")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[50/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 多个实例中同一文档的 aria-controls ID 唯一
+Error: Cannot call attributes on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:176:56
+    174|     const b = mount(SourceList, { props: { results } })
+    175|
+    176|     const idA = a.find('[data-testid="source-toggle"]').attributes("ar…
+       |                                                        ^
+    177|     const idB = b.find('[data-testid="source-toggle"]').attributes("ar…
+    178|     expect(idA).toBeTruthy()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[51/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 展开原文与 API 返回文本完全一致
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:187:56
+    185|     const wrapper = await mountSourceList([makeResult({ text: original…
+    186|
+    187|     await wrapper.find('[data-testid="source-toggle"]').trigger("click…
+       |                                                        ^
+    188|
+    189|     expect(wrapper.find('[data-testid="source-chunk-text"]').element.t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[52/104]⎯
+
+ FAIL  src/components/chat/__tests__/SourceList.spec.ts > SourceList 来源列表 > 展开后显示每个片段的原始排名
+TypeError: Cannot read properties of undefined (reading 'find')
+ ❯ src/components/chat/__tests__/SourceList.spec.ts:197:17
+    195|
+    196|     const first = wrapper.findAll('[data-testid="source-item"]')[0]!
+    197|     await first.find('[data-testid="source-toggle"]').trigger("click")
+       |                 ^
+    198|     const chunks = first.findAll('[data-testid="source-chunk"]')
+    199|     expect(chunks[0]!.text()).toContain("#1")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[53/104]⎯
+
+ FAIL  src/components/chat/__tests__/welcome-user-message.spec.ts > WelcomeView 起手路径 > 渲染上传资料、提问、核对来源三个步骤
+AssertionError: expected [] to have a length of 3 but got +0
+
+- Expected
++ Received
+
+- 3
++ 0
+
+ ❯ src/components/chat/__tests__/welcome-user-message.spec.ts:143:19
+    141|
+    142|     const steps = wrapper.findAll('[data-testid="welcome-step"]')
+    143|     expect(steps).toHaveLength(3)
+       |                   ^
+    144|     const text = wrapper.text()
+    145|     expect(text).toContain("上传资料")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[54/104]⎯
+
+ FAIL  src/components/chat/__tests__/welcome-user-message.spec.ts > WelcomeView 起手路径 > 点击上传资料按钮 emit upload 事件
+Error: Cannot call element on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/chat/__tests__/welcome-user-message.spec.ts:156:19
+    154|
+    155|     const button = wrapper.find('[data-testid="welcome-upload"]')
+    156|     expect(button.element.tagName).toBe("BUTTON")
+       |                   ^
+    157|     await button.trigger("click")
+    158|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[55/104]⎯
+
+ FAIL  src/components/chat/__tests__/welcome-user-message.spec.ts > WelcomeView 起手路径 > 推荐问题不少于三条且点击 emit pick-suggestion 而不发送
+AssertionError: expected 0 to be greater than or equal to 3
+ ❯ src/components/chat/__tests__/welcome-user-message.spec.ts:168:32
+    166|
+    167|     const suggestions = wrapper.findAll('[data-testid="welcome-suggest…
+    168|     expect(suggestions.length).toBeGreaterThanOrEqual(3)
+       |                                ^
+    169|
+    170|     const first = suggestions[0]!
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[56/104]⎯
+
+ FAIL  src/components/chat/__tests__/welcome-user-message.spec.ts > WelcomeView 起手路径 > 推荐问题不包含具体文档名或伪造内容
+AssertionError: 应至少渲染 3 条推荐问题: expected 0 to be greater than or equal to 3
+ ❯ src/components/chat/__tests__/welcome-user-message.spec.ts:184:49
+    182|
+    183|     const suggestions = wrapper.findAll('[data-testid="welcome-suggest…
+    184|     expect(suggestions.length, "应至少渲染 3 条推荐问题").toBeGreaterThanOrEqual…
+       |                                                 ^
+    185|     for (const s of suggestions) {
+    186|       expect(s.text()).not.toMatch(/\.pdf|\.docx|\.md\b/)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[57/104]⎯
+
+ FAIL  src/components/chat/__tests__/welcome-user-message.spec.ts > UserMessage 排版契约 > 气泡使用 whitespace-pre-wrap 保留换行
+AssertionError: expected [ 'max-w-[85%]', 'space-y-2', …(8) ] to include 'whitespace-pre-wrap'
+ ❯ src/components/chat/__tests__/welcome-user-message.spec.ts:203:30
+    201|
+    202|     const bubble = wrapper.find('[data-testid="user-message-bubble"]')
+    203|     expect(bubble.classes()).toContain("whitespace-pre-wrap")
+       |                              ^
+    204|   })
+    205|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[58/104]⎯
+
+ FAIL  src/components/chat/__tests__/welcome-user-message.spec.ts > UserMessage 排版契约 > 气泡启用 overflow-wrap: anywhere 防止长串撑破布局
+AssertionError: expected [ 'max-w-[85%]', 'space-y-2', …(8) ] to include '[overflow-wrap:anywhere]'
+ ❯ src/components/chat/__tests__/welcome-user-message.spec.ts:214:30
+    212|
+    213|     const bubble = wrapper.find('[data-testid="user-message-bubble"]')
+    214|     expect(bubble.classes()).toContain("[overflow-wrap:anywhere]")
+       |                              ^
+    215|   })
+    216|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[59/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 欢迎页交互 > 点击推荐问题填入输入框并聚焦，不发送
+AssertionError: 欢迎页应渲染推荐问题: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:73:47
+     71|
+     72|     const suggestion = w.find('[data-testid="welcome-suggestion"]')
+     73|     expect(suggestion.exists(), "欢迎页应渲染推荐问题").toBe(true)
+       |                                               ^
+     74|     const expected = suggestion.text()
+     75|     await suggestion.trigger("click")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[60/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 欢迎页交互 > 点击欢迎页上传按钮打开文件选择器
+AssertionError: 欢迎页应渲染上传资料按钮: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:92:45
+     90|     const clickSpy = vi.spyOn(input, "click")
+     91|     const upload = w.find('[data-testid="welcome-upload"]')
+     92|     expect(upload.exists(), "欢迎页应渲染上传资料按钮").toBe(true)
+       |                                             ^
+     93|     await upload.trigger("click")
+     94|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[61/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 问答流 > 检索阶段在回答占位区显示阶段文案并禁用发送
+AssertionError: 等待回答时应渲染 answer-pending 占位: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:153:60
+    151|
+    152|     const pending = w.find('[data-testid="answer-pending"]')
+    153|     expect(pending.exists(), "等待回答时应渲染 answer-pending 占位").toBe(true)
+       |                                                            ^
+    154|     expect(pending.text()).toContain("正在检索资料…")
+    155|     expect(pending.attributes("role")).toBe("status")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[62/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 问答流 > 生成阶段显示「正在生成回答…」
+Error: Cannot call text on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:179:52
+    177|     const w = await mountArea()
+    178|
+    179|     expect(w.find('[data-testid="answer-pending"]').text()).toContain(…
+       |                                                    ^
+    180|   })
+    181|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[63/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 问答流 > 回答下方直接显示来源列表，顺序为 回答 → 来源 → 检索详情
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:190:60
+    188|     await flushPromises()
+    189|
+    190|     expect(w.find('[data-testid="source-list"]').exists()).toBe(true)
+       |                                                            ^
+    191|     expect(w.find('[data-testid="source-doc-name"]').text()).toBe("线性代…
+    192|     const html = w.html()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[64/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 问答流 > 检索详情默认折叠，诊断面板不直接展示
+AssertionError: 回答下方应渲染检索详情入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:210:46
+    208|
+    209|     const toggle = w.find('[data-testid="retrieval-details-toggle"]')
+    210|     expect(toggle.exists(), "回答下方应渲染检索详情入口").toBe(true)
+       |                                              ^
+    211|     expect(toggle.attributes("aria-expanded")).toBe("false")
+    212|     expect(w.find('[data-testid="results-toggle"]').exists()).toBe(fal…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[65/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 问答流 > 引用统计按引用文档去重计数
+AssertionError: expected '引用 2 个分块 · 来自 3 个文档' to contain '来自 1 个文档'
+
+Expected: "来自 1 个文档"
+Received: "引用 2 个分块 · 来自 3 个文档"
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:234:19
+    232|     const stats = w.find('[data-testid="citation-stats"]').text()
+    233|     expect(stats).toContain("引用 2 个分块")
+    234|     expect(stats).toContain("来自 1 个文档")
+       |                   ^
+    235|   })
+    236|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[66/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 问答流 > 零结果时显示无资料依据提示
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:247:62
+    245|     await flushPromises()
+    246|
+    247|     expect(w.find('[data-testid="sources-empty"]').exists()).toBe(true)
+       |                                                              ^
+    248|   })
+    249|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[67/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 菜单按钮渲染在顶栏内部
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:78:92
+     76|     const w = await mountLayout()
+     77|
+     78|     expect(w.find('[data-testid="chat-top-nav"] [data-testid="hamburge…
+       |                                                                                            ^
+     79|   })
+     80|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[68/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 抽屉关闭时带 inert 与 aria-hidden=true
+AssertionError: expected undefined to be defined
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:85:43
+     83|     const w = await mountLayout()
+     84|
+     85|     expect(drawer(w).attributes("inert")).toBeDefined()
+       |                                           ^
+     86|     expect(drawer(w).attributes("aria-hidden")).toBe("true")
+     87|     expect(menuButton(w).attributes("aria-expanded")).toBe("false")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[69/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 打开抽屉后焦点进入抽屉
+AssertionError: expected undefined to be 'true' // Object.is equality
+
+- Expected:
+"true"
+
++ Received:
+undefined
+
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:97:55
+     95|     await flushPromises()
+     96|
+     97|     expect(menuButton(w).attributes("aria-expanded")).toBe("true")
+       |                                                       ^
+     98|     expect(drawer(w).attributes("inert")).toBeUndefined()
+     99|     expect(drawer(w).attributes("aria-hidden")).toBeUndefined()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[70/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 按 Esc 关闭抽屉并把焦点还给菜单按钮
+AssertionError: expected undefined to be defined
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:115:43
+    113|     await flushPromises()
+    114|
+    115|     expect(drawer(w).attributes("inert")).toBeDefined()
+       |                                           ^
+    116|     expect(document.activeElement).toBe(menuButton(w).element)
+    117|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[71/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 点击遮罩关闭后焦点回到菜单按钮
+AssertionError: expected undefined to be defined
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:128:43
+    126|     await flushPromises()
+    127|
+    128|     expect(drawer(w).attributes("inert")).toBeDefined()
+       |                                           ^
+    129|     expect(document.activeElement).toBe(menuButton(w).element)
+    130|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[72/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 抽屉内关闭按钮可关闭抽屉
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:138:57
+    136|     await menuButton(w).trigger("click")
+    137|     await flushPromises()
+    138|     await w.find('[data-testid="mobile-sidebar-close"]').trigger("clic…
+       |                                                         ^
+    139|     await flushPromises()
+    140|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[73/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 在抽屉中新建对话后自动收起
+AssertionError: expected undefined to be defined
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:154:43
+    152|
+    153|     expect(useChatStore().conversations).toHaveLength(1)
+    154|     expect(drawer(w).attributes("inert")).toBeDefined()
+       |                                           ^
+    155|     expect(menuButton(w).attributes("aria-expanded")).toBe("false")
+    156|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[74/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 在抽屉中选择历史对话后自动收起
+AssertionError: 抽屉中应能找到「旧对话」条目的选择按钮: expected undefined to be truthy
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:169:43
+    167|     const items = drawer(w).findAll('[data-testid="conversation-select…
+    168|     const target = items.find((i) => i.text().includes("旧对话"))
+    169|     expect(target, "抽屉中应能找到「旧对话」条目的选择按钮").toBeTruthy()
+       |                                           ^
+    170|     await target!.trigger("click")
+    171|     await flushPromises()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[75/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 在抽屉中选择当前对话也会收起
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:185:64
+    183|     await menuButton(w).trigger("click")
+    184|     await flushPromises()
+    185|     await drawer(w).find('[data-testid="conversation-select"]').trigge…
+       |                                                                ^
+    186|     await flushPromises()
+    187|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[76/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 抽屉打开时 Tab / Shift+Tab 在抽屉内循环
+AssertionError: expected <div …(4)>…(2)</div> to be <button …(2)>…(1)</button> // Object.is equality
+
+- Expected
++ Received
+
+- <button
+-   class="flex w-full items-center justify-center gap-2 rounded-md bg-brand-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-800 active:bg-brand-900"
+-   data-testid="new-conversation-btn"
++ <div
++   class="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-neutral-50"
++   data-testid="sidebar-user-info"
++   role="button"
++   tabindex="0"
+  >
+-   <svg
+-     class="size-4"
+-     fill="none"
+-     stroke="currentColor"
+-     stroke-linecap="round"
+-     stroke-linejoin="round"
+-     stroke-width="2"
+-     viewBox="0 0 24 24"
++   <!-- Avatar -->
++   <div
++     class="relative shrink-0"
+    >
+-     <path
+-       d="M12 5v14M5 12h14"
+-     />
+-   </svg>
+-    新建对话
+- </button>
++     <!-- 自定义头像图片（如有） -->
++
++     <!-- 品牌渐变 + 衬线体首字母（无头像时的回退） -->
++     <div
++       aria-hidden="true"
++       class="flex size-8 items-center justify-center rounded-full brand-gradient text-xs font-semibold text-white shadow-sm shadow-brand-200/30"
++     >
++       <span
++         class="font-display translate-y-px"
++       >
++         林同
++       </span>
++     </div>
++
++   </div>
++   <!-- 用户文字信息 -->
++   <div
++     class="min-w-0 flex-1"
++   >
++     <p
++       class="truncate text-sm font-medium leading-tight text-neutral-800"
++     >
++       林同学
++     </p>
++     <p
++       class="truncate text-xs leading-tight text-neutral-500"
++     >
++       lin@example.com
++     </p>
++   </div>
++ </div>
+
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:207:36
+    205|     last.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubb…
+    206|     await flushPromises()
+    207|     expect(document.activeElement).toBe(first)
+       |                                    ^
+    208|
+    209|     first.focus()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[77/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 移动端只请求一次已解析文档接口
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:219:37
+    217|     await mountLayout()
+    218|
+    219|     expect(mockListParsedDocuments).toHaveBeenCalledTimes(1)
+       |                                     ^
+    220|   })
+    221| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[78/104]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 桌面端 > 桌面端只请求一次已解析文档接口且不渲染移动抽屉
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:242:37
+    240|     const w = await mountLayout()
+    241|
+    242|     expect(mockListParsedDocuments).toHaveBeenCalledTimes(1)
+       |                                     ^
+    243|     expect(w.find('[data-testid="mobile-sidebar"]').exists()).toBe(fal…
+    244|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[79/104]⎯
+
+ FAIL  src/components/shared/__tests__/ConfirmDialog.spec.ts > ConfirmDialog 可访问性 > 具备 role=dialog、aria-modal 与 aria-labelledby
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts:236:29
+    234|
+    235|     const dialog = wrapper.find('[role="dialog"]')
+    236|     expect(dialog.exists()).toBe(true)
+       |                             ^
+    237|     expect(dialog.attributes("aria-modal")).toBe("true")
+    238|     const labelledby = dialog.attributes("aria-labelledby")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[80/104]⎯
+
+ FAIL  src/components/shared/__tests__/ConfirmDialog.spec.ts > ConfirmDialog 可访问性 > 打开时焦点落在取消按钮
+AssertionError: expected <body><div data-v-app>…(1)</div></body> to be <button …(2)></button> // Object.is equality
+
+- Expected
++ Received
+
++ <body>
++   <div
++     data-v-app=""
++   >
++     <div
++       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
++       data-testid="confirm-dialog-overlay"
++     >
++       <div
++         class="w-full max-w-sm rounded-lg bg-white shadow-lg"
++       >
++         <!-- Header -->
++         <div
++           class="border-b border-neutral-100 px-5 py-4"
++         >
++           <h3
++             class="font-display text-base font-semibold text-neutral-900"
++           >
++             删除这段对话？
++           </h3>
++         </div>
++         <!-- Body -->
++         <div
++           class="px-5 py-4"
++         >
++
++           <!--v-if-->
++
++         </div>
++         <!-- Footer -->
++         <div
++           class="flex justify-end gap-2.5 border-t border-neutral-100 px-5 py-4"
++         >
+            <button
+              class="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+              data-testid="confirm-dialog-cancel-btn"
+            >
+              取消
+            </button>
++           <button
++             class="rounded-md px-4 py-2 text-sm font-medium text-white transition-colors bg-brand-700 hover:bg-brand-800 active:bg-brand-900"
++             data-testid="confirm-dialog-confirm-btn"
++           >
++             确认
++           </button>
++         </div>
++       </div>
++     </div>
++   </div>
++ </body>
+
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts:252:36
+    250|     await wrapper.vm.$nextTick()
+    251|
+    252|     expect(document.activeElement).toBe(
+       |                                    ^
+    253|       wrapper.find('[data-testid="confirm-dialog-cancel-btn"]').elemen…
+    254|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[81/104]⎯
+
+ FAIL  src/components/shared/__tests__/ConfirmDialog.spec.ts > ConfirmDialog 可访问性 > 按 Esc emit cancel
+AssertionError: Target cannot be null or undefined.
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts:267:39
+    265|     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape…
+    266|
+    267|     expect(wrapper.emitted("cancel")).toHaveLength(1)
+       |                                       ^
+    268|     expect(wrapper.emitted("confirm")).toBeUndefined()
+    269|     wrapper.unmount()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[82/104]⎯
+
+ FAIL  src/components/shared/__tests__/ConfirmDialog.spec.ts > ConfirmDialog 可访问性 > Tab 与 Shift+Tab 焦点在对话框内循环
+AssertionError: expected <button …(2)></button> to be <button …(2)></button> // Object.is equality
+
+- Expected
++ Received
+
+  <button
+-   class="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+-   data-testid="confirm-dialog-cancel-btn"
++   class="rounded-md px-4 py-2 text-sm font-medium text-white transition-colors bg-brand-700 hover:bg-brand-800 active:bg-brand-900"
++   data-testid="confirm-dialog-confirm-btn"
+  >
+-   取消
++   确认
+  </button>
+
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts:296:36
+    294|     confirm.focus()
+    295|     confirm.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", b…
+    296|     expect(document.activeElement).toBe(cancel)
+       |                                    ^
+    297|
+    298|     cancel.focus()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[83/104]⎯
+
+ FAIL  src/components/shared/__tests__/ConfirmDialog.spec.ts > ConfirmDialog 可访问性 > 两个实例的 aria-labelledby 互不相同
+Error: Cannot call attributes on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts:309:37
+    307|     const b = mount(ConfirmDialog, { props: { visible: true, title: "乙…
+    308|
+    309|     expect(a.find('[role="dialog"]').attributes("aria-labelledby")).no…
+       |                                     ^
+    310|       b.find('[role="dialog"]').attributes("aria-labelledby"),
+    311|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[84/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/KnowledgeInfo.spec.ts > KnowledgeInfo 资料库分区 > 挂载时调用 listParsedDocuments 一次
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts:33:37
+     31|     await flushPromises()
+     32|
+     33|     expect(mockListParsedDocuments).toHaveBeenCalledTimes(1)
+       |                                     ^
+     34|   })
+     35|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[85/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/KnowledgeInfo.spec.ts > KnowledgeInfo 资料库分区 > 请求进行中显示加载状态
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts:42:72
+     40|     await flushPromises()
+     41|
+     42|     expect(wrapper.find('[data-testid="knowledge-loading"]').exists())…
+       |                                                                        ^
+     43|     expect(wrapper.find('[data-testid="knowledge-error"]').exists()).t…
+     44|     expect(wrapper.find('[data-testid="knowledge-empty"]').exists()).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[86/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/KnowledgeInfo.spec.ts > KnowledgeInfo 资料库分区 > 有资料时显示已解析数量
+Error: Cannot call text on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts:57:59
+     55|     await flushPromises()
+     56|
+     57|     expect(wrapper.find('[data-testid="knowledge-count"]').text()).toC…
+       |                                                           ^
+     58|     expect(wrapper.find('[data-testid="knowledge-loading"]').exists())…
+     59|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[87/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/KnowledgeInfo.spec.ts > KnowledgeInfo 资料库分区 > 资料库为空时显示空状态与上传引导
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts:68:28
+     66|
+     67|     const empty = wrapper.find('[data-testid="knowledge-empty"]')
+     68|     expect(empty.exists()).toBe(true)
+       |                            ^
+     69|     expect(empty.text()).toContain("还没有已解析的资料")
+     70|     expect(empty.text()).toContain("上传")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[88/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/KnowledgeInfo.spec.ts > KnowledgeInfo 资料库分区 > 加载失败时显示错误与重试按钮
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts:81:28
+     79|
+     80|     const error = wrapper.find('[data-testid="knowledge-error"]')
+     81|     expect(error.exists()).toBe(true)
+       |                            ^
+     82|     expect(error.text()).toContain("资料库状态获取失败")
+     83|     expect(wrapper.find('[data-testid="knowledge-retry"]').exists()).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[89/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/KnowledgeInfo.spec.ts > KnowledgeInfo 资料库分区 > 点击重试再次请求并在成功后显示数量
+Error: Cannot call trigger on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts:94:58
+     92|     await flushPromises()
+     93|
+     94|     await wrapper.find('[data-testid="knowledge-retry"]').trigger("cli…
+       |                                                          ^
+     95|     await flushPromises()
+     96|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[90/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/KnowledgeInfo.spec.ts > KnowledgeInfo 资料库分区 > 提供流程验证入口链接
+Error: Cannot call attributes on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/sidebar/__tests__/KnowledgeInfo.spec.ts:109:17
+    107|
+    108|     const link = wrapper.find('[data-testid="knowledge-verify-link"]')
+    109|     expect(link.attributes("href")).toBe("/verify")
+       |                 ^
+    110|     expect(link.text()).toContain("流程验证")
+    111|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[91/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > AppSidebar 资料库分区 > 渲染资料库分区并显示已解析资料数量
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:316:69
+    314|     await flushPromises()
+    315|
+    316|     expect(wrapper.find('[data-testid="knowledge-info"]').exists()).to…
+       |                                                                     ^
+    317|     expect(wrapper.find('[data-testid="knowledge-count"]').text()).toC…
+    318|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[92/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > AppSidebar 资料库分区 > 资料库分区位于对话列表之前
+AssertionError: expected -1 to be greater than -1
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:327:58
+    325|
+    326|     const html = wrapper.html()
+    327|     expect(html.indexOf('data-testid="knowledge-info"')).toBeGreaterTh…
+       |                                                          ^
+    328|     expect(html.indexOf('data-testid="knowledge-info"')).toBeLessThan(
+    329|       html.indexOf('data-testid="conversation-list"'),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[93/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > AppSidebar 资料库分区 > 头部显示「知寻」字标
+AssertionError: expected 'knowra 个人知识助手 新建对话' to contain '知寻'
+
+Expected: "知寻"
+Received: "knowra 个人知识助手 新建对话"
+
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:338:67
+    336|     const wrapper = mount(AppSidebar)
+    337|
+    338|     expect(wrapper.find('[data-testid="sidebar-header"]').text()).toCo…
+       |                                                                   ^
+    339|   })
+    340| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[94/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationList 分区标题顺序 > 无对话时标题位于空状态之前
+AssertionError: expected 5 to be less than 0
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:356:34
+    354|     const text = wrapper.text()
+    355|     expect(text.indexOf("最近对话")).toBeGreaterThan(-1)
+    356|     expect(text.indexOf("最近对话")).toBeLessThan(text.indexOf("暂无对话"))
+       |                                  ^
+    357|   })
+    358|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[95/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 条目主体为原生按钮并可选中对话
+Error: Cannot call element on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:420:19
+    418|
+    419|     const select = wrapper.find('[data-testid="conversation-select"]')
+    420|     expect(select.element.tagName).toBe("BUTTON")
+       |                   ^
+    421|     await select.trigger("click")
+    422|     expect(mockChatStore.setActiveConversation).toHaveBeenCalledWith("…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[96/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 当前对话带 aria-current=page，非当前对话不带
+Error: Cannot call attributes on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:429:62
+    427|     mockChatStore.activeConversationId = "c-del"
+    428|     const active = await mountItem()
+    429|     expect(active.find('[data-testid="conversation-select"]').attribut…
+       |                                                              ^
+    430|
+    431|     mockChatStore.activeConversationId = "other"
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[97/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 重命名与删除按钮带中文 aria-label
+AssertionError: expected undefined to be '重命名对话' // Object.is equality
+
+- Expected:
+"重命名对话"
+
++ Received:
+undefined
+
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:440:94
+    438|     const wrapper = await mountItem()
+    439|
+    440|     expect(wrapper.find('[data-testid="rename-conversation-btn"]').att…
+       |                                                                                              ^
+    441|     expect(wrapper.find('[data-testid="delete-conversation-btn"]').att…
+    442|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[98/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 操作按钮容器在键盘聚焦时可见
+Error: Cannot call classes on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:449:20
+    447|
+    448|     const actions = wrapper.find('[data-testid="conversation-actions"]…
+    449|     expect(actions.classes()).toContain("group-focus-within:opacity-10…
+       |                    ^
+    450|   })
+    451|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[99/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 点击删除弹出确认框且尚未删除
+AssertionError: expected null not to be null
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:458:26
+    456|     await wrapper.find('[data-testid="delete-conversation-btn"]').trig…
+    457|
+    458|     expect(dialog()).not.toBeNull()
+       |                          ^
+    459|     expect(dialog()!.textContent).toContain("待删除的对话")
+    460|     expect(mockChatStore.deleteConversation).not.toHaveBeenCalled()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[100/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 确认后删除对话
+TypeError: Cannot read properties of null (reading 'click')
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:470:14
+    468|     await wrapper.find('[data-testid="delete-conversation-btn"]').trig…
+    469|     const confirm = document.querySelector<HTMLButtonElement>('[data-t…
+    470|     confirm!.click()
+       |              ^
+    471|     await wrapper.vm.$nextTick()
+    472|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[101/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 取消后不删除并关闭确认框
+TypeError: Cannot read properties of null (reading 'click')
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:482:91
+    480|
+    481|     await wrapper.find('[data-testid="delete-conversation-btn"]').trig…
+    482|     document.querySelector<HTMLButtonElement>('[data-testid="confirm-d…
+       |                                                                                           ^
+    483|     await wrapper.vm.$nextTick()
+    484|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[102/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 按 Esc 取消删除
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "c-del",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:497:50
+    495|     await wrapper.vm.$nextTick()
+    496|
+    497|     expect(mockChatStore.deleteConversation).not.toHaveBeenCalled()
+       |                                                  ^
+    498|     expect(dialog()).toBeNull()
+    499|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[103/104]⎯
+
+ FAIL  src/components/sidebar/__tests__/sidebar.spec.ts > ConversationItem 可访问性与删除确认 > 取消后焦点回到删除按钮
+TypeError: Cannot read properties of null (reading 'click')
+ ❯ src/components/sidebar/__tests__/sidebar.spec.ts:509:91
+    507|     await del.trigger("click")
+    508|     await wrapper.vm.$nextTick()
+    509|     document.querySelector<HTMLButtonElement>('[data-testid="confirm-d…
+       |                                                                                           ^
+    510|     await wrapper.vm.$nextTick()
+    511|     await wrapper.vm.$nextTick()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[104/104]⎯
+
+
+ Test Files  12 failed | 24 passed (36)
+      Tests  104 failed | 359 passed (463)
+   Start at  11:09:47
+   Duration  14.45s (transform 2.71s, setup 0ms, import 3.37s, tests 8.44s, environment 24.17s)

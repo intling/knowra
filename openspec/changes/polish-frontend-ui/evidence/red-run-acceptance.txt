@@ -1,0 +1,164 @@
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts (14 tests | 2 failed) 1631ms
+     × 抽屉内确认框按 Esc 只关闭确认框，第二次 Esc 才关闭抽屉 53ms
+     × 抽屉内确认框打开时 Tab 焦点留在确认框内 135ms
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts (16 tests | 2 failed) 1569ms
+     × 发送追问后最新一轮问答被滚入视野 78ms
+     × 回答返回时不再额外滚动 55ms
+ ❯ src/__tests__/style-contract.test.ts (21 tests | 1 failed) 61ms
+     × paper-atmosphere 在纸色底上叠加径向渐变且不引用图片文件 8ms
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts (33 tests | 2 failed) 255ms
+     × 输入法组字中的 Enter 不发送 11ms
+     × 设置按钮显示「检索 N 段」且不出现 Top-K 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/style-contract.test.ts > 纸面氛围 > paper-atmosphere 在纸色底上叠加径向渐变且不引用图片文件
+AssertionError: expected '' to contain 'radial-gradient'
+
+- Expected
++ Received
+
+- radial-gradient
+
+ ❯ src/__tests__/style-contract.test.ts:144:18
+    142|   it("paper-atmosphere 在纸色底上叠加径向渐变且不引用图片文件", () => {
+    143|     const decl = declarationsFor(css, ".paper-atmosphere")
+    144|     expect(decl).toContain("radial-gradient")
+       |                  ^
+    145|     expect(decl).toMatch(/background-color/)
+    146|     expect(decl).not.toMatch(/url\(/)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 输入法组字中的 Enter 不发送
+AssertionError: expected [ [], [] ] to be undefined
+
+- Expected:
+undefined
+
++ Received:
+[
+  [],
+  [],
+]
+
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:542:37
+    540|     await textarea.trigger("keydown", { key: "Enter", keyCode: 229 })
+    541|
+    542|     expect(wrapper.emitted("send")).toBeUndefined()
+       |                                     ^
+    543|     expect(wrapper.emitted("update:modelValue")).toBeUndefined()
+    544|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/components/__tests__/ChatInput-attachment.spec.ts > ChatInput 重构交互 > 设置按钮显示「检索 N 段」且不出现 Top-K
+AssertionError: expected 'Top-K 5' to contain '检索 5 段'
+
+Expected: "检索 5 段"
+Received: "Top-K 5"
+
+ ❯ src/components/__tests__/ChatInput-attachment.spec.ts:566:48
+    564|
+    565|     const button = wrapper.find('[data-testid="settings-button"]')
+    566|     expect(button.text().replace(/\s+/g, " ")).toContain("检索 5 段")
+       |                                                ^
+    567|     expect(button.text()).not.toContain("Top-K")
+    568|     await button.trigger("click")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 发送后滚动 > 发送追问后最新一轮问答被滚入视野
+AssertionError: expected "vi.fn()" to be called at least once
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:337:23
+    335|     await flushPromises()
+    336|
+    337|     expect(scrollSpy).toHaveBeenCalled()
+       |                       ^
+    338|     const target = scrollSpy.mock.contexts.at(-1) as HTMLElement
+    339|     expect(target.textContent).toContain("它有什么性质")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea.spec.ts > ChatArea 发送后滚动 > 回答返回时不再额外滚动
+AssertionError: expected 0 to be greater than 0
+ ❯ src/components/layout/__tests__/ChatArea.spec.ts:357:28
+    355|     await flushPromises()
+    356|
+    357|     expect(callsAfterSend).toBeGreaterThan(0)
+       |                            ^
+    358|     expect(scrollSpy.mock.calls.length).toBe(callsAfterSend)
+    359|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 抽屉内确认框按 Esc 只关闭确认框，第二次 Esc 才关闭抽屉
+AssertionError: 取消删除后抽屉应保持打开: expected 'true' to be undefined
+
+- Expected:
+undefined
+
++ Received:
+"true"
+
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:233:59
+    231|
+    232|     expect(document.querySelector('[data-testid="confirm-dialog-overla…
+    233|     expect(drawer(w).attributes("inert"), "取消删除后抽屉应保持打开").toBeUndefine…
+       |                                                           ^
+    234|     expect(document.activeElement).toBe(del.element)
+    235|     expect(store.conversations).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  src/components/layout/__tests__/ChatLayout-nav.spec.ts > ChatLayout 移动端抽屉导航 > 抽屉内确认框打开时 Tab 焦点留在确认框内
+AssertionError: expected <button data-v-ecea8efb …(4)>…(1)</button> to be <button type="button" …(2)></button> // Object.is equality
+
+- Expected
++ Received
+
+  <button
+-   class="rounded-[var(--radius-button)] border border-line bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-paper-deep"
+-   data-testid="confirm-dialog-cancel-btn"
++   aria-label="关闭导航"
++   class="absolute top-4 right-3 z-10 flex size-8 items-center justify-center rounded-[var(--radius-button)] text-ink-muted transition-colors hover:bg-paper hover:text-ink"
++   data-testid="mobile-sidebar-close"
++   data-v-ecea8efb=""
+    type="button"
+  >
+-   取消
++   <svg
++     aria-hidden="true"
++     class="size-4"
++     data-v-ecea8efb=""
++     fill="none"
++     stroke="currentColor"
++     stroke-linecap="round"
++     stroke-width="2"
++     viewBox="0 0 24 24"
++   >
++     <path
++       d="M18 6 6 18M6 6l12 12"
++       data-v-ecea8efb=""
++     />
++   </svg>
+  </button>
+
+ ❯ src/components/layout/__tests__/ChatLayout-nav.spec.ts:257:36
+    255|     confirm.focus()
+    256|     confirm.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", b…
+    257|     expect(document.activeElement).toBe(cancel)
+       |                                    ^
+    258|
+    259|     cancel.focus()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  4 failed | 1 passed (5)
+      Tests  7 failed | 89 passed (96)
+   Start at  11:27:22
+   Duration  3.78s (transform 1.95s, setup 0ms, import 976ms, tests 5.71s, environment 2.53s)

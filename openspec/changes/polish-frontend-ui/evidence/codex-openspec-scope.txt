@@ -1,0 +1,11 @@
+$ openspec validate polish-frontend-ui --type change --strict --no-interactive
+Change 'polish-frontend-ui' is valid
+Exit code: 0
+
+$ openspec validate frontend-redesign --type spec --strict --no-interactive
+Specification 'frontend-redesign' is valid
+Exit code: 0
+
+$ openspec validate chat-recall-ui --type spec --strict --no-interactive
+Specification 'chat-recall-ui' is valid
+Exit code: 0

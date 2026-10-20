@@ -1,0 +1,20 @@
+✓ spec/backend-module-logging
+✓ spec/backend-runtime-lifecycle
+✓ spec/backend-structured-logging
+✓ spec/basic-user-foundation
+✓ spec/chat-generation
+✓ spec/chat-recall-ui
+✓ spec/document-chunking
+✓ spec/document-embedding
+✓ spec/document-parsing
+✓ spec/file-upload-storage
+✓ spec/frontend-redesign
+✓ spec/frontend-structured-logging
+✓ spec/pipeline-verification
+✓ change/polish-frontend-ui
+✗ spec/query-rewriting-integration
+✓ spec/query-rewriting-phase1
+✓ spec/query-rewriting-phase2
+✓ spec/semantic-search
+✓ spec/vector-storage
+Totals: 18 passed, 1 failed (19 items)

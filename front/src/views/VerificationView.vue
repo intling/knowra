@@ -190,56 +190,45 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- 顶部导航栏 -->
+  <!-- 顶部导航栏：与主界面同一字标与纸面底色 -->
   <nav
     data-testid="verify-navbar"
-    class="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-neutral-200 bg-white px-4 shadow-sm sm:px-6"
+    class="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-line bg-paper/90 px-4 backdrop-blur-sm sm:px-6"
   >
-    <div class="flex items-center gap-4">
-      <!-- Logo + 返回首页 -->
-      <a
-        data-testid="verify-nav-logo"
-        class="flex items-center gap-2 text-sm font-semibold text-neutral-900 transition hover:text-brand-700"
-        href="/"
-      >
-        <svg
-          class="size-5 text-brand-700"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+    <div class="flex min-w-0 items-center gap-2.5">
+      <a data-testid="verify-nav-logo" class="flex items-center gap-2 rounded-md text-ink transition hover:text-brand-700" href="/">
+        <span
+          class="flex size-7 items-center justify-center rounded-md bg-brand-700 font-display text-sm font-semibold text-white"
+          aria-hidden="true"
+          >知</span
         >
-          <path d="M12 2L2 7l10 5 10-5-10-5z" />
-          <path d="M2 17l10 5 10-5" />
-          <path d="M2 12l10 5 10-5" />
-        </svg>
-        knowra
+        <span class="font-display text-base font-semibold">知寻</span>
+        <span class="hidden text-[11px] tracking-[0.14em] text-ink-faint sm:inline">knowra</span>
       </a>
+      <span class="text-ink-faint" aria-hidden="true">/</span>
+      <span class="truncate text-sm font-medium text-ink-muted">流程验证</span>
     </div>
 
-    <div class="flex items-center gap-3">
-      <a
-        data-testid="verify-nav-back"
-        class="text-sm text-neutral-500 transition hover:text-neutral-800"
-        href="/"
-      >
-        返回首页
-      </a>
-      <span class="text-sm font-medium text-neutral-400">|</span>
-      <span class="text-sm font-medium text-neutral-600">流程验证</span>
-    </div>
+    <a
+      data-testid="verify-nav-back"
+      class="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-sm text-ink-muted transition hover:bg-paper-deep hover:text-ink"
+      href="/"
+    >
+      <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6" />
+      </svg>
+      返回首页
+    </a>
   </nav>
 
-  <section class="min-h-[calc(100vh-3.5rem)] bg-neutral-50 pb-24">
+  <section class="min-h-[calc(100vh-3.5rem)] bg-paper pb-24">
     <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
       <!-- 页面标题 -->
       <div class="mb-8">
-        <h1 class="font-display mt-2 text-2xl font-semibold tracking-normal text-neutral-900 sm:text-3xl">
+        <h1 class="font-display mt-2 text-2xl font-semibold tracking-normal text-ink sm:text-3xl">
           向量转译分块流程验证
         </h1>
-        <p class="mt-2 text-sm leading-6 text-neutral-500">
+        <p class="mt-2 text-sm leading-6 text-ink-muted">
           沿「向量 → 分块 → 文档」JOIN 链路还原全链路数据，验证 7 项数据完整性检查。
         </p>
       </div>
@@ -247,7 +236,7 @@ onMounted(() => {
       <!-- 文档选择器区域 -->
       <div
         data-testid="document-selector"
-        class="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+        class="rounded-lg border border-line bg-surface p-5 shadow-sm"
       >
         <!-- 加载中 -->
         <div
@@ -278,10 +267,10 @@ onMounted(() => {
         <div
           v-else-if="!hasDocuments"
           data-testid="documents-empty"
-          class="rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 text-center"
+          class="rounded-lg border border-dashed border-neutral-200 bg-paper px-4 py-8 text-center"
         >
           <p class="text-sm font-medium text-neutral-600">暂无已解析文档</p>
-          <p class="mt-1 text-xs text-neutral-400">
+          <p class="mt-1 text-xs text-ink-faint">
             请先在首页上传并解析文档，完成后返回此页面进行验证。
           </p>
         </div>
@@ -298,7 +287,7 @@ onMounted(() => {
             <select
               id="document-select"
               data-testid="document-select"
-              class="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400"
+              class="h-10 w-full rounded-md border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               @change="handleDocumentChange"
             >
               <option value="">— 请选择文档 —</option>
@@ -313,7 +302,7 @@ onMounted(() => {
           </div>
           <button
             data-testid="verify-button"
-            class="h-10 rounded-md bg-brand-700 px-5 text-sm font-medium text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400"
+            class="h-10 rounded-md bg-brand-700 px-5 text-sm font-medium text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-ink-faint"
             type="button"
             :disabled="!canVerify"
             @click="handleVerify"
@@ -380,37 +369,37 @@ onMounted(() => {
         <!-- 文档信息 -->
         <div
           data-testid="document-info"
-          class="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+          class="rounded-lg border border-line bg-surface p-5 shadow-sm"
         >
-          <h2 class="font-display text-sm font-semibold text-neutral-700">文档信息</h2>
+          <h2 class="font-display text-sm font-semibold text-ink">文档信息</h2>
           <dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
             <div>
-              <dt class="text-xs text-neutral-400">标题</dt>
-              <dd class="text-sm text-neutral-900">
+              <dt class="text-xs text-ink-faint">标题</dt>
+              <dd class="text-sm text-ink">
                 {{ verificationResult.document.title || "未命名" }}
               </dd>
             </div>
             <div>
-              <dt class="text-xs text-neutral-400">原始文件名</dt>
-              <dd class="text-sm text-neutral-900">
+              <dt class="text-xs text-ink-faint">原始文件名</dt>
+              <dd class="text-sm text-ink">
                 {{ verificationResult.document.original_filename }}
               </dd>
             </div>
             <div>
-              <dt class="text-xs text-neutral-400">内容类型</dt>
-              <dd class="text-sm text-neutral-900">
+              <dt class="text-xs text-ink-faint">内容类型</dt>
+              <dd class="text-sm text-ink">
                 {{ verificationResult.document.content_type || "—" }}
               </dd>
             </div>
             <div>
-              <dt class="text-xs text-neutral-400">文件大小</dt>
-              <dd class="text-sm text-neutral-900">
+              <dt class="text-xs text-ink-faint">文件大小</dt>
+              <dd class="text-sm text-ink">
                 {{ (verificationResult.document.byte_size / 1024).toFixed(1) }} KB
               </dd>
             </div>
             <div>
-              <dt class="text-xs text-neutral-400">文档 ID</dt>
-              <dd class="text-sm font-mono text-neutral-500 text-xs">
+              <dt class="text-xs text-ink-faint">文档 ID</dt>
+              <dd class="text-sm font-mono text-ink-muted text-xs">
                 {{ verificationResult.document.parsed_document_id }}
               </dd>
             </div>
@@ -420,14 +409,14 @@ onMounted(() => {
         <!-- Pipeline 链路展示 -->
         <div
           data-testid="pipeline-stages"
-          class="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+          class="rounded-lg border border-line bg-surface p-5 shadow-sm"
         >
-          <h2 class="font-display text-sm font-semibold text-neutral-700">Pipeline 链路</h2>
+          <h2 class="font-display text-sm font-semibold text-ink">Pipeline 链路</h2>
           <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div
               v-for="(item, idx) in pipelineStages"
               :key="item.key"
-              class="flex items-center gap-3 rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3"
+              class="flex items-center gap-3 rounded-lg border border-line/70 bg-paper px-4 py-3"
             >
               <span
                 class="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
@@ -438,7 +427,7 @@ onMounted(() => {
                       : item.stage.status === 'failed'
                         ? 'bg-red-100 text-red-700'
                         : 'bg-amber-100 text-amber-700'
-                    : 'bg-neutral-200 text-neutral-400'
+                    : 'bg-neutral-200 text-ink-faint'
                 "
               >
                 {{ idx + 1 }}
@@ -452,14 +441,14 @@ onMounted(() => {
                 >
                   {{ stageStatusText(item.stage.status) }}
                 </p>
-                <p v-else class="text-xs text-neutral-400">不可用</p>
+                <p v-else class="text-xs text-ink-faint">不可用</p>
               </div>
             </div>
           </div>
           <!-- 分块/向量化详情 -->
           <div
             v-if="verificationResult.pipeline.chunk_job || verificationResult.pipeline.embedding_job"
-            class="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-neutral-500"
+            class="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-ink-muted"
           >
             <template v-if="verificationResult.pipeline.chunk_job">
               <span>分块器：{{ verificationResult.pipeline.chunk_job.chunker_name }}</span>
@@ -478,10 +467,10 @@ onMounted(() => {
         <!-- 验证摘要面板 -->
         <div
           data-testid="verification-summary"
-          class="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+          class="rounded-lg border border-line bg-surface p-5 shadow-sm"
         >
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-display text-sm font-semibold text-neutral-700">完整性检查结果</h2>
+            <h2 class="font-display text-sm font-semibold text-ink">完整性检查结果</h2>
             <span
               class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
               :class="
@@ -527,32 +516,32 @@ onMounted(() => {
           data-testid="verification-stats"
           class="grid grid-cols-2 gap-3 sm:grid-cols-4"
         >
-          <div class="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-            <p class="text-xs text-neutral-400">总配对数</p>
-            <p class="mt-1 text-xl font-semibold text-neutral-900">
+          <div class="rounded-lg border border-line bg-surface px-4 py-3 shadow-sm">
+            <p class="text-xs text-ink-faint">总配对数</p>
+            <p class="mt-1 text-xl font-semibold text-ink">
               {{ verificationResult.stats.total_pairs }}
             </p>
           </div>
-          <div class="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-            <p class="text-xs text-neutral-400">Chunk Token 总数</p>
-            <p class="mt-1 text-xl font-semibold text-neutral-900">
+          <div class="rounded-lg border border-line bg-surface px-4 py-3 shadow-sm">
+            <p class="text-xs text-ink-faint">Chunk Token 总数</p>
+            <p class="mt-1 text-xl font-semibold text-ink">
               {{ verificationResult.stats.total_chunk_tokens }}
             </p>
           </div>
-          <div class="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-            <p class="text-xs text-neutral-400">文本来源</p>
-            <p class="mt-1 text-sm font-medium text-neutral-900">
+          <div class="rounded-lg border border-line bg-surface px-4 py-3 shadow-sm">
+            <p class="text-xs text-ink-faint">文本来源</p>
+            <p class="mt-1 text-sm font-medium text-ink">
               内联 {{ verificationResult.stats.inline_text_count }} · 文件
               {{ verificationResult.stats.file_storage_text_count }}
             </p>
           </div>
-          <div class="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-            <p class="text-xs text-neutral-400">嵌入模型</p>
-            <p class="mt-1 text-sm font-medium text-neutral-900">
+          <div class="rounded-lg border border-line bg-surface px-4 py-3 shadow-sm">
+            <p class="text-xs text-ink-faint">嵌入模型</p>
+            <p class="mt-1 text-sm font-medium text-ink">
               {{ verificationResult.stats.embedding_model || "—" }}
               <span
                 v-if="verificationResult.stats.embedding_dimensions"
-                class="text-xs text-neutral-400"
+                class="text-xs text-ink-faint"
               >
                 · {{ verificationResult.stats.embedding_dimensions }} 维
               </span>
@@ -563,17 +552,17 @@ onMounted(() => {
         <!-- 分块-向量对照表 -->
         <div
           data-testid="pairs-table"
-          class="rounded-lg border border-neutral-200 bg-white shadow-sm"
+          class="rounded-lg border border-line bg-surface shadow-sm"
         >
-          <div class="border-b border-neutral-100 px-5 py-3">
-            <h2 class="font-display text-sm font-semibold text-neutral-700">
+          <div class="border-b border-line/70 px-5 py-3">
+            <h2 class="font-display text-sm font-semibold text-ink">
               分块-向量对照表（{{ verificationResult.pairs.length }} 条）
             </h2>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead>
-                <tr class="border-b border-neutral-100 bg-neutral-50 text-neutral-500">
+                <tr class="border-b border-line/70 bg-paper text-ink-muted">
                   <th class="px-4 py-2.5 font-medium">序号</th>
                   <th class="px-4 py-2.5 font-medium">Chunk 文本</th>
                   <th class="px-4 py-2.5 font-medium">上下文增强文本</th>
@@ -587,7 +576,7 @@ onMounted(() => {
                   v-for="pair in verificationResult.pairs"
                   :key="pair.sequence_index"
                   data-testid="pair-row"
-                  class="border-b border-neutral-50 hover:bg-neutral-50/50"
+                  class="border-b border-line/50 hover:bg-paper/60"
                 >
                   <td class="px-4 py-2.5 font-mono text-neutral-600">
                     #{{ pair.sequence_index }}
@@ -600,22 +589,22 @@ onMounted(() => {
                     >
                       {{ truncateText(pair.chunk.text) }}
                     </span>
-                    <span v-else class="italic text-neutral-400">孤儿 embedding</span>
+                    <span v-else class="italic text-ink-faint">孤儿 embedding</span>
                   </td>
                   <td class="max-w-48 px-4 py-2.5 text-neutral-600">
                     <span v-if="pair.chunk?.contextualized_text" class="line-clamp-2">
                       {{ truncateText(pair.chunk.contextualized_text, 100) }}
                     </span>
-                    <span v-else class="text-neutral-400">—</span>
+                    <span v-else class="text-ink-faint">—</span>
                   </td>
                   <td class="px-4 py-2.5 font-mono text-neutral-600">
                     {{ pair.chunk?.token_count ?? "—" }}
                   </td>
-                  <td class="max-w-48 px-4 py-2.5 font-mono text-neutral-500">
+                  <td class="max-w-48 px-4 py-2.5 font-mono text-ink-muted">
                     <span v-if="pair.embedding?.vector_preview?.length">
                       {{ formatVectorPreview(pair.embedding.vector_preview) }}
                     </span>
-                    <span v-else class="italic text-neutral-400">孤儿 chunk</span>
+                    <span v-else class="italic text-ink-faint">孤儿 chunk</span>
                   </td>
                   <td class="px-4 py-2.5">
                     <span

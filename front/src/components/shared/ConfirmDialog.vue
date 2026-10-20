@@ -1,5 +1,9 @@
 <script setup lang="ts">
-defineProps<{
+import { nextTick, onMounted, onUnmounted, ref, watch } from "vue"
+
+import { trapTab, uniqueId } from "../../shared/a11y/focus"
+
+const props = defineProps<{
   visible: boolean
   title: string
   message?: string
@@ -13,50 +17,90 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const titleId = uniqueId("confirm-title")
+const dialogRef = ref<HTMLElement | null>(null)
+const cancelRef = ref<HTMLButtonElement | null>(null)
+
 function handleOverlayClick(event: MouseEvent) {
-  // Only close if clicking the overlay itself, not the dialog content
   if ((event.target as HTMLElement).dataset.testid === "confirm-dialog-overlay") {
     emit("cancel")
   }
 }
+
+/** 捕获阶段处理：确认框是最上层，Esc/Tab 不再交给抽屉等外层处理器。 */
+function handleKeydown(event: KeyboardEvent) {
+  if (!props.visible) return
+  if (event.key === "Escape") {
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    emit("cancel")
+    return
+  }
+  if (event.key === "Tab") {
+    // 只在边界处循环（trapTab 内部 preventDefault），中间位置交给浏览器原生 Tab
+    event.stopImmediatePropagation()
+    trapTab(event, dialogRef.value)
+  }
+}
+
+watch(
+  () => props.visible,
+  async (visible) => {
+    if (!visible) return
+    await nextTick()
+    cancelRef.value?.focus()
+  },
+  { immediate: true },
+)
+
+onMounted(() => document.addEventListener("keydown", handleKeydown, true))
+onUnmounted(() => document.removeEventListener("keydown", handleKeydown, true))
 </script>
 
 <template>
   <div
     v-if="visible"
     data-testid="confirm-dialog-overlay"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-ink/35 p-4"
     @click="handleOverlayClick"
   >
     <div
-      class="w-full max-w-sm rounded-lg bg-white shadow-lg"
+      ref="dialogRef"
+      role="dialog"
+      aria-modal="true"
+      :aria-labelledby="titleId"
+      class="w-full max-w-sm rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-popover)]"
       @click.stop
     >
-      <!-- Header -->
-      <div class="border-b border-neutral-100 px-5 py-4">
-        <h3 class="font-display text-base font-semibold text-neutral-900">{{ title }}</h3>
+      <div class="px-5 pt-5">
+        <h3 :id="titleId" class="font-display text-lg font-semibold text-ink">{{ title }}</h3>
       </div>
 
-      <!-- Body -->
-      <div class="px-5 py-4">
+      <div class="px-5 pt-2 pb-5">
         <slot>
-          <p v-if="message" class="text-sm leading-6 text-neutral-600">{{ message }}</p>
+          <p v-if="message" class="text-sm leading-6 text-ink-muted [overflow-wrap:anywhere]">{{ message }}</p>
         </slot>
       </div>
 
-      <!-- Footer -->
-      <div class="flex justify-end gap-2.5 border-t border-neutral-100 px-5 py-4">
+      <div class="flex justify-end gap-2 border-t border-line px-5 py-3.5">
         <button
+          ref="cancelRef"
+          type="button"
           data-testid="confirm-dialog-cancel-btn"
-          class="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+          class="rounded-[var(--radius-button)] border border-line bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-paper-deep"
           @click="emit('cancel')"
         >
           {{ cancelText ?? "取消" }}
         </button>
         <button
+          type="button"
           data-testid="confirm-dialog-confirm-btn"
-          class="rounded-md px-4 py-2 text-sm font-medium text-white transition-colors"
-          :class="danger ? 'bg-red-600 hover:bg-red-700 active:bg-red-800' : 'bg-brand-700 hover:bg-brand-800 active:bg-brand-900'"
+          class="rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium text-white transition-colors"
+          :class="
+            danger
+              ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
+              : 'bg-brand-700 hover:bg-brand-800 active:bg-brand-900'
+          "
           @click="emit('confirm')"
         >
           {{ confirmText ?? "确认" }}

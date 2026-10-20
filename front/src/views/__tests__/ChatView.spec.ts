@@ -204,7 +204,8 @@ describe("ChatView", () => {
       mockSearchChunks.mockResolvedValue(buildSearchResponse())
 
       const wrapper = mount(ChatView)
-      // Set the top-k slider
+      // Set the top-k slider（收在设置弹层内，需先展开）
+      await wrapper.find('[data-testid="settings-button"]').trigger("click")
       const slider = wrapper.find('#topk-slider')
       await slider.setValue(10)
       await sendQuery(wrapper, "测试查询")

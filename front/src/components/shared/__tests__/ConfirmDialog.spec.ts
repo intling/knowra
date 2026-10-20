@@ -1,7 +1,10 @@
-import { mount } from "@vue/test-utils"
-import { describe, expect, it } from "vitest"
+import { enableAutoUnmount, mount } from "@vue/test-utils"
+import { afterEach, describe, expect, it } from "vitest"
 
 import ConfirmDialog from "../ConfirmDialog.vue"
+
+// 每个用例结束后卸载，避免已打开对话框的全局键盘监听泄漏到后续用例
+enableAutoUnmount(afterEach)
 
 // ── Tests: ConfirmDialog ─────────────────────────────────────────────────────
 
@@ -220,5 +223,94 @@ describe("ConfirmDialog", () => {
       const btn = wrapper.find('[data-testid="confirm-dialog-confirm-btn"]')
       expect(btn.classes()).toContain("bg-brand-700")
     })
+  })
+})
+
+// ── 重构 RED：确认框可访问性与键盘行为 ─────────────────────────────────────
+
+describe("ConfirmDialog 可访问性", () => {
+  // 验证对话框具备模态语义，并通过 aria-labelledby 关联标题
+  it("具备 role=dialog、aria-modal 与 aria-labelledby", () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: { visible: true, title: "删除这段对话？" },
+    })
+
+    const dialog = wrapper.find('[role="dialog"]')
+    expect(dialog.exists()).toBe(true)
+    expect(dialog.attributes("aria-modal")).toBe("true")
+    const labelledby = dialog.attributes("aria-labelledby")
+    expect(labelledby).toBeTruthy()
+    expect(wrapper.find(`#${labelledby}`).text()).toBe("删除这段对话？")
+  })
+
+  // 验证打开后焦点落在「取消」上（危险操作的安全默认）
+  it("打开时焦点落在取消按钮", async () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: { visible: false, title: "删除这段对话？" },
+      attachTo: document.body,
+    })
+    await wrapper.setProps({ visible: true })
+    await wrapper.vm.$nextTick()
+
+    expect(document.activeElement).toBe(
+      wrapper.find('[data-testid="confirm-dialog-cancel-btn"]').element,
+    )
+    wrapper.unmount()
+  })
+
+  // 验证按 Esc 触发取消
+  it("按 Esc emit cancel", async () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: { visible: true, title: "删除这段对话？" },
+      attachTo: document.body,
+    })
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
+
+    expect(wrapper.emitted("cancel")).toHaveLength(1)
+    expect(wrapper.emitted("confirm")).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  // 验证对话框不可见时 Esc 不会误触发取消
+  it("不可见时按 Esc 不 emit cancel", async () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: { visible: false, title: "删除这段对话？" },
+      attachTo: document.body,
+    })
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
+
+    expect(wrapper.emitted("cancel")).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  // 验证模态框打开时 Tab / Shift+Tab 在「取消」「确认」之间循环，不逃逸到背景
+  it("Tab 与 Shift+Tab 焦点在对话框内循环", async () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: { visible: true, title: "删除这段对话？" },
+      attachTo: document.body,
+    })
+    const cancel = wrapper.find('[data-testid="confirm-dialog-cancel-btn"]').element as HTMLElement
+    const confirm = wrapper.find('[data-testid="confirm-dialog-confirm-btn"]').element as HTMLElement
+
+    confirm.focus()
+    confirm.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }))
+    expect(document.activeElement).toBe(cancel)
+
+    cancel.focus()
+    cancel.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true }))
+    expect(document.activeElement).toBe(confirm)
+    wrapper.unmount()
+  })
+
+  // 验证多个对话框实例的标题 ID 唯一，aria-labelledby 不会指错
+  it("两个实例的 aria-labelledby 互不相同", () => {
+    const a = mount(ConfirmDialog, { props: { visible: true, title: "甲" } })
+    const b = mount(ConfirmDialog, { props: { visible: true, title: "乙" } })
+
+    expect(a.find('[role="dialog"]').attributes("aria-labelledby")).not.toBe(
+      b.find('[role="dialog"]').attributes("aria-labelledby"),
+    )
   })
 })

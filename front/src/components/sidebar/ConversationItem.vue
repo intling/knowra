@@ -1,46 +1,34 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue"
+import { computed, nextTick, ref } from "vue"
 
 import { useChatStore, type Conversation } from "../../stores/chat"
+import ConfirmDialog from "../shared/ConfirmDialog.vue"
 
 const props = defineProps<{
   conversation: Conversation
 }>()
 
+const emit = defineEmits<{ (e: "select"): void }>()
+
 const chatStore = useChatStore()
 
-// ── Active state ───────────────────────────────────────────────────────────
+const isActive = computed(() => chatStore.activeConversationId === props.conversation.id)
 
-const isActive = ref(chatStore.activeConversationId === props.conversation.id)
-
-watch(
-  () => chatStore.activeConversationId,
-  (newId) => {
-    isActive.value = newId === props.conversation.id
-  },
-)
-
-// ── Display title ──────────────────────────────────────────────────────────
-
-/** 侧边栏展示标题：空标题时显示"新对话…"占位 */
-const displayTitle = computed(() => {
-  if (props.conversation.title && props.conversation.title.trim().length > 0) {
-    return props.conversation.title
-  }
-  return "新对话…"
-})
-
-/** 标题是否仍处于待生成状态（空标题或仅占位） */
-const isTitlePending = computed(() => {
-  return (
+const isTitlePending = computed(
+  () =>
     !props.conversation.title ||
     props.conversation.title.trim().length === 0 ||
-    props.conversation.title === "新对话"
-  )
-})
+    props.conversation.title === "新对话",
+)
 
-// ── Rename ─────────────────────────────────────────────────────────────────
+const displayTitle = computed(() => (isTitlePending.value ? "新对话…" : props.conversation.title))
 
+function select() {
+  chatStore.setActiveConversation(props.conversation.id)
+  emit("select")
+}
+
+// ── 重命名 ──
 const isRenaming = ref(false)
 const renameValue = ref("")
 const renameInputRef = ref<HTMLInputElement | null>(null)
@@ -58,107 +46,105 @@ function confirmRename() {
   const trimmed = renameValue.value.trim()
   if (trimmed && trimmed !== props.conversation.title) {
     chatStore.renameConversation(props.conversation.id, trimmed)
-  } else if (!trimmed && !props.conversation.title) {
-    // 用户清空了标题 → 不操作，保持占位状态
   }
-  isRenaming.value = false
-}
-
-function cancelRename() {
   isRenaming.value = false
 }
 
 function handleRenameKeydown(event: KeyboardEvent) {
-  if (event.key === "Enter") {
-    confirmRename()
-  } else if (event.key === "Escape") {
-    cancelRename()
-  }
+  if (event.key === "Enter") confirmRename()
+  else if (event.key === "Escape") isRenaming.value = false
 }
 
-// ── Delete ─────────────────────────────────────────────────────────────────
+// ── 删除（二次确认，关闭后焦点回到删除按钮）──
+const confirmingDelete = ref(false)
+const deleteButtonRef = ref<HTMLButtonElement | null>(null)
 
-function handleDelete() {
+function closeConfirm() {
+  confirmingDelete.value = false
+  nextTick(() => deleteButtonRef.value?.focus())
+}
+
+function confirmDelete() {
+  confirmingDelete.value = false
   chatStore.deleteConversation(props.conversation.id)
 }
 </script>
 
 <template>
   <div
-    :data-testid="'conversation-item'"
-    class="group relative cursor-pointer rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-neutral-100"
-    :class="{ 'bg-neutral-100': isActive }"
-    @click="chatStore.setActiveConversation(conversation.id)"
+    data-testid="conversation-item"
+    class="group relative rounded-[var(--radius-button)] text-sm transition-colors"
+    :class="isActive ? 'bg-neutral-100 shadow-[inset_2px_0_0_var(--color-brand-600)]' : 'hover:bg-paper/80'"
+    @click="!isRenaming && select()"
   >
-    <!-- Normal display -->
     <template v-if="!isRenaming">
-      <p
-        class="truncate pr-14 text-sm"
-        :class="isTitlePending ? 'text-neutral-400 italic' : 'text-neutral-700'"
+      <button
+        type="button"
+        data-testid="conversation-select"
+        class="block w-full truncate rounded-[var(--radius-button)] py-2 pr-16 pl-3 text-left"
+        :class="isTitlePending ? 'text-ink-faint italic' : isActive ? 'font-medium text-ink' : 'text-ink-muted'"
+        :aria-current="isActive ? 'page' : undefined"
+        :title="displayTitle"
       >
-        <!-- 待生成标题时显示细微的脉冲动画指示 -->
-        <span
-          v-if="isTitlePending && isActive"
-          class="mr-1.5 inline-block size-1.5 animate-pulse rounded-full bg-brand-400 align-middle"
-          aria-hidden="true"
-        />
         {{ displayTitle }}
-      </p>
+      </button>
 
-      <!-- Hover action buttons -->
       <div
-        class="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+        data-testid="conversation-actions"
+        class="absolute top-1/2 right-1 flex -translate-y-1/2 items-center gap-0.5 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+        :class="isActive ? 'opacity-100' : 'opacity-0'"
       >
         <button
           data-testid="rename-conversation-btn"
-          class="rounded p-1.5 text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-600"
+          type="button"
+          class="rounded p-1.5 text-ink-faint transition-colors hover:bg-neutral-200 hover:text-ink"
+          aria-label="重命名对话"
           title="重命名"
           @click.stop="startRename"
         >
-          <svg
-            class="size-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
           </svg>
         </button>
         <button
+          ref="deleteButtonRef"
           data-testid="delete-conversation-btn"
-          class="rounded p-1.5 text-neutral-400 transition-colors hover:bg-red-100 hover:text-red-600"
+          type="button"
+          class="rounded p-1.5 text-ink-faint transition-colors hover:bg-red-100 hover:text-red-700"
+          aria-label="删除对话"
           title="删除"
-          @click.stop="handleDelete"
+          @click.stop="confirmingDelete = true"
         >
-          <svg
-            class="size-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
           </svg>
         </button>
       </div>
     </template>
 
-    <!-- Rename input -->
-    <template v-else>
-      <input
-        ref="renameInputRef"
-        v-model="renameValue"
-        type="text"
-        class="w-full rounded-md border border-brand-400 bg-white px-2 py-1 text-sm text-neutral-900 outline-none ring-1 ring-brand-400"
-        data-testid="rename-conversation-input"
-        @keydown="handleRenameKeydown"
-        @blur="confirmRename"
+    <input
+      v-else
+      ref="renameInputRef"
+      v-model="renameValue"
+      type="text"
+      aria-label="对话标题"
+      class="w-full rounded-[var(--radius-button)] border border-brand-400 bg-surface px-2.5 py-1.5 text-sm text-ink outline-none ring-1 ring-brand-400"
+      data-testid="rename-conversation-input"
+      @click.stop
+      @keydown="handleRenameKeydown"
+      @blur="confirmRename"
+    />
+
+    <Teleport to="body">
+      <ConfirmDialog
+        :visible="confirmingDelete"
+        title="删除这段对话？"
+        :message="`「${displayTitle}」及其全部问答记录将被删除，且无法恢复。`"
+        confirm-text="删除"
+        danger
+        @confirm="confirmDelete"
+        @cancel="closeConfirm"
       />
-    </template>
+    </Teleport>
   </div>
 </template>

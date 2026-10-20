@@ -1,0 +1,14 @@
+
+> knowra-front@0.1.0 build
+> vue-tsc -b && vite build
+
+vite v8.0.12 building client environment for production...
+
+transforming...✓ 103 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.51 kB │ gzip:  0.33 kB
+dist/assets/index-DM-fI2Mb.css   49.07 kB │ gzip:  9.97 kB
+dist/assets/index-DTOpYbx0.js   275.86 kB │ gzip: 95.09 kB
+
+✓ built in 1.63s

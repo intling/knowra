@@ -33,10 +33,17 @@ const renderedMarkdown = computed(() => {
   return DOMPurify.sanitize(raw)
 })
 
+const tokenDetail = computed(() => {
+  const t = props.answerTokens
+  if (!t) return ""
+  return `提示词 ${t.prompt_tokens.toLocaleString()} + 生成 ${t.completion_tokens.toLocaleString()} = ${t.total_tokens.toLocaleString()} tokens（prompt ${t.prompt_tokens} / completion ${t.completion_tokens}）`
+})
+
 const isDegraded = computed(
-  () => props.generationError !== null
-    && props.generationError !== "Chat generation is disabled"
-    && (!props.answer || props.answer.length === 0),
+  () =>
+    props.generationError !== null &&
+    props.generationError !== "Chat generation is disabled" &&
+    (!props.answer || props.answer.length === 0),
 )
 
 async function handleCopy() {
@@ -111,7 +118,9 @@ function attachCodeCopyButtons() {
 function removeCodeCopyButtons() {
   if (!answerContentRef.value) return
 
-  const wrappers = answerContentRef.value.querySelectorAll(".code-block-wrapper")
+  const wrappers = answerContentRef.value.querySelectorAll(
+    ".code-block-wrapper",
+  )
   wrappers.forEach((wrapper) => {
     const pre = wrapper.querySelector("pre")
     if (pre && wrapper.parentNode) {
@@ -139,110 +148,72 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
-    <!-- Header -->
-    <div
-      class="flex flex-wrap items-center justify-between gap-2 pb-3"
+  <article data-testid="answer-panel" class="flex min-w-0 gap-3 sm:gap-4">
+    <!-- 「知」字印章：标识这是知寻基于资料给出的回答 -->
+    <span
+      class="mt-0.5 flex size-7 shrink-0 select-none items-center justify-center rounded-md bg-brand-700 font-display text-sm font-semibold text-white"
+      aria-hidden="true"
+      >知</span
     >
-      <h3 class="font-display text-sm font-semibold text-neutral-700">
-        <span class="mr-1.5" aria-hidden="true">🤖</span>AI 回答
-      </h3>
-      <div class="flex items-center gap-2">
-        <span
-          v-if="chatModel"
-          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
-        >
-          {{ chatModel }}
-        </span>
-        <button
-          data-testid="copy-answer-button"
-          class="rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 transition hover:border-neutral-400 hover:text-neutral-700"
-          type="button"
-          :disabled="!answer"
-          @click="handleCopy"
-        >
-          {{ copyLabel }}
-        </button>
-      </div>
-    </div>
 
-    <!-- Degraded state: generation error without answer -->
-    <div
-      v-if="isDegraded"
-      data-testid="answer-degraded"
-      class="py-2"
-    >
-      <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-        <p class="text-sm font-medium text-amber-800">AI 回答生成失败</p>
-        <p class="mt-1 text-xs text-amber-600">
-          {{ generationError }}
-        </p>
-        <p class="mt-2 text-xs text-amber-500">
-          以下为检索到的相关内容，您仍可查看检索结果了解上下文。
-        </p>
-      </div>
-    </div>
+    <div class="min-w-0 flex-1">
+      <h3 class="sr-only">AI 回答{{ chatModel ? `（${chatModel}）` : "" }}</h3>
 
-    <!-- Chat disabled state -->
-    <div
-      v-else-if="generationError === 'Chat generation is disabled'"
-      data-testid="answer-disabled"
-      class="py-2"
-    >
-      <div class="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
-        <p class="text-sm text-neutral-600">
+      <div
+        v-if="isDegraded"
+        data-testid="answer-degraded"
+        class="rounded-[var(--radius-button)] border-l-2 border-amber-500 bg-amber-50/70 px-3.5 py-2.5"
+      >
+        <p class="text-sm font-medium text-amber-900">AI 回答生成失败</p>
+        <p class="mt-0.5 text-xs text-amber-800 [overflow-wrap:anywhere]">{{ generationError }}</p>
+        <p class="mt-1.5 text-xs text-amber-700">下方仍列出了检索到的资料片段，可直接核对原文。</p>
+      </div>
+
+      <div
+        v-else-if="generationError === 'Chat generation is disabled'"
+        data-testid="answer-disabled"
+        class="rounded-[var(--radius-button)] border-l-2 border-line-strong bg-paper-deep px-3.5 py-2.5"
+      >
+        <p class="text-sm text-ink-muted">
           {{ answer || "AI 回答生成功能未启用，请联系管理员配置对话模型。" }}
         </p>
       </div>
+
+      <template v-else-if="answer">
+        <!-- eslint-disable vue/no-v-html -->
+        <div
+          ref="answerContentRef"
+          data-testid="answer-content"
+          class="prose-knowra"
+          v-html="renderedMarkdown"
+        ></div>
+        <!-- eslint-enable vue/no-v-html -->
+
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-faint">
+          <button
+            data-testid="copy-answer-button"
+            class="-ml-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink"
+            type="button"
+            :disabled="!answer"
+            @click="handleCopy"
+          >
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="12" height="12" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            {{ copyLabel }}
+          </button>
+          <span data-testid="citation-stats" class="tabular-nums">
+            引用 {{ totalResults }} 个分块 · 来自 {{ documentCount }} 个文档
+          </span>
+          <span v-if="answerTokens" data-testid="token-stats" class="tabular-nums" :title="tokenDetail">
+            <span data-testid="token-total">{{ answerTokens.total_tokens.toLocaleString() }} tokens</span>
+            <span class="sr-only">，{{ tokenDetail }}</span>
+          </span>
+        </div>
+      </template>
+
+      <p v-else class="py-2 text-sm text-ink-faint">AI 未生成回答</p>
     </div>
-
-    <!-- Answer content -->
-    <div
-      v-else-if="answer"
-    >
-      <!-- eslint-disable vue/no-v-html -->
-      <div
-        ref="answerContentRef"
-        data-testid="answer-content"
-        class="prose prose-sm prose-knowra"
-        v-html="renderedMarkdown"
-      ></div>
-      <!-- eslint-enable vue/no-v-html -->
-
-      <!-- Stats footer -->
-      <div
-        class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-neutral-100 pt-3 text-xs text-neutral-400"
-      >
-        <!-- Citation stats -->
-        <span data-testid="citation-stats" class="inline-flex items-center gap-1">
-          <svg class="size-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke-linecap="round" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round" />
-          </svg>
-          引用 {{ totalResults }} 个分块 · 来自 {{ documentCount }} 个文档
-        </span>
-
-        <!-- Token stats -->
-        <span
-          v-if="answerTokens"
-          data-testid="token-stats"
-          class="inline-flex items-center gap-1"
-        >
-          <svg class="size-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          Token: {{ answerTokens.prompt_tokens }} prompt + {{ answerTokens.completion_tokens }} completion = {{ answerTokens.total_tokens }} total
-        </span>
-      </div>
-    </div>
-
-    <!-- Empty state: response received but no answer produced -->
-    <div
-      v-else
-      class="flex items-center justify-center py-10"
-    >
-      <p class="text-sm text-neutral-400">AI 未生成回答</p>
-    </div>
-  </div>
+  </article>
 </template>

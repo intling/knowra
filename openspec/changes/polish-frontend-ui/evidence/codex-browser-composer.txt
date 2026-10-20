@@ -1,0 +1,24 @@
+{
+  "result": "PASS",
+  "scenarios": [
+    "new-turn-visible",
+    "preserve-reading-position",
+    "ime-enter",
+    "ordinary-enter"
+  ],
+  "secondTurn": {
+    "answerTop": 631.921875,
+    "answerBottom": 1084.421875,
+    "viewportTop": 52,
+    "viewportBottom": 701.859375,
+    "scrollTop": 456
+  },
+  "pageErrors": []
+}{
+  "result": "PASS",
+  "scenarios": [
+    "normal-motion-shell-stable"
+  ],
+  "turns": 3,
+  "pageErrors": []
+}

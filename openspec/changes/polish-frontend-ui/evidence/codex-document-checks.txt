@@ -1,0 +1,6 @@
+Staged scope: 88 frontend, documentation and OpenSpec files; scratch artifacts excluded
+Document links: 34 local targets exist in the commit scope
+Spec sync frontend-redesign: 10 delta requirements synchronized; unaffected requirements preserved
+Spec sync chat-recall-ui: 9 delta requirements synchronized; unaffected requirements preserved
+OpenSpec tasks: 53 complete, 0 pending
+git diff --cached --check: exit 0

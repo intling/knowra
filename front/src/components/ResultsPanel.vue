@@ -2,6 +2,7 @@
 import { computed, ref } from "vue"
 
 import type { SearchResultItem } from "../api/search"
+import PanelSection from "./shared/PanelSection.vue"
 
 const props = withDefaults(
   defineProps<{
@@ -9,21 +10,16 @@ const props = withDefaults(
     searchedDocumentCount?: number
     totalSearched?: number
     searchTimeMs?: number
+    variant?: "card" | "flat"
   }>(),
   {
     results: () => [],
     searchedDocumentCount: 0,
     totalSearched: 0,
     searchTimeMs: 0,
+    variant: "card",
   },
 )
-
-// ── Collapse toggle ──
-const isExpanded = ref(false)
-
-function toggleExpand() {
-  isExpanded.value = !isExpanded.value
-}
 
 // ── Format helper ──
 function formatMs(ms: number): string {
@@ -55,7 +51,10 @@ interface DocGroup {
 }
 
 const docGroups = computed<DocGroup[]>(() => {
-  const map = new Map<string, { item: SearchResultItem; globalIndex: number }[]>()
+  const map = new Map<
+    string,
+    { item: SearchResultItem; globalIndex: number }[]
+  >()
   props.results.forEach((item, idx) => {
     const name = item.document_name || "未知文档"
     if (!map.has(name)) map.set(name, [])
@@ -67,24 +66,19 @@ const docGroups = computed<DocGroup[]>(() => {
   }))
 })
 
-// ── Score bar width (invert cosine distance for visual similarity) ──
-const maxScore = computed(() => {
-  if (props.results.length === 0) return 1
-  return Math.max(...props.results.map((r) => r.score), 0.001)
-})
+// ── 相似度分数条：similarity = clamp(1 − 余弦距离, 0, 1) ──
+function similarity(score: number): number {
+  return Math.min(1, Math.max(0, 1 - score))
+}
 
 function scoreBarWidth(score: number): string {
-  // Normalize: lower score = higher similarity = wider bar
-  // score / maxScore ∈ (0, 1]; bar = (1 - score/maxScore) * 100
-  const pct = Math.max(0, (1 - score / maxScore.value) * 100)
-  return `${pct.toFixed(0)}%`
+  return `${Math.round(similarity(score) * 100)}%`
 }
 
 function scoreBarColor(score: number): string {
-  // lower score (more similar) → green; higher → neutral
-  const ratio = maxScore.value > 0 ? score / maxScore.value : 1
-  if (ratio < 0.33) return "bg-emerald-500"
-  if (ratio < 0.66) return "bg-amber-500"
+  const sim = similarity(score)
+  if (sim >= 0.75) return "bg-brand-600"
+  if (sim >= 0.5) return "bg-amber-500"
   return "bg-neutral-400"
 }
 
@@ -118,46 +112,46 @@ const scoreBins = computed(() => {
 </script>
 
 <template>
-  <div>
-    <!-- Toggle header -->
-    <button
-      data-testid="results-toggle"
-      class="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-neutral-50"
-      type="button"
-      @click="toggleExpand"
-    >
-      <div class="flex items-center gap-2">
-        <h3 class="font-display text-sm font-semibold text-neutral-700">
-          <span class="mr-1.5" aria-hidden="true">📊</span>检索结果
-        </h3>
-        <span
-          v-if="results.length > 0"
-          class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
-        >
-          {{ results.length }} 条
-        </span>
-      </div>
+  <PanelSection
+    title="检索结果"
+    collapsible
+    :default-expanded="false"
+    testid="results"
+    :variant="variant"
+  >
+    <template #icon>
       <svg
-        class="size-4 text-neutral-400 transition-transform"
-        :class="{ 'rotate-180': isExpanded }"
+        class="size-3.5"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
+        aria-hidden="true"
       >
-        <path d="m6 9 6 6 6-6" />
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
       </svg>
-    </button>
+    </template>
+    <template #badge>
+      <span
+        v-if="results.length > 0"
+        class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500"
+      >
+        {{ results.length }} 条
+      </span>
+    </template>
 
-    <!-- Expanded content -->
-    <div v-if="isExpanded" class="border-t border-neutral-100">
+    <div data-testid="results-content">
       <!-- Search summary bar -->
       <div
-        class="flex flex-wrap items-center gap-x-5 gap-y-1 px-5 py-3 text-xs text-neutral-500"
+        class="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-3 text-xs text-neutral-500"
       >
-        <span data-testid="search-summary" class="inline-flex items-center gap-1">
+        <span
+          data-testid="search-summary"
+          class="inline-flex items-center gap-1"
+        >
           <svg
             class="size-3.5"
             aria-hidden="true"
@@ -167,9 +161,14 @@ const scoreBins = computed(() => {
             stroke-width="2"
           >
             <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" stroke-linecap="round" stroke-linejoin="round" />
+            <path
+              d="m21 21-4.3-4.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
-          搜索 {{ searchedDocumentCount }} 个文档 · {{ totalSearched }} 个向量 · 耗时
+          搜索 {{ searchedDocumentCount }} 个文档 · {{ totalSearched }} 个向量 ·
+          耗时
           {{ formatMs(searchTimeMs) }}
         </span>
       </div>
@@ -178,9 +177,11 @@ const scoreBins = computed(() => {
       <div
         v-if="scoreBins.length > 0"
         data-testid="score-distribution"
-        class="border-t border-neutral-100 px-5 py-3"
+        class="border-t border-neutral-100 px-4 py-3"
       >
-        <p class="mb-2 text-xs font-medium text-neutral-500">分数分布（余弦距离）</p>
+        <p class="mb-2 text-xs font-medium text-neutral-500">
+          分数分布（余弦距离，越小越相似）
+        </p>
         <div class="flex items-end gap-1" style="height: 48px">
           <div
             v-for="(bin, i) in scoreBins"
@@ -210,7 +211,7 @@ const scoreBins = computed(() => {
       <div
         v-if="results.length === 0"
         data-testid="results-empty"
-        class="border-t border-neutral-100 px-5 py-10 text-center"
+        class="border-t border-neutral-100 px-4 py-10 text-center"
       >
         <p class="text-sm text-neutral-400">未找到相关结果</p>
       </div>
@@ -223,7 +224,7 @@ const scoreBins = computed(() => {
           class="[&+&]:border-t border-neutral-100"
         >
           <!-- Document group header -->
-          <div class="flex items-center gap-2 bg-neutral-50 px-5 py-2">
+          <div class="flex items-center gap-2 bg-neutral-50 px-4 py-2">
             <svg
               class="size-3.5 text-neutral-400"
               aria-hidden="true"
@@ -237,12 +238,18 @@ const scoreBins = computed(() => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
-              <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round" />
+              <polyline
+                points="14 2 14 8 20 8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
             <span class="text-xs font-medium text-neutral-600">
               {{ group.documentName }}
             </span>
-            <span class="rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] text-neutral-500">
+            <span
+              class="rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] text-neutral-500"
+            >
               {{ group.results.length }} 条
             </span>
           </div>
@@ -253,7 +260,7 @@ const scoreBins = computed(() => {
               v-for="{ item, globalIndex } in group.results"
               :key="item.chunk_id"
               data-testid="result-item"
-              class="border-t border-neutral-50 px-5 py-3"
+              class="border-t border-neutral-50 px-4 py-3"
             >
               <!-- Rank + score bar -->
               <div class="flex items-center gap-3">
@@ -263,15 +270,21 @@ const scoreBins = computed(() => {
                   {{ item.rank }}
                 </span>
                 <div class="flex min-w-0 flex-1 items-center gap-2">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-neutral-100">
+                  <div
+                    class="h-2 flex-1 overflow-hidden rounded-full bg-neutral-100"
+                  >
                     <div
+                      data-testid="result-score-bar"
                       :class="scoreBarColor(item.score)"
                       class="h-full rounded-full transition-all"
                       :style="{ width: scoreBarWidth(item.score) }"
                     />
                   </div>
-                  <span class="shrink-0 text-xs tabular-nums text-neutral-400">
-                    {{ item.score.toFixed(4) }}
+                  <span
+                    class="shrink-0 text-xs tabular-nums text-neutral-500"
+                    :title="`余弦距离 ${item.score.toFixed(4)}`"
+                  >
+                    相似度 {{ similarity(item.score).toFixed(2) }}
                   </span>
                 </div>
               </div>
@@ -338,7 +351,9 @@ const scoreBins = computed(() => {
                   {{ item.heading_path.join(" › ") }}
                 </span>
                 <span
-                  v-if="item.token_count !== null && item.token_count !== undefined"
+                  v-if="
+                    item.token_count !== null && item.token_count !== undefined
+                  "
                   class="inline-flex items-center gap-1"
                 >
                   <svg
@@ -363,5 +378,5 @@ const scoreBins = computed(() => {
         </div>
       </div>
     </div>
-  </div>
+  </PanelSection>
 </template>

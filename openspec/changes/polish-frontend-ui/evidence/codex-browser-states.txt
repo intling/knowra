@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "scenarios": [
+    "verification-success-mobile",
+    "verification-empty",
+    "search-error-recovery",
+    "no-sources-reduced-motion"
+  ]
+}

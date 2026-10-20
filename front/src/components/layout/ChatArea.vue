@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue"
+import { computed, nextTick, ref, watch } from "vue"
 
 import { uploadFile } from "../../api/uploads"
 import { searchChunks, type SearchResponse } from "../../api/search"
@@ -7,9 +7,8 @@ import { createLogger, getRingBuffer } from "../../shared/logger"
 import { useChatStore, type ChatBubble } from "../../stores/chat"
 import ChatInput, { type AttachedFile } from "../../components/ChatInput.vue"
 import AnswerPanel from "../../components/AnswerPanel.vue"
-import PromptPreview from "../../components/PromptPreview.vue"
-import ResultsPanel from "../../components/ResultsPanel.vue"
-import RewritePanel from "../../components/RewritePanel.vue"
+import RetrievalDetails from "../../components/chat/RetrievalDetails.vue"
+import SourceList from "../../components/chat/SourceList.vue"
 import WelcomeView from "../../components/chat/WelcomeView.vue"
 import UserMessage from "../../components/chat/UserMessage.vue"
 import ChatTopNav from "../../components/chat/ChatTopNav.vue"
@@ -31,6 +30,20 @@ const query = ref("")
 const topK = ref(5)
 const files = ref<AttachedFile[]>([])
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const chatInputRef = ref<InstanceType<typeof ChatInput> | null>(null)
+const scrollRef = ref<HTMLElement | null>(null)
+
+/** 主动发送后把最新一轮问答滚入视野；回答异步返回时不滚动。 */
+async function revealTurn(bubbleId: string) {
+  await nextTick()
+  const container = scrollRef.value
+  const el = container?.querySelector<HTMLElement>(`[data-turn-id="${bubbleId}"]`)
+  if (!container || !el) return
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+  // 只滚动消息容器本身；scrollIntoView 会连带滚动 overflow-hidden 的外层壳
+  const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 16
+  container.scrollTo?.({ top: Math.max(0, top), behavior: reduce ? "auto" : "smooth" })
+}
 const forceReplace = ref(false)
 
 /** 标记已触发自动命名的 store 对话 ID，避免重复调用 */
@@ -116,6 +129,18 @@ function ensureActiveConversation(): string {
   if (chatStore.activeConversationId) return chatStore.activeConversationId
   const conv = chatStore.addConversation()
   return conv.id
+}
+
+/** 本轮回答实际引用的文档数（按 parsed_document_id 去重）。 */
+function citedDocumentCount(response: SearchResponse): number {
+  return new Set(response.results.map((r) => r.parsed_document_id)).size
+}
+
+/** 推荐问题：只填入输入框并聚焦，由用户确认后发送。 */
+async function handlePickSuggestion(text: string) {
+  query.value = text
+  await nextTick()
+  chatInputRef.value?.focus()
 }
 
 // ── File handling ──────────────────────────────────────────────────────────
@@ -206,6 +231,7 @@ async function handleSend() {
 
   query.value = ""
   files.value = []
+  void revealTurn(bubbleId)
 
   // Transition to "generating" after 2s for UX feedback。
   //  写入气泡的 stage 字段（而非组件局部状态），这样即使切换对话，
@@ -258,108 +284,96 @@ async function handleSend() {
 </script>
 
 <template>
-  <section class="flex min-h-0 flex-1 flex-col">
-    <!-- ── 顶部导航栏：显示当前对话模型 ── -->
+  <section class="paper-atmosphere flex min-h-0 flex-1 flex-col">
     <ChatTopNav :model-name="currentModelName" />
 
-    <!-- ── 内容滚动区域 ── -->
-    <div class="flex-1 overflow-y-auto scrollbar-thin">
-      <div class="main-container py-6">
-        <!-- WelcomeView: empty state -->
+    <div ref="scrollRef" data-testid="chat-scroll" class="flex-1 overflow-y-auto scrollbar-thin">
+      <div class="main-container pt-4 pb-8">
         <Transition name="welcome-fade" appear>
-          <WelcomeView v-if="showWelcome" />
+          <WelcomeView
+            v-if="showWelcome"
+            @upload="handleAddFiles"
+            @pick-suggestion="handlePickSuggestion"
+          />
         </Transition>
 
-        <!-- Conversation history (store-backed, 支持跨会话回溯) -->
-        <TransitionGroup
-          v-if="hasBubbles"
-          name="message-fade"
-          tag="div"
-          class="space-y-6"
-        >
+        <TransitionGroup v-if="hasBubbles" name="message-fade" tag="div" class="space-y-10 pt-4">
           <div
             v-for="bubble in bubbles"
             :key="bubble.id"
-            class="space-y-4"
+            :data-turn-id="bubble.id"
+            class="scroll-mt-4 space-y-5"
           >
-            <!-- User message bubble -->
             <UserMessage :content="bubble.query" :file-names="bubble.fileNames" />
 
-            <!-- Pending skeleton: shown while a bubble is awaiting its response.
-                 基于气泡自身状态（response/error 均为空）判断，而非组件级 loading 标志，
-                 从而在切换对话后仍能正确显示未完成气泡的骨架框。 -->
-            <div
-              v-if="!bubble.response && !bubble.error"
-              class="animate-pulse rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
-            >
-              <div class="mb-3 h-4 w-20 rounded bg-neutral-200" />
-              <div class="space-y-2">
-                <div class="h-3 w-full rounded bg-neutral-100" />
-                <div class="h-3 w-5/6 rounded bg-neutral-100" />
-                <div class="h-3 w-4/6 rounded bg-neutral-100" />
+            <!-- 等待回答：阶段文案显示在回答位置，并由读屏播报 -->
+            <div v-if="!bubble.response && !bubble.error" class="flex gap-3 sm:gap-4">
+              <span
+                class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-700/85 font-display text-sm font-semibold text-white"
+                aria-hidden="true"
+                >知</span
+              >
+              <div class="min-w-0 flex-1">
+                <p
+                  data-testid="answer-pending"
+                  role="status"
+                  aria-live="polite"
+                  class="text-sm text-ink-muted"
+                >
+                  {{ bubble.stage === "generating" ? "正在生成回答…" : "正在检索资料…" }}
+                </p>
+                <div class="mt-3 space-y-2 motion-safe:animate-pulse" aria-hidden="true">
+                  <div class="h-2.5 w-full rounded bg-paper-deep" />
+                  <div class="h-2.5 w-5/6 rounded bg-paper-deep" />
+                  <div class="h-2.5 w-3/5 rounded bg-paper-deep" />
+                </div>
               </div>
             </div>
 
-            <!-- Error state -->
             <div
               v-if="bubble.error && !bubble.response"
               data-testid="chat-error"
-              class="rounded-lg border border-red-200 bg-red-50 p-4"
+              role="alert"
+              class="ml-10 rounded-[var(--radius-button)] border-l-2 border-red-600 bg-red-50/70 px-3.5 py-2.5 sm:ml-11"
             >
-              <p class="text-sm font-medium text-red-800">请求失败</p>
-              <p class="mt-1 text-sm text-red-600">{{ bubble.error }}</p>
+              <p class="text-sm font-medium text-red-900">请求失败</p>
+              <p class="mt-0.5 text-sm text-red-800 [overflow-wrap:anywhere]">{{ bubble.error }}</p>
+              <p class="mt-1 text-xs text-red-700/80">请稍后重新发送这个问题。</p>
             </div>
 
-            <!-- Rewrite panel (above AnswerPanel, only when rewrite is enabled) -->
-            <RewritePanel
-              v-if="bubble.response && bubble.response.rewrite_info !== null"
-              :rewrite-info="bubble.response.rewrite_info"
-            />
-
-            <!-- Answer panel -->
-            <AnswerPanel
-              v-if="bubble.response"
-              :answer="bubble.response.answer"
-              :answer-tokens="bubble.response.answer_tokens"
-              :chat-model="bubble.response.chat_model"
-              :total-results="bubble.response.results.length"
-              :document-count="bubble.response.searched_document_count"
-              :generation-error="bubble.response.generation_error"
-            />
-
-            <!-- Results panel -->
-            <ResultsPanel
-              v-if="bubble.response && bubble.response.results.length > 0"
-              :results="bubble.response.results"
-              :searched-document-count="bubble.response.searched_document_count"
-              :total-searched="bubble.response.total_searched"
-              :search-time-ms="bubble.response.search_time_ms"
-            />
-
-            <!-- Prompt preview panel -->
-            <PromptPreview
-              v-if="bubble.response && bubble.response.prompt_messages.length > 0"
-              :messages="bubble.response.prompt_messages"
-            />
+            <template v-if="bubble.response">
+              <AnswerPanel
+                :answer="bubble.response.answer"
+                :answer-tokens="bubble.response.answer_tokens"
+                :chat-model="bubble.response.chat_model"
+                :total-results="bubble.response.results.length"
+                :document-count="citedDocumentCount(bubble.response)"
+                :generation-error="bubble.response.generation_error"
+              />
+              <div class="space-y-3 pl-10 sm:pl-11">
+                <SourceList :results="bubble.response.results" />
+                <RetrievalDetails :response="bubble.response" />
+              </div>
+            </template>
           </div>
         </TransitionGroup>
-
       </div>
     </div>
 
-    <!-- Hidden file input -->
     <input
       ref="fileInputRef"
       type="file"
       multiple
       class="hidden"
+      aria-hidden="true"
+      tabindex="-1"
       @change="handleFileChange"
     />
 
-    <!-- ── 底部输入区：sticky 固定在底部，与内容区宽度严格一致 ── -->
-    <div class="sticky bottom-0 z-10">
-      <div class="main-container py-3">
+    <div class="shrink-0 bg-gradient-to-t from-paper via-paper to-paper/0 pt-2">
+      <div class="main-container pb-3 sm:pb-4">
         <ChatInput
+          ref="chatInputRef"
           v-model:model-value="query"
           v-model:top-k="topK"
           v-model:force-replace="forceReplace"
@@ -370,16 +384,17 @@ async function handleSend() {
           @add-files="handleAddFiles"
           @remove-file="handleRemoveFile"
         />
+        <p class="mt-1.5 text-center text-[11px] text-ink-faint">回答依据你的资料生成，请以来源原文为准。</p>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-/* ── 统一宽度约束：内容区 & 底部输入区共用 ── */
+/* 内容列与输入区共用同一宽度，左右对齐 */
 .main-container {
-  max-width: 900px;
   width: 100%;
+  max-width: 47.5rem;
   margin: 0 auto;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
@@ -387,37 +402,25 @@ async function handleSend() {
 
 @media (max-width: 767px) {
   .main-container {
-    max-width: 100%;
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
 }
 
-/* ── 消息淡入动画 ── */
 .message-fade-enter-active {
-  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-}
-.message-fade-leave-active {
-  transition: opacity 0.25s ease-in, transform 0.25s ease-in;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 .message-fade-enter-from {
   opacity: 0;
-  transform: translateY(12px);
-}
-.message-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-.message-fade-move {
-  transition: transform 0.3s ease;
+  transform: translateY(6px);
 }
 
-/* ── 欢迎页淡入动画 ── */
 .welcome-fade-enter-active {
-  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transition: opacity 0.3s ease-out;
 }
 .welcome-fade-enter-from {
   opacity: 0;
-  transform: translateY(8px);
 }
 </style>

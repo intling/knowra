@@ -416,9 +416,156 @@ describe("ChatInput 附件功能", () => {
         },
       })
 
+      // Top-K 滑块收进设置弹层，需先打开
+      await wrapper.find('[data-testid="settings-button"]').trigger("click")
       const slider = wrapper.find("#topk-slider")
       const el = slider.element as HTMLInputElement
       expect(el.disabled).toBe(true)
     })
+
+    it("设置弹层默认关闭，点击齿轮展开", async () => {
+      const { default: ChatInput } = await import("../ChatInput.vue")
+      const wrapper = mount(ChatInput, {
+        props: {
+          modelValue: "",
+          topK: 5,
+          loading: false,
+          files: [],
+        },
+      })
+
+      expect(wrapper.find('[data-testid="settings-popover"]').exists()).toBe(false)
+      await wrapper.find('[data-testid="settings-button"]').trigger("click")
+      expect(wrapper.find('[data-testid="settings-popover"]').exists()).toBe(true)
+    })
+  })
+})
+
+// ── 重构 RED：设置弹层键盘行为、Top-K 可见与 focus 能力 ───────────────────
+
+describe("ChatInput 重构交互", () => {
+  // 验证设置按钮上直接可见当前 Top-K，无需展开弹层
+  it("设置按钮显示当前 Top-K 数值", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "", topK: 12, loading: false, files: [] },
+    })
+
+    expect(wrapper.find('[data-testid="settings-button"]').text()).toContain("12")
+  })
+
+  // 验证弹层为可访问对话框
+  it("设置弹层带 role=dialog 与中文 aria-label", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "", topK: 5, loading: false, files: [] },
+    })
+
+    await wrapper.find('[data-testid="settings-button"]').trigger("click")
+    const popover = wrapper.find('[data-testid="settings-popover"]')
+    expect(popover.attributes("role")).toBe("dialog")
+    expect(popover.attributes("aria-label")).toBe("检索设置")
+  })
+
+  // 验证 Esc 关闭弹层并把焦点还给设置按钮
+  it("按 Esc 关闭设置弹层并把焦点还给设置按钮", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "", topK: 5, loading: false, files: [] },
+      attachTo: document.body,
+    })
+
+    await wrapper.find('[data-testid="settings-button"]').trigger("click")
+    await wrapper.find('[data-testid="settings-popover"]').trigger("keydown", { key: "Escape" })
+
+    expect(wrapper.find('[data-testid="settings-popover"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(wrapper.find('[data-testid="settings-button"]').element)
+    expect(wrapper.find('[data-testid="settings-button"]').attributes("aria-expanded")).toBe("false")
+    wrapper.unmount()
+  })
+
+  // 验证组件暴露 focus()，供推荐问题填入后聚焦输入框
+  it("暴露 focus() 使文本框获得焦点", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "", topK: 5, loading: false, files: [] },
+      attachTo: document.body,
+    })
+
+    ;(wrapper.vm as unknown as { focus: () => void }).focus()
+
+    expect(document.activeElement).toBe(wrapper.find('[data-testid="chat-input"]').element)
+    wrapper.unmount()
+  })
+
+  // 验证发送按钮为带可访问名称的图标按钮，加载阶段文案仍可被读屏读出
+  it("加载中发送按钮保留可访问名称与阶段读屏文本", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "q", topK: 5, loading: true, loadingStage: "generating", files: [] },
+    })
+
+    const send = wrapper.find('[data-testid="send-button"]')
+    expect(send.attributes("aria-label")).toBe("发送")
+    expect(send.attributes("disabled")).toBeDefined()
+    const srText = send.find(".sr-only")
+    expect(srText.exists(), "图标按钮应以 sr-only 文本向读屏提供加载阶段").toBe(true)
+    expect(srText.text()).toContain("生成回答中")
+  })
+
+  // 验证输入框与工具栏是上下两行结构（文本框独占一行，修复移动端文本区仅 164px 的问题）
+  it("文本框独占一行，附件/设置/发送位于下方工具栏", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "", topK: 5, loading: false, files: [] },
+    })
+
+    const toolbar = wrapper.find('[data-testid="chat-input-toolbar"]')
+    expect(toolbar.exists()).toBe(true)
+    expect(toolbar.find('[data-testid="chat-input"]').exists()).toBe(false)
+    expect(toolbar.find('[data-testid="attach-button"]').exists()).toBe(true)
+    expect(toolbar.find('[data-testid="settings-button"]').exists()).toBe(true)
+    expect(toolbar.find('[data-testid="send-button"]').exists()).toBe(true)
+  })
+
+  // 验证输入法组字时按 Enter（确认候选词）不发送，草稿保留
+  it("输入法组字中的 Enter 不发送", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "如何", topK: 5, loading: false, files: [] },
+    })
+
+    const textarea = wrapper.find('[data-testid="chat-input"]')
+    await textarea.trigger("keydown", { key: "Enter", code: "Enter", isComposing: true })
+    await textarea.trigger("keydown", { key: "Enter", keyCode: 229 })
+
+    expect(wrapper.emitted("send")).toBeUndefined()
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined()
+  })
+
+  // 验证组字结束后的普通 Enter 仍然发送
+  it("非组字的 Enter 仍然发送", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "如何", topK: 5, loading: false, files: [] },
+    })
+
+    await wrapper.find('[data-testid="chat-input"]').trigger("keydown", { key: "Enter", isComposing: false })
+
+    expect(wrapper.emitted("send")).toHaveLength(1)
+  })
+
+  // 验证主工具栏使用直白中文「检索 N 段」，不出现 Top-K 术语；高级设置标签仍注明 Top-K
+  it("设置按钮显示「检索 N 段」且不出现 Top-K", async () => {
+    const { default: ChatInput } = await import("../ChatInput.vue")
+    const wrapper = mount(ChatInput, {
+      props: { modelValue: "", topK: 5, loading: false, files: [] },
+    })
+
+    const button = wrapper.find('[data-testid="settings-button"]')
+    expect(button.text().replace(/\s+/g, " ")).toContain("检索 5 段")
+    expect(button.text()).not.toContain("Top-K")
+    await button.trigger("click")
+    expect(wrapper.find('label[for="topk-slider"]').text()).toContain("Top-K")
   })
 })
