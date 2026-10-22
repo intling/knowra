@@ -43,6 +43,7 @@ export interface Conversation {
 }
 
 interface ChatState {
+  ownerId: string | null
   conversations: Conversation[]
   activeConversationId: string | null
 }
@@ -54,7 +55,9 @@ interface PersistedChatData {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "knowra:chat"
+const LEGACY_STORAGE_KEY = "knowra:chat"
+export const LEGACY_DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
+const storageKey = (id: string) => `knowra:chat:v2:${id}`
 
 /** 自动提炼对话标题的最大字符数（中文约 15-18 字） */
 const AUTO_TITLE_MAX_LENGTH = 18
@@ -121,18 +124,21 @@ function timestampTitle(): string {
   return `${month}月${day}日 ${hours}:${minutes}`
 }
 
-function loadFromStorage(): PersistedChatData {
+function loadFromStorage(ownerId: string): PersistedChatData {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(storageKey(ownerId))
     if (!raw) return { conversations: [], activeConversationId: null }
 
     const parsed = JSON.parse(raw) as PersistedChatData
 
     // 验证数据结构
     if (!Array.isArray(parsed.conversations)) {
-      log().warn("localStorage 对话数据格式异常（conversations 非数组），重置为空列表", {
-        module_name: "chat-store",
-      })
+      log().warn(
+        "localStorage 对话数据格式异常（conversations 非数组），重置为空列表",
+        {
+          module_name: "chat-store",
+        },
+      )
       return { conversations: [], activeConversationId: null }
     }
 
@@ -158,12 +164,13 @@ function loadFromStorage(): PersistedChatData {
 }
 
 function saveToStorage(state: ChatState): void {
+  if (!state.ownerId) return
   try {
     const data: PersistedChatData = {
       conversations: state.conversations,
       activeConversationId: state.activeConversationId,
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(storageKey(state.ownerId), JSON.stringify(data))
   } catch (error) {
     log().error("localStorage 对话数据保存失败", {
       module_name: "chat-store",
@@ -175,28 +182,54 @@ function saveToStorage(state: ChatState): void {
 // ── Store ──────────────────────────────────────────────────────────────────
 
 export const useChatStore = defineStore("chat", {
-  state: (): ChatState => {
-    const persisted = loadFromStorage()
-    return {
-      conversations: persisted.conversations,
-      activeConversationId: persisted.activeConversationId,
-    }
-  },
+  state: (): ChatState => ({
+    ownerId: null,
+    conversations: [],
+    activeConversationId: null,
+  }),
 
   getters: {
     /** 当前活跃的完整对话对象 */
     activeConversation(state): Conversation | null {
       if (!state.activeConversationId) return null
-      return state.conversations.find((c) => c.id === state.activeConversationId) ?? null
+      return (
+        state.conversations.find((c) => c.id === state.activeConversationId) ??
+        null
+      )
     },
 
     /** 非活跃的历史对话列表（时间倒序） */
     historyConversations(state): Conversation[] {
-      return state.conversations.filter((c) => c.id !== state.activeConversationId)
+      return state.conversations.filter(
+        (c) => c.id !== state.activeConversationId,
+      )
     },
   },
 
   actions: {
+    bindUser(ownerId: string | null): void {
+      if (this.ownerId === ownerId) return
+      this.ownerId = ownerId
+      this.conversations = []
+      this.activeConversationId = null
+      if (!ownerId) return
+      if (ownerId === LEGACY_DEFAULT_USER_ID) {
+        try {
+          if (localStorage.getItem(storageKey(ownerId)) === null) {
+            const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
+            if (legacy !== null) {
+              localStorage.setItem(storageKey(ownerId), legacy)
+              localStorage.removeItem(LEGACY_STORAGE_KEY)
+            }
+          }
+        } catch {
+          /* Continue with an empty workspace when storage is unavailable. */
+        }
+      }
+      const persisted = loadFromStorage(ownerId)
+      this.conversations = persisted.conversations
+      this.activeConversationId = persisted.activeConversationId
+    },
     /** 创建新对话，标题为空（UI 显示"新对话…"占位），自动设为活跃对话 */
     addConversation(title?: string): Conversation {
       const now = nowISO()
@@ -214,7 +247,10 @@ export const useChatStore = defineStore("chat", {
       this.activeConversationId = conversation.id
 
       saveToStorage(this.$state)
-      log().info("创建新对话", { conversationId: conversation.id, title: conversation.title || "(空)" })
+      log().info("创建新对话", {
+        conversationId: conversation.id,
+        title: conversation.title || "(空)",
+      })
 
       return conversation
     },
@@ -271,7 +307,10 @@ export const useChatStore = defineStore("chat", {
       conversation.updatedAt = nowISO()
 
       saveToStorage(this.$state)
-      log().info("自动提炼对话标题", { conversationId: id, title: conversation.title })
+      log().info("自动提炼对话标题", {
+        conversationId: id,
+        title: conversation.title,
+      })
     },
 
     /** 设置当前活跃对话，传入 null 清除活跃状态 */
@@ -285,7 +324,9 @@ export const useChatStore = defineStore("chat", {
 
     /** 向指定对话追加一个气泡 */
     addBubble(conversationId: string, bubble: ChatBubble): void {
-      const conversation = this.conversations.find((c) => c.id === conversationId)
+      const conversation = this.conversations.find(
+        (c) => c.id === conversationId,
+      )
       if (!conversation) {
         log().warn("尝试向不存在的对话添加气泡", { conversationId })
         return
@@ -297,8 +338,14 @@ export const useChatStore = defineStore("chat", {
     },
 
     /** 更新指定对话中的某个气泡（按 id 匹配） */
-    updateBubble(conversationId: string, bubbleId: string, updates: Partial<ChatBubble>): void {
-      const conversation = this.conversations.find((c) => c.id === conversationId)
+    updateBubble(
+      conversationId: string,
+      bubbleId: string,
+      updates: Partial<ChatBubble>,
+    ): void {
+      const conversation = this.conversations.find(
+        (c) => c.id === conversationId,
+      )
       if (!conversation) {
         log().warn("尝试更新不存在的对话气泡", { conversationId, bubbleId })
         return
@@ -317,7 +364,9 @@ export const useChatStore = defineStore("chat", {
 
     /** 清空指定对话的所有气泡（切换对话时不会自动清空） */
     clearBubbles(conversationId: string): void {
-      const conversation = this.conversations.find((c) => c.id === conversationId)
+      const conversation = this.conversations.find(
+        (c) => c.id === conversationId,
+      )
       if (!conversation) {
         log().warn("尝试清空不存在对话的气泡", { conversationId })
         return

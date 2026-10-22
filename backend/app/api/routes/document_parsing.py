@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlmodel import Session, select
 
+from app.api.deps import ReadUserDep, WriteUserDep
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
 from app.models.document_parsing import DocumentParseJob, DocumentSegment, ParsedDocument
@@ -30,7 +31,6 @@ from app.services.document_parsing import (
     DocumentParsingDisabledError,
 )
 from app.services.uploads import LocalFileStorage
-from app.services.users import CurrentUserUnavailableError, get_current_user
 
 router = APIRouter(tags=["document-parsing"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -46,6 +46,7 @@ def create_document_parse_job(
     upload_id: UUID,
     background_tasks: BackgroundTasks,
     request: Request,
+    current_user: WriteUserDep,
     session: SessionDep,
     settings: SettingsDep,
 ) -> DocumentParseJobRead | JSONResponse:
@@ -55,7 +56,6 @@ def create_document_parse_job(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Service is shutting down",
         )
-    current_user = require_current_user(session)
     service = make_document_parse_service(session=session, settings=settings)
 
     try:
@@ -108,8 +108,9 @@ def create_document_parse_job(
     "/document-parse-jobs/{job_id}",
     response_model=DocumentParseJobRead,
 )
-def read_document_parse_job(job_id: UUID, session: SessionDep) -> DocumentParseJobRead:
-    current_user = require_current_user(session)
+def read_document_parse_job(
+    job_id: UUID, current_user: ReadUserDep, session: SessionDep
+) -> DocumentParseJobRead:
     statement = select(DocumentParseJob).where(
         DocumentParseJob.id == job_id,
         DocumentParseJob.owner_user_id == current_user.id,
@@ -130,9 +131,9 @@ def read_document_parse_job(job_id: UUID, session: SessionDep) -> DocumentParseJ
 )
 def read_uploaded_file_parsed_document(
     upload_id: UUID,
+    current_user: ReadUserDep,
     session: SessionDep,
 ) -> ParsedDocumentRead:
-    current_user = require_current_user(session)
     upload = get_owned_upload(session=session, upload_id=upload_id, owner_user_id=current_user.id)
     statement = (
         select(ParsedDocument)
@@ -159,10 +160,10 @@ def read_uploaded_file_parsed_document(
     response_model=list[ParsedDocumentRead],
 )
 def list_parsed_documents(
+    current_user: ReadUserDep,
     session: SessionDep,
 ) -> list[ParsedDocumentRead]:
     """列出当前用户的所有已解析文档，按创建时间降序排列。"""
-    current_user = require_current_user(session)
     statement = (
         select(ParsedDocument)
         .where(ParsedDocument.owner_user_id == current_user.id)
@@ -187,11 +188,11 @@ def list_parsed_documents(
 )
 def read_parsed_document_segments(
     parsed_document_id: UUID,
+    current_user: ReadUserDep,
     session: SessionDep,
     offset: int = 0,
     limit: int = 50,
 ) -> DocumentSegmentPageRead:
-    current_user = require_current_user(session)
     parsed_document = session.exec(
         select(ParsedDocument).where(
             ParsedDocument.id == parsed_document_id,
@@ -237,16 +238,6 @@ def make_document_parse_service(*, session: Session, settings: Settings) -> Docu
         allowed_content_types=set(settings.document_parse_allowed_content_types),
         allowed_extensions=set(settings.document_parse_allowed_extensions),
     )
-
-
-def require_current_user(session: Session):
-    try:
-        return get_current_user(session)
-    except CurrentUserUnavailableError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Current user is unavailable",
-        ) from exc
 
 
 def get_owned_upload(*, session: Session, upload_id: UUID, owner_user_id: UUID) -> UploadedFile:

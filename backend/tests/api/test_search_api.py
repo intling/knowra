@@ -17,8 +17,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
+from app.api.deps import get_current_user, get_model_settings
+from app.core.config import get_settings
 from app.db.session import get_session
 from app.main import app
+from app.models.user import User
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
@@ -94,6 +97,7 @@ def make_fake_session(*, total_embedding_count: int = 1, rows: list | None = Non
     (0 → simulates "no vector data").
     """
     session = MagicMock()
+    session.get.return_value = None
     if rows is None:
         rows = []
     if total_embedding_count == 0:
@@ -233,7 +237,11 @@ def search_client(
     except ImportError:
         pass  # Red phase — route doesn't exist yet
 
+    # 检索接口要求已认证用户：覆盖认证依赖为固定测试成员。
+    overrides[get_current_user] = lambda: User(display_name="Search Tester", role="member")
     overrides[get_session] = _get_session
+    # 假检索会话不模拟配置表；配置真实依赖另由 admin_console 集成测试覆盖。
+    overrides[get_model_settings] = get_settings
 
     # Store refs so tests can configure
     app._search_test_refs = SimpleNamespace(

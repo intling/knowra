@@ -1,28 +1,34 @@
-from typing import Annotated
+from fastapi import APIRouter, Request, Response
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session
-
-from app.core.logging import get_logger
-from app.db.session import get_session
+from app.api.deps import CurrentUserDep, SessionDep
+from app.api.routes.auth import clear_session_cookie
+from app.schemas.auth import PasswordChange, ProfileUpdate
 from app.schemas.user import UserRead
-from app.services.users import CurrentUserUnavailableError, get_current_user
-
-logger = get_logger(__name__)
+from app.services.auth import change_password, update_profile
 
 router = APIRouter(prefix="/users", tags=["users"])
-SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @router.get("/me", response_model=UserRead)
-def read_current_user(session: SessionDep) -> UserRead:
-    try:
-        user = get_current_user(session)
-    except CurrentUserUnavailableError as exc:
-        logger.error("当前用户不可用")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Current user is unavailable",
-        ) from exc
-
+def read_current_user(user: CurrentUserDep) -> UserRead:
     return UserRead.model_validate(user, from_attributes=True)
+
+
+@router.patch("/me", response_model=UserRead)
+def patch_current_user(
+    payload: ProfileUpdate, user: CurrentUserDep, session: SessionDep
+) -> UserRead:
+    updated = update_profile(session, user, payload.display_name)
+    return UserRead.model_validate(updated, from_attributes=True)
+
+
+@router.post("/me/password", status_code=204)
+def post_password(
+    payload: PasswordChange,
+    user: CurrentUserDep,
+    session: SessionDep,
+    request: Request,
+    response: Response,
+) -> None:
+    change_password(session, user, **payload.model_dump())
+    clear_session_cookie(response, request)

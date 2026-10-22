@@ -1,0 +1,1 @@
+PASS 320px administrator cards keep account details on their own full-width row

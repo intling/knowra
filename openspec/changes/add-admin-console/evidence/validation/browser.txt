@@ -1,0 +1,8 @@
+PASS create account through UI
+PASS member login and admin page/API denial
+PASS reset revokes session; old password denied and new password login succeeds
+PASS disable/enable, session revocation and viewer role
+PASS soft deletion and modal keyboard focus
+PASS create and activate all four model purposes
+PASS blank edit preserves key; restore environment, disable and delete model
+PASS desktop/320px layouts, screenshots and no JS errors

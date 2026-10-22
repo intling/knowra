@@ -17,8 +17,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app.api.deps import get_current_user, get_model_settings
+from app.core.config import get_settings
 from app.db.session import get_session
 from app.main import app
+from app.models.user import User
 from tests.search_helpers import (
     make_fake_chat_adapter,
     make_fake_chat_config,
@@ -78,6 +81,8 @@ def search_client(
     def _get_session():
         return _session
 
+    app.dependency_overrides[get_model_settings] = get_settings
+
     def _get_chat_config():
         return _chat_config
 
@@ -114,6 +119,8 @@ def search_client(
     except ImportError:
         overrides = {}
 
+    # 检索接口要求已认证用户：覆盖认证依赖为固定测试成员。
+    overrides[get_current_user] = lambda: User(display_name="Search Tester", role="member")
     overrides[get_session] = _get_session
 
     # Store refs so tests can configure

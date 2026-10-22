@@ -4,6 +4,7 @@ import { computed, nextTick, ref, watch } from "vue"
 import { uploadFile } from "../../api/uploads"
 import { searchChunks, type SearchResponse } from "../../api/search"
 import { createLogger, getRingBuffer } from "../../shared/logger"
+import { useUserStore } from "../../stores/user"
 import { useChatStore, type ChatBubble } from "../../stores/chat"
 import ChatInput, { type AttachedFile } from "../../components/ChatInput.vue"
 import AnswerPanel from "../../components/AnswerPanel.vue"
@@ -23,6 +24,8 @@ function log() {
 // ── Store ──────────────────────────────────────────────────────────────────
 
 const chatStore = useChatStore()
+const userStore = useUserStore()
+const canUpload = computed(() => userStore.hasPermission("knowledge:write"))
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -37,12 +40,22 @@ const scrollRef = ref<HTMLElement | null>(null)
 async function revealTurn(bubbleId: string) {
   await nextTick()
   const container = scrollRef.value
-  const el = container?.querySelector<HTMLElement>(`[data-turn-id="${bubbleId}"]`)
+  const el = container?.querySelector<HTMLElement>(
+    `[data-turn-id="${bubbleId}"]`,
+  )
   if (!container || !el) return
-  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+  const reduce =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
   // 只滚动消息容器本身；scrollIntoView 会连带滚动 overflow-hidden 的外层壳
-  const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 16
-  container.scrollTo?.({ top: Math.max(0, top), behavior: reduce ? "auto" : "smooth" })
+  const top =
+    el.getBoundingClientRect().top -
+    container.getBoundingClientRect().top +
+    container.scrollTop -
+    16
+  container.scrollTo?.({
+    top: Math.max(0, top),
+    behavior: reduce ? "auto" : "smooth",
+  })
 }
 const forceReplace = ref(false)
 
@@ -71,7 +84,9 @@ const loading = computed(() =>
 /** 当前在途气泡的加载阶段（searching/generating）。
  *  同样从气泡持久化数据派生，切换对话后能恢复正确阶段文案。 */
 const loadingStage = computed<"searching" | "generating" | null>(() => {
-  const pending = bubbles.value.find((bubble) => !bubble.response && !bubble.error)
+  const pending = bubbles.value.find(
+    (bubble) => !bubble.response && !bubble.error,
+  )
   return pending?.stage ?? null
 })
 
@@ -114,7 +129,9 @@ function generateBubbleId(): string {
  *  每个已完成的气泡产生两条消息：user（查询）+ assistant（回答）。
  *  跳过无响应的气泡（如发送中或出错的气泡）。
  */
-function buildHistory(previousBubbles: ChatBubble[]): Record<string, unknown>[] {
+function buildHistory(
+  previousBubbles: ChatBubble[],
+): Record<string, unknown>[] {
   const history: Record<string, unknown>[] = []
   for (const bubble of previousBubbles) {
     if (!bubble.response) continue
@@ -146,10 +163,12 @@ async function handlePickSuggestion(text: string) {
 // ── File handling ──────────────────────────────────────────────────────────
 
 function handleAddFiles() {
+  if (!canUpload.value) return
   fileInputRef.value?.click()
 }
 
 function handleFileChange(event: Event) {
+  if (!canUpload.value) return
   const input = event.target as HTMLInputElement
   const selectedFiles = input.files
   if (!selectedFiles || selectedFiles.length === 0) return
@@ -181,9 +200,11 @@ async function uploadAttachedFile(id: string, file: File) {
     log().info("文件上传成功", { fileName: file.name })
   } catch (error) {
     attachedFile.status = "error"
-    attachedFile.error =
-      error instanceof Error ? error.message : "上传失败"
-    log().warn("文件上传失败", { fileName: file.name, error: attachedFile.error })
+    attachedFile.error = error instanceof Error ? error.message : "上传失败"
+    log().warn("文件上传失败", {
+      fileName: file.name,
+      error: attachedFile.error,
+    })
   }
 }
 
@@ -224,7 +245,11 @@ async function handleSend() {
   chatStore.addBubble(conversationId, bubble)
 
   // 首条消息 → 立即用用户输入乐观生成标题（不阻塞发送）
-  if (isFirstMessage && trimmed.length > 0 && autoTitledForStoreId !== conversationId) {
+  if (
+    isFirstMessage &&
+    trimmed.length > 0 &&
+    autoTitledForStoreId !== conversationId
+  ) {
     chatStore.autoTitleConversation(conversationId, trimmed)
     autoTitledForStoreId = conversationId
   }
@@ -259,7 +284,11 @@ async function handleSend() {
     })
 
     // 更新气泡：写入 API 响应数据
-    chatStore.updateBubble(conversationId, bubbleId, { response, error: null, stage: null })
+    chatStore.updateBubble(conversationId, bubbleId, {
+      response,
+      error: null,
+      stage: null,
+    })
 
     // AI 响应回来后，若标题仍为空/默认值，用 AI 回答内容二次提炼
     if (isFirstMessage && response.answer.length > 0) {
@@ -275,9 +304,11 @@ async function handleSend() {
       hasAnswer: response.answer.length > 0,
     })
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "未知错误"
-    chatStore.updateBubble(conversationId, bubbleId, { error: message, stage: null })
+    const message = error instanceof Error ? error.message : "未知错误"
+    chatStore.updateBubble(conversationId, bubbleId, {
+      error: message,
+      stage: null,
+    })
     log().warn("搜索请求失败", { query: queryForApi, error: message })
   }
 }
@@ -287,27 +318,43 @@ async function handleSend() {
   <section class="paper-atmosphere flex min-h-0 flex-1 flex-col">
     <ChatTopNav :model-name="currentModelName" />
 
-    <div ref="scrollRef" data-testid="chat-scroll" class="flex-1 overflow-y-auto scrollbar-thin">
+    <div
+      ref="scrollRef"
+      data-testid="chat-scroll"
+      class="flex-1 overflow-y-auto scrollbar-thin"
+    >
       <div class="main-container pt-4 pb-8">
         <Transition name="welcome-fade" appear>
           <WelcomeView
             v-if="showWelcome"
+            :can-upload="canUpload"
             @upload="handleAddFiles"
             @pick-suggestion="handlePickSuggestion"
           />
         </Transition>
 
-        <TransitionGroup v-if="hasBubbles" name="message-fade" tag="div" class="space-y-10 pt-4">
+        <TransitionGroup
+          v-if="hasBubbles"
+          name="message-fade"
+          tag="div"
+          class="space-y-10 pt-4"
+        >
           <div
             v-for="bubble in bubbles"
             :key="bubble.id"
             :data-turn-id="bubble.id"
             class="scroll-mt-4 space-y-5"
           >
-            <UserMessage :content="bubble.query" :file-names="bubble.fileNames" />
+            <UserMessage
+              :content="bubble.query"
+              :file-names="bubble.fileNames"
+            />
 
             <!-- 等待回答：阶段文案显示在回答位置，并由读屏播报 -->
-            <div v-if="!bubble.response && !bubble.error" class="flex gap-3 sm:gap-4">
+            <div
+              v-if="!bubble.response && !bubble.error"
+              class="flex gap-3 sm:gap-4"
+            >
               <span
                 class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-700/85 font-display text-sm font-semibold text-white"
                 aria-hidden="true"
@@ -320,9 +367,16 @@ async function handleSend() {
                   aria-live="polite"
                   class="text-sm text-ink-muted"
                 >
-                  {{ bubble.stage === "generating" ? "正在生成回答…" : "正在检索资料…" }}
+                  {{
+                    bubble.stage === "generating"
+                      ? "正在生成回答…"
+                      : "正在检索资料…"
+                  }}
                 </p>
-                <div class="mt-3 space-y-2 motion-safe:animate-pulse" aria-hidden="true">
+                <div
+                  class="mt-3 space-y-2 motion-safe:animate-pulse"
+                  aria-hidden="true"
+                >
                   <div class="h-2.5 w-full rounded bg-paper-deep" />
                   <div class="h-2.5 w-5/6 rounded bg-paper-deep" />
                   <div class="h-2.5 w-3/5 rounded bg-paper-deep" />
@@ -337,8 +391,12 @@ async function handleSend() {
               class="ml-10 rounded-[var(--radius-button)] border-l-2 border-red-600 bg-red-50/70 px-3.5 py-2.5 sm:ml-11"
             >
               <p class="text-sm font-medium text-red-900">请求失败</p>
-              <p class="mt-0.5 text-sm text-red-800 [overflow-wrap:anywhere]">{{ bubble.error }}</p>
-              <p class="mt-1 text-xs text-red-700/80">请稍后重新发送这个问题。</p>
+              <p class="mt-0.5 text-sm text-red-800 [overflow-wrap:anywhere]">
+                {{ bubble.error }}
+              </p>
+              <p class="mt-1 text-xs text-red-700/80">
+                请稍后重新发送这个问题。
+              </p>
             </div>
 
             <template v-if="bubble.response">
@@ -377,6 +435,7 @@ async function handleSend() {
           v-model:model-value="query"
           v-model:top-k="topK"
           v-model:force-replace="forceReplace"
+          :can-upload="canUpload"
           :loading="loading"
           :loading-stage="loadingStage"
           :files="files"
@@ -384,7 +443,9 @@ async function handleSend() {
           @add-files="handleAddFiles"
           @remove-file="handleRemoveFile"
         />
-        <p class="mt-1.5 text-center text-[11px] text-ink-faint">回答依据你的资料生成，请以来源原文为准。</p>
+        <p class="mt-1.5 text-center text-[11px] text-ink-faint">
+          回答依据你的资料生成，请以来源原文为准。
+        </p>
       </div>
     </div>
   </section>

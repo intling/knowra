@@ -1,0 +1,15 @@
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 1ms
+2026-10-22 10:40:30 [info     ] 数据库引擎已创建                       database_url=postgresql+psycopg://knowra_test:***@127.0.0.1:15479/knowra_admin_test echo=True
+Uninstalled 1 package in 0.57ms
+Installed 1 package in 1ms
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 20261022_0001 -> 20261021_0002, 增加模型配置与每种用途唯一绑定，不迁移或修改用户资料。
+Uninstalled 1 package in 0.60ms
+Installed 1 package in 1ms
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 20261021_0002 -> 20261022_0001, 增加模型配置与每种用途唯一绑定，不迁移或修改用户资料。
+PostgreSQL downgrade/upgrade verified; retained account, credentials, sessions, documents and vectors: {'users': 2, 'user_credentials': 1, 'user_sessions': 1, 'uploaded_files': 1, 'document_parse_jobs': 1, 'parsed_documents': 1, 'document_chunk_jobs': 1, 'document_chunks': 1, 'document_embedding_jobs': 1, 'document_embeddings': 1}
+Four empty model bindings verified. Browser administrator created in disposable database.

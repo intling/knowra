@@ -1,4 +1,4 @@
-import { buildApiUrl } from "./client"
+import { apiFetch } from "./client"
 import { createLogger, getRingBuffer } from "../shared/logger"
 
 /** Lazy logger — getRingBuffer() is only available after main.ts initLogger(). */
@@ -145,7 +145,7 @@ export async function searchChunks(
 
   let response: Response
   try {
-    response = await fetch(buildApiUrl("/search"), {
+    response = await apiFetch("/search", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="48" failures="24" errors="0" time="3.281712632">
+    <testsuite name="src/api/adminUsers.test.ts" timestamp="2026-10-22T02:07:29.181Z" hostname="instance-20260413-2343" tests="2" failures="0" errors="0" skipped="0" time="0.011480309">
+        <testcase classname="src/api/adminUsers.test.ts" name="admin users API &gt; listUsers 使用 offset 与 limit 分页" time="0.008862604">
+        </testcase>
+        <testcase classname="src/api/adminUsers.test.ts" name="admin users API &gt; updateUser 以 PATCH 提交角色或状态" time="0.00103481">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/router/__tests__/guards.spec.ts" timestamp="2026-10-22T02:07:29.184Z" hostname="instance-20260413-2343" tests="8" failures="0" errors="0" skipped="0" time="0.223040923">
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="路由认证守卫 &gt; 匿名访问 /verify 跳转 /login?redirect=/verify" time="0.017743289">
+        </testcase>
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="路由认证守卫 &gt; 已登录用户访问 /login 与 /register 导向 /" time="0.004924607">
+        </testcase>
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="路由认证守卫 &gt; 会话恢复完成前导航保持挂起" time="0.004989088">
+        </testcase>
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="路由认证守卫 &gt; 非管理员进入 /admin/users 由页面处理权限反馈" time="0.003288271">
+        </testcase>
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="路由认证守卫 &gt; 会话探测网络错误时保留导航目标" time="0.002943108">
+        </testcase>
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="统一会话失效处理 &gt; 业务请求 401 触发重新登录流程" time="0.067587284">
+        </testcase>
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="统一会话失效处理 &gt; 跨标签页退出同步清理" time="0.056082294">
+        </testcase>
+        <testcase classname="src/router/__tests__/guards.spec.ts" name="统一会话失效处理 &gt; 本页退出后离开私有页面" time="0.054180076">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/views/__tests__/AdminConsole.spec.ts" timestamp="2026-10-22T02:07:29.188Z" hostname="instance-20260413-2343" tests="15" failures="15" errors="0" skipped="0" time="1.811116436">
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 后台入口跳转用户管理并声明模型管理权限" time="1.674456656">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:109:24
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 管理员菜单提供后台管理入口" time="0.070229348">
+            <failure message="expected &apos;用户管理&apos; to contain &apos;后台管理&apos;" type="AssertionError">
+AssertionError: expected &apos;用户管理&apos; to contain &apos;后台管理&apos;
+
+Expected: &quot;后台管理&quot;
+Received: &quot;用户管理&quot;
+
+ ❯ src/views/__tests__/AdminConsole.spec.ts:132:25
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 匿名访问模型页要求登录" time="0.003997998">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="缺少需认证的模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 缺少需认证的模型配置路由: expected 0 to be greater than 0
+ ❯ src/views/__tests__/AdminConsole.spec.ts:147:7
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; member 不能读取模型配置" time="0.003556713">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:157:30
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; viewer 不能读取模型配置" time="0.002894627">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:157:30
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 模型列表显示基本信息与后台导航" time="0.004486363">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:169:28
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 新增 chat 模型配置" time="0.022162131">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:183:30
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 新增 embedding 模型配置" time="0.008898845">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:183:30
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 新增 rerank 模型配置" time="0.002201061">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:183:30
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 新增 query_rewrite 模型配置" time="0.006177618">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:183:30
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 编辑密钥留空保留旧值" time="0.002385902">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:211:28
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 确认后设为默认模型" time="0.001834538">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:236:28
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 模型激活被拒绝时显示索引冲突原因" time="0.001515774">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:264:28
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 取消模型删除保留配置" time="0.001425013">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:284:28
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminConsole.spec.ts" name="后台入口和模型配置 &gt; 模型列表失败显示具体原因" time="0.002391382">
+            <system-err>
+[Vue Router warn]: No match found for location with path &quot;/admin/models&quot;
+
+            </system-err>
+            <failure message="后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0" type="AssertionError">
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+ ❯ src/views/__tests__/AdminConsole.spec.ts:303:28
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/views/__tests__/AdminUsersLifecycle.spec.ts" timestamp="2026-10-22T02:07:29.203Z" hostname="instance-20260413-2343" tests="9" failures="9" errors="0" skipped="0" time="0.532755951">
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 创建用户后刷新列表和清空密码" time="0.315656285">
+            <failure message="用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:105:24
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 密码不一致时不发送建号请求" time="0.032733391">
+            <failure message="用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:128:18
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 建号失败保留表单并显示错误" time="0.029229359">
+            <failure message="用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:140:18
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 建号进行中只提交一次" time="0.024801717">
+            <failure message="用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:159:24
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 重置密码后清空密码并说明会话失效" time="0.044911107">
+            <failure message="目标账号缺少重置密码入口: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 目标账号缺少重置密码入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:173:45
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 删除前确认且取消不调用 API" time="0.020522156">
+            <failure message="目标账号缺少删除入口: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 目标账号缺少删除入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:192:43
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 删除成功刷新账号列表" time="0.018379055">
+            <failure message="目标账号缺少删除入口: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 目标账号缺少删除入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:206:43
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 删除失败保留账号并显示原因" time="0.01995647">
+            <failure message="目标账号缺少删除入口: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 目标账号缺少删除入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:227:43
+            </failure>
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersLifecycle.spec.ts" name="后台用户生命周期 &gt; 删除末页最后一项返回有效页" time="0.024375072">
+            <failure message="末页账号应有删除操作: expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: 末页账号应有删除操作: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:247:43
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/views/__tests__/AdminUsersView.spec.ts" timestamp="2026-10-22T02:07:29.210Z" hostname="instance-20260413-2343" tests="8" failures="0" errors="0" skipped="0" time="0.534115643">
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; member 看到权限不足且不请求列表" time="0.258302698">
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; viewer 看到权限不足且不请求列表" time="0.022670415">
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; 管理员加载用户列表" time="0.043605455">
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; 变更角色经确认后调用 API 并更新行" time="0.081736058">
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; 禁用账号经确认后更新状态" time="0.057418987">
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; last_admin 失败时回滚并显示原因" time="0.03047353">
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; 不能禁用自己" time="0.012099075">
+        </testcase>
+        <testcase classname="src/views/__tests__/AdminUsersView.spec.ts" name="AdminUsersView &gt; 分页加载下一页" time="0.025614763">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/sidebar/__tests__/SidebarUser.spec.ts" timestamp="2026-10-22T02:07:29.212Z" hostname="instance-20260413-2343" tests="6" failures="0" errors="0" skipped="0" time="0.16920337">
+        <testcase classname="src/components/sidebar/__tests__/SidebarUser.spec.ts" name="SidebarUser 账户入口 &gt; 展示用户名与角色" time="0.067818685">
+        </testcase>
+        <testcase classname="src/components/sidebar/__tests__/SidebarUser.spec.ts" name="SidebarUser 账户入口 &gt; admin 的账户菜单（用户管理可见：true）" time="0.031786982">
+        </testcase>
+        <testcase classname="src/components/sidebar/__tests__/SidebarUser.spec.ts" name="SidebarUser 账户入口 &gt; member 的账户菜单（用户管理可见：false）" time="0.020053791">
+        </testcase>
+        <testcase classname="src/components/sidebar/__tests__/SidebarUser.spec.ts" name="SidebarUser 账户入口 &gt; viewer 的账户菜单（用户管理可见：false）" time="0.013177326">
+        </testcase>
+        <testcase classname="src/components/sidebar/__tests__/SidebarUser.spec.ts" name="SidebarUser 账户入口 &gt; Esc 关闭菜单并归还焦点" time="0.01787337">
+        </testcase>
+        <testcase classname="src/components/sidebar/__tests__/SidebarUser.spec.ts" name="SidebarUser 账户入口 &gt; 退出登录" time="0.01582419">
+        </testcase>
+    </testsuite>
+</testsuites>

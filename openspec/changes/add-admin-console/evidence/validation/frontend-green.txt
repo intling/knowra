@@ -1,0 +1,12 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/views/__tests__/AdminUsersLifecycle.spec.ts src/views/__tests__/AdminConsole.spec.ts src/views/__tests__/AdminUsersView.spec.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+
+ Test Files  3 passed (3)
+      Tests  32 passed (32)
+   Start at  10:25:12
+   Duration  2.73s (transform 1.92s, setup 0ms, import 768ms, tests 3.00s, environment 1.98s)

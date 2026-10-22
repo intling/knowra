@@ -1,0 +1,13 @@
+PASS anonymous private route redirects to login
+PASS browser registration creates member and HttpOnly session
+PASS authenticated upload persists through real API
+PASS authenticated question receives real API no-vector response
+PASS profile update and password change revoke session; only new password works
+PASS logout redirects both browser tabs
+PASS account switching isolates and restores local conversation histories
+PASS last active administrator cannot demote itself
+PASS confirmed role update takes effect; viewer upload is disabled and API denies write
+PASS disable revokes existing session; re-enable requires a new login
+MOBILE BUTTONS ,新对话, 上传资料 ,总结这些资料的核心观点,列出资料中的关键概念并逐一解释,资料里有哪些结论需要特别注意前提条件？,资料,检索 5 段,发送
+PASS 320px login/register/workspace/account/admin layouts have no horizontal overflow
+PASS desktop application has no uncaught browser errors

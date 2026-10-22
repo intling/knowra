@@ -19,6 +19,7 @@ import hashlib
 import inspect
 import threading
 import time
+from uuid import UUID
 
 from sqlmodel import Session, func, select
 
@@ -39,8 +40,7 @@ from app.services.chat_adapter import ChatAdapter, ChatAPIError
 from app.services.chat_config import ChatConfig
 from app.services.circuit_breaker import CircuitBreaker
 from app.services.embedding_adapter import EmbeddingAdapter
-
-
+from app.services.rerank_adapter import RerankAdapter, RerankError
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -130,6 +130,8 @@ class SearchService:
         self,
         *,
         session: Session,
+        owner_user_id: UUID,
+        kb_fingerprint: str | None = None,
         embedding_adapter: EmbeddingAdapter,
         chat_adapter: ChatAdapter,
         chat_config: ChatConfig,
@@ -139,8 +141,11 @@ class SearchService:
         response_cache: object | None = None,
         audit_trail: object | None = None,
         circuit_breaker: CircuitBreaker | None = None,
+        rerank_adapter: RerankAdapter | None = None,
     ) -> None:
         self._session = session
+        self._owner_user_id = owner_user_id
+        self._cache_scope = f"u:{owner_user_id}:{kb_fingerprint}"
         self._embedding_adapter = embedding_adapter
         self._chat_adapter = chat_adapter
         self._chat_config = chat_config
@@ -150,6 +155,7 @@ class SearchService:
         self._response_cache = response_cache
         self._audit_trail = audit_trail
         self._circuit_breaker = circuit_breaker
+        self._rerank_adapter = rerank_adapter
         self._logger = get_logger(__name__)
 
     # ── public API ──────────────────────────────────────────────────
@@ -238,6 +244,9 @@ class SearchService:
 
         # 解析会话 ID
         resolved_session_id = self._resolve_session_id(session_id, history)
+        rewrite_session_id = resolved_session_id
+        if resolved_session_id is not None:
+            resolved_session_id = f"{self._cache_scope}:{resolved_session_id}"
 
         # 计算 history digest（用于缓存键，确保不同对话历史产生不同缓存键）
         history_digest = self._compute_history_digest(history)
@@ -274,8 +283,10 @@ class SearchService:
                 cached_response = cached_response.model_copy(
                     update={
                         "audit_trail_id": audit_trail_id,
-                        "rewrite_info": cached_response.rewrite_info.model_copy(
-                            update={"cache_hit": True}
+                        "rewrite_info": (
+                            cached_response.rewrite_info.model_copy(update={"cache_hit": True})
+                            if cached_response.rewrite_info is not None
+                            else None
                         ),
                     }
                 )
@@ -289,7 +300,10 @@ class SearchService:
             rewrite_t0 = time.perf_counter()
             try:
                 rewrite_result = self._query_rewriter.rewrite(  # type: ignore[union-attr]
-                    query, session_id=resolved_session_id, history=history
+                    query,
+                    session_id=rewrite_session_id,
+                    history=history,
+                    cache_namespace=self._cache_scope,
                 )
                 # QueryRewriter.rewrite() is async in production, but tests use sync mocks.
                 # Use _run_async() for real coroutines, pass through sync results directly.
@@ -355,7 +369,8 @@ class SearchService:
             return response
 
         # 4. pgvector 跨文档检索
-        rows = self._vector_search(query_vector, top_k)
+        candidate_count = min(50, max(top_k, 20)) if self._rerank_adapter else top_k
+        rows = self._vector_search(query_vector, candidate_count)
 
         # 4a. 按相似度阈值过滤：仅保留 cosine_distance <= threshold 的结果。
         #     当阈值设为 0 时禁用过滤（保留所有结果）。
@@ -381,6 +396,21 @@ class SearchService:
                 )
                 rows = []
 
+        if self._rerank_adapter and rows:
+            try:
+                indices = self._rerank_adapter.rank(
+                    query,
+                    [
+                        row.DocumentChunk.contextualized_text or row.DocumentChunk.text or ""
+                        for row in rows
+                    ],
+                    top_k,
+                )
+                rows = [rows[index] for index in indices]
+            except RerankError:
+                self._logger.warning("search_rerank_unavailable")
+                rows = rows[:top_k]
+
         # 5. 构建 SearchResult 列表（含文本截断，强制不超过 top_k）
         results = self._build_results(rows, top_k)
 
@@ -397,8 +427,8 @@ class SearchService:
 
         # 8. LLM 生成（含优雅降级）
         #    _generate_answer 为 async，在此通过 _run_async 桥接同步调用
-        answer, answer_tokens, chat_model, prompt_messages, generation_error = (
-            _run_async(self._generate_answer(query, rows, history=history))
+        answer, answer_tokens, chat_model, prompt_messages, generation_error = _run_async(
+            self._generate_answer(query, rows, history=history)
         )
 
         # 9. 组装响应
@@ -457,7 +487,18 @@ class SearchService:
 
     def _count_total_embeddings(self) -> int:
         """Return the total number of embedding vectors in the database."""
-        stmt = select(func.count()).select_from(DocumentEmbedding)
+        stmt = (
+            select(func.count())
+            .select_from(DocumentEmbedding)
+            .join(ParsedDocument, DocumentEmbedding.parsed_document_id == ParsedDocument.id)
+            .join(UploadedFile, ParsedDocument.uploaded_file_id == UploadedFile.id)
+            .where(
+                DocumentEmbedding.owner_user_id == self._owner_user_id,
+                ParsedDocument.owner_user_id == self._owner_user_id,
+                UploadedFile.owner_user_id == self._owner_user_id,
+                UploadedFile.deleted_at.is_(None),
+            )
+        )
         result = self._session.exec(stmt)
         count = result.first()
         return count or 0
@@ -503,7 +544,13 @@ class SearchService:
                 UploadedFile,
                 ParsedDocument.uploaded_file_id == UploadedFile.id,
             )
-            .where(UploadedFile.deleted_at.is_(None))
+            .where(
+                DocumentEmbedding.owner_user_id == self._owner_user_id,
+                DocumentChunk.owner_user_id == self._owner_user_id,
+                ParsedDocument.owner_user_id == self._owner_user_id,
+                UploadedFile.owner_user_id == self._owner_user_id,
+                UploadedFile.deleted_at.is_(None),
+            )
             .order_by(distance_expr.asc())
             .limit(top_k)
         )
@@ -617,7 +664,7 @@ class SearchService:
         messages = self._assemble_prompt(query, rows, history=history)
 
         async def _try_generate(msgs: list[dict]) -> tuple:
-            """异步调用 LLM（流式 + 首 token 超时），返回 (answer, answer_tokens, chat_model, messages, error)。"""
+            """流式调用 LLM，返回回答、token 数、模型、消息及错误。"""
             try:
                 # asyncio.wait_for 硬兜底：即使流式收集挂起也不会超过 20s
                 chat_result = await asyncio.wait_for(
@@ -636,7 +683,7 @@ class SearchService:
                     msgs,
                     None,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._logger.warning(
                     "chat_generation_total_timeout",
                     timeout=_CHAT_GENERATION_TOTAL_TIMEOUT,

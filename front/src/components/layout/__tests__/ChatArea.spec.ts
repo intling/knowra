@@ -11,10 +11,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { SearchResponse } from "../../../api/search"
 import { makeResponse, makeResult } from "../../../__tests__/fixtures/search"
+import { makeUser } from "../../../__tests__/fixtures/users"
+import type { UserRole } from "../../../api/users"
 import { useChatStore } from "../../../stores/chat"
+import { useUserStore } from "../../../stores/user"
 
 vi.mock("../../../shared/logger", () => ({
-  createLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
   getRingBuffer: () => ({ push: vi.fn(), size: 0, getAll: () => [] }),
 }))
 
@@ -30,6 +38,13 @@ vi.mock("../../../api/uploads", () => ({
 }))
 
 let wrapper: VueWrapper | null = null
+
+/** ChatArea 只在已登录后渲染：按角色种下当前用户（默认成员，可上传）。 */
+function signIn(role: UserRole = "member") {
+  const store = useUserStore()
+  store.currentUser = makeUser(role)
+  store.status = "authenticated"
+}
 
 async function mountArea() {
   const { default: ChatArea } = await import("../ChatArea.vue")
@@ -47,7 +62,9 @@ async function ask(w: VueWrapper, text: string) {
 /** 返回一个可在测试中手动 resolve 的 searchChunks 结果。 */
 function deferredSearch() {
   let resolve!: (r: SearchResponse) => void
-  mockSearchChunks.mockReturnValueOnce(new Promise<SearchResponse>((r) => (resolve = r)))
+  mockSearchChunks.mockReturnValueOnce(
+    new Promise<SearchResponse>((r) => (resolve = r)),
+  )
   return (r: SearchResponse) => resolve(r)
 }
 
@@ -55,6 +72,7 @@ describe("ChatArea 欢迎页交互", () => {
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
+    signIn()
     mockSearchChunks.mockReset()
     mockUploadFile.mockReset()
   })
@@ -103,7 +121,10 @@ describe("ChatArea 欢迎页交互", () => {
 
     const input = w.find<HTMLInputElement>('input[type="file"]')
     const file = new File(["hello"], "讲义.pdf", { type: "application/pdf" })
-    Object.defineProperty(input.element, "files", { value: [file], configurable: true })
+    Object.defineProperty(input.element, "files", {
+      value: [file],
+      configurable: true,
+    })
     await input.trigger("change")
     await flushPromises()
 
@@ -118,7 +139,10 @@ describe("ChatArea 欢迎页交互", () => {
 
     const input = w.find<HTMLInputElement>('input[type="file"]')
     const file = new File(["x"], "巨大.pdf", { type: "application/pdf" })
-    Object.defineProperty(input.element, "files", { value: [file], configurable: true })
+    Object.defineProperty(input.element, "files", {
+      value: [file],
+      configurable: true,
+    })
     await input.trigger("change")
     await flushPromises()
 
@@ -131,6 +155,7 @@ describe("ChatArea 问答流", () => {
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
+    signIn()
     mockSearchChunks.mockReset()
     mockUploadFile.mockReset()
   })
@@ -154,7 +179,9 @@ describe("ChatArea 问答流", () => {
     expect(pending.text()).toContain("正在检索资料…")
     expect(pending.attributes("role")).toBe("status")
     expect(pending.attributes("aria-live")).toBe("polite")
-    expect(w.find('[data-testid="send-button"]').attributes("disabled")).toBeDefined()
+    expect(
+      w.find('[data-testid="send-button"]').attributes("disabled"),
+    ).toBeDefined()
 
     resolve(makeResponse())
     await flushPromises()
@@ -176,7 +203,9 @@ describe("ChatArea 问答流", () => {
     })
     const w = await mountArea()
 
-    expect(w.find('[data-testid="answer-pending"]').text()).toContain("正在生成回答…")
+    expect(w.find('[data-testid="answer-pending"]').text()).toContain(
+      "正在生成回答…",
+    )
   })
 
   // 验证回答后来源列表直接可见，并紧跟在回答之后、检索详情之前
@@ -188,7 +217,9 @@ describe("ChatArea 问答流", () => {
     await flushPromises()
 
     expect(w.find('[data-testid="source-list"]').exists()).toBe(true)
-    expect(w.find('[data-testid="source-doc-name"]').text()).toBe("线性代数讲义.pdf")
+    expect(w.find('[data-testid="source-doc-name"]').text()).toBe(
+      "线性代数讲义.pdf",
+    )
     const html = w.html()
     const answerAt = html.indexOf('data-testid="answer-content"')
     const sourcesAt = html.indexOf('data-testid="source-list"')
@@ -220,7 +251,12 @@ describe("ChatArea 问答流", () => {
         searched_document_count: 3,
         results: [
           makeResult({ rank: 1, chunk_id: "a1", parsed_document_id: "doc-a" }),
-          makeResult({ rank: 2, chunk_id: "a2", parsed_document_id: "doc-a", sequence_index: 13 }),
+          makeResult({
+            rank: 2,
+            chunk_id: "a2",
+            parsed_document_id: "doc-a",
+            sequence_index: 13,
+          }),
         ],
       }),
     )
@@ -237,7 +273,10 @@ describe("ChatArea 问答流", () => {
   // 验证零结果时明确提示回答缺少资料依据
   it("零结果时显示无资料依据提示", async () => {
     mockSearchChunks.mockResolvedValue(
-      makeResponse({ results: [], answer: "根据现有文档内容，无法回答此问题。" }),
+      makeResponse({
+        results: [],
+        answer: "根据现有文档内容，无法回答此问题。",
+      }),
     )
     const w = await mountArea()
 
@@ -291,7 +330,9 @@ describe("ChatArea 问答流", () => {
     await ask(w, "什么是特征值")
     await flushPromises()
 
-    expect((mockSearchChunks.mock.calls[0]![0] as Record<string, unknown>).top_k).toBe(10)
+    expect(
+      (mockSearchChunks.mock.calls[0]![0] as Record<string, unknown>).top_k,
+    ).toBe(10)
   })
 
   // 回归守护：空输入不能发送
@@ -302,7 +343,9 @@ describe("ChatArea 问答流", () => {
     await flushPromises()
 
     expect(mockSearchChunks).not.toHaveBeenCalled()
-    expect(w.find('[data-testid="send-button"]').attributes("disabled")).toBeDefined()
+    expect(
+      w.find('[data-testid="send-button"]').attributes("disabled"),
+    ).toBeDefined()
   })
 })
 
@@ -313,6 +356,7 @@ describe("ChatArea 发送后滚动", () => {
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
+    signIn()
     mockSearchChunks.mockReset()
     scrollSpy.mockReset()
     intoViewSpy.mockReset()
@@ -329,7 +373,9 @@ describe("ChatArea 发送后滚动", () => {
 
   // 验证主动发送后只滚动消息容器（不连带滚动外层壳），使最新一轮问答（含新问题与等待占位）进入视野
   it("发送追问后消息容器滚动到最新一轮问答", async () => {
-    mockSearchChunks.mockResolvedValueOnce(makeResponse({ answer: "第一轮回答" }))
+    mockSearchChunks.mockResolvedValueOnce(
+      makeResponse({ answer: "第一轮回答" }),
+    )
     const resolveSecond = deferredSearch()
     const w = await mountArea()
 
@@ -363,5 +409,37 @@ describe("ChatArea 发送后滚动", () => {
 
     expect(callsAfterSend).toBeGreaterThan(0)
     expect(scrollSpy.mock.calls.length).toBe(callsAfterSend)
+  })
+})
+
+describe("ChatArea 只读用户", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+    signIn("viewer")
+    mockSearchChunks.mockReset()
+    mockUploadFile.mockReset()
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+    wrapper = null
+    document.body.innerHTML = ""
+  })
+
+  // 验证只读用户仍可提问，但欢迎页与输入框的上传入口都不可用并说明原因
+  it("只读用户的上传入口不可用", async () => {
+    const w = await mountArea()
+
+    expect(
+      w.find('[data-testid="welcome-upload"]').attributes("disabled"),
+    ).toBeDefined()
+    expect(
+      w.find('[data-testid="attach-button"]').attributes("disabled"),
+    ).toBeDefined()
+    expect(w.text()).toContain("只读账号不能上传或处理资料")
+    expect(
+      w.find('[data-testid="chat-input"]').attributes("disabled"),
+    ).toBeUndefined()
   })
 })

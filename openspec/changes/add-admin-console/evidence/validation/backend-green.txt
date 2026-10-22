@@ -1,0 +1,32 @@
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 1ms
+................................F....................................... [ 93%]
+.....                                                                    [100%]
+=================================== FAILURES ===================================
+_______________ test_edit_preserves_or_replaces_secret[changes1] _______________
+tests/admin_console/test_model_api.py:144: in test_edit_preserves_or_replaces_secret
+    body = assert_status(response, 200, "修改配置必须保留或显式替换密钥")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 修改配置必须保留或显式替换密钥：期望 HTTP 200，实际 HTTP 422；响应={"detail":"请至少提供一项模型配置变更","code":"empty_update"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:19:59.853593Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mbfbecc7c-045d-4d22-ac71-d9f816c4d781[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mbbdc2225-3946-4da8-b038-0f6beac9c1f3[0m [36mtrace_id[0m=[35m01a16168-7be5-7e13-9b8b-5ecb4664fc66[0m
+[2m2026-10-22T02:19:59.855983Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:19:59.864551Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/bbdc2225-3946-4da8-b038-0f6beac9c1f3 "HTTP/1.1 422 Unprocessable Entity"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:90 {'profile_id': 'bbdc2225-3946-4da8-b038-0f6beac9c1f3', 'actor_user_id': 'bfbecc7c-045d-4d22-ac71-d9f816c4d781', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16168-7be5-7e13-9b8b-5ecb4664fc66', 'level': 'info', 'timestamp': '2026-10-22T02:19:59.853593Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/bbdc2225-3946-4da8-b038-0f6beac9c1f3 "HTTP/1.1 422 Unprocessable Entity"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:19:59.939799Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:19:59.954326Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:19:59.954653Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:19:59.939799Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:19:59.954326Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:19:59.954653Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_api.py::test_edit_preserves_or_replaces_secret[changes1]
+1 failed, 76 passed in 4.97s

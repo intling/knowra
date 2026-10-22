@@ -86,17 +86,26 @@ class ChatAdapter:
         if client is not None:
             self._client = client
         else:
-            if not config.api_key:
+            if not config.api_key and not config.auth_optional:
                 raise ChatAPIError(
                     "Chat API key is not configured. Set CHAT_API_KEY in your .env file."
                 )
             self._client = OpenAI(
                 base_url=config.api_base_url,
-                api_key=config.api_key,
+                api_key=config.api_key or "local-no-auth",
                 timeout=config.request_timeout,
                 max_retries=0,  # 关闭 SDK 内部重试，由 ChatAdapter 层统一管理
             )
         self._logger = get_logger(__name__)
+
+    def close(self) -> None:
+        self._client.close()
+
+    async def aclose(self) -> None:
+        self.close()
+        cached = getattr(self, "_async_client_cache", None)
+        if cached is not None:
+            await cached.close()
 
     # ── 公共 API ──────────────────────────────────────────────────────────
 
@@ -132,7 +141,9 @@ class ChatAdapter:
             raise NotImplementedError("Streaming will be implemented in Phase 2")
 
         effective_model = model or self.config.model
-        effective_timeout = request_timeout if request_timeout is not None else self.config.request_timeout
+        effective_timeout = (
+            request_timeout if request_timeout is not None else self.config.request_timeout
+        )
         effective_max_retries = max_retries if max_retries is not None else self.config.max_retries
 
         self._logger.info(
@@ -148,40 +159,44 @@ class ChatAdapter:
         if request_timeout is not None and request_timeout != self.config.request_timeout:
             client = OpenAI(
                 base_url=self.config.api_base_url,
-                api_key=self.config.api_key,
+                api_key=self.config.api_key or "local-no-auth",
                 timeout=effective_timeout,
                 max_retries=0,  # 由 ChatAdapter 层管理重试，避免双重重试放大延迟
             )
         else:
             client = self._client
 
-        last_exception: Exception | None = None
+        try:
+            last_exception: Exception | None = None
 
-        for attempt in range(effective_max_retries + 1):
-            try:
-                response = client.chat.completions.create(
-                    model=effective_model,
-                    messages=messages,
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
-                )
-                return self._parse_response(response)
-            except Exception as exc:
-                last_exception = exc
-                if not self._should_retry(exc, attempt, effective_max_retries):
-                    break
-                if attempt < effective_max_retries:
-                    delay = self._compute_delay(exc, attempt)
-                    self._logger.warning(
-                        "chat_retry",
-                        attempt=attempt + 1,
-                        max_retries=effective_max_retries,
-                        delay=round(delay, 2),
-                        error=str(exc),
+            for attempt in range(effective_max_retries + 1):
+                try:
+                    response = client.chat.completions.create(
+                        model=effective_model,
+                        messages=messages,
+                        temperature=self.config.temperature,
+                        max_tokens=self.config.max_tokens,
                     )
-                    time.sleep(delay)
+                    return self._parse_response(response)
+                except Exception as exc:
+                    last_exception = exc
+                    if not self._should_retry(exc, attempt, effective_max_retries):
+                        break
+                    if attempt < effective_max_retries:
+                        delay = self._compute_delay(exc, attempt)
+                        self._logger.warning(
+                            "chat_retry",
+                            attempt=attempt + 1,
+                            max_retries=effective_max_retries,
+                            delay=round(delay, 2),
+                            error=str(exc),
+                        )
+                        time.sleep(delay)
 
-        raise self._wrap_error(last_exception)
+            raise self._wrap_error(last_exception)
+        finally:
+            if client is not self._client:
+                client.close()
 
     # ── 异步流式 API（RAG 答案生成推荐） ──────────────────────────────────
 
@@ -191,7 +206,7 @@ class ChatAdapter:
         if not hasattr(self, "_async_client_cache"):
             self._async_client_cache = AsyncOpenAI(
                 base_url=self.config.api_base_url,
-                api_key=self.config.api_key,
+                api_key=self.config.api_key or "local-no-auth",
                 timeout=self.config.request_timeout,
                 max_retries=0,  # 关闭 SDK 内部重试，由本层统一管理
             )
@@ -234,10 +249,14 @@ class ChatAdapter:
             ChatAPIError: API 调用在重试耗尽后失败。
         """
         effective_model = model or self.config.model
-        effective_timeout = request_timeout if request_timeout is not None else self.config.request_timeout
+        effective_timeout = (
+            request_timeout if request_timeout is not None else self.config.request_timeout
+        )
         effective_max_retries = max_retries if max_retries is not None else self.config.max_retries
         effective_first_token_timeout = (
-            first_token_timeout if first_token_timeout is not None else self.config.first_token_timeout
+            first_token_timeout
+            if first_token_timeout is not None
+            else self.config.first_token_timeout
         )
 
         self._logger.info(
@@ -254,62 +273,66 @@ class ChatAdapter:
         if request_timeout is not None and request_timeout != self.config.request_timeout:
             client = AsyncOpenAI(
                 base_url=self.config.api_base_url,
-                api_key=self.config.api_key,
+                api_key=self.config.api_key or "local-no-auth",
                 timeout=effective_timeout,
                 max_retries=0,
             )
         else:
             client = self._async_client
 
-        last_exception: Exception | None = None
+        try:
+            last_exception: Exception | None = None
 
-        for attempt in range(effective_max_retries + 1):
-            try:
-                stream = await client.chat.completions.create(
-                    model=effective_model,
-                    messages=messages,
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
-                    stream=True,
-                    stream_options={"include_usage": True},
-                )
-                return await self._collect_stream(
-                    stream,
-                    effective_model,
-                    first_token_timeout=effective_first_token_timeout,
-                )
-            except asyncio.TimeoutError:
-                last_exception = asyncio.TimeoutError(
-                    f"First token not received within {effective_first_token_timeout}s"
-                )
-                if not self._should_retry(last_exception, attempt, effective_max_retries):
-                    break
-                if attempt < effective_max_retries:
-                    delay = self._compute_delay(last_exception, attempt)
-                    self._logger.warning(
-                        "chat_first_token_timeout_retry",
-                        attempt=attempt + 1,
-                        max_retries=effective_max_retries,
-                        delay=round(delay, 2),
+            for attempt in range(effective_max_retries + 1):
+                try:
+                    stream = await client.chat.completions.create(
+                        model=effective_model,
+                        messages=messages,
+                        temperature=self.config.temperature,
+                        max_tokens=self.config.max_tokens,
+                        stream=True,
+                        stream_options={"include_usage": True},
+                    )
+                    return await self._collect_stream(
+                        stream,
+                        effective_model,
                         first_token_timeout=effective_first_token_timeout,
                     )
-                    await asyncio.sleep(delay)
-            except Exception as exc:
-                last_exception = exc
-                if not self._should_retry(exc, attempt, effective_max_retries):
-                    break
-                if attempt < effective_max_retries:
-                    delay = self._compute_delay(exc, attempt)
-                    self._logger.warning(
-                        "chat_async_retry",
-                        attempt=attempt + 1,
-                        max_retries=effective_max_retries,
-                        delay=round(delay, 2),
-                        error=str(exc),
+                except TimeoutError:
+                    last_exception = TimeoutError(
+                        f"First token not received within {effective_first_token_timeout}s"
                     )
-                    await asyncio.sleep(delay)
+                    if not self._should_retry(last_exception, attempt, effective_max_retries):
+                        break
+                    if attempt < effective_max_retries:
+                        delay = self._compute_delay(last_exception, attempt)
+                        self._logger.warning(
+                            "chat_first_token_timeout_retry",
+                            attempt=attempt + 1,
+                            max_retries=effective_max_retries,
+                            delay=round(delay, 2),
+                            first_token_timeout=effective_first_token_timeout,
+                        )
+                        await asyncio.sleep(delay)
+                except Exception as exc:
+                    last_exception = exc
+                    if not self._should_retry(exc, attempt, effective_max_retries):
+                        break
+                    if attempt < effective_max_retries:
+                        delay = self._compute_delay(exc, attempt)
+                        self._logger.warning(
+                            "chat_async_retry",
+                            attempt=attempt + 1,
+                            max_retries=effective_max_retries,
+                            delay=round(delay, 2),
+                            error=str(exc),
+                        )
+                        await asyncio.sleep(delay)
 
-        raise self._wrap_error(last_exception)
+            raise self._wrap_error(last_exception)
+        finally:
+            if client is not getattr(self, "_async_client_cache", None):
+                await client.close()
 
     async def _collect_stream(
         self,
@@ -333,9 +356,7 @@ class ChatAdapter:
         total_tokens = 0
         first_chunk_received = False
 
-        async for chunk in self._iter_stream_with_first_timeout(
-            stream, first_token_timeout
-        ):
+        async for chunk in self._iter_stream_with_first_timeout(stream, first_token_timeout):
             if not first_chunk_received:
                 first_chunk_received = True
                 self._logger.debug("chat_first_token_received", model=model)
@@ -346,7 +367,7 @@ class ChatAdapter:
                     delta = choices[0].delta
                     if delta and delta.content:
                         content_parts.append(delta.content)
-            except (AttributeError, IndexError):
+            except AttributeError, IndexError:
                 pass
 
             # Usage 信息通常包含在流的最后一个 chunk 中
@@ -383,7 +404,7 @@ class ChatAdapter:
         # 首个 chunk：硬超时检测
         try:
             first = await asyncio.wait_for(aiter.__anext__(), timeout=first_token_timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._logger.warning(
                 "chat_first_token_timeout",
                 timeout=first_token_timeout,
@@ -398,7 +419,9 @@ class ChatAdapter:
 
     # ── 内部实现 ──────────────────────────────────────────────────────────
 
-    def _should_retry(self, exception: Exception, attempt: int, max_retries: int | None = None) -> bool:
+    def _should_retry(
+        self, exception: Exception, attempt: int, max_retries: int | None = None
+    ) -> bool:
         """判断 *exception* 是否值得再试一次。"""
         effective_max_retries = max_retries if max_retries is not None else self.config.max_retries
         if attempt >= effective_max_retries:
@@ -526,3 +549,20 @@ class ChatAdapter:
                 request_id=request_id,
             )
         return ChatAPIError(str(exception))
+
+
+class TransientChatAdapter:
+    """供共享改写器使用的无连接外壳，每次同步调用独立持有并关闭客户端。"""
+
+    def __init__(self, *, config: QueryRewriteConfig) -> None:
+        self.config = config
+
+    def generate(self, messages: list[dict], **kwargs) -> ChatResult:
+        adapter = ChatAdapter(config=self.config)
+        try:
+            return adapter.generate(messages, **kwargs)
+        finally:
+            try:
+                adapter.close()
+            except Exception:
+                get_logger(__name__).warning("改写客户端关闭失败")

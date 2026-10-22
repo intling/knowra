@@ -18,6 +18,7 @@ from app.db.session import get_session
 from app.main import app
 from app.models.user import User
 from app.services.users import DEFAULT_USER_ID
+from tests.auth_helpers import authenticate_as
 from tests.document_chunking_helpers import make_parsed_document_with_segment
 from tests.document_parsing_helpers import make_user
 
@@ -117,6 +118,7 @@ def seed_current_user(session: Session) -> User:
     session.add(user)
     session.commit()
     session.refresh(user)
+    authenticate_as(user)
     return user
 
 
@@ -757,7 +759,7 @@ def test_reembed_returns_202_and_created_job(
     """
     # 抑制后台任务执行（后台逻辑由独立测试覆盖）
     routes_mod = import_module("app.api.routes.document_embedding")
-    monkeypatch.setattr(routes_mod.ReembedDispatcher, "enqueue", lambda self, job_id: None)
+    monkeypatch.setattr(routes_mod.ReembedDispatcher, "enqueue", lambda self, job_id, **kw: None)
 
     user = seed_current_user(session)
     _owner, _upload, _parse_job, parsed = make_parsed_document_with_segment(
@@ -802,7 +804,7 @@ def test_reembed_uses_default_model_when_not_specified(
     后台执行器行为由 8.8–8.11 独立验证，此处仅断言 API 同步响应。
     """
     routes_mod = import_module("app.api.routes.document_embedding")
-    monkeypatch.setattr(routes_mod.ReembedDispatcher, "enqueue", lambda self, job_id: None)
+    monkeypatch.setattr(routes_mod.ReembedDispatcher, "enqueue", lambda self, job_id, **kw: None)
 
     user = seed_current_user(session)
     _owner, _upload, _parse_job, parsed = make_parsed_document_with_segment(

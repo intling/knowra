@@ -26,6 +26,7 @@ class ChatConfig:
     request_timeout: float
     max_retries: int
     first_token_timeout: float
+    auth_optional: bool = False
 
     @classmethod
     def from_settings(cls, settings=None) -> ChatConfig:
@@ -44,6 +45,7 @@ class ChatConfig:
             request_timeout=settings.chat_request_timeout,
             max_retries=settings.chat_max_retries,
             first_token_timeout=settings.chat_first_token_timeout,
+            auth_optional="chat" in getattr(settings, "configured_model_kinds", ()),
         )
 
     def snapshot(self) -> dict[str, Any]:

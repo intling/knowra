@@ -25,8 +25,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app.api.deps import get_current_user
 from app.db.session import get_session
 from app.main import app
+from app.models.user import User
 from tests.search_helpers import (
     make_fake_chat_adapter,
     make_fake_chat_config,
@@ -176,7 +178,12 @@ def e2e_client(
 
     # Import the route's dependency functions
     search_routes = import_module("app.api.routes.search")
+    from app.api.deps import get_model_settings
+    from app.core.config import get_settings
+
     overrides = {
+        # 检索用伪 session 只模拟片段；模型配置真实依赖由后台集成测试验证。
+        get_model_settings: get_settings,
         search_routes.get_chat_config: _get_chat_config,
         search_routes.get_embedding_adapter: _get_embedding_adapter,
         search_routes.get_chat_adapter: _get_chat_adapter,
@@ -186,6 +193,8 @@ def e2e_client(
     if hasattr(search_routes, "get_query_rewriter"):
         overrides[search_routes.get_query_rewriter] = _get_query_rewriter
 
+    # 检索接口要求已认证用户：覆盖认证依赖为固定测试成员。
+    overrides[get_current_user] = lambda: User(display_name="Search Tester", role="member")
     overrides[get_session] = _get_session
 
     # Store refs so tests can configure

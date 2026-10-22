@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="74" skipped="1" tests="246" time="10.198" timestamp="2026-10-22T10:07:27.357869+08:00" hostname="instance-20260413-2343"><testcase classname="tests.admin_console.test_model_api" name="test_create_and_list_profiles[chat]" time="0.196"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:26: in test_create_and_list_profiles
+    created = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_create_and_list_profiles[embedding]" time="0.043"><failure message="AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:26: in test_create_and_list_profiles
+    created = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_create_and_list_profiles[rerank]" time="0.042"><failure message="AssertionError: 管理员创建 rerank 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:26: in test_create_and_list_profiles
+    created = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 rerank 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_create_and_list_profiles[query_rewrite]" time="0.041"><failure message="AssertionError: 管理员创建 query_rewrite 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:26: in test_create_and_list_profiles
+    created = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 query_rewrite 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_empty_profile_page" time="0.042"><failure message="AssertionError: 首次进入模型管理应显示空列表：期望 HTTP 200，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:42: in test_empty_profile_page
+    body = assert_status(auth_client.get("/api/admin/models"), 200, "首次进入模型管理应显示空列表")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次进入模型管理应显示空列表：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_local_model_endpoints_are_supported[http://localhost:11434/v1]" time="0.051"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:49: in test_local_model_endpoints_are_supported
+    created = create_profile(auth_client, base_url=base_url, api_key="")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_local_model_endpoints_are_supported[http://192.168.1.8:8000/v1]" time="0.043"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:49: in test_local_model_endpoints_are_supported
+    created = create_profile(auth_client, base_url=base_url, api_key="")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes0]" time="0.040"><failure message="AssertionError: 无效模型字段 ['name'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['name'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes1]" time="0.069"><failure message="AssertionError: 无效模型字段 ['name'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['name'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes2]" time="0.059"><failure message="AssertionError: 无效模型字段 ['model'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['model'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes3]" time="0.037"><failure message="AssertionError: 无效模型字段 ['kind'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['kind'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes4]" time="0.044"><failure message="AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes5]" time="0.044"><failure message="AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes6]" time="0.038"><failure message="AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes7]" time="0.037"><failure message="AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['base_url'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes8]" time="0.037"><failure message="AssertionError: 无效模型字段 ['timeout_seconds'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['timeout_seconds'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes9]" time="0.037"><failure message="AssertionError: 无效模型字段 ['timeout_seconds'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['timeout_seconds'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes10]" time="0.042"><failure message="AssertionError: 无效模型字段 ['max_retries'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['max_retries'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes11]" time="0.045"><failure message="AssertionError: 无效模型字段 ['max_retries'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['max_retries'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes12]" time="0.207"><failure message="AssertionError: 无效模型字段 ['kind', 'dimensions'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['kind', 'dimensions'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_validation_is_safe[changes13]" time="0.041"><failure message="AssertionError: 无效模型字段 ['kind', 'api_format', 'max_retries'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:76: in test_profile_validation_is_safe
+    body = assert_status(response, 422, f"无效模型字段 {list(changes)} 应被拒绝")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效模型字段 ['kind', 'api_format', 'max_retries'] 应被拒绝：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_pagination_validation[params0]" time="0.041"><failure message="AssertionError: 分页参数必须有界：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:86: in test_profile_pagination_validation
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 分页参数必须有界：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_pagination_validation[params1]" time="0.042"><failure message="AssertionError: 分页参数必须有界：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:86: in test_profile_pagination_validation
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 分页参数必须有界：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_profile_pagination_validation[params2]" time="0.043"><failure message="AssertionError: 分页参数必须有界：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:86: in test_profile_pagination_validation
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 分页参数必须有界：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_model_management_permission_is_explicit[admin]" time="0.043"><failure message="AssertionError: 模型配置权限必须显式授予管理员，不能依赖前端隐藏按钮&#10;assert ('models:manage' in ['knowledge:read', 'knowledge:write', 'users:manage']) is ('admin' == 'admin'&#10;  &#10;    admin)">tests/admin_console/test_model_api.py:98: in test_model_management_permission_is_explicit
+    assert ("models:manage" in body["permissions"]) is (role == "admin"), (
+E   AssertionError: 模型配置权限必须显式授予管理员，不能依赖前端隐藏按钮
+E   assert ('models:manage' in ['knowledge:read', 'knowledge:write', 'users:manage']) is ('admin' == 'admin'
+E
+E       admin)</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_model_management_permission_is_explicit[member]" time="0.043" /><testcase classname="tests.admin_console.test_model_api" name="test_model_management_permission_is_explicit[viewer]" time="0.041" /><testcase classname="tests.admin_console.test_model_api" name="test_model_endpoints_reject_unauthorized[None]" time="0.040"><failure message="AssertionError: 非管理员不得访问任意模型管理接口：期望 HTTP 401，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:119: in test_model_endpoints_reject_unauthorized
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非管理员不得访问任意模型管理接口：期望 HTTP 401，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_model_endpoints_reject_unauthorized[member]" time="0.047"><failure message="AssertionError: 非管理员不得访问任意模型管理接口：期望 HTTP 403，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:119: in test_model_endpoints_reject_unauthorized
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非管理员不得访问任意模型管理接口：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_model_endpoints_reject_unauthorized[viewer]" time="0.047"><failure message="AssertionError: 非管理员不得访问任意模型管理接口：期望 HTTP 403，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:119: in test_model_endpoints_reject_unauthorized
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非管理员不得访问任意模型管理接口：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_api_key_is_encrypted_at_rest" time="0.038"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:129: in test_api_key_is_encrypted_at_rest
+    create_profile(auth_client)
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_edit_preserves_or_replaces_secret[changes0]" time="0.038"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:141: in test_edit_preserves_or_replaces_secret
+    profile = create_profile(auth_client)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_edit_preserves_or_replaces_secret[changes1]" time="0.041"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:141: in test_edit_preserves_or_replaces_secret
+    profile = create_profile(auth_client)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_edit_preserves_or_replaces_secret[changes2]" time="0.041"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:141: in test_edit_preserves_or_replaces_secret
+    profile = create_profile(auth_client)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_clear_secret_is_explicit" time="0.047"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:153: in test_clear_secret_is_explicit
+    profile = create_profile(auth_client)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_missing_encryption_key_fails_closed" time="0.039"><failure message="AssertionError: 未配置加密主密钥不得保存秘密：期望 HTTP 503，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:169: in test_missing_encryption_key_fails_closed
+    assert_error(response, 503, "model_secret_unavailable", "未配置加密主密钥不得保存秘密")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 未配置加密主密钥不得保存秘密：期望 HTTP 503，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_kind_is_immutable_and_empty_patch_rejected" time="0.039"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:175: in test_kind_is_immutable_and_empty_patch_rejected
+    profile = create_profile(auth_client)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_defaults_are_unique_per_kind_and_can_be_reverted" time="0.037"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:186: in test_defaults_are_unique_per_kind_and_can_be_reverted
+    first = create_profile(auth_client, name="聊天一")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_default_and_disabled_profile_protection" time="0.041"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:211: in test_default_and_disabled_profile_protection
+    profile = create_profile(auth_client, enabled=False)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_missing_profile_has_business_error" time="0.043"><failure message="AssertionError: 不存在模型必须返回具体业务原因：期望错误码 model_not_found，实际 {'detail': 'Not Found'}">tests/admin_console/test_model_api.py:240: in test_missing_profile_has_business_error
+    assert_error(response, 404, "model_not_found", "不存在模型必须返回具体业务原因")
+tests/admin_console/helpers.py:16: in assert_error
+    assert body.get("code") == code, f"{condition}：期望错误码 {code}，实际 {body}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 不存在模型必须返回具体业务原因：期望错误码 model_not_found，实际 {'detail': 'Not Found'}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_embedding_activation_rejects_existing_index_conflict" time="0.077"><failure message="AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:249: in test_embedding_activation_rejects_existing_index_conflict
+    profile = create_profile(auth_client, "embedding", model="different-space-same-dimensions")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_active_embedding_edit_and_revert_guard" time="0.039"><failure message="AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:262: in test_active_embedding_edit_and_revert_guard
+    profile = create_profile(auth_client, "embedding", model="Qwen/Qwen3-Embedding-4B")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_api" name="test_model_writes_require_trusted_origin" time="0.038"><failure message="AssertionError: 跨站模型配置写入必须拒绝：期望 HTTP 403，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_api.py:290: in test_model_writes_require_trusted_origin
+    assert_error(response, 403, "csrf_origin_rejected", "跨站模型配置写入必须拒绝")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 跨站模型配置写入必须拒绝：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_runtime" name="test_unbound_profiles_preserve_environment" time="0.032"><failure message="ModuleNotFoundError: No module named 'app.services.model_configuration'">tests/admin_console/test_model_runtime.py:19: in test_unbound_profiles_preserve_environment
+    effective = resolve(auth_db, model_settings)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_model_runtime.py:12: in resolve
+    module = import_module("app.services.model_configuration")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+&lt;frozen importlib._bootstrap&gt;:1406: in _gcd_import
+    ???
+&lt;frozen importlib._bootstrap&gt;:1371: in _find_and_load
+    ???
+&lt;frozen importlib._bootstrap&gt;:1335: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'app.services.model_configuration'</failure></testcase><testcase classname="tests.admin_console.test_model_runtime" name="test_runtime_resolves_each_purpose[chat-chat-chat_request_timeout]" time="0.041"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_runtime.py:39: in test_runtime_resolves_each_purpose
+    profile = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_runtime" name="test_runtime_resolves_each_purpose[embedding-document_embedding-document_embedding_request_timeout]" time="0.039"><failure message="AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_runtime.py:39: in test_runtime_resolves_each_purpose
+    profile = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 embedding 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_runtime" name="test_runtime_resolves_each_purpose[rerank-rerank-rerank_request_timeout]" time="0.042"><failure message="AssertionError: 管理员创建 rerank 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_runtime.py:39: in test_runtime_resolves_each_purpose
+    profile = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 rerank 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_runtime" name="test_runtime_resolves_each_purpose[query_rewrite-query_rewrite-query_rewrite_timeout]" time="0.039"><failure message="AssertionError: 管理员创建 query_rewrite 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_runtime.py:39: in test_runtime_resolves_each_purpose
+    profile = create_profile(auth_client, kind)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 query_rewrite 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_runtime" name="test_new_resolution_changes_without_mutating_inflight_snapshot" time="0.040"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_runtime.py:61: in test_new_resolution_changes_without_mutating_inflight_snapshot
+    first = create_profile(auth_client, model="chat-before")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_model_runtime" name="test_unreadable_secret_does_not_fall_back" time="0.040"><failure message="AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_model_runtime.py:80: in test_unreadable_secret_does_not_fall_back
+    profile = create_profile(auth_client)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:41: in create_profile
+    return assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 chat 模型配置必须返回公开配置，不能缺少创建接口：期望 HTTP 201，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_account_and_login[admin]" time="0.037"><failure message="AssertionError: 管理员创建 admin 账号应成功，现有列表接口不足以支持建号：期望 HTTP 201，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:31: in test_create_account_and_login
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 admin 账号应成功，现有列表接口不足以支持建号：期望 HTTP 201，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_account_and_login[member]" time="0.037"><failure message="AssertionError: 管理员创建 member 账号应成功，现有列表接口不足以支持建号：期望 HTTP 201，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:31: in test_create_account_and_login
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 member 账号应成功，现有列表接口不足以支持建号：期望 HTTP 201，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_account_and_login[viewer]" time="0.037"><failure message="AssertionError: 管理员创建 viewer 账号应成功，现有列表接口不足以支持建号：期望 HTTP 201，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:31: in test_create_account_and_login
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员创建 viewer 账号应成功，现有列表接口不足以支持建号：期望 HTTP 201，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_normalizes_identity_and_defaults_to_member" time="0.035"><failure message="AssertionError: 建号规范化：期望 HTTP 201，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:58: in test_create_normalizes_identity_and_defaults_to_member
+    body = assert_status(auth_client.post("/api/admin/users", json=payload), 201, "建号规范化")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号规范化：期望 HTTP 201，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_disabled_account_blocks_login" time="0.036"><failure message="AssertionError: 管理员可预建禁用账号：期望 HTTP 201，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:69: in test_create_disabled_account_blocks_login
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员可预建禁用账号：期望 HTTP 201，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_validates_without_partial_writes[changes0]" time="0.035"><failure message="AssertionError: 建号字段无效 ['email'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:103: in test_create_validates_without_partial_writes
+    body = assert_status(response, 422, f"建号字段无效 {list(changes)} 应拒绝且不给出秘密")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号字段无效 ['email'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_validates_without_partial_writes[changes1]" time="0.037"><failure message="AssertionError: 建号字段无效 ['display_name'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:103: in test_create_validates_without_partial_writes
+    body = assert_status(response, 422, f"建号字段无效 {list(changes)} 应拒绝且不给出秘密")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号字段无效 ['display_name'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_validates_without_partial_writes[changes2]" time="0.036"><failure message="AssertionError: 建号字段无效 ['display_name'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:103: in test_create_validates_without_partial_writes
+    body = assert_status(response, 422, f"建号字段无效 {list(changes)} 应拒绝且不给出秘密")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号字段无效 ['display_name'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_validates_without_partial_writes[changes3]" time="0.041"><failure message="AssertionError: 建号字段无效 ['password'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:103: in test_create_validates_without_partial_writes
+    body = assert_status(response, 422, f"建号字段无效 {list(changes)} 应拒绝且不给出秘密")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号字段无效 ['password'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_validates_without_partial_writes[changes4]" time="0.035"><failure message="AssertionError: 建号字段无效 ['password'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:103: in test_create_validates_without_partial_writes
+    body = assert_status(response, 422, f"建号字段无效 {list(changes)} 应拒绝且不给出秘密")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号字段无效 ['password'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_validates_without_partial_writes[changes5]" time="0.036"><failure message="AssertionError: 建号字段无效 ['role'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:103: in test_create_validates_without_partial_writes
+    body = assert_status(response, 422, f"建号字段无效 {list(changes)} 应拒绝且不给出秘密")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号字段无效 ['role'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_validates_without_partial_writes[changes6]" time="0.036"><failure message="AssertionError: 建号字段无效 ['status'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:103: in test_create_validates_without_partial_writes
+    body = assert_status(response, 422, f"建号字段无效 {list(changes)} 应拒绝且不给出秘密")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 建号字段无效 ['status'] 应拒绝且不给出秘密：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_rejects_duplicate_normalized_email[False]" time="0.036"><failure message="AssertionError: 规范化后重复的邮箱应保留原账号归属：期望 HTTP 409，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:114: in test_create_rejects_duplicate_normalized_email
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 规范化后重复的邮箱应保留原账号归属：期望 HTTP 409，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_create_rejects_duplicate_normalized_email[True]" time="0.037"><failure message="AssertionError: 规范化后重复的邮箱应保留原账号归属：期望 HTTP 409，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:114: in test_create_rejects_duplicate_normalized_email
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 规范化后重复的邮箱应保留原账号归属：期望 HTTP 409，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_reset_password_revokes_all_target_sessions" time="0.037"><failure message="AssertionError: 管理员重置他人密码后必须撤销其全部设备会话：期望 HTTP 204，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_user_lifecycle.py:131: in test_reset_password_revokes_all_target_sessions
+    assert_status(response, 204, "管理员重置他人密码后必须撤销其全部设备会话")
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员重置他人密码后必须撤销其全部设备会话：期望 HTTP 204，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_reset_disabled_user_preserves_disabled_status" time="0.037"><failure message="AssertionError: 管理员可重置禁用账号密码但不得启用账号：期望 HTTP 204，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_user_lifecycle.py:159: in test_reset_disabled_user_preserves_disabled_status
+    assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员可重置禁用账号密码但不得启用账号：期望 HTTP 204，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_weak_reset_keeps_password_and_sessions" time="0.038"><failure message="AssertionError: 重置弱密码必须拒绝且保持旧凭据有效：期望 HTTP 422，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_user_lifecycle.py:178: in test_weak_reset_keeps_password_and_sessions
+    assert_error(response, 422, "weak_password", "重置弱密码必须拒绝且保持旧凭据有效")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 重置弱密码必须拒绝且保持旧凭据有效：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_self_management_uses_account_settings[delete-cannot_delete_self]" time="0.037"><failure message="AssertionError: 后台不得删除当前账号或旁路自身账户改密验证：期望 HTTP 409，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:198: in test_self_management_uses_account_settings
+    assert_error(response, 409, code, "后台不得删除当前账号或旁路自身账户改密验证")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 后台不得删除当前账号或旁路自身账户改密验证：期望 HTTP 409，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_self_management_uses_account_settings[reset-password-cannot_reset_self]" time="0.037"><failure message="AssertionError: 后台不得删除当前账号或旁路自身账户改密验证：期望 HTTP 409，实际 HTTP 404；响应={&quot;detail&quot;:&quot;Not Found&quot;}">tests/admin_console/test_user_lifecycle.py:198: in test_self_management_uses_account_settings
+    assert_error(response, 409, code, "后台不得删除当前账号或旁路自身账户改密验证")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 后台不得删除当前账号或旁路自身账户改密验证：期望 HTTP 409，实际 HTTP 404；响应={"detail":"Not Found"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_delete_preserves_private_knowledge" time="0.075"><failure message="AssertionError: 删除账号应软删除并保留资料：期望 HTTP 204，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:210: in test_delete_preserves_private_knowledge
+    assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 删除账号应软删除并保留资料：期望 HTTP 204，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_missing_targets_return_business_error[False]" time="0.037"><failure message="AssertionError: 目标不存在或已删除时应说明业务原因：期望 HTTP 404，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:244: in test_missing_targets_return_business_error
+    assert_error(response, 404, "user_not_found", "目标不存在或已删除时应说明业务原因")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 目标不存在或已删除时应说明业务原因：期望 HTTP 404，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_missing_targets_return_business_error[True]" time="0.038"><failure message="AssertionError: 目标不存在或已删除时应说明业务原因：期望 HTTP 404，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:244: in test_missing_targets_return_business_error
+    assert_error(response, 404, "user_not_found", "目标不存在或已删除时应说明业务原因")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 目标不存在或已删除时应说明业务原因：期望 HTTP 404，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_lifecycle_rejects_unauthorized_callers[None]" time="0.039"><failure message="AssertionError: 非管理员不得执行账号生命周期操作：期望 HTTP 401，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:263: in test_lifecycle_rejects_unauthorized_callers
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非管理员不得执行账号生命周期操作：期望 HTTP 401，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_lifecycle_rejects_unauthorized_callers[member]" time="0.042"><failure message="AssertionError: 非管理员不得执行账号生命周期操作：期望 HTTP 403，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:263: in test_lifecycle_rejects_unauthorized_callers
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非管理员不得执行账号生命周期操作：期望 HTTP 403，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_lifecycle_rejects_unauthorized_callers[viewer]" time="0.042"><failure message="AssertionError: 非管理员不得执行账号生命周期操作：期望 HTTP 403，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:263: in test_lifecycle_rejects_unauthorized_callers
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非管理员不得执行账号生命周期操作：期望 HTTP 403，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_lifecycle" name="test_lifecycle_rejects_cross_site_writes" time="0.039"><failure message="AssertionError: 跨站后台写入必须拒绝：期望 HTTP 403，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_lifecycle.py:287: in test_lifecycle_rejects_cross_site_writes
+    assert_error(response, 403, "csrf_origin_rejected", "跨站后台写入必须拒绝")
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 跨站后台写入必须拒绝：期望 HTTP 403，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.auth.test_account_api" name="test_read_me_returns_public_fields_role_and_permissions[viewer-permissions0]" time="0.036" /><testcase classname="tests.auth.test_account_api" name="test_read_me_returns_public_fields_role_and_permissions[member-permissions1]" time="0.038" /><testcase classname="tests.auth.test_account_api" name="test_read_me_returns_public_fields_role_and_permissions[admin-permissions2]" time="0.039" /><testcase classname="tests.auth.test_account_api" name="test_read_me_reflects_role_change_without_relogin" time="0.040" /><testcase classname="tests.auth.test_account_api" name="test_update_me_changes_display_name_only" time="0.043" /><testcase classname="tests.auth.test_account_api" name="test_update_me_rejects_invalid_display_name[]" time="0.041" /><testcase classname="tests.auth.test_account_api" name="test_update_me_rejects_invalid_display_name[   ]" time="0.039" /><testcase classname="tests.auth.test_account_api" name="test_update_me_rejects_invalid_display_name[\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d]" time="0.039" /><testcase classname="tests.auth.test_account_api" name="test_account_endpoints_require_login" time="0.036" /><testcase classname="tests.auth.test_account_api" name="test_change_password_revokes_all_sessions_and_requires_relogin" time="0.077" /><testcase classname="tests.auth.test_account_api" name="test_change_password_with_wrong_current_password_keeps_session" time="0.054" /><testcase classname="tests.auth.test_account_api" name="test_change_password_rejects_weak_new_password" time="0.044" /><testcase classname="tests.auth.test_admin_users_api" name="test_non_admin_cannot_manage_users[member]" time="0.047" /><testcase classname="tests.auth.test_admin_users_api" name="test_non_admin_cannot_manage_users[viewer]" time="0.048" /><testcase classname="tests.auth.test_admin_users_api" name="test_anonymous_cannot_list_users" time="0.030" /><testcase classname="tests.auth.test_admin_users_api" name="test_admin_lists_users_with_pagination" time="0.047" /><testcase classname="tests.auth.test_admin_users_api" name="test_admin_list_validates_pagination[params0]" time="0.041" /><testcase classname="tests.auth.test_admin_users_api" name="test_admin_list_validates_pagination[params1]" time="0.039" /><testcase classname="tests.auth.test_admin_users_api" name="test_admin_list_validates_pagination[params2]" time="0.037" /><testcase classname="tests.auth.test_admin_users_api" name="test_promote_member_takes_effect_immediately" time="0.063" /><testcase classname="tests.auth.test_admin_users_api" name="test_demote_to_viewer_revokes_write_permission" time="0.269" /><testcase classname="tests.auth.test_admin_users_api" name="test_disable_user_revokes_sessions_and_blocks_login" time="0.062" /><testcase classname="tests.auth.test_admin_users_api" name="test_reenable_user_allows_login_but_not_old_sessions" time="0.067" /><testcase classname="tests.auth.test_admin_users_api" name="test_last_admin_cannot_demote_self" time="0.045" /><testcase classname="tests.auth.test_admin_users_api" name="test_admin_can_demote_self_when_another_admin_exists" time="0.050" /><testcase classname="tests.auth.test_admin_users_api" name="test_cannot_remove_last_active_admin_via_other_account" time="0.051" /><testcase classname="tests.auth.test_admin_users_api" name="test_admin_cannot_disable_self" time="0.044" /><testcase classname="tests.auth.test_admin_users_api" name="test_update_missing_or_deleted_user_returns_404" time="0.062" /><testcase classname="tests.auth.test_admin_users_api" name="test_update_user_validates_payload[payload0-empty_update]" time="0.043" /><testcase classname="tests.auth.test_admin_users_api" name="test_update_user_validates_payload[payload1-None]" time="0.043" /><testcase classname="tests.auth.test_admin_users_api" name="test_update_user_validates_payload[payload2-None]" time="0.042" /><testcase classname="tests.auth.test_admin_users_api" name="test_admin_cannot_read_other_users_documents" time="0.089" /><testcase classname="tests.auth.test_auth_api" name="test_register_creates_member_and_logs_in" time="0.043" /><testcase classname="tests.auth.test_auth_api" name="test_register_persists_argon2_credential_and_new_uuid" time="0.038" /><testcase classname="tests.auth.test_auth_api" name="test_register_ignores_role_and_permission_fields" time="0.037" /><testcase classname="tests.auth.test_auth_api" name="test_first_registration_is_not_admin" time="0.038" /><testcase classname="tests.auth.test_auth_api" name="test_register_rejects_duplicate_email_case_insensitively" time="0.035" /><testcase classname="tests.auth.test_auth_api" name="test_register_rejects_invalid_input[overrides0-invalid_email]" time="0.045" /><testcase classname="tests.auth.test_auth_api" name="test_register_rejects_invalid_input[overrides1-invalid_display_name]" time="0.033" /><testcase classname="tests.auth.test_auth_api" name="test_register_rejects_invalid_input[overrides2-weak_password]" time="0.032" /><testcase classname="tests.auth.test_auth_api" name="test_register_rejects_invalid_input[overrides3-weak_password]" time="0.032" /><testcase classname="tests.auth.test_auth_api" name="test_register_rejects_invalid_input[overrides4-weak_password]" time="0.032" /><testcase classname="tests.auth.test_auth_api" name="test_login_succeeds_with_case_insensitive_email" time="0.044" /><testcase classname="tests.auth.test_auth_api" name="test_login_failures_do_not_reveal_account_existence" time="0.182" /><testcase classname="tests.auth.test_auth_api" name="test_login_rejects_disabled_account" time="0.037" /><testcase classname="tests.auth.test_auth_api" name="test_login_rotates_existing_session" time="0.042" /><testcase classname="tests.auth.test_auth_api" name="test_login_is_rate_limited_after_repeated_failures" time="0.056" /><testcase classname="tests.auth.test_auth_api" name="test_login_rate_limit_recovers_after_window_and_resets_on_success" time="0.088" /><testcase classname="tests.auth.test_auth_api" name="test_logout_revokes_session_and_clears_cookie" time="0.047" /><testcase classname="tests.auth.test_auth_api" name="test_logout_without_session_is_idempotent" time="0.031" /><testcase classname="tests.auth.test_auth_api" name="test_private_endpoint_requires_valid_session" time="0.037" /><testcase classname="tests.auth.test_auth_api" name="test_expired_session_returns_401" time="0.040" /><testcase classname="tests.auth.test_auth_api" name="test_default_user_is_not_used_as_fallback" time="0.031" /><testcase classname="tests.auth.test_auth_api" name="test_untrusted_origin_is_rejected_for_login" time="0.035" /><testcase classname="tests.auth.test_auth_api" name="test_cross_site_fetch_metadata_is_rejected" time="0.037" /><testcase classname="tests.auth.test_auth_api" name="test_trusted_origin_is_allowed" time="0.039" /><testcase classname="tests.auth.test_auth_api" name="test_validation_errors_do_not_echo_passwords[False-/api/auth/register]" time="0.035" /><testcase classname="tests.auth.test_auth_api" name="test_validation_errors_do_not_echo_passwords[False-/api/auth/login]" time="0.035" /><testcase classname="tests.auth.test_auth_api" name="test_validation_errors_do_not_echo_passwords[False-/api/users/me/password]" time="0.038" /><testcase classname="tests.auth.test_auth_api" name="test_validation_errors_do_not_echo_passwords[True-/api/auth/register]" time="0.047" /><testcase classname="tests.auth.test_auth_api" name="test_validation_errors_do_not_echo_passwords[True-/api/auth/login]" time="0.035" /><testcase classname="tests.auth.test_auth_api" name="test_validation_errors_do_not_echo_passwords[True-/api/users/me/password]" time="0.036" /><testcase classname="tests.auth.test_auth_api" name="test_auth_flow_logs_do_not_contain_secrets" time="0.066" /><testcase classname="tests.auth.test_auth_migration" name="test_auth_migration_is_new_single_head" time="0.089" /><testcase classname="tests.auth.test_auth_migration" name="test_auth_migration_upgrade_adds_role_and_auth_tables" time="0.002" /><testcase classname="tests.auth.test_auth_migration" name="test_auth_migration_downgrade_drops_auth_structures" time="0.001" /><testcase classname="tests.auth.test_auth_migration" name="test_user_model_role_default_and_check" time="0.015" /><testcase classname="tests.auth.test_auth_migration" name="test_auth_settings_defaults" time="0.003" /><testcase classname="tests.auth.test_auth_migration" name="test_insecure_auth_settings_fail_fast[overrides0-BACKEND_CORS_ORIGINS]" time="0.003" /><testcase classname="tests.auth.test_auth_migration" name="test_insecure_auth_settings_fail_fast[overrides1-BACKEND_CORS_ORIGINS]" time="0.003" /><testcase classname="tests.auth.test_auth_migration" name="test_insecure_auth_settings_fail_fast[overrides2-AUTH_COOKIE_SECURE]" time="0.003" /><testcase classname="tests.auth.test_auth_migration" name="test_production_with_secure_cookie_is_valid" time="0.003" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_email_strips_and_lowercases" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_email_rejects_invalid_values[]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_email_rejects_invalid_values[   ]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_email_rejects_invalid_values[no-at-sign]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_email_rejects_invalid_values[user@localhost]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_email_rejects_invalid_values[a b@example.com]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_email_rejects_invalid_values[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ex.com]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_display_name_strips_and_accepts_100_chars" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_display_name_rejects_blank_or_too_long[]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_display_name_rejects_blank_or_too_long[   ]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_normalize_display_name_rejects_blank_or_too_long[\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d\u540d]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_accepts_boundaries[abcdefghi1]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_accepts_boundaries[a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_rejects_weak_passwords[abcdefgh1-someone@example.com-10]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_rejects_weak_passwords[a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1x-someone@example.com-128]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_rejects_weak_passwords[onlyletterspassword-someone@example.com-\u6570\u5b57]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_rejects_weak_passwords[1234567890123-someone@example.com-\u5b57\u6bcd]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_rejects_weak_passwords[Alice2026@Example.com-alice2026@example.com-\u90ae\u7bb1]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_validate_password_rejects_weak_passwords[ALICE2026PW-alice2026pw@example.com-\u90ae\u7bb1]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_hash_password_uses_argon2id_and_verifies" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_verify_password_returns_false_for_malformed_hash" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_needs_rehash_detects_outdated_parameters" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_permissions_for_role_matrix[viewer-expected0]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_permissions_for_role_matrix[member-expected1]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_permissions_for_role_matrix[admin-expected2]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_permissions_for_role_matrix[root-expected3]" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_login_rate_limiter_locks_after_max_failures_and_unlocks_after_window" time="0.001" /><testcase classname="tests.auth.test_auth_passwords" name="test_login_rate_limiter_reset_clears_failures" time="0.001" /><testcase classname="tests.auth.test_auth_sessions" name="test_create_session_stores_only_token_hash" time="0.016" /><testcase classname="tests.auth.test_auth_sessions" name="test_resolve_session_user_returns_owner_or_none" time="0.017" /><testcase classname="tests.auth.test_auth_sessions" name="test_resolve_session_user_rejects_expired_session" time="0.017" /><testcase classname="tests.auth.test_auth_sessions" name="test_revoke_session_marks_revoked_and_invalidates" time="0.021" /><testcase classname="tests.auth.test_auth_sessions" name="test_revoke_session_ignores_unknown_token" time="0.011" /><testcase classname="tests.auth.test_auth_sessions" name="test_resolve_session_user_rejects_disabled_or_deleted_user" time="0.021" /><testcase classname="tests.auth.test_auth_sessions" name="test_revoke_user_sessions_only_affects_target_user" time="0.022" /><testcase classname="tests.auth.test_auth_sessions" name="test_default_user_is_never_resolved_without_session" time="0.012" /><testcase classname="tests.auth.test_authorization" name="test_route_inventory_contains_auth_and_admin_endpoints" time="0.001" /><testcase classname="tests.auth.test_authorization" name="test_every_private_route_requires_authentication" time="0.109" /><testcase classname="tests.auth.test_authorization" name="test_viewer_cannot_call_write_endpoints" time="0.096" /><testcase classname="tests.auth.test_authorization" name="test_viewer_can_read_own_documents" time="0.087" /><testcase classname="tests.auth.test_authorization" name="test_cross_user_resource_access_returns_404" time="0.165" /><testcase classname="tests.auth.test_chat_quota" name="test_three_reservations_then_reject_with_retry_after" time="0.027" /><testcase classname="tests.auth.test_chat_quota" name="test_unconfigured_accounts_are_unlimited[member]" time="0.017" /><testcase classname="tests.auth.test_chat_quota" name="test_unconfigured_accounts_are_unlimited[admin]" time="0.016" /><testcase classname="tests.auth.test_chat_quota" name="test_account_quotas_are_independent" time="0.027" /><testcase classname="tests.auth.test_chat_quota" name="test_rolling_window_expires_at_exact_hour" time="0.026" /><testcase classname="tests.auth.test_chat_quota" name="test_failed_request_releases_only_its_own_reservation" time="0.038" /><testcase classname="tests.auth.test_chat_quota" name="test_releasing_unlimited_request_is_noop" time="0.019" /><testcase classname="tests.auth.test_chat_quota" name="test_usage_survives_new_database_session" time="0.022" /><testcase classname="tests.auth.test_chat_quota" name="test_database_rejects_nonpositive_hourly_limit[0]" time="0.015" /><testcase classname="tests.auth.test_chat_quota" name="test_database_rejects_nonpositive_hourly_limit[-1]" time="0.014" /><testcase classname="tests.auth.test_chat_quota" name="test_postgres_concurrent_requests_cannot_exceed_limit" time="0.001"><skipped type="pytest.skip" message="需显式提供隔离恢复库连接，验证 PostgreSQL FOR UPDATE 多连接并发">/root/project/knowra/backend/tests/auth/test_chat_quota.py:150: 需显式提供隔离恢复库连接，验证 PostgreSQL FOR UPDATE 多连接并发</skipped></testcase><testcase classname="tests.auth.test_chat_quota_api" name="test_fourth_search_is_rejected_before_adapters" time="0.082" /><testcase classname="tests.auth.test_chat_quota_api" name="test_new_login_does_not_reset_quota_and_other_user_is_unaffected" time="0.118" /><testcase classname="tests.auth.test_chat_quota_api" name="test_invalid_search_does_not_consume_quota" time="0.046" /><testcase classname="tests.auth.test_chat_quota_api" name="test_search_errors_release_reservation[failure0]" time="0.120" /><testcase classname="tests.auth.test_chat_quota_api" name="test_search_errors_release_reservation[failure1]" time="0.120" /><testcase classname="tests.auth.test_chat_quota_api" name="test_adapter_dependency_failure_releases_reservation" time="0.062" /><testcase classname="tests.auth.test_chat_quota_api" name="test_empty_knowledge_or_generation_fallback_does_not_charge[no_documents]" time="0.087" /><testcase classname="tests.auth.test_chat_quota_api" name="test_empty_knowledge_or_generation_fallback_does_not_charge[generation_failure]" time="0.083" /><testcase classname="tests.auth.test_chat_quota_api" name="test_anonymous_search_is_still_unauthorized" time="0.031" /><testcase classname="tests.auth.test_chat_quota_api" name="test_expired_usage_recovers_on_next_search" time="0.085" /><testcase classname="tests.auth.test_chat_quota_migration" name="test_quota_migration_follows_auth_and_is_single_head" time="0.006" /><testcase classname="tests.auth.test_chat_quota_migration" name="test_quota_upgrade_creates_constrained_tables_and_index" time="0.001" /><testcase classname="tests.auth.test_chat_quota_migration" name="test_quota_downgrade_only_removes_quota_tables" time="0.001" /><testcase classname="tests.auth.test_cli_users" name="test_create_admin_creates_new_admin" time="0.016" /><testcase classname="tests.auth.test_cli_users" name="test_create_admin_reads_password_with_getpass_twice" time="0.015" /><testcase classname="tests.auth.test_cli_users" name="test_create_admin_rejects_mismatched_passwords" time="0.011" /><testcase classname="tests.auth.test_cli_users" name="test_create_admin_rejects_weak_password" time="0.011" /><testcase classname="tests.auth.test_cli_users" name="test_create_admin_does_not_accept_password_argument" time="0.012" /><testcase classname="tests.auth.test_cli_users" name="test_create_admin_rejects_existing_email" time="0.015" /><testcase classname="tests.auth.test_cli_users" name="test_create_admin_claims_legacy_default_user" time="0.022" /><testcase classname="tests.auth.test_cli_users" name="test_claim_legacy_user_requires_unclaimed_legacy_row[missing]" time="0.012" /><testcase classname="tests.auth.test_cli_users" name="test_claim_legacy_user_requires_unclaimed_legacy_row[already_claimed]" time="0.016" /><testcase classname="tests.auth.test_cli_users" name="test_reset_password_sets_new_password_and_revokes_sessions" time="0.035" /><testcase classname="tests.auth.test_cli_users" name="test_reset_password_unknown_email" time="0.012" /><testcase classname="tests.auth.test_creation_foreign_keys" name="test_cli_creates_account_with_foreign_keys[create-user]" time="0.017" /><testcase classname="tests.auth.test_creation_foreign_keys" name="test_cli_creates_account_with_foreign_keys[create-admin]" time="0.017" /><testcase classname="tests.auth.test_creation_foreign_keys" name="test_registration_creates_account_with_foreign_keys" time="0.014" /><testcase classname="tests.auth.test_demo_cli" name="test_create_member_with_hourly_limit" time="0.018" /><testcase classname="tests.auth.test_demo_cli" name="test_create_member_without_limit" time="0.015" /><testcase classname="tests.auth.test_demo_cli" name="test_duplicate_email_does_not_change_existing_user" time="0.018" /><testcase classname="tests.auth.test_demo_cli" name="test_invalid_limit_creates_nothing[0]" time="0.011" /><testcase classname="tests.auth.test_demo_cli" name="test_invalid_limit_creates_nothing[-1]" time="0.011" /><testcase classname="tests.auth.test_demo_cli" name="test_invalid_limit_creates_nothing[1.5]" time="0.011" /><testcase classname="tests.auth.test_demo_cli" name="test_invalid_limit_creates_nothing[abc]" time="0.013" /><testcase classname="tests.auth.test_demo_cli" name="test_weak_password_creates_nothing" time="0.011" /><testcase classname="tests.auth.test_demo_cli" name="test_member_interactive_password_confirmation" time="0.011" /><testcase classname="tests.auth.test_demo_cli" name="test_quota_insert_failure_is_atomic" time="0.014" /><testcase classname="tests.auth.test_search_isolation" name="test_search_service_requires_owner_user_id" time="0.004" /><testcase classname="tests.auth.test_search_isolation" name="test_count_and_vector_search_are_scoped_to_owner" time="0.011" /><testcase classname="tests.auth.test_search_isolation" name="test_count_total_embeddings_counts_only_visible_owner_vectors" time="0.096" /><testcase classname="tests.auth.test_search_isolation" name="test_user_without_vectors_gets_empty_response_even_if_others_have_data" time="0.048" /><testcase classname="tests.auth.test_search_isolation" name="test_response_cache_is_isolated_per_user" time="0.022" /><testcase classname="tests.auth.test_search_isolation" name="test_response_cache_key_includes_kb_fingerprint" time="0.009" /><testcase classname="tests.auth.test_search_isolation" name="test_query_rewriter_receives_user_scoped_namespace" time="0.008" /><testcase classname="tests.auth.test_search_isolation" name="test_compute_fingerprint_is_scoped_to_owner" time="0.053" /><testcase classname="tests.auth.test_search_isolation" name="test_search_route_scopes_to_current_user" time="0.080" /></testsuite></testsuites>

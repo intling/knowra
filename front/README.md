@@ -44,11 +44,70 @@ The app starts at `http://localhost:5173`. API requests under `/api` are proxied
   Pending turns show 正在检索资料… / 正在生成回答… with `aria-live`. On an explicit send only the message
   container scrolls the new turn into view; async answers never force scrolling.
 
-## Current user
+## Accounts and permissions
 
-The frontend loads `GET /api/users/me` on the home view to display the current
-user context. Login, registration, logout, and user switching are not part of
-this phase.
+`/login` and `/register` provide email/password authentication. Registration
+creates a member and signs in automatically. Private routes first probe
+`GET /api/users/me`; anonymous users return to login with a sanitized local
+redirect. A temporary probe failure offers retry without mounting private views.
+
+The sidebar account menu opens `/account` for profile/password settings and
+logout. Administrators also see “后台管理” at `/admin`, redirecting to
+`/admin/users`. The shared navigation links user management and `/admin/models`.
+Users can be created with an initial password and fixed role, have passwords
+reset (revoking all sessions), be enabled/disabled, change roles, or be deleted
+after confirmation. Deletion retains historical documents. Self password changes
+use account settings; self deletion and disabling are blocked.
+Members see a permission message
+when directly opening the admin route. Viewers can ask questions and read their
+own sources; upload controls are disabled with an explanation. The backend
+enforces the same permissions on every API request.
+
+Model management supports chat, Embedding, reranking and query rewriting with
+name, HTTP(S) API address, model ID, optional key, timeout and retries. Embedding
+uses the database's fixed 2560 dimensions; reranking selects `compatible` or
+`dashscope` format with no retries. Save a profile then explicitly activate it
+as the purpose's default. Deactivating restores environment configuration.
+Blank keys preserve existing secrets; clearing requires the explicit checkbox.
+The UI never receives stored keys and clears entered secrets on success, close
+or leaving the page. Backend errors, including incompatible Embedding indexes,
+are shown without discarding the current list. See `backend/README.md` for the
+required migration and master key setup. Only admins receive `models:manage`.
+
+All API modules use `src/api/client.ts`, which sends same-origin Cookies and
+trace IDs and normalizes `ApiError`. A private API 401 clears the local identity
+and redirects to login; failed login itself stays on the form. Password changes
+revoke all sessions. Logout and password changes broadcast a storage event so
+other open tabs also leave private views. Session tokens stay in HttpOnly Cookies
+and are never copied into localStorage.
+
+Conversation history uses `knowra:chat:v2:{userId}` in localStorage. Switching
+accounts clears the mounted workspace and binds the new account's history.
+Only the explicitly claimed legacy default user migrates the old `knowra:chat`
+key. Conversations remain local to this browser; they are not synchronized to
+the server. Files and retrieved sources are always scoped by the backend.
+
+Administrator bootstrap, recovery and HTTPS/Cookie configuration are documented
+in [the backend README](../backend/README.md#administrator-bootstrap-and-recovery).
+
+### Demo interview link
+
+`/login#demo=<payload>` accepts base64url encoded UTF-8 JSON with `email` and
+`password`. Only `demo@deerfd.com` is eligible. Generate the actual link outside
+tracked source using the current demo password; no production password is built
+into the frontend. The fragment is encoding, so anyone with the link can use
+the shared demo identity.
+
+On opening the link, the login form fills both inputs and immediately replaces
+the address to remove the fragment, preserving a valid local redirect. Visitors
+click **登录** themselves. No login is submitted automatically. Invalid or
+oversized fragments are ignored and cleared. Credentials stay in form memory
+and are never sent to probes or written to logs or browser storage. Reloading
+the cleaned address shows an empty form; failed login clears the password.
+
+The demo notice explains the shared limit: at most three successful questions
+in the preceding 60 minutes, across all visitors, devices and threads. The
+backend enforces it and returns a readable 429 and `Retry-After` when exhausted.
 
 ## File uploads
 

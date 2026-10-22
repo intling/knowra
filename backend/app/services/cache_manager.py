@@ -286,6 +286,7 @@ class CacheManager:
         session_id: str | None = None,
         ttl_override: float | None = None,
         zero_vector: bool = False,
+        namespace: str | None = None,
     ) -> None:
         """将重写结果存入 L2 精确文本缓存（跨会话）。
 
@@ -316,7 +317,7 @@ class CacheManager:
             return
 
         normalized = self._normalize_text(query_text)
-        composite_key = self._make_l2_key(normalized)
+        composite_key = self._make_l2_key(normalized, namespace)
 
         if composite_key in self._l2_store:
             self._l2_store.move_to_end(composite_key)
@@ -342,7 +343,7 @@ class CacheManager:
             knowledge_type=knowledge_type,
         )
 
-    def lookup_l2(self, query_text: str) -> dict | None:
+    def lookup_l2(self, query_text: str, *, namespace: str | None = None) -> dict | None:
         """在 L2 精确文本缓存中查找与 *query_text* 匹配的条目。
 
         当前实现为规范化后的精确文本匹配（逐字符比较）。
@@ -358,7 +359,7 @@ class CacheManager:
             或 ``None``（未命中）。
         """
         normalized = self._normalize_text(query_text)
-        composite_key = self._make_l2_key(normalized)
+        composite_key = self._make_l2_key(normalized, namespace)
 
         entry = self._l2_store.get(composite_key)
         if entry is None:
@@ -550,13 +551,17 @@ class CacheManager:
         return f"{session_id}:{query_hash}"
 
     @staticmethod
-    def _make_l2_key(normalized_query: str) -> str:
+    def _make_l2_key(normalized_query: str, namespace: str | None = None) -> str:
         """构造 L2 语义缓存的键（跨会话，不绑定 session_id）。
 
         格式：``l2:{normalized_query}``
         当前使用规范化文本精确匹配，生产环境将替换为向量最近邻检索。
         """
-        return f"l2:{normalized_query}"
+        return (
+            f"l2:{namespace}:{normalized_query}"
+            if namespace is not None
+            else f"l2:{normalized_query}"
+        )
 
     @staticmethod
     def _normalize_text(text: str) -> str:

@@ -1,0 +1,43 @@
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 2ms
+.........FF                                                              [100%]
+=================================== FAILURES ===================================
+_______________________ test_local_embedding_without_key _______________________
+tests/admin_console/test_model_integration.py:173: in test_local_embedding_without_key
+    adapter = EmbeddingAdapter(config=EmbeddingConfig.from_settings(effective))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/services/embedding_adapter.py:66: in __init__
+    self._client = OpenAI(
+.venv/lib/python3.14/site-packages/openai/_client.py:230: in __init__
+    raise OpenAIError(
+E   openai.OpenAIError: Missing credentials. Please pass an `api_key`, `workload_identity`, `admin_api_key`, or set the `OPENAI_API_KEY` or `OPENAI_ADMIN_KEY` environment variable.
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:36:14.339483Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:36:14.354076Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:36:14.354531Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:36:14.339483Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:36:14.354076Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:36:14.354531Z', 'logger': 'app.core.shutdown'}
+___________________ test_reembed_worker_closes_owned_adapter ___________________
+tests/admin_console/test_model_integration.py:197: in test_reembed_worker_closes_owned_adapter
+    adapter.close.assert_called_once()
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/unittest/mock.py:965: in assert_called_once
+    raise AssertionError(msg)
+E   AssertionError: Expected 'close' to have been called once. Called 0 times.
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:36:14.370904Z[0m [[32m[1minfo[0m] [1mRe-embed job started[0m [[0m[1m[34mapp.api.routes.document_embedding[0m][0m [36mchunk_job_id[0m=[35mchunks[0m [36mjob_id[0m=[35mjob[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.api.routes.document_embedding:document_embedding.py:323 {'job_id': 'job', 'chunk_job_id': 'chunks', 'event': 'Re-embed job started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:36:14.370904Z', 'logger': 'app.api.routes.document_embedding'}
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:36:14.423861Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:36:14.440156Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:36:14.440470Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:36:14.423861Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:36:14.440156Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:36:14.440470Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_integration.py::test_local_embedding_without_key
+FAILED tests/admin_console/test_model_integration.py::test_reembed_worker_closes_owned_adapter
+2 failed, 9 passed in 0.87s

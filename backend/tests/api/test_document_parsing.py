@@ -14,6 +14,7 @@ from app.db.session import get_session
 from app.main import app
 from app.models.user import User
 from app.services.users import DEFAULT_USER_ID
+from tests.auth_helpers import authenticate_as
 from tests.document_parsing_helpers import make_uploaded_file, make_user
 
 JOB_RESPONSE_FIELDS = {
@@ -86,6 +87,7 @@ def seed_current_user(session: Session) -> User:
     session.add(user)
     session.commit()
     session.refresh(user)
+    authenticate_as(user)
     return user
 
 
@@ -192,14 +194,14 @@ def test_post_upload_parse_allows_text_when_docling_models_are_loading(
     assert response.json()["uploaded_file_id"] == str(upload.id)
 
 
-# 测试当前用户不可用时拒绝创建无归属解析作业。
-def test_post_upload_parse_rejects_when_current_user_unavailable(
+# 测试未登录时拒绝创建无归属解析作业（401 auth_required）。
+def test_post_upload_parse_rejects_when_not_authenticated(
     parse_client: TestClient,
 ) -> None:
     response = parse_client.post(f"/api/uploads/{uuid4()}/parse")
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Current user is unavailable"}
+    assert response.status_code == 401
+    assert response.json()["code"] == "auth_required"
 
 
 # 测试非归属上传文件不能被当前用户解析。

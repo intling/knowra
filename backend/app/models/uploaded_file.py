@@ -19,6 +19,7 @@ class UploadedFile(SQLModel, table=True):
             "checksum_sha256",
             unique=True,
             postgresql_where=text("deleted_at IS NULL"),
+            sqlite_where=text("deleted_at IS NULL"),
         ),
     )
 

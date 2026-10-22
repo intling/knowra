@@ -1,113 +1,142 @@
 <script setup lang="ts">
-/**
- * SidebarUser — 侧边栏底部用户信息
- *
- * 固定在侧边栏底部，展示当前用户头像与基本信息。
- *
- * 头像回退使用品牌底色 + 衬线首字母，与顶部字标呼应；仅展示，不可操作。
- */
-import { onMounted } from "vue"
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue"
+import { useRouter } from "vue-router"
+import { uniqueId } from "../../shared/a11y/focus"
 import { useUserStore } from "../../stores/user"
 
-const userStore = useUserStore()
-
-onMounted(() => {
-  userStore.loadCurrentUser()
-})
-
-/** 从 display_name 提取首字母作为头像回退方案 */
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) {
-    return (parts[0]![0]! + parts[1]![0]!).toUpperCase()
+const userStore = useUserStore(),
+  router = useRouter()
+const open = ref(false),
+  busy = ref(false),
+  error = ref("")
+const trigger = ref<HTMLButtonElement | null>(null),
+  root = ref<HTMLElement | null>(null)
+const menuId = uniqueId("user-menu")
+const roleLabel = computed(
+  () =>
+    ({ admin: "管理员", member: "成员", viewer: "只读" })[
+      userStore.currentUser?.role ?? "member"
+    ],
+)
+async function close() {
+  open.value = false
+  await nextTick()
+  trigger.value?.focus()
+}
+async function toggle() {
+  open.value = !open.value
+  if (open.value) {
+    await nextTick()
+    root.value?.querySelector<HTMLElement>("a")?.focus()
   }
-  return name.trim().slice(0, 2).toUpperCase()
+}
+function outside(event: MouseEvent) {
+  if (root.value && !root.value.contains(event.target as Node))
+    open.value = false
+}
+onMounted(() => document.addEventListener("click", outside))
+onUnmounted(() => document.removeEventListener("click", outside))
+async function logout() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    await userStore.logout()
+    await router.replace({ name: "login", query: { reason: "logged_out" } })
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "退出失败，请重试"
+  } finally {
+    busy.value = false
+  }
 }
 </script>
 
 <template>
   <footer
+    ref="root"
     data-testid="sidebar-user"
-    class="shrink-0 border-t border-line"
+    class="relative shrink-0 border-t border-line"
+    @keydown.esc.stop.prevent="close"
   >
-    <!-- 加载骨架 — 用户信息加载中 -->
     <div
       v-if="userStore.isUserLoading"
       data-testid="sidebar-user-skeleton"
-      class="flex items-center gap-3 px-4 py-3"
+      class="p-4 text-sm text-ink-muted"
     >
-      <div class="size-8 shrink-0 animate-pulse rounded-full bg-neutral-200" />
-      <div class="flex flex-1 flex-col gap-1.5">
-        <div class="h-3 w-20 animate-pulse rounded bg-neutral-200" />
-        <div class="h-2.5 w-28 animate-pulse rounded bg-neutral-100" />
-      </div>
+      正在加载账户…
     </div>
-
-    <!-- 加载失败 — 温和降级，不阻断使用 -->
-    <div
+    <p
       v-else-if="userStore.userError"
       data-testid="sidebar-user-error"
-      class="flex items-center gap-3 px-4 py-3"
+      class="p-4 text-sm text-cite"
     >
+      {{ userStore.userError }}
+    </p>
+    <template v-else-if="userStore.currentUser">
       <div
-        class="flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-400"
-        aria-hidden="true"
+        v-if="open"
+        :id="menuId"
+        class="absolute right-3 bottom-full left-3 mb-2 rounded-lg border border-line bg-surface p-2 shadow-[var(--shadow-popover)]"
       >
-        <svg
-          class="size-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+        <RouterLink
+          data-testid="menu-account"
+          to="/account"
+          class="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-paper-deep"
+          @click="open = false"
+          >账户设置</RouterLink
         >
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
+        <RouterLink
+          v-if="userStore.hasPermission('users:manage')"
+          data-testid="menu-admin"
+          to="/admin"
+          class="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-paper-deep"
+          @click="open = false"
+          >后台管理</RouterLink
+        >
+        <button
+          data-testid="menu-logout"
+          class="w-full rounded-lg px-3 py-2 text-left text-sm text-cite hover:bg-paper-deep"
+          :disabled="busy"
+          @click="logout"
+        >
+          {{ busy ? "退出中…" : "退出登录" }}
+        </button>
+        <p v-if="error" role="alert" class="px-3 text-sm text-cite">
+          {{ error }}
+        </p>
       </div>
-      <p class="text-xs text-neutral-400">用户信息加载失败</p>
-    </div>
-
-    <!-- 用户信息 — 正常展示 -->
-    <div
-      v-else-if="userStore.currentUser"
-      data-testid="sidebar-user-info"
-      class="flex items-center gap-3 px-4 py-3"
-    >
-      <!-- Avatar -->
-      <div class="relative shrink-0">
-        <!-- 自定义头像图片（如有） -->
-        <img
-          v-if="userStore.currentUser.avatar_url"
-          :src="userStore.currentUser.avatar_url"
-          :alt="userStore.currentUser.display_name"
-          class="size-8 rounded-full object-cover ring-1 ring-line"
-        />
-        <!-- 品牌渐变 + 衬线体首字母（无头像时的回退） -->
-        <div
-          v-else
-          class="flex size-8 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white"
+      <button
+        ref="trigger"
+        data-testid="user-menu-button"
+        class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-paper-deep"
+        :aria-expanded="open"
+        :aria-controls="menuId"
+        aria-label="账户菜单"
+        @click="toggle"
+      >
+        <span
+          v-if="!userStore.currentUser.avatar_url"
+          class="grid size-8 shrink-0 place-items-center rounded-full bg-brand-700 text-xs font-semibold text-white"
           aria-hidden="true"
+          >{{ userStore.currentUser.display_name.slice(0, 2) }}</span
         >
-          <span class="font-display translate-y-px">
-            {{ initials(userStore.currentUser.display_name) }}
-          </span>
-        </div>
-      </div>
-
-      <!-- 用户文字信息 -->
-      <div class="min-w-0 flex-1">
-        <p class="truncate text-sm font-medium leading-tight text-neutral-800">
-          {{ userStore.currentUser.display_name }}
-        </p>
-        <p
-          v-if="userStore.currentUser.email"
-          class="truncate text-xs leading-tight text-neutral-500"
+        <img
+          v-else
+          :src="userStore.currentUser.avatar_url"
+          alt=""
+          class="size-8 rounded-full"
+        />
+        <span data-testid="sidebar-user-info" class="min-w-0 flex-1"
+          ><span class="block truncate text-sm font-medium text-ink">{{
+            userStore.currentUser.display_name
+          }}</span
+          ><span
+            data-testid="sidebar-user-role"
+            class="block text-xs text-ink-muted"
+            >{{ roleLabel }}</span
+          ></span
         >
-          {{ userStore.currentUser.email }}
-        </p>
-      </div>
-    </div>
+        <span aria-hidden="true" class="text-ink-faint">⌃</span>
+      </button>
+    </template>
   </footer>
 </template>

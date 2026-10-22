@@ -1,0 +1,51 @@
+Uninstalled 1 package in 0.61ms
+Installed 1 package in 1ms
+....FF                                                                   [100%]
+=================================== FAILURES ===================================
+__________________ test_local_chat_profile_accepts_no_api_key __________________
+tests/admin_console/test_model_integration.py:90: in test_local_chat_profile_accepts_no_api_key
+    adapter = ChatAdapter(config=ChatConfig.from_settings(effective))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/services/chat_adapter.py:90: in __init__
+    raise ChatAPIError(
+E   app.services.chat_adapter.ChatAPIError: Chat API key is not configured. Set CHAT_API_KEY in your .env file.
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:27:56.484186Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m5b87b929-1beb-4a59-909f-2d76eebdcb09[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mb5ad5bd2-976c-445c-a7d7-430f08c02b49[0m [36mtrace_id[0m=[35m01a1616f-c1bb-7fd2-a191-47e61e9d7b04[0m
+[2m2026-10-22T02:27:56.486666Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:27:56.505106Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35m5b87b929-1beb-4a59-909f-2d76eebdcb09[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mb5ad5bd2-976c-445c-a7d7-430f08c02b49[0m [36mtrace_id[0m=[35m01a1616f-c1c7-7b3f-b0c9-82ea788ce653[0m
+[2m2026-10-22T02:27:56.507394Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/b5ad5bd2-976c-445c-a7d7-430f08c02b49/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:91 {'profile_id': 'b5ad5bd2-976c-445c-a7d7-430f08c02b49', 'actor_user_id': '5b87b929-1beb-4a59-909f-2d76eebdcb09', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1616f-c1bb-7fd2-a191-47e61e9d7b04', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.484186Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:169 {'profile_id': 'b5ad5bd2-976c-445c-a7d7-430f08c02b49', 'actor_user_id': '5b87b929-1beb-4a59-909f-2d76eebdcb09', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a1616f-c1c7-7b3f-b0c9-82ea788ce653', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.505106Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/b5ad5bd2-976c-445c-a7d7-430f08c02b49/activate "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:27:56.581814Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:27:56.596189Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:27:56.596504Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.581814Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.596189Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.596504Z', 'logger': 'app.core.shutdown'}
+________________ test_request_adapter_is_closed_after_response _________________
+tests/admin_console/test_model_integration.py:108: in test_request_adapter_is_closed_after_response
+    adapter.close.assert_called_once()
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/unittest/mock.py:965: in assert_called_once
+    raise AssertionError(msg)
+E   AssertionError: Expected 'close' to have been called once. Called 0 times.
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:27:56.626001Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/probe "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/probe "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:27:56.677560Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:27:56.691767Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:27:56.692127Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.677560Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.691767Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:27:56.692127Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_integration.py::test_local_chat_profile_accepts_no_api_key
+FAILED tests/admin_console/test_model_integration.py::test_request_adapter_is_closed_after_response
+2 failed, 4 passed in 0.57s

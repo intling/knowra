@@ -1,4 +1,4 @@
-import { apiGet, buildApiUrl } from "./client"
+import { apiGet, apiFetch } from "./client"
 
 export type DocumentChunkJobStatus =
   | "queued"
@@ -73,7 +73,9 @@ class DocumentChunkingApiError extends Error {
   }
 }
 
-async function parseErrorResponse(response: Response): Promise<DocumentChunkingApiError> {
+async function parseErrorResponse(
+  response: Response,
+): Promise<DocumentChunkingApiError> {
   try {
     const payload = (await response.json()) as Record<string, unknown>
     const detail =
@@ -90,7 +92,10 @@ async function parseErrorResponse(response: Response): Promise<DocumentChunkingA
       Object.keys(extra).length > 0 ? extra : undefined,
     )
   } catch {
-    return new DocumentChunkingApiError(response.status, `请求失败：${response.status}`)
+    return new DocumentChunkingApiError(
+      response.status,
+      `请求失败：${response.status}`,
+    )
   }
 }
 
@@ -123,8 +128,8 @@ export async function rechunkParsedDocument(
   parsedDocumentId: string,
   request: RechunkRequest = {},
 ): Promise<DocumentChunkJob> {
-  const response = await fetch(
-    buildApiUrl(`/parsed-documents/${parsedDocumentId}/rechunk`),
+  const response = await apiFetch(
+    `/parsed-documents/${parsedDocumentId}/rechunk`,
     {
       method: "POST",
       headers: {

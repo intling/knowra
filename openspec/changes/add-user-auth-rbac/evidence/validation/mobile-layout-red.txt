@@ -1,0 +1,11 @@
+AssertionError [ERR_ASSERTION]: 320px card must leave readable full-row account details: {"card":286,"name":62}
+    at /tmp/knowra-auth-mobile.cjs:16:10
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:502:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

@@ -1,7 +1,6 @@
 import { createLogger, getRingBuffer } from "../shared/logger"
 import { traceManager } from "../shared/logger/trace-context"
 
-/** Lazy logger — getRingBuffer() is only available after main.ts initLogger(). */
 let _logger: ReturnType<typeof createLogger> | null = null
 function log() {
   if (!_logger) _logger = createLogger("api:client", getRingBuffer())
@@ -9,94 +8,121 @@ function log() {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api"
-const TRACE_HEADER = "X-Trace-ID"
-
 export function buildApiUrl(path: string): string {
-  const baseUrl = API_BASE_URL.replace(/\/$/, "")
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`
-  return `${baseUrl}${normalizedPath}`
+  return `${API_BASE_URL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`
 }
 
-/** Return common headers including X-Trace-ID for every API request. */
-function commonHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: "application/json",
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string | null,
+    public detail: string,
+  ) {
+    super(detail)
+    this.name = "ApiError"
   }
+}
+
+type RequestOptions = RequestInit & { skipAuthRedirect?: boolean }
+let unauthorizedHandler: (() => void) | null = null
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
+
+export async function apiFetch(
+  path: string,
+  options: RequestOptions = {},
+): Promise<Response> {
+  const { skipAuthRedirect, ...init } = options
+  const headers: Record<string, string> = { Accept: "application/json" }
   try {
-    headers[TRACE_HEADER] = traceManager.getTraceId()
+    headers["X-Trace-ID"] = traceManager.getTraceId()
   } catch {
-    // traceManager not yet initialized — omit header gracefully.
+    /* Logger may not be initialized. */
   }
-  return headers
+  Object.assign(
+    headers,
+    init.headers instanceof Headers
+      ? Object.fromEntries(init.headers)
+      : init.headers,
+  )
+  const response = await fetch(buildApiUrl(path), {
+    ...init,
+    credentials: "include",
+    headers,
+  })
+  if (
+    response.status === 401 &&
+    !skipAuthRedirect &&
+    !path.replace(/^\//, "").startsWith("auth/")
+  ) {
+    unauthorizedHandler?.()
+  }
+  log().debug("API 请求完成", { path, status: response.status })
+  return response
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const start = performance.now()
-  const url = buildApiUrl(path)
-  log().debug("API GET 请求发送", { path, url })
-
-  let response: Response
-  try {
-    response = await fetch(url, {
-      headers: commonHeaders(),
-    })
-  } catch (error) {
-    log().error("API GET 网络请求失败", error, { path, url })
-    throw error
-  }
-
+async function readResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    log().warn("API GET 返回非 2xx 状态", {
-      path, status: response.status, duration: Math.round(performance.now() - start),
-    })
-    throw new Error(`请求失败：${response.status}`)
+    let detail = `请求失败：${response.status}`
+    let code: string | null = null
+    try {
+      const body = (await response.json()) as {
+        detail?: unknown
+        code?: string
+      }
+      if (typeof body.detail === "string" && body.detail) detail = body.detail
+      else if (
+        Array.isArray(body.detail) &&
+        typeof body.detail[0]?.msg === "string"
+      )
+        detail = body.detail[0].msg
+      code = body.code ?? null
+    } catch {
+      /* A proxy can return a non-JSON error body. */
+    }
+    throw new ApiError(response.status, code, detail)
   }
+  return response.status === 204
+    ? (undefined as T)
+    : (response.json() as Promise<T>)
+}
 
-  log().info("API GET 请求完成", {
-    path, status: response.status, duration: Math.round(performance.now() - start),
-  })
-  return response.json() as Promise<T>
+export async function apiGet<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  return readResponse<T>(await apiFetch(path, options))
 }
 
 export async function apiPostForm<T>(path: string, body: FormData): Promise<T> {
-  const start = performance.now()
-  const url = buildApiUrl(path)
-  log().debug("API POST 请求发送", { path, url })
-
-  let response: Response
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      body,
-      headers: commonHeaders(),
-    })
-  } catch (error) {
-    log().error("API POST 网络请求失败", error, { path, url })
-    throw error
-  }
-
-  if (!response.ok) {
-    log().warn("API POST 返回非 2xx 状态", {
-      path, status: response.status, duration: Math.round(performance.now() - start),
-    })
-    throw new Error(await getErrorMessage(response))
-  }
-
-  log().info("API POST 请求完成", {
-    path, status: response.status, duration: Math.round(performance.now() - start),
-  })
-  return response.json() as Promise<T>
+  return readResponse<T>(await apiFetch(path, { method: "POST", body }))
 }
 
-async function getErrorMessage(response: Response): Promise<string> {
-  try {
-    const payload = (await response.json()) as { detail?: unknown }
-    if (typeof payload.detail === "string" && payload.detail.length > 0) {
-      return payload.detail
-    }
-  } catch {
-    // Fall through to the status-based message when the server response is not JSON.
-  }
+async function writeJson<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  return readResponse<T>(
+    await apiFetch(path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    }),
+  )
+}
 
-  return `请求失败：${response.status}`
+export function apiPostJson<T = void>(
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  return writeJson<T>("POST", path, body)
+}
+export function apiPatchJson<T>(path: string, body: unknown): Promise<T> {
+  return writeJson<T>("PATCH", path, body)
+}
+
+export function apiDelete(path: string): Promise<void> {
+  return writeJson<void>("DELETE", path)
 }

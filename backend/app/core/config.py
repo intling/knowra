@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DEFAULT_ALLOWED_UPLOAD_CONTENT_TYPES = (
@@ -36,12 +36,19 @@ DEFAULT_DOCUMENT_MODEL_DOCLING_REQUIRED_MODELS = (
 
 
 class Settings(BaseSettings):
+    model_config_encryption_key: str = Field(default="", repr=False, exclude=True)
+    model_configuration_revision: str = ""
+    configured_model_kinds: tuple[str, ...] = ()
     app_name: str = "knowra"
     app_env: str = "local"
     debug: bool = True
     log_level: str = "INFO"
     api_prefix: str = "/api"
     backend_cors_origins: str = "http://localhost:5173"
+    auth_cookie_secure: bool = False
+    auth_session_ttl_hours: int = 336
+    auth_login_max_failures: int = 5
+    auth_login_window_seconds: int = 900
     database_url: str = "postgresql+psycopg://knowra:knowra@localhost:5432/knowra"
     upload_storage_dir: str = "storage/uploads"
     max_upload_bytes: int = 50 * 1024 * 1024
@@ -77,6 +84,12 @@ class Settings(BaseSettings):
     document_embedding_batch_size: int = 100
     document_embedding_max_retries: int = 3
     document_embedding_request_timeout: float = 60.0
+    rerank_enabled: bool = False
+    rerank_api_base_url: str = ""
+    rerank_api_key: str = ""
+    rerank_model: str = ""
+    rerank_api_format: str = "compatible"
+    rerank_request_timeout: float = 15.0
     chat_api_base_url: str = "https://newapi.bytcloud.org/v1"
     chat_api_key: str = ""
     chat_model: str = "qwen3.5-plus"
@@ -200,6 +213,23 @@ class Settings(BaseSettings):
     @classmethod
     def parse_document_model_docling_required_models(cls, value: str | list[str]) -> list[str]:
         return parse_csv_list(value)
+
+    @model_validator(mode="after")
+    def validate_auth_settings(self) -> Settings:
+        if "*" in self.cors_origins:
+            raise ValueError("BACKEND_CORS_ORIGINS 不能包含 *")
+        if self.app_env.lower() in {"prod", "production"} and not self.auth_cookie_secure:
+            raise ValueError("生产环境必须设置 AUTH_COOKIE_SECURE=true")
+        if (
+            min(
+                self.auth_session_ttl_hours,
+                self.auth_login_max_failures,
+                self.auth_login_window_seconds,
+            )
+            <= 0
+        ):
+            raise ValueError("AUTH 会话时长及登录限流参数必须大于零")
+        return self
 
     @model_validator(mode="after")
     def _resolve_log_format(self) -> Settings:

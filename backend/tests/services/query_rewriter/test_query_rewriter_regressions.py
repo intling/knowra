@@ -15,20 +15,22 @@
 
 from __future__ import annotations
 
-import ast
 import asyncio
 import inspect
 from importlib import import_module
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
 from app.services.query_rewriter import QueryRewriter
 
 from .conftest import build_phase2_rewriter
+
+# 检索服务必须绑定已认证用户；既有单测使用固定测试用户 ID。
+TEST_OWNER_ID = UUID("11111111-1111-1111-1111-111111111111")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -282,6 +284,7 @@ def test_different_histories_produce_different_cache_keys():
 
     # 不使用 query_rewriter（简化测试，只验证缓存键分离）
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -290,15 +293,11 @@ def test_different_histories_produce_different_cache_keys():
     )
 
     # 首次请求：history_a
-    response1 = service.search(
-        query=query, top_k=top_k, history=history_a, session_id=session_id
-    )
+    response1 = service.search(query=query, top_k=top_k, history=history_a, session_id=session_id)
     assert response1.rewrite_info is None  # 无 query_rewriter
 
     # 第二次请求：history_b（不同 history，相同 query/top_k/session_id）
-    response2 = service.search(
-        query=query, top_k=top_k, history=history_b, session_id=session_id
-    )
+    response2 = service.search(query=query, top_k=top_k, history=history_b, session_id=session_id)
     assert response2.rewrite_info is None
 
     # 关键验证：embed_single 被调用了两次
@@ -346,6 +345,7 @@ def test_fingerprint_change_invalidates_response_cache():
     history = [{"role": "user", "content": "档案怎么查？"}]
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -401,14 +401,11 @@ def test_invalidate_session_clears_stale_response_cache():
     removed = cache.invalidate_session("sess-1")
 
     # 关键断言 1: 返回移除条目数
-    assert removed == 2, (
-        f"invalidate_session 应移除 sess-1 的 2 条 L1 条目，实际移除: {removed}"
-    )
+    assert removed == 2, f"invalidate_session 应移除 sess-1 的 2 条 L1 条目，实际移除: {removed}"
 
     # 关键断言 2: sess-1 的所有条目已清除 → 后续查找 miss
     assert cache.lookup("sess-1", "key-a") is None, (
-        "修复前（bug）：文档状态变更未失效缓存，"
-        "同一会话仍返回软删除文档的旧缓存内容。"
+        "修复前（bug）：文档状态变更未失效缓存，同一会话仍返回软删除文档的旧缓存内容。"
     )
     assert cache.lookup("sess-1", "key-b") is None
 
@@ -481,7 +478,11 @@ class TestInflightDedupBehavior:
 
         # ── 启动 leader ──
         leader_task = asyncio.create_task(
-            rewriter.rewrite("它怎么用", session_id="sess-1", history=[{"role": "user", "content": "Python 是什么"}])
+            rewriter.rewrite(
+                "它怎么用",
+                session_id="sess-1",
+                history=[{"role": "user", "content": "Python 是什么"}],
+            )
         )
 
         # 等待 leader 注册 inflight event 并进入 _do_rewrite
@@ -489,7 +490,11 @@ class TestInflightDedupBehavior:
 
         # ── 启动 follower ──（inflight event 已存在，应作为 follower 等待）
         follower_task = asyncio.create_task(
-            rewriter.rewrite("它怎么用", session_id="sess-1", history=[{"role": "user", "content": "Python 是什么"}])
+            rewriter.rewrite(
+                "它怎么用",
+                session_id="sess-1",
+                history=[{"role": "user", "content": "Python 是什么"}],
+            )
         )
 
         # 给 follower 时间进入 inflight 等待
@@ -498,9 +503,7 @@ class TestInflightDedupBehavior:
         # ── 释放 leader 完成 ──
         barrier_continue.set()
 
-        leader_result, follower_result = await asyncio.gather(
-            leader_task, follower_task
-        )
+        leader_result, follower_result = await asyncio.gather(leader_task, follower_task)
 
         # 关键断言 1：两个结果应为同一对象
         # （follower 通过 inflight dedup 获取 leader 的结果）
@@ -565,8 +568,12 @@ class TestInflightDedupBehavior:
 
         # 两个不同 session_id → 不同 dedup key → 各自独立执行
         r1, r2 = await asyncio.gather(
-            rewriter.rewrite("它怎么用", session_id="sess-a", history=[{"role": "user", "content": "hi"}]),
-            rewriter.rewrite("它怎么用", session_id="sess-b", history=[{"role": "user", "content": "hi"}]),
+            rewriter.rewrite(
+                "它怎么用", session_id="sess-a", history=[{"role": "user", "content": "hi"}]
+            ),
+            rewriter.rewrite(
+                "它怎么用", session_id="sess-b", history=[{"role": "user", "content": "hi"}]
+            ),
         )
 
         # 不同 dedup key → context_rewriter 被调用 2 次
@@ -834,9 +841,7 @@ def test_l2_normalized_exact_match_hits_across_whitespace_case():
     # 规范化后文本一致（trim + 小写 + 单空格化）→ 命中
     result = cache.lookup_l2("how to refund")
 
-    assert result is not None, (
-        "规范化（trim + lowercase + 单空格化）后文本一致，应命中"
-    )
+    assert result is not None, "规范化（trim + lowercase + 单空格化）后文本一致，应命中"
     assert result["result"] == "退款流程结果"
 
 
@@ -866,8 +871,8 @@ def test_dedup_index_is_partial_unique():
             )
             where_clause = arg.dialect_kwargs.get("postgresql_where")
             assert where_clause is not None, (
-                f"修复前（bug）：缺少 partial 约束，软删除后同一 checksum 无法重新上传。\n"
-                f"修复后：应有 WHERE deleted_at IS NULL partial 约束。"
+                "修复前（bug）：缺少 partial 约束，软删除后同一 checksum 无法重新上传。\n"
+                "修复后：应有 WHERE deleted_at IS NULL partial 约束。"
             )
             break
 
@@ -885,9 +890,9 @@ def test_create_upload_handles_integrity_error():
     source = inspect.getsource(UploadService.create_upload)
 
     assert "IntegrityError" in source, (
-        f"修复前（bug）：create_upload 仅 select-then-insert，"
-        f"并发上传同一文件会插入重复记录。\n"
-        f"修复后：应捕获 IntegrityError 转为读取已存在记录。"
+        "修复前（bug）：create_upload 仅 select-then-insert，"
+        "并发上传同一文件会插入重复记录。\n"
+        "修复后：应捕获 IntegrityError 转为读取已存在记录。"
     )
     assert "_find_active_duplicate" in source, (
         "create_upload 应先查后插（_find_active_duplicate）作为快速路径"
@@ -913,9 +918,9 @@ def test_dedup_migration_exists():
             break
 
     assert found, (
-        f"修复前（bug）：模型改了索引但没有 migration，"
-        f"`alembic upgrade head` 后真实 DB 无 partial unique index。\n"
-        f"修复后：migration 应包含 ix_uploaded_files_dedup 且 unique=True。"
+        "修复前（bug）：模型改了索引但没有 migration，"
+        "`alembic upgrade head` 后真实 DB 无 partial unique index。\n"
+        "修复后：migration 应包含 ix_uploaded_files_dedup 且 unique=True。"
     )
 
 
@@ -941,8 +946,7 @@ def test_rewrite_info_field_nullable():
         f"修复后：应为 Optional[RewriteInfo]，当前 annotation: {annotation_str}"
     )
     assert rewrite_field.default is None, (
-        f"修复后 rewrite_info default 应为 None（禁用时返回 null），"
-        f"实际: {rewrite_field.default}"
+        f"修复后 rewrite_info default 应为 None（禁用时返回 null），实际: {rewrite_field.default}"
     )
 
 
@@ -957,9 +961,7 @@ def test_disabled_path_creates_null_rewrite_info():
 
     # 成功/失败路径仍构造 RewriteInfo
     rewrite_assignments = [
-        line.strip()
-        for line in source.split("\n")
-        if "rewrite_info = RewriteInfo(" in line
+        line.strip() for line in source.split("\n") if "rewrite_info = RewriteInfo(" in line
     ]
     assert len(rewrite_assignments) >= 2, (
         f"预期至少 2 条 rewrite_info = RewriteInfo(...) 赋值（成功/失败路径），"

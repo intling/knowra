@@ -5,9 +5,11 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import Settings, get_settings
+from app.core.errors import AppError, handle_app_error, handle_validation_error
 from app.core.logging import configure_logging, configure_uvicorn_loggers
 
 # ── Configure logging BEFORE any app module that logs at import time ──────────
@@ -106,6 +108,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = app_settings
+    app.add_exception_handler(AppError, handle_app_error)
+    app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.state.document_model_bootstrap_service_factory = lambda: DocumentModelBootstrapService(
         settings=app_settings
     )

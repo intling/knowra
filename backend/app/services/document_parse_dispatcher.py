@@ -148,6 +148,13 @@ def run_parse_job(
                         chunk_job_id=str(chunk_job.id),
                         chunks=chunk_job.chunk_count or 0,
                     )
+                    from app.services.model_configuration import (
+                        lock_model_binding,
+                        resolve_model_settings,
+                    )
+
+                    lock_model_binding(session, "embedding")
+                    settings = resolve_model_settings(session, settings)
                     should_embed = (
                         settings.document_embedding_enabled
                         if document_embedding_enabled is None
@@ -164,10 +171,19 @@ def run_parse_job(
                             settings=settings,
                             shutdown_state=shutdown_state,
                         )
-                        emb_job = emb_service.run_initial_embedding(
-                            chunk_job=chunk_job,
-                            parsed_document=parsed_document,
-                        )
+                        try:
+                            emb_job = emb_service.run_initial_embedding(
+                                chunk_job=chunk_job,
+                                parsed_document=parsed_document,
+                            )
+                        finally:
+                            if embedding_service is None:
+                                try:
+                                    emb_service.adapter.close()
+                                except Exception:
+                                    logger.warning(
+                                        "自动向量化客户端关闭失败", parse_job_id=str(job.id)
+                                    )
                         logger.info(
                             "Auto-embedding succeeded",
                             parse_job_id=str(job.id),
@@ -386,7 +402,10 @@ def make_document_embedding_service(
     from app.services.document_embedding import DocumentEmbeddingService
     from app.services.embedding_adapter import EmbeddingAdapter
     from app.services.embedding_config import EmbeddingConfig
+    from app.services.model_configuration import lock_model_binding, resolve_model_settings
 
+    lock_model_binding(session, "embedding")
+    settings = resolve_model_settings(session, settings)
     config = EmbeddingConfig(
         api_base_url=settings.document_embedding_api_base_url,
         api_key=settings.document_embedding_api_key,

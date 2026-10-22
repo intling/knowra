@@ -1,12 +1,4 @@
-import { apiGet } from "./client"
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api"
-
-function buildApiUrl(path: string): string {
-  const baseUrl = API_BASE_URL.replace(/\/$/, "")
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`
-  return `${baseUrl}${normalizedPath}`
-}
+import { apiGet, apiFetch } from "./client"
 
 export interface DocumentParseJob {
   id: string
@@ -84,25 +76,39 @@ class DocumentParseApiError extends Error {
   }
 }
 
-async function parseErrorResponse(response: Response): Promise<DocumentParseApiError> {
+async function parseErrorResponse(
+  response: Response,
+): Promise<DocumentParseApiError> {
   try {
     const payload = (await response.json()) as Record<string, unknown>
-    const detail = typeof payload.detail === "string" ? payload.detail : `请求失败：${response.status}`
+    const detail =
+      typeof payload.detail === "string"
+        ? payload.detail
+        : `请求失败：${response.status}`
     const extra: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(payload)) {
       if (key !== "detail") {
         extra[key] = value
       }
     }
-    return new DocumentParseApiError(response.status, detail, Object.keys(extra).length > 0 ? extra : undefined)
+    return new DocumentParseApiError(
+      response.status,
+      detail,
+      Object.keys(extra).length > 0 ? extra : undefined,
+    )
   } catch {
-    return new DocumentParseApiError(response.status, `请求失败：${response.status}`)
+    return new DocumentParseApiError(
+      response.status,
+      `请求失败：${response.status}`,
+    )
   }
 }
 
-export async function createDocumentParseJob(uploadId: string): Promise<DocumentParseJob> {
-  const url = buildApiUrl(`/uploads/${uploadId}/parse`)
-  const response = await fetch(url, { method: "POST" })
+export async function createDocumentParseJob(
+  uploadId: string,
+): Promise<DocumentParseJob> {
+  const path = `/uploads/${uploadId}/parse`
+  const response = await apiFetch(path, { method: "POST" })
 
   if (!response.ok) {
     if (response.status === 409) {
@@ -135,7 +141,9 @@ export function getDocumentParseJob(jobId: string): Promise<DocumentParseJob> {
   return apiGet<DocumentParseJob>(`/document-parse-jobs/${jobId}`)
 }
 
-export function getParsedDocumentForUpload(uploadId: string): Promise<ParsedDocument> {
+export function getParsedDocumentForUpload(
+  uploadId: string,
+): Promise<ParsedDocument> {
   return apiGet<ParsedDocument>(`/uploads/${uploadId}/parsed-document`)
 }
 

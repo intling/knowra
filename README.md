@@ -29,6 +29,12 @@
 
 后续会逐步扩展查询改写、HyDE、知识图谱和效果评测等能力。当前实现已经支持资料上传、Docling 解析、解析后自动分块、embedding 向量化、跨文档语义检索（pgvector 余弦距离）和基于检索结果的 RAG 回答生成（含来源引用、幻觉防护）；知识图谱和检索效果评测仍待建设。
 
+## 后台管理
+
+管理员登录后，从账户菜单进入“后台管理”（`/admin`）。用户管理支持新增账号、重置他人密码、禁用/启用、软删除和切换管理员/成员/只读角色；模型配置支持聊天、Embedding、重排、查询改写四种用途的地址、模型标识、密钥、超时及默认选择。管理权限不包含读取他人私有资料。
+
+更新后先在 `backend` 执行 `uv run alembic upgrade head`，再按 [后端配置指南](backend/README.md#model-administration) 设置并独立备份 `MODEL_CONFIG_ENCRYPTION_KEY`。未选后台默认时沿用环境配置，选定后对新请求生效。已有向量索引或未完成任务时，系统会拒绝切换到不同的 Embedding 空间；不会自动重建索引。
+
 ## 文档模型启动准备
 
 后端启动时会执行文档模型 bootstrap，提前检查 PDF 解析所需的 Docling artifacts 和分块所需的 tokenizer。文件准备就绪后，应用会启动非阻塞后台预加载，把 Docling PDF pipeline 和 tokenizer 加载到进程内存里。现有 `GET /api/health` 会返回 `document_models` 摘要；不会新增独立的 `/api/health/document-models`。
@@ -117,9 +123,44 @@ npm run dev
 
 前端默认运行在 `http://localhost:5173`，开发环境通过 Vite proxy 将 `/api` 转发到后端。
 
+### 用户、角色与管理员初始化
+
+首次访问会进入登录页，可通过注册创建普通成员。角色权限如下；管理员也只能检索自己的资料。
+
+| 角色 | 读取与提问 | 上传与处理资料 | 管理账号 |
+|---|---|---|---|
+| 管理员 `admin` | ✓ | ✓ | ✓ |
+| 成员 `member` | ✓ | ✓ | — |
+| 只读 `viewer` | ✓ | — | — |
+
+完成数据库迁移后，在 `backend` 目录创建首位管理员。命令会隐藏输入密码并要求确认；密码须为 10–128 个字符且包含字母和数字。
+
+```bash
+uv run python -m app.cli create-admin --email admin@example.com --display-name 管理员
+```
+
+从旧版本升级时，若希望保留默认账号的历史资料和此浏览器的旧对话，首次创建管理员时使用 `--claim-legacy-user`。它认领原账号，不搬迁资料；不带此参数会创建独立的新账号。
+
+```bash
+uv run python -m app.cli create-admin --email admin@example.com --display-name 管理员 --claim-legacy-user
+uv run python -m app.cli reset-password --email admin@example.com
+```
+
+注册不会自动授予管理员权限。侧栏账户菜单提供账户设置、退出和管理员用户管理入口；修改密码会退出所有设备。资料、检索与缓存均按用户隔离，对话保存在此浏览器各用户独立的存储键中。
+
+可用 CLI 创建演示成员并限制最近 60 分钟最多成功问答 3 次：
+
+```bash
+uv run python -m app.cli create-user --email demo@deerfd.com --display-name 演示账号 --hourly-chat-limit 3
+```
+
+密码通过隐藏交互输入或受保护 stdin 提供。额度由数据库按账号统一控制，换设备、重新登录或新建对话不会重置；无资料、失败或生成降级不扣次数，超限返回 429 和等待秒数，未配置限额的账号不受影响。演示分享入口采用 `/login#demo=<base64url JSON>`，仅接受该演示邮箱，自动填表并清除地址片段，由访客点击登录。实际密码和分享链接不写入源码；格式与边界见 [前端 README](front/README.md#demo-interview-link)。
+
+生产环境需要 HTTPS、`APP_ENV=production`、`AUTH_COOKIE_SECURE=true`，并将 `BACKEND_CORS_ORIGINS` 设为精确的前端来源（禁止 `*`）。详细接口、限流边界和迁移回滚步骤见 [后端 README](backend/README.md)。
+
 ### 主界面使用流程
 
-1. **上传资料**：点击欢迎页的"上传资料"或输入框左下角的"资料"按钮，资料会上传到 `POST /api/uploads`。侧边栏"资料库"显示已解析资料的数量（解析完成不代表已建好索引）。
+1. **登录并上传资料**：登录后点击欢迎页的"上传资料"或输入框左下角的"资料"按钮，资料会上传到 `POST /api/uploads`。只读账号会显示不可上传的说明。侧边栏"资料库"显示已解析资料的数量（解析完成不代表已建好索引）。
 2. **提问**：输入问题后按 Enter 发送，Shift+Enter 换行；输入法组字时按 Enter 不会发送。欢迎页的推荐问题只会填入输入框，确认后再发送。"检索 N 段"按钮用于调整每次检索的片段数（Top-K）。
 3. **核对来源**：每个回答下方直接列出"来源"，按文档聚合，显示页码和分块编号；点开即可查看原文片段。查询改写、检索分数、提示词等诊断信息收在默认折叠的"检索详情"中。
 

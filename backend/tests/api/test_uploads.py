@@ -17,6 +17,7 @@ from app.db.session import get_session
 from app.main import app
 from app.models.user import User
 from app.services.users import DEFAULT_USER_ID
+from tests.auth_helpers import authenticate_as
 
 RESPONSE_FIELDS = {
     "id",
@@ -61,6 +62,8 @@ def uploads_client(
     session: Session,
     upload_storage_dir,
 ) -> Generator[TestClient]:
+    # 元数据测试只验证上传与入队；不执行使用生产会话工厂的后台解析。
+    monkeypatch.setattr("app.services.document_parse_dispatcher.run_parse_job", lambda *_: None)
     monkeypatch.setenv("UPLOAD_STORAGE_DIR", str(upload_storage_dir))
     monkeypatch.setenv("MAX_UPLOAD_BYTES", "8")
     monkeypatch.setenv("ALLOWED_UPLOAD_CONTENT_TYPES", "text/plain,application/pdf")
@@ -80,16 +83,16 @@ def uploads_client(
 
 def seed_current_user(session: Session) -> None:
     created_at = datetime(2026, 5, 25, tzinfo=UTC)
-    session.add(
-        User(
-            id=DEFAULT_USER_ID,
-            display_name="Default User",
-            status="active",
-            created_at=created_at,
-            updated_at=created_at,
-        )
+    user = User(
+        id=DEFAULT_USER_ID,
+        display_name="Default User",
+        status="active",
+        created_at=created_at,
+        updated_at=created_at,
     )
+    session.add(user)
     session.commit()
+    authenticate_as(user)
 
 
 def count_stored_uploads(session: Session) -> int:
@@ -151,19 +154,22 @@ def test_post_uploads_requires_file_field(
     assert count_stored_uploads(session) == 0
 
 
-# 测试当前用户不可解析时拒绝上传，
-# 避免创建无归属元数据或成功保存文件。
-def test_post_uploads_rejects_when_current_user_is_unavailable(
+# 测试未登录时拒绝上传（401 auth_required），
+# 避免创建无归属元数据或成功保存文件；即使默认用户存在也不回退。
+def test_post_uploads_rejects_when_not_authenticated(
     uploads_client: TestClient,
     session: Session,
 ) -> None:
+    session.add(User(id=DEFAULT_USER_ID, display_name="Default User", status="active"))
+    session.commit()
+
     response = uploads_client.post(
         "/api/uploads",
         files={"file": ("course-notes.txt", b"notes", "text/plain")},
     )
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Current user is unavailable"}
+    assert response.status_code == 401
+    assert response.json()["code"] == "auth_required"
     assert count_stored_uploads(session) == 0
 
 
@@ -209,7 +215,7 @@ def test_post_uploads_rejects_file_over_configured_size_limit(
 
 
 # 测试用户不可用时返回 503 前应输出 ERROR 级别日志。
-def test_post_uploads_logs_error_when_user_unavailable(
+def test_post_uploads_logs_authentication_failure_when_anonymous(
     uploads_client: TestClient,
     session: Session,
     caplog,
@@ -221,8 +227,8 @@ def test_post_uploads_logs_error_when_user_unavailable(
         files={"file": ("notes.txt", b"content", "text/plain")},
     )
 
-    route_records = [r for r in caplog.records if r.name == "app.api.routes.uploads"]
-    assert any(r.levelname == "ERROR" for r in route_records)
+    route_records = [r for r in caplog.records if r.name == "app.api.deps"]
+    assert any(r.levelname == "INFO" and "missing_session" in r.getMessage() for r in route_records)
 
 
 # 测试文件超限时返回 413 前应输出 WARNING 级别日志。

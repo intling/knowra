@@ -12,7 +12,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlmodel import Session, col, select
 
+from app.api.deps import ReadUserDep, WriteUserDep
 from app.core.config import Settings, get_settings
+from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.db.session import get_session
 from app.models.document_chunking import DocumentChunk, DocumentChunkJob
@@ -40,7 +42,7 @@ from app.services.document_embedding import (
 )
 from app.services.embedding_adapter import EmbeddingAdapter
 from app.services.embedding_config import EmbeddingConfig
-from app.services.users import CurrentUserUnavailableError, get_current_user
+from app.services.model_configuration import lock_model_binding, resolve_model_settings
 
 logger = get_logger(__name__)
 
@@ -56,9 +58,10 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
     "/document-embedding-jobs/{job_id}",
     response_model=EmbeddingJobResponse,
 )
-def read_document_embedding_job(job_id: UUID, session: SessionDep) -> EmbeddingJobResponse:
+def read_document_embedding_job(
+    job_id: UUID, current_user: ReadUserDep, session: SessionDep
+) -> EmbeddingJobResponse:
     """查询向量化作业状态，校验当前用户权限。"""
-    current_user = require_current_user(session)
     logger.info("Querying embedding job", job_id=str(job_id))
     job = session.exec(
         select(DocumentEmbeddingJob).where(
@@ -80,10 +83,10 @@ def read_document_embedding_job(job_id: UUID, session: SessionDep) -> EmbeddingJ
 )
 def read_chunk_job_latest_embedding_job(
     chunk_job_id: UUID,
+    current_user: ReadUserDep,
     session: SessionDep,
 ) -> EmbeddingJobResponse:
     """查询分块作业最新的向量化作业（不限状态），用于前端展示向量化进度。"""
-    current_user = require_current_user(session)
     logger.info("Querying latest embedding job for chunk job", chunk_job_id=str(chunk_job_id))
     chunk_job = get_owned_chunk_job(
         session=session,
@@ -112,12 +115,12 @@ def read_chunk_job_latest_embedding_job(
 )
 def read_chunk_job_embeddings(
     chunk_job_id: UUID,
+    current_user: ReadUserDep,
     session: SessionDep,
     offset: int = 0,
     limit: int = 50,
 ) -> EmbeddingPageResponse:
     """分页查询分块作业的最新活跃向量结果，按 ``sequence_index`` 排序。"""
-    current_user = require_current_user(session)
     logger.info("Querying chunk job embeddings", chunk_job_id=str(chunk_job_id))
     chunk_job = get_owned_chunk_job(
         session=session,
@@ -168,9 +171,10 @@ def read_chunk_job_embeddings(
     "/document-chunks/{chunk_id}/embedding",
     response_model=EmbeddingResponse,
 )
-def read_chunk_embedding(chunk_id: UUID, session: SessionDep) -> EmbeddingResponse:
+def read_chunk_embedding(
+    chunk_id: UUID, current_user: ReadUserDep, session: SessionDep
+) -> EmbeddingResponse:
     """查询单个 chunk 的向量详情。"""
-    current_user = require_current_user(session)
     logger.info("Querying chunk embedding", chunk_id=str(chunk_id))
     chunk = session.exec(
         select(DocumentChunk).where(
@@ -218,6 +222,7 @@ def read_chunk_embedding(chunk_id: UUID, session: SessionDep) -> EmbeddingRespon
 def reembed_chunk_job(
     chunk_job_id: UUID,
     http_request: Request,
+    current_user: WriteUserDep,
     session: SessionDep,
     settings: SettingsDep,
     background_tasks: BackgroundTasks,
@@ -239,7 +244,6 @@ def reembed_chunk_job(
             detail="Service is shutting down",
         )
 
-    current_user = require_current_user(session)
     logger.info(
         "Re-embed request received",
         chunk_job_id=str(chunk_job_id),
@@ -266,13 +270,15 @@ def reembed_chunk_job(
             content=jsonable_encoder(payload),
         )
 
+    lock_model_binding(session, "embedding")
+    settings = resolve_model_settings(session, settings)
     config = _make_embedding_config(settings=settings, request=request)
     job = _create_queued_embedding_job(
         session=session,
         chunk_job=chunk_job,
         config=config,
     )
-    ReembedDispatcher(background_tasks).enqueue(job.id)
+    ReembedDispatcher(background_tasks).enqueue(job.id, config=config)
     return EmbeddingJobResponse.model_validate(job, from_attributes=True)
 
 
@@ -288,8 +294,8 @@ class ReembedDispatcher:
     def __init__(self, background_tasks: BackgroundTasks) -> None:
         self.background_tasks = background_tasks
 
-    def enqueue(self, job_id: UUID) -> None:
-        self.background_tasks.add_task(run_reembed_job, job_id)
+    def enqueue(self, job_id: UUID, *, config: EmbeddingConfig | None = None) -> None:
+        self.background_tasks.add_task(run_reembed_job, job_id, config=config)
 
 
 def run_reembed_job(
@@ -298,6 +304,7 @@ def run_reembed_job(
     session_factory: SessionFactory | None = None,
     embedding_adapter: object | None = None,
     shutdown_state: object | None = None,
+    config: EmbeddingConfig | None = None,
 ) -> None:
     """后台执行重新向量化作业。
 
@@ -307,6 +314,7 @@ def run_reembed_job(
     所有参数均可选注入，便于测试；未注入时使用生产默认值。
     """
     session_context = session_factory or default_session_factory
+    owned_adapter = None
 
     with session_context() as session:
         job = session.get(DocumentEmbeddingJob, _coerce_uuid(job_id))
@@ -335,8 +343,12 @@ def run_reembed_job(
             if not chunks:
                 raise ValueError("No chunks found for the chunk job")
 
-            config = EmbeddingConfig.from_settings()
+            config = config or EmbeddingConfig.from_settings(
+                resolve_model_settings(session, get_settings())
+            )
             adapter = embedding_adapter or EmbeddingAdapter(config=config)
+            if embedding_adapter is None:
+                owned_adapter = adapter
 
             service = DocumentEmbeddingService(
                 session=session,
@@ -370,19 +382,15 @@ def run_reembed_job(
                 error=str(exc),
                 exc_info=True,
             )
+        finally:
+            if owned_adapter is not None:
+                try:
+                    owned_adapter.close()
+                except Exception:
+                    logger.warning("向量化客户端关闭失败", job_id=str(job.id))
 
 
 # ── Helper functions ───────────────────────────────────────────────────
-
-
-def require_current_user(session: Session):
-    try:
-        return get_current_user(session)
-    except CurrentUserUnavailableError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Current user is unavailable",
-        ) from exc
 
 
 def get_owned_chunk_job(
@@ -447,6 +455,17 @@ def _make_embedding_config(
     request: ReEmbedRequest | None = None,
 ) -> EmbeddingConfig:
     """从应用配置和可选请求参数构建 ``EmbeddingConfig``。"""
+    if (
+        "embedding" in settings.configured_model_kinds
+        and request
+        and (
+            (request.model and request.model != settings.document_embedding_model)
+            or (request.dimensions and request.dimensions != settings.document_embedding_dimensions)
+        )
+    ):
+        raise AppError(
+            409, "embedding_configuration_managed", "请使用管理员配置的 Embedding 模型和维度"
+        )
     return EmbeddingConfig(
         api_base_url=settings.document_embedding_api_base_url,
         api_key=settings.document_embedding_api_key,

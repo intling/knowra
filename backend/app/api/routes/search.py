@@ -11,18 +11,22 @@
 - 503: Chat 功能未配置（chat_model 为空）
 """
 
+from collections.abc import AsyncGenerator, Generator
+from functools import wraps
+from threading import RLock
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
-from app.core.config import Settings, get_settings
+from app.api.deps import ChatAdmissionDep, ReadUserDep, get_model_settings
+from app.core.config import Settings
 from app.core.logging import get_logger
 from app.db.session import get_session
 from app.schemas.search import SearchRequest, SearchResponse
 from app.services.audit_trail import AuditTrail
 from app.services.cache_manager import CacheManager
-from app.services.chat_adapter import ChatAdapter
+from app.services.chat_adapter import ChatAdapter, TransientChatAdapter
 from app.services.chat_config import ChatConfig
 from app.services.circuit_breaker import CircuitBreaker
 from app.services.context_rewriter import ContextRewriter
@@ -40,6 +44,7 @@ from app.services.query_rewriter import (
     KnowledgeClassifier,
     QueryRewriter,
 )
+from app.services.rerank_adapter import RerankAdapter
 from app.services.search import SearchService
 from app.services.strategy_router import StrategyRouter
 from app.services.term_align_rewriter import TermAlignRewriter
@@ -52,7 +57,7 @@ router = APIRouter(tags=["search"])
 # ── 类型别名 ──────────────────────────────────────────────────────────
 
 SessionDep = Annotated[Session, Depends(get_session)]
-SettingsDep = Annotated[Settings, Depends(get_settings)]
+SettingsDep = Annotated[Settings, Depends(get_model_settings)]
 
 
 # ── 依赖注入 ──────────────────────────────────────────────────────────
@@ -63,15 +68,37 @@ def get_chat_config(settings: SettingsDep) -> ChatConfig:
     return ChatConfig.from_settings(settings)
 
 
-def get_embedding_adapter(settings: SettingsDep) -> EmbeddingAdapter:
+def get_embedding_adapter(settings: SettingsDep) -> Generator[EmbeddingAdapter]:
     """构建 EmbeddingAdapter（复用现有 EmbeddingConfig 模式）。"""
     config = EmbeddingConfig.from_settings(settings)
-    return EmbeddingAdapter(config=config)
+    adapter = EmbeddingAdapter(config=config)
+    try:
+        yield adapter
+    finally:
+        adapter.close()
 
 
-def get_chat_adapter(chat_config: Annotated[ChatConfig, Depends(get_chat_config)]) -> ChatAdapter:
+async def get_chat_adapter(
+    chat_config: Annotated[ChatConfig, Depends(get_chat_config)],
+) -> AsyncGenerator[ChatAdapter]:
     """构建 ChatAdapter，与 EmbeddingAdapter 使用独立的 OpenAI 客户端实例。"""
-    return ChatAdapter(config=chat_config)
+    adapter = ChatAdapter(config=chat_config)
+    try:
+        yield adapter
+    finally:
+        await adapter.aclose()
+
+
+def get_rerank_adapter(settings: SettingsDep) -> RerankAdapter | None:
+    if not settings.rerank_enabled:
+        return None
+    return RerankAdapter(
+        api_base_url=settings.rerank_api_base_url,
+        api_key=settings.rerank_api_key,
+        model=settings.rerank_model,
+        api_format=settings.rerank_api_format,
+        request_timeout=settings.rerank_request_timeout,
+    )
 
 
 def get_query_rewrite_config(settings: SettingsDep) -> QueryRewriteConfig | None:
@@ -91,6 +118,32 @@ _search_audit_trail_singleton: AuditTrail | None = None
 _search_response_cache_singleton: CacheManager | None = None
 _search_response_cache_disabled: bool = False  # 标记缓存是否被禁用
 _chat_circuit_breaker_singleton: CircuitBreaker | None = None
+_model_state_revision = ""
+_model_state_lock = RLock()
+
+
+def _locked_model_state(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        with _model_state_lock:
+            return function(*args, **kwargs)
+
+    return wrapped
+
+
+def _ensure_model_revision(settings: Settings) -> None:
+    """更换版本时替换状态对象；在途请求仍持有原对象，不清空其缓存。"""
+    global _model_state_revision, _query_rewriter_singleton, _query_rewriter_singleton_disabled
+    global _search_response_cache_singleton, _search_response_cache_disabled
+    global _chat_circuit_breaker_singleton
+    revision = settings.model_configuration_revision
+    if revision != _model_state_revision:
+        _query_rewriter_singleton = None
+        _query_rewriter_singleton_disabled = False
+        _search_response_cache_singleton = None
+        _search_response_cache_disabled = False
+        _chat_circuit_breaker_singleton = None
+        _model_state_revision = revision
 
 
 def invalidate_query_rewrite_cache(session_id: str | None = None) -> int:
@@ -161,6 +214,7 @@ def get_search_audit_trail() -> AuditTrail:
     return _search_audit_trail_singleton
 
 
+@_locked_model_state
 def get_search_response_cache(settings: SettingsDep) -> CacheManager | None:
     """获取搜索响应 L1 缓存单例（会话绑定精确匹配）。
 
@@ -168,6 +222,7 @@ def get_search_response_cache(settings: SettingsDep) -> CacheManager | None:
     SearchService 将跳过缓存查找与存储。
     """
     global _search_response_cache_singleton, _search_response_cache_disabled
+    _ensure_model_revision(settings)
 
     if _search_response_cache_singleton is not None:
         return _search_response_cache_singleton
@@ -190,6 +245,7 @@ def get_search_response_cache(settings: SettingsDep) -> CacheManager | None:
     return _search_response_cache_singleton
 
 
+@_locked_model_state
 def get_chat_circuit_breaker(settings: SettingsDep) -> CircuitBreaker:
     """获取对话生成熔断器单例。
 
@@ -197,6 +253,7 @@ def get_chat_circuit_breaker(settings: SettingsDep) -> CircuitBreaker:
     熔断期间所有 LLM 生成跳过，直接返回降级文本。
     """
     global _chat_circuit_breaker_singleton
+    _ensure_model_revision(settings)
     if _chat_circuit_breaker_singleton is None:
         _chat_circuit_breaker_singleton = CircuitBreaker(
             failure_threshold=settings.chat_circuit_breaker_threshold,
@@ -205,6 +262,7 @@ def get_chat_circuit_breaker(settings: SettingsDep) -> CircuitBreaker:
     return _chat_circuit_breaker_singleton
 
 
+@_locked_model_state
 def get_query_rewriter(
     settings: SettingsDep,
     query_rewrite_config: Annotated[QueryRewriteConfig | None, Depends(get_query_rewrite_config)],
@@ -221,6 +279,7 @@ def get_query_rewriter(
     搜索管线的 Step 0（查询重写）将被跳过。
     """
     global _query_rewriter_singleton, _query_rewriter_singleton_disabled
+    _ensure_model_revision(settings)
 
     if _query_rewriter_singleton is not None:
         return _query_rewriter_singleton
@@ -231,7 +290,7 @@ def get_query_rewriter(
         _query_rewriter_singleton_disabled = True
         return None
 
-    if not query_rewrite_config.api_key:
+    if not query_rewrite_config.api_key and not query_rewrite_config.auth_optional:
         logger.warning("query_rewrite_disabled", reason="api_key_empty")
         _query_rewriter_singleton_disabled = True
         return None
@@ -241,7 +300,7 @@ def get_query_rewriter(
     term_protector = TermProtector.from_defaults()
 
     # ChatAdapter：重写 LLM 使用独立配置（可能不同于主 chat 模型）
-    rewrite_chat_adapter = ChatAdapter(config=query_rewrite_config)
+    rewrite_chat_adapter = TransientChatAdapter(config=query_rewrite_config)
 
     # PromptLoader：三层降级加载器（加载 rewrite_prompts.yaml）
     prompt_loader = PromptLoader()
@@ -345,6 +404,7 @@ QueryRewriterDep = Annotated[QueryRewriter | None, Depends(get_query_rewriter)]
 SearchResponseCacheDep = Annotated[CacheManager | None, Depends(get_search_response_cache)]
 ChatCircuitBreakerDep = Annotated[CircuitBreaker, Depends(get_chat_circuit_breaker)]
 SearchAuditTrailDep = Annotated[AuditTrail, Depends(get_search_audit_trail)]
+RerankAdapterDep = Annotated[RerankAdapter | None, Depends(get_rerank_adapter)]
 
 
 # ── POST /api/search ──────────────────────────────────────────────────
@@ -357,6 +417,8 @@ SearchAuditTrailDep = Annotated[AuditTrail, Depends(get_search_audit_trail)]
 )
 def search_documents(
     request: SearchRequest,
+    current_user: ReadUserDep,
+    admission: ChatAdmissionDep,
     session: SessionDep,
     settings: SettingsDep,
     chat_config: ChatConfigDep,
@@ -366,6 +428,7 @@ def search_documents(
     response_cache: SearchResponseCacheDep = None,
     search_audit_trail: SearchAuditTrailDep = None,
     chat_circuit_breaker: ChatCircuitBreakerDep = None,
+    rerank_adapter: RerankAdapterDep = None,
 ) -> SearchResponse:
     """跨所有已向量化文档进行语义搜索，并生成 AI 回答。
 
@@ -390,7 +453,7 @@ def search_documents(
         )
 
     # 503: Chat API key 未配置
-    if not chat_config.api_key:
+    if not chat_config.api_key and not chat_config.auth_optional:
         logger.info("search_rejected", reason="chat_api_key_empty")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -399,6 +462,10 @@ def search_documents(
 
     service = SearchService(
         session=session,
+        owner_user_id=current_user.id,
+        kb_fingerprint=compute_fingerprint(session, owner_user_id=current_user.id)
+        + ":models:"
+        + settings.model_configuration_revision,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
         chat_config=chat_config,
@@ -408,17 +475,8 @@ def search_documents(
         response_cache=response_cache,
         audit_trail=search_audit_trail,
         circuit_breaker=chat_circuit_breaker,
+        rerank_adapter=rerank_adapter,
     )
-
-    # ── 知识库指纹注入 ──────────────────────────────────────────────────
-    # 每次请求前计算当前知识库指纹，注入到查询重写缓存和搜索响应缓存中。
-    # 指纹变化时，缓存层会在读取条目时惰性淘汰旧数据。
-    # 指纹计算为轻量聚合查询（COUNT + MAX），通常在 1ms 内完成。
-    _kb_fp = compute_fingerprint(session)
-    if query_rewriter is not None:
-        query_rewriter.update_fingerprint(_kb_fp)
-    if response_cache is not None:
-        response_cache.update_fingerprint(_kb_fp)
 
     try:
         response = service.search(
@@ -441,4 +499,5 @@ def search_documents(
             detail="知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。",
         )
 
+    admission.succeeded = response.generation_error is None
     return response

@@ -1,0 +1,13 @@
+Uninstalled 1 package in 0.57ms
+Installed 1 package in 1ms
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_model_migration_upgrade_and_downgrade __________________
+tests/admin_console/test_model_migration.py:15: in test_model_migration_upgrade_and_downgrade
+    assert len(paths) == 1, "缺少模型配置独立迁移，不能仅依赖 create_all 建表"
+E   AssertionError: 缺少模型配置独立迁移，不能仅依赖 create_all 建表
+E   assert 0 == 1
+E    +  where 0 = len([])
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_migration.py::test_model_migration_upgrade_and_downgrade
+1 failed in 0.19s

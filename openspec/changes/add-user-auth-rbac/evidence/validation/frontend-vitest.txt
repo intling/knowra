@@ -1,0 +1,12 @@
+
+> knowra-front@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+
+ Test Files  50 passed (50)
+      Tests  584 passed (584)
+   Start at  10:47:17
+   Duration  20.14s (transform 3.17s, setup 0ms, import 5.08s, tests 10.95s, environment 33.72s)

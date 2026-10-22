@@ -1,0 +1,67 @@
+Uninstalled 1 package in 1ms
+Installed 1 package in 1ms
+......FFF..............................................                  [100%]
+=================================== FAILURES ===================================
+___________________ test_rewrite_adapter_releases_each_call ____________________
+tests/admin_console/test_model_integration.py:120: in test_rewrite_adapter_releases_each_call
+    adapter = module.TransientChatAdapter(config=QueryRewriteConfig.from_settings(model_settings))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'app.services.chat_adapter' has no attribute 'TransientChatAdapter'
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:33:55.116137Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.130882Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.131270Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.116137Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.130882Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.131270Z', 'logger': 'app.core.shutdown'}
+___________ test_auto_embedding_activates_when_environment_disabled ____________
+tests/admin_console/test_model_integration.py:150: in test_auto_embedding_activates_when_environment_disabled
+    embedding.run_initial_embedding.assert_called_once()
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/unittest/mock.py:965: in assert_called_once
+    raise AssertionError(msg)
+E   AssertionError: Expected 'run_initial_embedding' to have been called once. Called 0 times.
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:33:55.169043Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35ma2e7cda5-4a5d-43a3-b186-1ece4d89c748[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35m0a346dc8-da13-40d4-bd64-6fb4b8679a07[0m [36mtrace_id[0m=[35m01a16175-3ad8-76f7-b437-aa76a9bee7ee[0m
+[2m2026-10-22T02:33:55.171516Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.182352Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35ma2e7cda5-4a5d-43a3-b186-1ece4d89c748[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35m0a346dc8-da13-40d4-bd64-6fb4b8679a07[0m [36mtrace_id[0m=[35m01a16175-3ae4-723f-ba9d-f3fe3b22f7a5[0m
+[2m2026-10-22T02:33:55.184658Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/0a346dc8-da13-40d4-bd64-6fb4b8679a07/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.194646Z[0m [[32m[1minfo[0m] [1mParse started[0m [[0m[1m[34mapp.services.document_parse_dispatcher[0m][0m [36mjob_id[0m=[35m7322158d-1557-45e9-8db6-f7adfb5e4567[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.201548Z[0m [[32m[1minfo[0m] [1mParse succeeded[0m [[0m[1m[34mapp.services.document_parse_dispatcher[0m][0m [36mjob_id[0m=[35m7322158d-1557-45e9-8db6-f7adfb5e4567[0m [36mpages[0m=[35m1[0m [36msegments[0m=[35m1[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.201846Z[0m [[32m[1minfo[0m] [1mAuto-chunking started[0m [[0m[1m[34mapp.services.document_parse_dispatcher[0m][0m [36mparse_job_id[0m=[35m7322158d-1557-45e9-8db6-f7adfb5e4567[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.202892Z[0m [[32m[1minfo[0m] [1mAuto-chunking succeeded[0m [[0m[1m[34mapp.services.document_parse_dispatcher[0m][0m [36mchunk_job_id[0m=[35m"<MagicMock name='mock.run_initial_chunking().id' id='249998108614608'>"[0m [36mchunks[0m=[35m<MagicMock name='mock.run_initial_chunking().chunk_count' id='249998108610240'>[0m [36mparse_job_id[0m=[35m7322158d-1557-45e9-8db6-f7adfb5e4567[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:91 {'profile_id': '0a346dc8-da13-40d4-bd64-6fb4b8679a07', 'actor_user_id': 'a2e7cda5-4a5d-43a3-b186-1ece4d89c748', 'kind': 'embedding', 'event': '管理员创建模型配置', 'trace_id': '01a16175-3ad8-76f7-b437-aa76a9bee7ee', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.169043Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:169 {'profile_id': '0a346dc8-da13-40d4-bd64-6fb4b8679a07', 'actor_user_id': 'a2e7cda5-4a5d-43a3-b186-1ece4d89c748', 'kind': 'embedding', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a16175-3ae4-723f-ba9d-f3fe3b22f7a5', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.182352Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/0a346dc8-da13-40d4-bd64-6fb4b8679a07/activate "HTTP/1.1 200 OK"
+INFO     app.services.document_parse_dispatcher:document_parse_dispatcher.py:75 {'job_id': '7322158d-1557-45e9-8db6-f7adfb5e4567', 'event': 'Parse started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.194646Z', 'logger': 'app.services.document_parse_dispatcher'}
+INFO     app.services.document_parse_dispatcher:document_parse_dispatcher.py:122 {'job_id': '7322158d-1557-45e9-8db6-f7adfb5e4567', 'pages': 1, 'segments': 1, 'event': 'Parse succeeded', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.201548Z', 'logger': 'app.services.document_parse_dispatcher'}
+INFO     app.services.document_parse_dispatcher:document_parse_dispatcher.py:135 {'parse_job_id': '7322158d-1557-45e9-8db6-f7adfb5e4567', 'event': 'Auto-chunking started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.201846Z', 'logger': 'app.services.document_parse_dispatcher'}
+INFO     app.services.document_parse_dispatcher:document_parse_dispatcher.py:145 {'parse_job_id': '7322158d-1557-45e9-8db6-f7adfb5e4567', 'chunk_job_id': "<MagicMock name='mock.run_initial_chunking().id' id='249998108614608'>", 'chunks': <MagicMock name='mock.run_initial_chunking().chunk_count' id='249998108610240'>, 'event': 'Auto-chunking succeeded', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.202892Z', 'logger': 'app.services.document_parse_dispatcher'}
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:33:55.257410Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.271823Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.272187Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.257410Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.271823Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.272187Z', 'logger': 'app.core.shutdown'}
+________________ test_reembed_cannot_override_managed_embedding ________________
+tests/admin_console/test_model_integration.py:162: in test_reembed_cannot_override_managed_embedding
+    with pytest.raises(AppError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE <class 'app.core.errors.AppError'>
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:33:55.301900Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.316629Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:33:55.317030Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.301900Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.316629Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:33:55.317030Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_integration.py::test_rewrite_adapter_releases_each_call
+FAILED tests/admin_console/test_model_integration.py::test_auto_embedding_activates_when_environment_disabled
+FAILED tests/admin_console/test_model_integration.py::test_reembed_cannot_override_managed_embedding
+3 failed, 52 passed in 3.90s

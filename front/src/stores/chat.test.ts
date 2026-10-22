@@ -14,11 +14,20 @@ vi.mock("../shared/logger", () => ({
 }))
 
 // Lazy import after mocks are established
-const { useChatStore, autoTitleFromMessage } = await import("./chat")
+const { useChatStore: createChatStore, autoTitleFromMessage } =
+  await import("./chat")
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "knowra:chat"
+const TEST_USER_ID = "user-a"
+const STORAGE_KEY = `knowra:chat:v2:${TEST_USER_ID}`
+
+/** 对话存储按已认证用户分键；既有用例统一在绑定测试用户后操作。 */
+function useChatStore() {
+  const store = createChatStore()
+  store.bindUser(TEST_USER_ID)
+  return store
+}
 
 function populateStorage(store: ReturnType<typeof useChatStore>) {
   const c1 = store.addConversation("第一个对话")
@@ -171,7 +180,9 @@ describe("useChatStore", () => {
       const store = useChatStore()
       populateStorage(store)
 
-      expect(() => store.renameConversation("nonexistent", "新标题")).not.toThrow()
+      expect(() =>
+        store.renameConversation("nonexistent", "新标题"),
+      ).not.toThrow()
     })
   })
 
@@ -325,7 +336,9 @@ describe("useChatStore", () => {
       store.renameConversation(c1.id, "新名称")
 
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
-      const renamed = saved.conversations.find((c: { id: string }) => c.id === c1.id)
+      const renamed = saved.conversations.find(
+        (c: { id: string }) => c.id === c1.id,
+      )
       expect(renamed.title).toBe("新名称")
     })
 
@@ -368,27 +381,38 @@ describe("useChatStore", () => {
     })
 
     it("移除常见前缀「请帮我」", () => {
-      expect(autoTitleFromMessage("请帮我总结一下知识库的内容")).toBe("总结一下知识库的内容")
+      expect(autoTitleFromMessage("请帮我总结一下知识库的内容")).toBe(
+        "总结一下知识库的内容",
+      )
     })
 
     it("移除常见前缀「帮我」", () => {
-      expect(autoTitleFromMessage("帮我分析这份报告的核心观点")).toBe("分析这份报告的核心观点")
+      expect(autoTitleFromMessage("帮我分析这份报告的核心观点")).toBe(
+        "分析这份报告的核心观点",
+      )
     })
 
     it("移除常见前缀「如何」", () => {
-      expect(autoTitleFromMessage("如何在Hadoop上配置HDFS高可用")).toBe("在Hadoop上配置HDFS高可用")
+      expect(autoTitleFromMessage("如何在Hadoop上配置HDFS高可用")).toBe(
+        "在Hadoop上配置HDFS高可用",
+      )
     })
 
     it("移除常见前缀「怎么」", () => {
-      expect(autoTitleFromMessage("怎么解决Python依赖冲突问题")).toBe("解决Python依赖冲突问题")
+      expect(autoTitleFromMessage("怎么解决Python依赖冲突问题")).toBe(
+        "解决Python依赖冲突问题",
+      )
     })
 
     it("移除常见前缀「我想知道」", () => {
-      expect(autoTitleFromMessage("我想知道微服务架构的最佳实践")).toBe("微服务架构的最佳实践")
+      expect(autoTitleFromMessage("我想知道微服务架构的最佳实践")).toBe(
+        "微服务架构的最佳实践",
+      )
     })
 
     it("长消息截断并追加省略号", () => {
-      const long = "这是一个非常长的消息内容用于测试标题自动截断功能需要更多字符来验证"
+      const long =
+        "这是一个非常长的消息内容用于测试标题自动截断功能需要更多字符来验证"
       const result = autoTitleFromMessage(long)
       // AUTO_TITLE_MAX_LENGTH = 18, result max = 18 + "…"
       expect(result.length).toBeLessThanOrEqual(19)
@@ -400,7 +424,9 @@ describe("useChatStore", () => {
     })
 
     it("换行符替换为空格", () => {
-      expect(autoTitleFromMessage("第一行\n第二行\n第三行")).toBe("第一行 第二行 第三行")
+      expect(autoTitleFromMessage("第一行\n第二行\n第三行")).toBe(
+        "第一行 第二行 第三行",
+      )
     })
 
     it("全为前缀时返回空字符串", () => {
@@ -410,7 +436,9 @@ describe("useChatStore", () => {
 
     it("末尾标点被移除", () => {
       expect(autoTitleFromMessage("Hadoop安装步骤？")).toBe("Hadoop安装步骤")
-      expect(autoTitleFromMessage("Python代码报错分析。")).toBe("Python代码报错分析")
+      expect(autoTitleFromMessage("Python代码报错分析。")).toBe(
+        "Python代码报错分析",
+      )
     })
   })
 
@@ -539,8 +567,22 @@ describe("useChatStore", () => {
       const store = useChatStore()
       const conv = store.addConversation("多气泡测试")
 
-      store.addBubble(conv.id, { id: "b-1", query: "第一个问题", topK: 5, fileNames: [], response: null, error: null })
-      store.addBubble(conv.id, { id: "b-2", query: "第二个问题", topK: 5, fileNames: [], response: null, error: null })
+      store.addBubble(conv.id, {
+        id: "b-1",
+        query: "第一个问题",
+        topK: 5,
+        fileNames: [],
+        response: null,
+        error: null,
+      })
+      store.addBubble(conv.id, {
+        id: "b-2",
+        query: "第二个问题",
+        topK: 5,
+        fileNames: [],
+        response: null,
+        error: null,
+      })
 
       expect(store.conversations[0].bubbles).toHaveLength(2)
       expect(store.conversations[0].bubbles[1].query).toBe("第二个问题")
@@ -552,7 +594,14 @@ describe("useChatStore", () => {
       const originalUpdatedAt = conv.updatedAt
 
       await new Promise((resolve) => setTimeout(resolve, 10))
-      store.addBubble(conv.id, { id: "b-1", query: "测试", topK: 5, fileNames: [], response: null, error: null })
+      store.addBubble(conv.id, {
+        id: "b-1",
+        query: "测试",
+        topK: 5,
+        fileNames: [],
+        response: null,
+        error: null,
+      })
 
       expect(store.conversations[0].updatedAt).not.toBe(originalUpdatedAt)
     })
@@ -561,7 +610,14 @@ describe("useChatStore", () => {
       const store = useChatStore()
 
       expect(() =>
-        store.addBubble("nonexistent", { id: "b-1", query: "测试", topK: 5, fileNames: [], response: null, error: null }),
+        store.addBubble("nonexistent", {
+          id: "b-1",
+          query: "测试",
+          topK: 5,
+          fileNames: [],
+          response: null,
+          error: null,
+        }),
       ).not.toThrow()
     })
   })
@@ -570,10 +626,20 @@ describe("useChatStore", () => {
     it("更新气泡的 response 字段", () => {
       const store = useChatStore()
       const conv = store.addConversation("更新测试")
-      store.addBubble(conv.id, { id: "b-1", query: "查询", topK: 5, fileNames: [], response: null, error: null })
+      store.addBubble(conv.id, {
+        id: "b-1",
+        query: "查询",
+        topK: 5,
+        fileNames: [],
+        response: null,
+        error: null,
+      })
 
       const mockResponse = { answer: "AI 回答", chat_model: "test-model" }
-      store.updateBubble(conv.id, "b-1", { response: mockResponse as unknown as import("../api/search").SearchResponse })
+      store.updateBubble(conv.id, "b-1", {
+        response:
+          mockResponse as unknown as import("../api/search").SearchResponse,
+      })
 
       expect(store.conversations[0].bubbles[0].response).not.toBeNull()
     })
@@ -581,7 +647,14 @@ describe("useChatStore", () => {
     it("更新气泡的 error 字段", () => {
       const store = useChatStore()
       const conv = store.addConversation("错误更新测试")
-      store.addBubble(conv.id, { id: "b-1", query: "查询", topK: 5, fileNames: [], response: null, error: null })
+      store.addBubble(conv.id, {
+        id: "b-1",
+        query: "查询",
+        topK: 5,
+        fileNames: [],
+        response: null,
+        error: null,
+      })
 
       store.updateBubble(conv.id, "b-1", { error: "网络错误" })
 
@@ -591,7 +664,9 @@ describe("useChatStore", () => {
     it("更新不存在的对话或气泡不抛出异常", () => {
       const store = useChatStore()
 
-      expect(() => store.updateBubble("nonexistent", "b-1", { error: "测试" })).not.toThrow()
+      expect(() =>
+        store.updateBubble("nonexistent", "b-1", { error: "测试" }),
+      ).not.toThrow()
     })
   })
 
@@ -599,8 +674,22 @@ describe("useChatStore", () => {
     it("清空对话的所有气泡", () => {
       const store = useChatStore()
       const conv = store.addConversation("清空测试")
-      store.addBubble(conv.id, { id: "b-1", query: "查询1", topK: 5, fileNames: [], response: null, error: null })
-      store.addBubble(conv.id, { id: "b-2", query: "查询2", topK: 5, fileNames: [], response: null, error: null })
+      store.addBubble(conv.id, {
+        id: "b-1",
+        query: "查询1",
+        topK: 5,
+        fileNames: [],
+        response: null,
+        error: null,
+      })
+      store.addBubble(conv.id, {
+        id: "b-2",
+        query: "查询2",
+        topK: 5,
+        fileNames: [],
+        response: null,
+        error: null,
+      })
 
       store.clearBubbles(conv.id)
 

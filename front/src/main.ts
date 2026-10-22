@@ -3,6 +3,7 @@ import { createApp } from "vue"
 
 import App from "./App.vue"
 import router from "./router"
+import { installAuthHandling } from "./router/guards"
 import "./style.css"
 import { initLogger, createLogger, getRingBuffer } from "./shared/logger"
 
@@ -18,7 +19,10 @@ app.config.errorHandler = (err, _instance, info) => {
   if (err instanceof Error) {
     appLogger.error(message, err, { componentInfo: info })
   } else {
-    appLogger.error(message, undefined, { componentInfo: info, error: String(err) })
+    appLogger.error(message, undefined, {
+      componentInfo: info,
+      error: String(err),
+    })
   }
 }
 
@@ -28,10 +32,13 @@ window.addEventListener("unhandledrejection", (event) => {
   if (reason instanceof Error) {
     appLogger.error("未捕获的 Promise 拒绝", reason)
   } else {
-    appLogger.error("未捕获的 Promise 拒绝", undefined, { reason: String(reason) })
+    appLogger.error("未捕获的 Promise 拒绝", undefined, {
+      reason: String(reason),
+    })
   }
 })
 
 app.use(createPinia())
+installAuthHandling(router)
 app.use(router)
 app.mount("#app")

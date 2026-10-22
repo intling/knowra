@@ -1,0 +1,413 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/views/__tests__/AdminUsersLifecycle.spec.ts src/views/__tests__/AdminConsole.spec.ts src/views/__tests__/AdminUsersView.spec.ts src/components/sidebar/__tests__/SidebarUser.spec.ts src/router/__tests__/guards.spec.ts src/api/adminUsers.test.ts --reporter=default --reporter=junit --outputFile.junit=../openspec/changes/add-admin-console/evidence/validation/frontend.xml
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ✓ src/views/__tests__/AdminUsersView.spec.ts (8 tests) 534ms
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts (9 tests | 9 failed) 533ms
+     × 创建用户后刷新列表和清空密码 316ms
+     × 密码不一致时不发送建号请求 33ms
+     × 建号失败保留表单并显示错误 29ms
+     × 建号进行中只提交一次 25ms
+     × 重置密码后清空密码并说明会话失效 45ms
+     × 删除前确认且取消不调用 API 21ms
+     × 删除成功刷新账号列表 18ms
+     × 删除失败保留账号并显示原因 20ms
+     × 删除末页最后一项返回有效页 24ms
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 后台入口跳转用户管理并声明模型管理权限
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 匿名访问模型页要求登录
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > member 不能读取模型配置
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > viewer 不能读取模型配置
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 模型列表显示基本信息与后台导航
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 chat 模型配置
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 embedding 模型配置
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 rerank 模型配置
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 query_rewrite 模型配置
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 编辑密钥留空保留旧值
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 确认后设为默认模型
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 模型激活被拒绝时显示索引冲突原因
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 取消模型删除保留配置
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 模型列表失败显示具体原因
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+ ❯ src/views/__tests__/AdminConsole.spec.ts (15 tests | 15 failed) 1811ms
+     × 后台入口跳转用户管理并声明模型管理权限 1674ms
+     × 管理员菜单提供后台管理入口 70ms
+     × 匿名访问模型页要求登录 4ms
+     × member 不能读取模型配置 4ms
+     × viewer 不能读取模型配置 3ms
+     × 模型列表显示基本信息与后台导航 4ms
+     × 新增 chat 模型配置 22ms
+     × 新增 embedding 模型配置 9ms
+     × 新增 rerank 模型配置 2ms
+     × 新增 query_rewrite 模型配置 6ms
+     × 编辑密钥留空保留旧值 2ms
+     × 确认后设为默认模型 2ms
+     × 模型激活被拒绝时显示索引冲突原因 2ms
+     × 取消模型删除保留配置 1ms
+     × 模型列表失败显示具体原因 2ms
+ ✓ src/router/__tests__/guards.spec.ts (8 tests) 223ms
+ ✓ src/components/sidebar/__tests__/SidebarUser.spec.ts (6 tests) 169ms
+ ✓ src/api/adminUsers.test.ts (2 tests) 11ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 24 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 后台入口跳转用户管理并声明模型管理权限
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:109:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 管理员菜单提供后台管理入口
+AssertionError: expected '用户管理' to contain '后台管理'
+
+Expected: "后台管理"
+Received: "用户管理"
+
+ ❯ src/views/__tests__/AdminConsole.spec.ts:132:25
+    130|     await wrapper.get('[data-testid="user-menu-button"]').trigger("cli…
+    131|     const link = wrapper.get('[data-testid="menu-admin"]')
+    132|     expect(link.text()).toContain("后台管理")
+       |                         ^
+    133|     expect(link.attributes("href")).toBe("/admin")
+    134|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 匿名访问模型页要求登录
+AssertionError: 缺少需认证的模型配置路由: expected 0 to be greater than 0
+ ❯ src/views/__tests__/AdminConsole.spec.ts:147:7
+    145|       router.resolve("/admin/models").matched.length,
+    146|       "缺少需认证的模型配置路由",
+    147|     ).toBeGreaterThan(0)
+       |       ^
+    148|     await router.push("/admin/models")
+    149|     expect(router.currentRoute.value.name).toBe("login")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > member 不能读取模型配置
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > viewer 不能读取模型配置
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:157:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 模型列表显示基本信息与后台导航
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:169:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 chat 模型配置
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 embedding 模型配置
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 rerank 模型配置
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 新增 query_rewrite 模型配置
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:183:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 编辑密钥留空保留旧值
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:211:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 确认后设为默认模型
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:236:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 模型激活被拒绝时显示索引冲突原因
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:264:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 取消模型删除保留配置
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:284:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/24]⎯
+
+ FAIL  src/views/__tests__/AdminConsole.spec.ts > 后台入口和模型配置 > 模型列表失败显示具体原因
+AssertionError: 后台缺少 /admin/models 模型配置路由: expected 0 to be greater than 0
+ ❯ mountModels src/views/__tests__/AdminConsole.spec.ts:61:5
+     59|     match.matched.length,
+     60|     "后台缺少 /admin/models 模型配置路由",
+     61|   ).toBeGreaterThan(0)
+       |     ^
+     62|   await router.push("/admin/models")
+     63|   await router.isReady()
+ ❯ src/views/__tests__/AdminConsole.spec.ts:303:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 创建用户后刷新列表和清空密码
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+     69| ) {
+     70|   const open = w.find('[data-testid="admin-create-user"]')
+     71|   expect(open.exists(), "用户管理缺少新增账号入口，无法完成管理员建号").toBe(
+       |                                                   ^
+     72|     true,
+     73|   )
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:105:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 密码不一致时不发送建号请求
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+     69| ) {
+     70|   const open = w.find('[data-testid="admin-create-user"]')
+     71|   expect(open.exists(), "用户管理缺少新增账号入口，无法完成管理员建号").toBe(
+       |                                                   ^
+     72|     true,
+     73|   )
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:128:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 建号失败保留表单并显示错误
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+     69| ) {
+     70|   const open = w.find('[data-testid="admin-create-user"]')
+     71|   expect(open.exists(), "用户管理缺少新增账号入口，无法完成管理员建号").toBe(
+       |                                                   ^
+     72|     true,
+     73|   )
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:140:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 建号进行中只提交一次
+AssertionError: 用户管理缺少新增账号入口，无法完成管理员建号: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fillCreate src/views/__tests__/AdminUsersLifecycle.spec.ts:71:51
+     69| ) {
+     70|   const open = w.find('[data-testid="admin-create-user"]')
+     71|   expect(open.exists(), "用户管理缺少新增账号入口，无法完成管理员建号").toBe(
+       |                                                   ^
+     72|     true,
+     73|   )
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:159:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 重置密码后清空密码并说明会话失效
+AssertionError: 目标账号缺少重置密码入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:173:45
+    171|     const w = await mountAdmin()
+    172|     const button = targetRow(w).find('[data-testid="admin-user-reset"]…
+    173|     expect(button.exists(), "目标账号缺少重置密码入口").toBe(true)
+       |                                             ^
+    174|     await button.trigger("click")
+    175|     const form = w.get('[data-testid="admin-reset-form"]')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 删除前确认且取消不调用 API
+AssertionError: 目标账号缺少删除入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:192:43
+    190|     const w = await mountAdmin()
+    191|     const button = targetRow(w).find('[data-testid="admin-user-delete"…
+    192|     expect(button.exists(), "目标账号缺少删除入口").toBe(true)
+       |                                           ^
+    193|     await button.trigger("click")
+    194|     expect(document.body.textContent).toContain("target@example.com")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 删除成功刷新账号列表
+AssertionError: 目标账号缺少删除入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:206:43
+    204|     const w = await mountAdmin()
+    205|     const button = targetRow(w).find('[data-testid="admin-user-delete"…
+    206|     expect(button.exists(), "目标账号缺少删除入口").toBe(true)
+       |                                           ^
+    207|     await button.trigger("click")
+    208|     api.listUsers.mockResolvedValue({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 删除失败保留账号并显示原因
+AssertionError: 目标账号缺少删除入口: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:227:43
+    225|     const w = await mountAdmin()
+    226|     const button = targetRow(w).find('[data-testid="admin-user-delete"…
+    227|     expect(button.exists(), "目标账号缺少删除入口").toBe(true)
+       |                                           ^
+    228|     await button.trigger("click")
+    229|     await clickConfirmation("confirm")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/24]⎯
+
+ FAIL  src/views/__tests__/AdminUsersLifecycle.spec.ts > 后台用户生命周期 > 删除末页最后一项返回有效页
+AssertionError: 末页账号应有删除操作: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/views/__tests__/AdminUsersLifecycle.spec.ts:247:43
+    245|     await flushPromises()
+    246|     const button = targetRow(w).find('[data-testid="admin-user-delete"…
+    247|     expect(button.exists(), "末页账号应有删除操作").toBe(true)
+       |                                           ^
+    248|     await button.trigger("click")
+    249|     api.listUsers.mockImplementation(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/24]⎯
+
+
+ Test Files  2 failed | 4 passed (6)
+      Tests  24 failed | 24 passed (48)
+   Start at  10:07:25
+   Duration  3.92s (transform 2.26s, setup 0ms, import 1.45s, tests 3.28s, environment 4.53s)
+
+JUNIT report written to /root/project/knowra/openspec/changes/add-admin-console/evidence/validation/frontend.xml

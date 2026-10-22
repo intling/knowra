@@ -1,4 +1,4 @@
-import { apiGet, buildApiUrl } from "./client"
+import { apiGet, apiFetch } from "./client"
 import { createLogger, getRingBuffer } from "../shared/logger"
 
 /** Lazy logger — getRingBuffer() is only available after main.ts initLogger(). */
@@ -76,7 +76,9 @@ class EmbeddingApiError extends Error {
   }
 }
 
-async function parseErrorResponse(response: Response): Promise<EmbeddingApiError> {
+async function parseErrorResponse(
+  response: Response,
+): Promise<EmbeddingApiError> {
   try {
     const payload = (await response.json()) as Record<string, unknown>
     const detail =
@@ -93,18 +95,27 @@ async function parseErrorResponse(response: Response): Promise<EmbeddingApiError
       Object.keys(extra).length > 0 ? extra : undefined,
     )
   } catch {
-    return new EmbeddingApiError(response.status, `请求失败：${response.status}`)
+    return new EmbeddingApiError(
+      response.status,
+      `请求失败：${response.status}`,
+    )
   }
 }
 
 /** 查询单个向量化作业状态。 */
-export function getDocumentEmbeddingJob(jobId: string): Promise<DocumentEmbeddingJob> {
+export function getDocumentEmbeddingJob(
+  jobId: string,
+): Promise<DocumentEmbeddingJob> {
   return apiGet<DocumentEmbeddingJob>(`/document-embedding-jobs/${jobId}`)
 }
 
 /** 查询分块作业最新的向量化作业（不限状态），用于前端展示向量化进度。 */
-export function getChunkJobLatestEmbeddingJob(chunkJobId: string): Promise<DocumentEmbeddingJob> {
-  return apiGet<DocumentEmbeddingJob>(`/document-chunk-jobs/${chunkJobId}/embedding-job`)
+export function getChunkJobLatestEmbeddingJob(
+  chunkJobId: string,
+): Promise<DocumentEmbeddingJob> {
+  return apiGet<DocumentEmbeddingJob>(
+    `/document-chunk-jobs/${chunkJobId}/embedding-job`,
+  )
 }
 
 /** 分页查询分块作业的最新活跃向量结果，按 sequence_index 排序。 */
@@ -127,8 +138,8 @@ export async function reembedChunkJob(
   chunkJobId: string,
   request: ReEmbedRequest = {},
 ): Promise<DocumentEmbeddingJob> {
-  const response = await fetch(
-    buildApiUrl(`/document-chunk-jobs/${chunkJobId}/re-embed`),
+  const response = await apiFetch(
+    `/document-chunk-jobs/${chunkJobId}/re-embed`,
     {
       method: "POST",
       headers: {

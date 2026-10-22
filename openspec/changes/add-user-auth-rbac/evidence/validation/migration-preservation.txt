@@ -1,0 +1,6 @@
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 1ms
+2026-10-21 10:49:31 [info     ] 数据库引擎已创建                       database_url=postgresql+psycopg://knowra@127.0.0.1:15439/knowra echo=True
+PASS downgrade: user identities and upload/parsed-document ownership preserved
+PASS upgrade: user identities and upload/parsed-document ownership preserved
+Verified row counts: {'users': 12, 'uploads': 7, 'parsed': 7}

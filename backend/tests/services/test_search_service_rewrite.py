@@ -9,8 +9,11 @@
 
 from importlib import import_module
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from unittest.mock import ANY, AsyncMock, MagicMock
+from uuid import UUID, uuid4
+
+# 检索服务必须绑定已认证用户；既有单测使用固定测试用户 ID。
+TEST_OWNER_ID = UUID("11111111-1111-1111-1111-111111111111")
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
@@ -218,6 +221,7 @@ def test_search_calls_rewriter_and_uses_rewritten_query():
 
     # 使用 query_rewriter 参数构造 SearchService
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -229,7 +233,7 @@ def test_search_calls_rewriter_and_uses_rewritten_query():
 
     # ── 验证 QueryRewriter.rewrite() 被调用 ──
     fake_rewriter.rewrite.assert_called_once_with(
-        "Python 怎么用", session_id=None, history=None
+        "Python 怎么用", session_id=None, history=None, cache_namespace=ANY
     )
 
     # ── 验证向量化使用了改写后的查询 ──
@@ -284,6 +288,7 @@ def test_search_uses_first_rewritten_query_when_multiple_rewrites():
     fake_rewriter.rewrite = MagicMock(return_value=multi_result)
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -330,6 +335,7 @@ def test_search_rewrite_info_has_original_query_when_no_rewriter_provided():
 
     # query_rewriter 默认为 None（不传入）
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -360,6 +366,7 @@ def test_search_rewrite_info_has_original_query_when_rewriter_explicitly_none():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -393,6 +400,7 @@ def test_search_graceful_degradation_on_rewrite_failure():
     fake_rewriter.rewrite = MagicMock(side_effect=RuntimeError("Query rewriter timeout"))
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -437,6 +445,7 @@ def test_search_rewrite_failure_does_not_affect_generation_error():
     fake_rewriter.rewrite = MagicMock(side_effect=RuntimeError("Rewriter error"))
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -467,7 +476,9 @@ def test_search_preserves_rewrite_info_when_llm_fails():
     embedding_adapter = make_fake_embedding_adapter()
     chat_adapter = make_fake_chat_adapter()
     # LLM 调用失败
-    chat_adapter.generate_async.side_effect = chat_module.ChatAPIError("LLM timeout", status_code=502)
+    chat_adapter.generate_async.side_effect = chat_module.ChatAPIError(
+        "LLM timeout", status_code=502
+    )
     chat_config = make_fake_chat_config()
 
     fake_rewriter = make_fake_rewriter(
@@ -477,6 +488,7 @@ def test_search_preserves_rewrite_info_when_llm_fails():
     )
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -519,6 +531,7 @@ def test_search_time_includes_rewrite_time_and_rewrite_time_independent():
     )
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -552,6 +565,7 @@ def test_timing_fields_are_non_negative():
     fake_rewriter = make_fake_rewriter()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -588,6 +602,7 @@ def test_rewrite_info_reflects_cache_hit():
     )
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -624,6 +639,7 @@ def test_search_passes_history_to_rewriter():
     )
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -637,7 +653,7 @@ def test_search_passes_history_to_rewriter():
 
     # 验证 history 被传递给 rewriter（session_id 由 SearchService 从 history 派生）
     fake_rewriter.rewrite.assert_called_once_with(
-        "它怎么用", session_id="f22eb635d9725bf2", history=history
+        "它怎么用", session_id="f22eb635d9725bf2", history=history, cache_namespace=ANY
     )
 
     # rewrite_info 应反映上下文融合策略
@@ -658,6 +674,7 @@ def test_search_passes_none_history_when_not_provided():
     fake_rewriter = make_fake_rewriter()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -668,5 +685,5 @@ def test_search_passes_none_history_when_not_provided():
     service.search(query="独立查询", top_k=5)
 
     fake_rewriter.rewrite.assert_called_once_with(
-        "独立查询", session_id=None, history=None
+        "独立查询", session_id=None, history=None, cache_namespace=ANY
     )

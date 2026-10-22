@@ -1,6 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.deps import get_current_user, verify_trusted_origin
 from app.api.routes import (
+    admin_models,
+    admin_users,
+    auth,
     document_chunking,
     document_embedding,
     document_parsing,
@@ -11,12 +15,18 @@ from app.api.routes import (
     users,
 )
 
-api_router = APIRouter()
+api_router = APIRouter(dependencies=[Depends(verify_trusted_origin)])
 api_router.include_router(health.router)
-api_router.include_router(uploads.router)
-api_router.include_router(document_parsing.router)
-api_router.include_router(document_chunking.router)
-api_router.include_router(document_embedding.router)
-api_router.include_router(pipeline_verification.router)
-api_router.include_router(users.router)
-api_router.include_router(search.router)
+api_router.include_router(auth.router)
+for private_router in (
+    admin_models.router,
+    uploads.router,
+    document_parsing.router,
+    document_chunking.router,
+    document_embedding.router,
+    pipeline_verification.router,
+    users.router,
+    search.router,
+    admin_users.router,
+):
+    api_router.include_router(private_router, dependencies=[Depends(get_current_user)])

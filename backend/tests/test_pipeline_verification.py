@@ -24,6 +24,7 @@ from app.db.session import get_session
 from app.main import app
 from app.models.user import User
 from app.services.users import DEFAULT_USER_ID
+from tests.auth_helpers import authenticate_as
 from tests.document_chunking_helpers import make_parsed_document_with_segment
 from tests.document_parsing_helpers import make_user
 
@@ -142,6 +143,7 @@ def seed_current_user(session: Session) -> User:
     session.add(user)
     session.commit()
     session.refresh(user)
+    authenticate_as(user)
     return user
 
 
@@ -849,16 +851,12 @@ def test_deleted_chunk_file_returns_200_with_text_availability_check_failed(
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-def test_current_user_unavailable_returns_503(
+def test_unauthenticated_request_returns_401(
     verification_client: TestClient,
     session: Session,
     tmp_path,
 ) -> None:
-    """验证 get_current_user() 抛出 CurrentUserUnavailableError 时返回 503。
-
-    不 seed 用户数据，get_current_user() 找不到 DEFAULT_USER_ID 对应的活跃用户，
-    抛出 CurrentUserUnavailableError。"""
-    # 创建一个不属于 DEFAULT_USER_ID 用户的 parsed_document
+    """验证未登录请求返回 401 auth_required，且不会回退为默认用户。"""
     other_user = make_user(session, display_name="Other User")
     _owner, _upload, _parse_job, parsed = make_parsed_document_with_segment(
         session,
@@ -868,5 +866,5 @@ def test_current_user_unavailable_returns_503(
 
     response = verification_client.get(f"/api/parsed-documents/{parsed.id}/pipeline-verification")
 
-    assert response.status_code == 503
-    assert response.json()["detail"] == "Current user is unavailable"
+    assert response.status_code == 401
+    assert response.json()["code"] == "auth_required"

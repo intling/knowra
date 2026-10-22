@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlmodel import Session, col, select
 
+from app.api.deps import ReadUserDep, WriteUserDep
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
 from app.models.document_chunking import DocumentChunk, DocumentChunkJob, DocumentChunkJobStatus
@@ -23,7 +24,6 @@ from app.schemas.document_chunking import (
 from app.services.document_chunker import DocumentChunkingConfig
 from app.services.document_chunking import RechunkDispatcher
 from app.services.uploads import LocalFileStorage
-from app.services.users import CurrentUserUnavailableError, get_current_user
 
 router = APIRouter(tags=["document-chunking"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -34,8 +34,9 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
     "/document-chunk-jobs/{job_id}",
     response_model=DocumentChunkJobRead,
 )
-def read_document_chunk_job(job_id: UUID, session: SessionDep) -> DocumentChunkJobRead:
-    current_user = require_current_user(session)
+def read_document_chunk_job(
+    job_id: UUID, current_user: ReadUserDep, session: SessionDep
+) -> DocumentChunkJobRead:
     job = session.exec(
         select(DocumentChunkJob).where(
             DocumentChunkJob.id == job_id,
@@ -54,9 +55,9 @@ def read_document_chunk_job(job_id: UUID, session: SessionDep) -> DocumentChunkJ
 )
 def read_latest_parsed_document_chunk_job(
     parsed_document_id: UUID,
+    current_user: ReadUserDep,
     session: SessionDep,
 ) -> DocumentChunkJobRead:
-    current_user = require_current_user(session)
     parsed_document = get_owned_parsed_document(
         session=session,
         parsed_document_id=parsed_document_id,
@@ -75,11 +76,11 @@ def read_latest_parsed_document_chunk_job(
 )
 def read_parsed_document_chunks(
     parsed_document_id: UUID,
+    current_user: ReadUserDep,
     session: SessionDep,
     offset: int = 0,
     limit: int = 50,
 ) -> DocumentChunkPageRead:
-    current_user = require_current_user(session)
     parsed_document = get_owned_parsed_document(
         session=session,
         parsed_document_id=parsed_document_id,
@@ -118,8 +119,9 @@ def read_parsed_document_chunks(
     "/document-chunks/{chunk_id}",
     response_model=DocumentChunkRead,
 )
-def read_document_chunk(chunk_id: UUID, session: SessionDep) -> DocumentChunkRead:
-    current_user = require_current_user(session)
+def read_document_chunk(
+    chunk_id: UUID, current_user: ReadUserDep, session: SessionDep
+) -> DocumentChunkRead:
     chunk = session.exec(
         select(DocumentChunk).where(
             DocumentChunk.id == chunk_id,
@@ -139,6 +141,7 @@ def read_document_chunk(chunk_id: UUID, session: SessionDep) -> DocumentChunkRea
 def rechunk_parsed_document(
     parsed_document_id: UUID,
     http_request: Request,
+    current_user: WriteUserDep,
     session: SessionDep,
     settings: SettingsDep,
     background_tasks: BackgroundTasks,
@@ -153,7 +156,6 @@ def rechunk_parsed_document(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Service is shutting down",
         )
-    current_user = require_current_user(session)
     parsed_document = get_owned_parsed_document(
         session=session,
         parsed_document_id=parsed_document_id,
@@ -216,16 +218,6 @@ def ensure_tokenizer_runtime_ready(model_readiness: object | None) -> None:
         else "Tokenizer models are unavailable"
     )
     raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
-
-
-def require_current_user(session: Session):
-    try:
-        return get_current_user(session)
-    except CurrentUserUnavailableError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Current user is unavailable",
-        ) from exc
 
 
 def get_owned_parsed_document(

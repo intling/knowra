@@ -57,13 +57,17 @@
   --shadow-popover: 0 12px 32px -12px rgb(31 38 36 / 0.28);
 
   /* ── 字体 ── */
-  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Noto Serif SC",
-    "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", STSong, SimSun, serif;
-  --font-sans: Seravek, "Gill Sans Nova", "Segoe UI Variable Text", "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC",
-    "Source Han Sans SC", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, "Liberation Mono",
-    monospace;
+  --font-display:
+    "Iowan Old Style", "Palatino Linotype", Palatino, "Noto Serif SC",
+    "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", STSong, SimSun,
+    serif;
+  --font-sans:
+    Seravek, "Gill Sans Nova", "Segoe UI Variable Text", "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas,
+    "Liberation Mono", monospace;
 }
 
 @layer base {
@@ -139,8 +143,16 @@
 @utility paper-atmosphere {
   background-color: var(--color-paper);
   background-image:
-    radial-gradient(ellipse 80% 55% at 50% -10%, rgb(43 106 93 / 0.06), transparent 70%),
-    radial-gradient(ellipse 70% 50% at 100% 110%, rgb(180 140 90 / 0.07), transparent 70%);
+    radial-gradient(
+      ellipse 80% 55% at 50% -10%,
+      rgb(43 106 93 / 0.06),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 100% 110%,
+      rgb(180 140 90 / 0.07),
+      transparent 70%
+    );
   background-attachment: local;
 }
 
@@ -333,4 +345,22 @@
 .code-copy-btn.copied {
   opacity: 1;
   color: #9fd8c4;
+}
+
+@layer components {
+  .account-card {
+    @apply min-w-0 rounded-xl border border-line bg-surface p-5 sm:p-7;
+  }
+  .account-label {
+    @apply mb-2 block text-sm font-medium text-ink;
+  }
+  .account-input {
+    @apply block min-w-0 w-full rounded-lg border border-line-strong bg-surface px-3 py-2.5 text-base text-ink;
+  }
+  .account-primary {
+    @apply rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-800 disabled:cursor-wait disabled:opacity-60;
+  }
+  .account-secondary {
+    @apply rounded-lg border border-line-strong bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-paper-deep disabled:cursor-default disabled:opacity-50;
+  }
 }

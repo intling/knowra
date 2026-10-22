@@ -6,6 +6,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from app.models.user import User
 
 
+# 验证 users 表保留原有字段并新增 role（认证凭据不进入 users 表）。
 def test_user_table_contains_required_columns() -> None:
     columns = User.__table__.columns
 
@@ -18,6 +19,7 @@ def test_user_table_contains_required_columns() -> None:
         "deleted_at",
         "created_at",
         "updated_at",
+        "role",
     }
     assert columns["id"].primary_key
     assert not columns["display_name"].nullable

@@ -24,17 +24,192 @@ uv run uvicorn app.main:app --reload
 
 The API is served at `http://localhost:8000`, with routes mounted under `/api`.
 
-## Current user
+## Authentication and account management
 
-The backend exposes `GET /api/users/me` as the current user contract. This
-initial user foundation does not implement login or registration; it returns the
-default active user created by the user migration.
+Run `uv run alembic upgrade head` before starting the server. Users register with
+an email, display name and password; public registration always creates a
+`member`. Passwords contain 10–128 characters, including a letter and a digit,
+and cannot equal the normalized email or its local part. Only argon2id hashes
+are stored, in a separate `user_credentials` table.
+
+Login uses an opaque `knowra_session` HttpOnly Cookie (`SameSite=Lax`,
+`Path=/api`); the database stores only its SHA-256 hash. Sessions expire after
+an absolute lifetime and are checked against the user's current status and role
+on each request. There is no fallback to the old default user.
+
+| Endpoint | Behavior |
+|---|---|
+| `POST /api/auth/register` | `{email, display_name, password}` → 201 user and session |
+| `POST /api/auth/login` | `{email, password}` → 200 user and rotated session |
+| `POST /api/auth/logout` | 204; revoke current session and clear Cookie; idempotent |
+| `GET /api/users/me` | Current user, including `role` and `permissions` |
+| `PATCH /api/users/me` | `{display_name}` → updated user |
+| `POST /api/users/me/password` | `{current_password, new_password}` → 204; revoke all sessions |
+| `GET /api/admin/users?offset=0&limit=20` | Admin-only paginated users; limit 1–100 |
+| `PATCH /api/admin/users/{id}` | Admin-only `{role?, status?}` update |
+| `POST /api/admin/users` | Admin-only `{email, display_name, password, role?, status?}` → 201 user |
+| `POST /api/admin/users/{id}/reset-password` | Admin-only `{new_password}` → 204; revoke all target sessions |
+| `DELETE /api/admin/users/{id}` | Admin-only soft deletion → 204; disable and revoke all target sessions |
+
+Except for health and auth routes, all business APIs require a session. `admin`
+and `member` can read, search, upload and process their own documents; `viewer`
+can only read and search. Only `admin` has `users:manage` and `models:manage`. Administration does
+not grant access to another user's documents. Foreign resources return 404;
+missing sessions return 401 and insufficient permissions return 403. Error
+responses use `{detail, code}`; validation errors retain a `detail` list with
+`loc`, `msg` and `type`, excluding input values to avoid echoing passwords.
+
+Disabling a user revokes all sessions; enabling them requires a fresh login.
+Role changes apply on the next request. The last active administrator cannot
+be demoted, disabled or deleted, and administrators cannot disable or delete themselves.
+Reset your own password through account settings with the current password.
+Deletion retains historical documents and ownership and reserves the email;
+there is no restore or physical purge button. Creation conflicts return
+`email_conflict`; self reset/delete return `cannot_reset_self` / `cannot_delete_self`.
+PostgreSQL transaction locks preserve the last administrator during concurrent changes.
+
+### Model administration
+
+Administrators open `/admin/models` to manage system-wide `chat`, `embedding`,
+`rerank`, and `query_rewrite` profiles. Apply `uv run alembic upgrade head`
+(revision `20261022_0001`) before starting the updated server. This creates
+`model_profiles` and four empty `model_bindings`; existing users and documents
+are retained. With no active profile, each purpose uses its environment configuration.
+
+Generate a master key once, place it in `MODEL_CONFIG_ENCRYPTION_KEY` in the
+server environment, and back it up separately from the database:
+
+```bash
+uv run python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
+```
+
+All instances must share the same key. API responses expose only `has_api_key`;
+stored API keys use Fernet encryption. Omitting or leaving an edit key blank
+preserves it; `clear_api_key=true` explicitly clears it. Local services may
+use no key. A missing/invalid master key or unreadable active secret returns
+503 `model_secret_unavailable`; active configuration never silently falls back.
+Restore the original master key alongside database backups. For rotation,
+stop model requests and either re-encrypt secrets offline or clear the old
+secrets before replacing the master key and re-entering them. Directly
+replacing the key makes existing ciphertext unreadable.
+
+| Endpoint | Behavior |
+|---|---|
+| `GET /api/admin/models?kind=chat&offset=0&limit=20` | Filtered page; limit 1–100 |
+| `POST /api/admin/models` | 201 profile; required `name, kind, base_url, model` |
+| `PATCH /api/admin/models/{id}` | Partial update; kind is immutable |
+| `DELETE /api/admin/models/{id}` | 204; current defaults cannot be deleted |
+| `POST /api/admin/models/{id}/activate` | Select the single default for this purpose |
+| `POST /api/admin/models/{id}/deactivate` | Restore that purpose's environment fallback |
+
+Optional fields are `api_key`, `enabled`, `timeout_seconds` (1–120),
+`max_retries` (0–3), `dimensions` (Embedding only, fixed 2560), and `api_format`
+(rerank only: `compatible` or `dashscope`; rerank retries are fixed at zero).
+URLs must use HTTP(S) without embedded credentials, query or fragment.
+Saving does not contact the model service. Disabled profiles cannot be activated;
+current defaults must be replaced or deactivated before disabling or deleting.
+
+Changes affect subsequent search requests and new vectorization tasks. A request
+resolves one independent configuration snapshot; queued tasks keep their captured
+configuration in memory without putting plaintext keys into job JSON. Search and
+rewrite caches, request deduplication and circuit breakers include configuration
+revisions while retaining user isolation. Request and task clients close after
+use; the shared rewrite pipeline creates and closes a client per LLM call.
+Activating a rerank/rewrite profile enables that stage; activating Embedding
+enables automatic vectorization after parsing/chunking when those stages are enabled.
+
+If undeleted users have succeeded vectors or queued/running embedding jobs,
+changing effective Embedding `(base_url, model, dimensions)` returns 409
+`embedding_index_conflict`, including reverting to a different environment model.
+Changing name, key or timeout is permitted. No automatic reindexing is performed.
+When a managed Embedding default exists, re-embed request overrides of its model
+or dimensions return 409 `embedding_configuration_managed`. Admission and default
+changes coordinate through the same PostgreSQL binding lock.
+
+Before rollback, deactivate defaults where compatible and restore the environment
+configuration. `uv run alembic downgrade 20261021_0002` removes only this change's
+model tables and configuration; existing ownership data remains.
+
+### Administrator bootstrap and recovery
+
+From `backend`, after applying migrations:
+
+```bash
+uv run python -m app.cli create-admin --email admin@example.com --display-name 管理员
+uv run python -m app.cli reset-password --email admin@example.com
+```
+
+These commands prompt for a hidden password and confirmation. Automation may
+use `--password-stdin` to read one line from protected stdin; plaintext password
+arguments are not accepted. Exit codes: 0 success, 1 invalid input/password,
+2 unmet prerequisites (for example, email already taken).
+
+For an existing installation, add `--claim-legacy-user` to `create-admin` to
+claim the original default user and retain their UUID and document ownership.
+The legacy user must exist, be undeleted and have no credential. Without that
+option a separate account is created; registration never inherits old data.
+Password resets revoke all sessions, including sessions on other devices.
+
+### Limited demo accounts
+
+Create a member with a rolling hourly chat limit using protected stdin or the
+interactive password prompt (never pass a password as a command argument):
+
+```bash
+uv run python -m app.cli create-user --email demo@deerfd.com --display-name 演示账号 --hourly-chat-limit 3
+```
+
+`create-user` always creates an active member; omitting `--hourly-chat-limit`
+leaves it unlimited. A limit must be a positive integer. Account, credential
+and quota are committed atomically. Existing users are never changed by this
+command; use `reset-password` for password recovery.
+
+`POST /api/search` reserves quota before retrieval or model initialization.
+Three successful requests in the preceding 60 minutes block a fourth with
+HTTP 429, `{code: "chat_quota_exceeded", detail: "…"}` and a positive
+`Retry-After` in seconds. The window rolls from each admission time and is
+shared across devices, login sessions and chat threads. Cached successes count;
+invalid requests, no indexed documents, failures and `generation_error`
+fallbacks do not. Accounts without a `user_chat_limits` row remain unlimited.
+
+Migration `20261021_0002` adds `user_chat_limits` (positive hourly limit per
+user) and `chat_usage` (UTC admission events, indexed by user and time).
+PostgreSQL locks the limit row for the short admission transaction; external
+calls run after commit. Failed requests release only their own reservation.
+Graceful shutdown drains requests. A forced process kill or failed cleanup
+can conservatively occupy quota until the 60 minute window expires; expired
+events are removed on that account's next admission. No scheduler is required.
+
+The frontend accepts `/login#demo=<base64url JSON>` for the demo identity only;
+see [frontend demo links](../front/README.md#demo-interview-link). Share links
+contain usable demo credentials and must be generated outside tracked source.
+
+### Auth configuration and deployment
+
+| Variable | Default | Behavior |
+|---|---|---|
+| `AUTH_COOKIE_SECURE` | `false` | Require HTTPS for the session Cookie |
+| `AUTH_SESSION_TTL_HOURS` | `336` | Absolute session lifetime (14 days) |
+| `AUTH_LOGIN_MAX_FAILURES` | `5` | Failed logins per normalized email before lockout |
+| `AUTH_LOGIN_WINDOW_SECONDS` | `900` | Sliding failure window and lockout duration |
+
+Production requires `APP_ENV=production`, `AUTH_COOKIE_SECURE=true` and HTTPS.
+`BACKEND_CORS_ORIGINS` must list exact trusted frontend origins; wildcard `*`
+is rejected at startup. Unsafe browser requests validate `Origin`, with
+`Sec-Fetch-Site` as a fallback. Cookie deployments should use the same site
+for frontend and API (the local Vite proxy already does this).
+
+Login failures return the same error for unknown accounts and wrong passwords.
+Rate limiting returns 429 with `Retry-After`. The limiter is process-local;
+multiple workers/replicas each have their own window. Deployments needing a
+global limit should add a shared limiter at the gateway. Expired/revoked session
+rows are retained; schedule database cleanup according to retention needs.
 
 ## File uploads
 
 The backend exposes `POST /api/uploads` for single-file uploads. The request
 must be `multipart/form-data` with the file field named `file`. The API resolves
-ownership through the current user service and ignores any client-submitted
+ownership through the authenticated session and ignores any client-submitted
 `owner_user_id`.
 
 Successful uploads return `201 Created` with the uploaded file record:
@@ -390,9 +565,18 @@ data volumes but will need an index as the corpus grows.
 
 ## Semantic search & RAG generation
 
+Optional reranking retains the deployed adapter: enable `RERANK_ENABLED`, set
+`RERANK_API_BASE_URL`, `RERANK_API_KEY`, `RERANK_MODEL`, and choose
+`RERANK_API_FORMAT=compatible|dashscope` (default `compatible`). Timeout is
+`RERANK_REQUEST_TIMEOUT=15` seconds. Reranking takes up to
+`min(50, max(top_k, 20))` owned candidates after vector retrieval, uses full
+chunk text, and orders sources and answer context identically. Failure falls
+back to vector order with a safe fixed event. Scores remain cosine distances.
+Keep explicit `DOCUMENT_EMBEDDING_DIMENSIONS=2560` for the deployed schema.
+
 `POST /api/search` is the retrieval + generation entry point of the RAG
 pipeline: it embeds the natural-language query, runs a pgvector cosine-distance
-search across **all** vectorised chunks, assembles a source-annotated prompt
+search across the authenticated user's visible vectorised chunks, assembles a source-annotated prompt
 from the top matches, and calls the chat LLM to produce a Markdown answer with
 citations back to document name / heading path / page numbers.
 
@@ -472,11 +656,10 @@ anti-hallucination guard, not an error.
 
 ### Limitations
 
-- Search runs across **all** vectorised documents in the database with no
-  per-owner filtering, even though `document_embeddings.owner_user_id` exists
-  and is indexed. This is harmless today because the backend only has a single
-  bootstrap user (see "Current user" above), but it must be scoped by owner
-  before real multi-user/team support ships.
+- Search, corpus counts and knowledge-base fingerprints follow the authenticated
+  owner's visible document chain. Response caches, rewrite L1/L2 caches and
+  in-flight deduplication include a user namespace, even if clients reuse a
+  `session_id`. Team sharing is not implemented.
 - Streaming responses are not implemented (`ChatAdapter.generate(stream=True)`
   raises `NotImplementedError`); the endpoint always returns a complete answer.
 - Query rewriting is supported (see "Query rewriting configuration" above),
@@ -530,3 +713,14 @@ Start PostgreSQL, then run:
 ```bash
 uv run alembic upgrade head
 ```
+
+The auth revision `20261021_0001` adds `users.role`, `user_credentials` and
+`user_sessions`, preserving all existing user rows and document ownership.
+Existing users initially have role `member` and no credentials, so operators
+must explicitly bootstrap or claim an administrator before using old data.
+
+For rollback, stop public access first, run `uv run alembic downgrade -1` with
+the auth migration still available, then restore the previous code. Credentials,
+sessions and role assignments are removed; users and document ownership remain.
+The old code restores default-user access, so keep external access closed until
+the deployment has been verified. Back up the database before migration or rollback.

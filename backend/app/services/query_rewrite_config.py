@@ -26,6 +26,7 @@ class QueryRewriteConfig:
     max_tokens: int
     request_timeout: float
     max_retries: int
+    auth_optional: bool = False
 
     @classmethod
     def from_settings(cls, settings=None) -> QueryRewriteConfig:
@@ -43,6 +44,7 @@ class QueryRewriteConfig:
             max_tokens=settings.query_rewrite_max_tokens,
             request_timeout=settings.query_rewrite_timeout,
             max_retries=settings.query_rewrite_max_retries,
+            auth_optional="query_rewrite" in getattr(settings, "configured_model_kinds", ()),
         )
 
     def snapshot(self) -> dict[str, Any]:

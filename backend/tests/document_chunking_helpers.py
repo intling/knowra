@@ -85,9 +85,13 @@ def make_parsed_document_with_segment(
     session: Session,
     storage_root,
     user: User | None = None,
+    *,
+    source_content: bytes | None = None,
 ) -> tuple[User, UploadedFile, DocumentParseJob, ParsedDocument]:
     owner = user or make_user(session)
-    upload = make_uploaded_file(session, storage_root, owner)
+    upload = make_uploaded_file(
+        session, storage_root, owner, **({"content": source_content} if source_content else {})
+    )
     job = DocumentParseJob(
         uploaded_file_id=upload.id,
         owner_user_id=owner.id,

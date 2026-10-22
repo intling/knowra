@@ -5,10 +5,13 @@
 
 from importlib import import_module
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from unittest.mock import ANY, AsyncMock, MagicMock
+from uuid import UUID, uuid4
 
 import pytest
+
+# 检索服务必须绑定已认证用户；既有单测使用固定测试用户 ID。
+TEST_OWNER_ID = UUID("11111111-1111-1111-1111-111111111111")
 
 # ── helpers ──────────────────────────────────────────────────────────
 
@@ -238,6 +241,7 @@ def test_search_across_all_documents_returns_top_k_results():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -293,6 +297,7 @@ def test_search_returns_empty_results_when_no_embeddings_exist():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -333,6 +338,7 @@ def test_search_skips_llm_when_no_embeddings_exist():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -374,6 +380,7 @@ def test_search_returns_llm_answer_with_token_stats():
     chat_config = make_fake_chat_config(model="test-chat-model")
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -444,6 +451,7 @@ def test_search_assembles_prompt_with_system_and_context():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -515,6 +523,7 @@ def test_search_graceful_degradation_when_chat_disabled():
     chat_config = make_fake_chat_config(model="")  # Empty model = disabled
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -563,10 +572,13 @@ def test_search_graceful_degradation_on_llm_failure():
     session = make_fake_session(rows=rows, total_count=1)
     embedding_adapter = make_fake_embedding_adapter()
     chat_adapter = make_fake_chat_adapter()
-    chat_adapter.generate_async.side_effect = chat_module.ChatAPIError("LLM API timeout", status_code=502)
+    chat_adapter.generate_async.side_effect = chat_module.ChatAPIError(
+        "LLM API timeout", status_code=502
+    )
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -621,6 +633,7 @@ def test_search_degrades_on_empty_llm_content():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -659,6 +672,7 @@ def test_search_propagates_embedding_error():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -692,6 +706,7 @@ def test_search_results_ordered_by_score_ascending():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -724,6 +739,7 @@ def test_search_respects_top_k_limit():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -750,6 +766,7 @@ def test_search_response_includes_query_embedding_preview():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -790,6 +807,7 @@ def test_similarity_threshold_filters_irrelevant_results():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -832,6 +850,7 @@ def test_similarity_threshold_keeps_relevant_results():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -865,6 +884,7 @@ def test_similarity_threshold_zero_disables_filtering():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -904,6 +924,7 @@ def test_min_score_threshold_blocks_weakly_relevant_results():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -950,6 +971,7 @@ def test_min_score_threshold_allows_strongly_relevant_results():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -988,6 +1010,7 @@ def test_min_score_threshold_skipped_when_no_rows_pass_similarity():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1019,6 +1042,7 @@ def test_min_score_threshold_zero_disables_check():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1070,6 +1094,7 @@ def test_assemble_prompt_skips_noise_chunks():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1146,6 +1171,7 @@ def test_assemble_prompt_includes_history_messages():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1187,6 +1213,7 @@ def test_assemble_prompt_filters_system_role_from_history():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1228,6 +1255,7 @@ def test_assemble_prompt_handles_none_or_empty_history():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1264,6 +1292,7 @@ def test_assemble_prompt_truncates_long_history_messages():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1296,6 +1325,7 @@ def test_search_injects_history_into_llm_prompt():
     chat_config = make_fake_chat_config()
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1348,6 +1378,7 @@ def test_search_history_used_for_both_rewrite_and_prompt():
     fake_rewriter.rewrite = MagicMock(return_value=result)
 
     service = module.SearchService(
+        owner_user_id=TEST_OWNER_ID,
         session=session,
         embedding_adapter=embedding_adapter,
         chat_adapter=chat_adapter,
@@ -1365,7 +1396,7 @@ def test_search_history_used_for_both_rewrite_and_prompt():
     # 1. history 应被传递给 rewriter（用于指代词消解）
     # session_id 由 SearchService 从 history 派生（非 None）
     fake_rewriter.rewrite.assert_called_once_with(
-        "它怎么用", session_id="857ef68c512752a2", history=history
+        "它怎么用", session_id="857ef68c512752a2", history=history, cache_namespace=ANY
     )
 
     # 2. chat_adapter.generate_async 的 messages 应包含 history（用于多轮对话）

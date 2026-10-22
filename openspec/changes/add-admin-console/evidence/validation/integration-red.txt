@@ -1,0 +1,101 @@
+Uninstalled 1 package in 0.54ms
+Installed 1 package in 1ms
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_________________ test_search_dependency_reads_active_profile __________________
+tests/admin_console/test_model_integration.py:31: in test_search_dependency_reads_active_profile
+    assert response.json()["model"] == "database-chat", "搜索依赖仍在读取环境配置"
+E   AssertionError: 搜索依赖仍在读取环境配置
+E   assert 'environment-chat' == 'database-chat'
+E
+E     - database-chat
+E     + environment-chat
+---------------------------- Captured stderr setup -----------------------------
+[2m2026-10-22T02:21:54.622955Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.623458Z[0m [[32m[1minfo[0m] [1mStartup job reconciliation completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'startup_reconciliation', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.622955Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:60 {'reason': 'startup_reconciliation', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Startup job reconciliation completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.623458Z', 'logger': 'app.core.shutdown'}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:21:54.650834Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m6a3c3cba-8c0c-4d3d-a3ee-bccc2e25f87e[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mc0c38df3-a0cf-4f50-93a7-1421bbbc1823[0m [36mtrace_id[0m=[35m01a1616a-3c4d-70cc-99e3-ba5b22e29b97[0m
+[2m2026-10-22T02:21:54.653746Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.664775Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35m6a3c3cba-8c0c-4d3d-a3ee-bccc2e25f87e[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mc0c38df3-a0cf-4f50-93a7-1421bbbc1823[0m [36mtrace_id[0m=[35m01a1616a-3c5e-7f46-bd90-48ce635100a9[0m
+[2m2026-10-22T02:21:54.667156Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/c0c38df3-a0cf-4f50-93a7-1421bbbc1823/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.671572Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/probe "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:91 {'profile_id': 'c0c38df3-a0cf-4f50-93a7-1421bbbc1823', 'actor_user_id': '6a3c3cba-8c0c-4d3d-a3ee-bccc2e25f87e', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1616a-3c4d-70cc-99e3-ba5b22e29b97', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.650834Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:169 {'profile_id': 'c0c38df3-a0cf-4f50-93a7-1421bbbc1823', 'actor_user_id': '6a3c3cba-8c0c-4d3d-a3ee-bccc2e25f87e', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a1616a-3c5e-7f46-bd90-48ce635100a9', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.664775Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/c0c38df3-a0cf-4f50-93a7-1421bbbc1823/activate "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/probe "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:21:54.739880Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.756854Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.757223Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.739880Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.756854Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.757223Z', 'logger': 'app.core.shutdown'}
+__________________ test_model_revision_isolates_runtime_state __________________
+tests/admin_console/test_model_integration.py:45: in test_model_revision_isolates_runtime_state
+    assert search.get_search_response_cache(second) is not cache, "新模型不得复用旧搜索响应缓存"
+E   AssertionError: 新模型不得复用旧搜索响应缓存
+E   assert <app.services.cache_manager.CacheManager object at 0xf6a950e10590> is not <app.services.cache_manager.CacheManager object at 0xf6a950e10590>
+E    +  where <app.services.cache_manager.CacheManager object at 0xf6a950e10590> = <function get_search_response_cache at 0xf6a95127fab0>(Settings(model_configuration_revision='chat:2', configured_model_kinds=(), app_name='knowra', app_env='local', debug=T...econds=5.0, log_format='console', log_file_path='logs/knowra.log', log_file_max_size=10485760, log_file_backup_count=5))
+E    +    where <function get_search_response_cache at 0xf6a95127fab0> = search.get_search_response_cache
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:21:54.774134Z[0m [[32m[1minfo[0m] [1msearch_response_cache_initialized[0m [[0m[1m[34mapp.api.routes.search[0m][0m [36mmax_size[0m=[35m100[0m [36mtrace_id[0m=[35m-[0m [36mttl_seconds[0m=[35m600.0[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.api.routes.search:search.py:199 {'max_size': 100, 'ttl_seconds': 600.0, 'event': 'search_response_cache_initialized', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.774134Z', 'logger': 'app.api.routes.search'}
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:21:54.778973Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.792536Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.792815Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.778973Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.792536Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.792815Z', 'logger': 'app.core.shutdown'}
+____________________ test_automatic_embedding_uses_profile _____________________
+tests/admin_console/test_model_integration.py:56: in test_automatic_embedding_uses_profile
+    assert service.config.model == "active-embedding", "自动向量化没有接入后台默认配置"
+E   AssertionError: 自动向量化没有接入后台默认配置
+E   assert 'Qwen/Qwen3-Embedding-4B' == 'active-embedding'
+E
+E     - active-embedding
+E     + Qwen/Qwen3-Embedding-4B
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:21:54.824649Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35md7a2e23f-ad55-4a95-a45e-99867722cc21[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35ma3388fff-9caa-4551-9640-e187c45f564d[0m [36mtrace_id[0m=[35m01a1616a-3d00-7c91-b3a5-b75897330997[0m
+[2m2026-10-22T02:21:54.827059Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.838067Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35md7a2e23f-ad55-4a95-a45e-99867722cc21[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35ma3388fff-9caa-4551-9640-e187c45f564d[0m [36mtrace_id[0m=[35m01a1616a-3d0c-7d4f-a807-e137328b1d86[0m
+[2m2026-10-22T02:21:54.840457Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/a3388fff-9caa-4551-9640-e187c45f564d/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:91 {'profile_id': 'a3388fff-9caa-4551-9640-e187c45f564d', 'actor_user_id': 'd7a2e23f-ad55-4a95-a45e-99867722cc21', 'kind': 'embedding', 'event': '管理员创建模型配置', 'trace_id': '01a1616a-3d00-7c91-b3a5-b75897330997', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.824649Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:169 {'profile_id': 'a3388fff-9caa-4551-9640-e187c45f564d', 'actor_user_id': 'd7a2e23f-ad55-4a95-a45e-99867722cc21', 'kind': 'embedding', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a1616a-3d0c-7d4f-a807-e137328b1d86', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.838067Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/a3388fff-9caa-4551-9640-e187c45f564d/activate "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:21:54.879493Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.894969Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.895290Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.879493Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.894969Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.895290Z', 'logger': 'app.core.shutdown'}
+______________ test_reembed_worker_accepts_inflight_configuration ______________
+tests/admin_console/test_model_integration.py:77: in test_reembed_worker_accepts_inflight_configuration
+    route.run_reembed_job("job", session_factory=session_factory, embedding_adapter=object(), config=config)
+E   TypeError: run_reembed_job() got an unexpected keyword argument 'config'
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:21:54.918463Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.932305Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:21:54.932599Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.918463Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.932305Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:21:54.932599Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_integration.py::test_search_dependency_reads_active_profile
+FAILED tests/admin_console/test_model_integration.py::test_model_revision_isolates_runtime_state
+FAILED tests/admin_console/test_model_integration.py::test_automatic_embedding_uses_profile
+FAILED tests/admin_console/test_model_integration.py::test_reembed_worker_accepts_inflight_configuration
+4 failed in 0.40s

@@ -17,6 +17,7 @@ from app.db.session import get_session
 from app.main import app
 from app.models.user import User
 from app.services.users import DEFAULT_USER_ID
+from tests.auth_helpers import authenticate_as
 from tests.document_chunking_helpers import make_parsed_document_with_segment
 from tests.document_parsing_helpers import make_user
 
@@ -80,6 +81,8 @@ def session() -> Generator[Session]:
 # 将 FastAPI 依赖替换为测试 session，并把上传/分块产物写入 tmp_path。
 # 用于验证 API 响应，同时隔离本地存储副作用。
 def chunking_client(monkeypatch, session: Session, tmp_path) -> Generator[TestClient]:
+    # 路由测试只验证入队结果；后台作业由独立服务测试覆盖，不能连接外部数据库。
+    monkeypatch.setattr("app.services.document_chunking.run_rechunk_job", lambda *_: None)
     monkeypatch.setenv("UPLOAD_STORAGE_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("DOCUMENT_CHUNK_ARTIFACT_STORAGE_DIR", str(tmp_path / "chunks"))
     get_settings.cache_clear()
@@ -111,6 +114,7 @@ def seed_current_user(session: Session) -> User:
     session.add(user)
     session.commit()
     session.refresh(user)
+    authenticate_as(user)
     return user
 
 

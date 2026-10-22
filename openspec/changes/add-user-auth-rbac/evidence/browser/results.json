@@ -1,0 +1,20 @@
+{
+  "results": [
+    "anonymous private route redirects to login",
+    "browser registration creates member and HttpOnly session",
+    "authenticated upload persists through real API",
+    "authenticated question receives real API no-vector response",
+    "profile update and password change revoke session; only new password works",
+    "logout redirects both browser tabs",
+    "account switching isolates and restores local conversation histories",
+    "last active administrator cannot demote itself",
+    "confirmed role update takes effect; viewer upload is disabled and API denies write",
+    "disable revokes existing session; re-enable requires a new login",
+    "320px login/register/workspace/account/admin layouts have no horizontal overflow",
+    "desktop application has no uncaught browser errors",
+    "320px admin account details use a readable full-width row (62px before fix)"
+  ],
+  "notes": [
+    "真实 PostgreSQL、实际 Cookie、实际认证与资料 API；关闭模型 bootstrap、自动分块、文档 embedding 和 query rewrite。查询向量来自本地固定向量 HTTP 服务，空知识库按现有契约返回 404；未验证外部模型质量。另以真实 pgvector SQL 和固定适配器验证跨用户检索与响应缓存隔离。"
+  ]
+}

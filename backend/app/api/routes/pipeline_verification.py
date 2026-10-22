@@ -7,9 +7,10 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
+from app.api.deps import ReadUserDep
 from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 from app.db.session import get_session
@@ -19,7 +20,6 @@ from app.services.pipeline_verification import (
     PipelineVerificationError,
     PipelineVerificationService,
 )
-from app.services.users import CurrentUserUnavailableError, get_current_user
 
 logger = get_logger(__name__)
 
@@ -37,6 +37,7 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 )
 def read_pipeline_verification(
     parsed_document_id: UUID,
+    current_user: ReadUserDep,
     session: SessionDep,
     settings: SettingsDep,
 ) -> PipelineVerificationResponse:
@@ -46,16 +47,9 @@ def read_pipeline_verification(
     执行 7 项完整性检查，返回结构化验证报告。
 
     - **404**: parsed_document 不存在、无成功的分块作业、无成功的向量化作业
-    - **503**: 当前用户不可用
+    - **401**: 未登录或会话已失效
     """
     # 权限校验：确认当前用户可用
-    try:
-        current_user = get_current_user(session)
-    except CurrentUserUnavailableError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Current user is unavailable",
-        ) from exc
 
     logger.info(
         "Pipeline verification requested",

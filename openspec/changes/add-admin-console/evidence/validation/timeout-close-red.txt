@@ -1,0 +1,44 @@
+Uninstalled 1 package in 1ms
+Installed 1 package in 1ms
+............FF                                                           [100%]
+=================================== FAILURES ===================================
+_____________ test_chat_timeout_override_releases_temporary_client _____________
+tests/admin_console/test_model_integration.py:260: in test_chat_timeout_override_releases_temporary_client
+    temporary.close.assert_called_once()
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/unittest/mock.py:965: in assert_called_once
+    raise AssertionError(msg)
+E   AssertionError: Expected 'close' to have been called once. Called 0 times.
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:44:33.229878Z[0m [[32m[1minfo[0m] [1mchat_generate_request[0m [[0m[1m[34mapp.services.chat_adapter[0m][0m [36mmax_retries[0m=[35m0[0m [36mmax_tokens[0m=[35m1024[0m [36mmessage_count[0m=[35m0[0m [36mmodel[0m=[35menvironment-chat[0m [36mrequest_timeout[0m=[35m1[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.chat_adapter:chat_adapter.py:149 {'model': 'environment-chat', 'message_count': 0, 'max_tokens': 1024, 'request_timeout': 1, 'max_retries': 0, 'event': 'chat_generate_request', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.229878Z', 'logger': 'app.services.chat_adapter'}
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:44:33.346799Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:44:33.361446Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:44:33.361805Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.346799Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.361446Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.361805Z', 'logger': 'app.core.shutdown'}
+__________ test_async_chat_timeout_override_releases_temporary_client __________
+tests/admin_console/test_model_integration.py:279: in test_async_chat_timeout_override_releases_temporary_client
+    temporary.close.assert_awaited_once()
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/unittest/mock.py:2376: in assert_awaited_once
+    raise AssertionError(msg)
+E   AssertionError: Expected close to have been awaited once. Awaited 0 times.
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T02:44:33.379160Z[0m [[32m[1minfo[0m] [1mchat_generate_async_request[0m [[0m[1m[34mapp.services.chat_adapter[0m][0m [36mfirst_token_timeout[0m=[35m10.0[0m [36mmax_retries[0m=[35m0[0m [36mmax_tokens[0m=[35m1024[0m [36mmessage_count[0m=[35m0[0m [36mmodel[0m=[35menvironment-chat[0m [36mrequest_timeout[0m=[35m1[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.chat_adapter:chat_adapter.py:258 {'model': 'environment-chat', 'message_count': 0, 'max_tokens': 1024, 'request_timeout': 1, 'max_retries': 0, 'first_token_timeout': 10.0, 'event': 'chat_generate_async_request', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.379160Z', 'logger': 'app.services.chat_adapter'}
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T02:44:33.430226Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:44:33.445158Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T02:44:33.445517Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.430226Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.445158Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T02:44:33.445517Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_integration.py::test_chat_timeout_override_releases_temporary_client
+FAILED tests/admin_console/test_model_integration.py::test_async_chat_timeout_override_releases_temporary_client
+2 failed, 12 passed in 1.10s

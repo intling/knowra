@@ -36,6 +36,7 @@ describe("fetchHealth", () => {
       environment: "local",
     })
     expect(fetchMock).toHaveBeenCalledWith("/api/health", {
+      credentials: "include",
       headers: {
         Accept: "application/json",
         "X-Trace-ID": expect.any(String) as string,

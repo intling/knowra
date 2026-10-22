@@ -1,14 +1,26 @@
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import JSONResponse
 from sqlmodel import Session
 
+from app.api.deps import WriteUserDep
+from app.api.routes.search import invalidate_all_search_caches
 from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 from app.db.session import get_session
 from app.schemas.upload import UploadedFileRead
 from app.services.document_parse_dispatcher import BackgroundTasksParseJobDispatcher
+from app.services.document_parser import UnsupportedDocumentFormatError
 from app.services.document_parsing import (
     DocumentParseConflictError,
     DocumentParseModelLoadingError,
@@ -17,7 +29,6 @@ from app.services.document_parsing import (
     DocumentParseTooLargeError,
     DocumentParsingDisabledError,
 )
-from app.services.document_parser import UnsupportedDocumentFormatError
 from app.services.uploads import (
     LocalFileStorage,
     UploadMetadataError,
@@ -26,8 +37,6 @@ from app.services.uploads import (
     UploadTooLargeError,
     UploadValidationError,
 )
-from app.services.users import CurrentUserUnavailableError, get_current_user
-from app.api.routes.search import invalidate_all_search_caches
 
 logger = get_logger(__name__)
 
@@ -38,6 +47,7 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 @router.post("", response_model=UploadedFileRead, status_code=status.HTTP_201_CREATED)
 def create_upload(
+    current_user: WriteUserDep,
     session: SessionDep,
     settings: SettingsDep,
     background_tasks: BackgroundTasks,
@@ -53,14 +63,6 @@ def create_upload(
         - ``False``：幂等模式。若已存在相同内容的文件，直接返回已有记录 (HTTP 200)。
         - ``True``：强制替换模式。软删除旧记录并重新走完整管线 (HTTP 201)。
     """
-    try:
-        current_user = get_current_user(session)
-    except CurrentUserUnavailableError as exc:
-        logger.error("当前用户不可用，无法上传文件")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Current user is unavailable",
-        ) from exc
 
     service = UploadService(
         session=session,
@@ -121,7 +123,9 @@ def create_upload(
     # 幂等命中返回 200，新上传返回 201
     status_code_to_use = status.HTTP_201_CREATED if is_new else status.HTTP_200_OK
     return JSONResponse(
-        content=UploadedFileRead.model_validate(record, from_attributes=True).model_dump(mode="json"),
+        content=UploadedFileRead.model_validate(record, from_attributes=True).model_dump(
+            mode="json"
+        ),
         status_code=status_code_to_use,
     )
 

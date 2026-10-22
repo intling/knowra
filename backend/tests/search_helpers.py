@@ -79,6 +79,8 @@ def make_fake_chat_config(*, model: str = "test-chat-model", **overrides):
 def make_fake_session(*, total_embedding_count: int = 1, rows: list | None = None):
     """Create a fake SQLModel Session for the search query."""
     session = MagicMock()
+    # 默认测试用户没有额度配置；额度与并发行为由真实数据库测试覆盖。
+    session.get.return_value = None
     if rows is None:
         rows = []
     mock_result = MagicMock()

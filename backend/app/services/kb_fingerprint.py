@@ -15,16 +15,19 @@ Usage::
 from __future__ import annotations
 
 import hashlib
+from uuid import UUID
 
 from sqlmodel import Session, func, select
 
 from app.core.logging import get_logger
 from app.models.document_embedding import DocumentEmbedding, DocumentEmbeddingJob
+from app.models.document_parsing import ParsedDocument
+from app.models.uploaded_file import UploadedFile
 
 logger = get_logger(__name__)
 
 
-def compute_fingerprint(session: Session) -> str:
+def compute_fingerprint(session: Session, *, owner_user_id: UUID) -> str:
     """计算当前知识库的指纹字符串。
 
     基于以下数据聚合：
@@ -35,11 +38,29 @@ def compute_fingerprint(session: Session) -> str:
     指纹长度固定 16 字符（SHA-256 hex[:16]），可在 1ms 内完成查询。
     返回值为纯哈希无盐字符串，不包含原始聚合值。
     """
-    count = session.exec(select(func.count()).select_from(DocumentEmbedding)).one()
+    count = session.exec(
+        select(func.count())
+        .select_from(DocumentEmbedding)
+        .join(ParsedDocument, DocumentEmbedding.parsed_document_id == ParsedDocument.id)
+        .join(UploadedFile, ParsedDocument.uploaded_file_id == UploadedFile.id)
+        .where(
+            DocumentEmbedding.owner_user_id == owner_user_id,
+            ParsedDocument.owner_user_id == owner_user_id,
+            UploadedFile.owner_user_id == owner_user_id,
+            UploadedFile.deleted_at.is_(None),
+        )
+    ).one()
 
     max_updated = session.exec(
-        select(func.max(DocumentEmbeddingJob.updated_at)).where(
-            DocumentEmbeddingJob.status == "succeeded"
+        select(func.max(DocumentEmbeddingJob.updated_at))
+        .join(ParsedDocument, DocumentEmbeddingJob.parsed_document_id == ParsedDocument.id)
+        .join(UploadedFile, ParsedDocument.uploaded_file_id == UploadedFile.id)
+        .where(
+            DocumentEmbeddingJob.status == "succeeded",
+            DocumentEmbeddingJob.owner_user_id == owner_user_id,
+            ParsedDocument.owner_user_id == owner_user_id,
+            UploadedFile.owner_user_id == owner_user_id,
+            UploadedFile.deleted_at.is_(None),
         )
     ).one()
 

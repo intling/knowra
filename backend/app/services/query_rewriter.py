@@ -325,7 +325,8 @@ class QueryRewriter:
         strategy_normalize_enabled: bool = True,
         strategy_expand_enabled: bool = True,
         strategy_term_align_enabled: bool = True,
-        l2_similarity_threshold: float = 0.95,  # 已弃用：当前 L2 为精确文本匹配，阈值检查待向量检索实现后启用
+        # 已弃用：当前 L2 为精确文本匹配，阈值检查待向量检索实现后启用。
+        l2_similarity_threshold: float = 0.95,
         knowledge_classifier: object | None = None,
         context_verifier: object | None = None,
         # ── 集成联调 新增依赖 ──
@@ -361,7 +362,9 @@ class QueryRewriter:
         self._strategy_normalize_enabled = strategy_normalize_enabled
         self._strategy_expand_enabled = strategy_expand_enabled
         self._strategy_term_align_enabled = strategy_term_align_enabled
-        self._l2_similarity_threshold = l2_similarity_threshold  # 已弃用：当前为精确匹配，向量检索时启用
+        self._l2_similarity_threshold = (
+            l2_similarity_threshold  # 已弃用：当前为精确匹配，向量检索时启用
+        )
         self._knowledge_classifier = knowledge_classifier
         self._context_verifier = context_verifier
 
@@ -525,6 +528,7 @@ class QueryRewriter:
         history: list[dict] | None = None,
         *,
         rewrite_model: str | None = None,
+        cache_namespace: str | None = None,
     ) -> RewriteResult:
         """执行查询重写管线，返回 RewriteResult。
 
@@ -546,6 +550,8 @@ class QueryRewriter:
 
         # 解析会话 ID：显式传入优先，否则从 history 派生
         resolved_session_id = session_id or self._derive_session_id(history)
+        if cache_namespace is not None:
+            resolved_session_id = f"{cache_namespace}:{resolved_session_id}"
 
         # 模块开关
         if not self._enabled:
@@ -639,18 +645,14 @@ class QueryRewriter:
             # 使用 run_in_executor 将阻塞的 threading.Event.wait() 卸载到线程池，
             # 避免阻塞当前 event loop（同一 loop 场景）同时保持跨线程安全（多 loop 场景）。
             loop = asyncio.get_running_loop()
-            notified = await loop.run_in_executor(
-                None, event.wait, self._dedup_timeout
-            )
+            notified = await loop.run_in_executor(None, event.wait, self._dedup_timeout)
             if notified:
                 # Leader 已完成，读取结果
                 with self._inflight_lock:
                     result = self._inflight_results.get(dedup_key)
                 if result is not None:
                     if self._dissatisfaction_detector is not None:
-                        self._dissatisfaction_detector.record(
-                            resolved_session_id, query_hash
-                        )
+                        self._dissatisfaction_detector.record(resolved_session_id, query_hash)
                     return result
                 self._logger.warning(
                     "inflight_result_missing_after_wait",
@@ -680,6 +682,7 @@ class QueryRewriter:
                     resolved_session_id,
                     query_hash,
                     is_dissatisfaction=is_dissatisfaction,
+                    **({"cache_namespace": cache_namespace} if cache_namespace is not None else {}),
                 ),
                 timeout=self._pipeline_timeout,
             )
@@ -731,6 +734,7 @@ class QueryRewriter:
         session_id: str | None,
         query_hash: str,
         is_dissatisfaction: bool = False,
+        cache_namespace: str | None = None,
     ) -> RewriteResult:
         """执行实际的重写管线（调用方已处理 L1 缓存与请求去重）。
 
@@ -768,7 +772,10 @@ class QueryRewriter:
             l2_lookup = getattr(self._cache_manager, "lookup_l2", None)  # type: ignore[union-attr]
             if l2_lookup is not None:
                 try:
-                    l2_cached = l2_lookup(rewritten)
+                    l2_cached = l2_lookup(
+                        rewritten,
+                        **({"namespace": cache_namespace} if cache_namespace is not None else {}),
+                    )
                     if l2_cached is not None:
                         result = None
                         if isinstance(l2_cached, RewriteResult):
@@ -950,7 +957,7 @@ class QueryRewriter:
                                     ),
                                     timeout=parallel_timeout,
                                 )
-                            except (asyncio.TimeoutError, Exception):
+                            except TimeoutError, Exception:
                                 return None
 
                         async def _exec_term_align():
@@ -965,7 +972,7 @@ class QueryRewriter:
                                     ),
                                     timeout=parallel_timeout,
                                 )
-                            except (asyncio.TimeoutError, Exception):
+                            except TimeoutError, Exception:
                                 return None
 
                         # 并行执行，各自处理异常，互不影响
@@ -1076,7 +1083,7 @@ class QueryRewriter:
                         current_query = new_query
                         strategies.append(strategy_name)
                         primary_strategy_index = len(strategy_rewrites) - 1
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         self._logger.warning(
                             "strategy_hard_timeout",
                             strategy=strategy_name,
@@ -1133,8 +1140,7 @@ class QueryRewriter:
                 # normalize 仅是清理/补全，不改变语义结构，预检失败时不丢弃，
                 # 而是标记 quality_fallback 接受改写。
                 is_normalize_only = (
-                    len(routed_strategies) == 1
-                    and routed_strategies[0] == "normalize"
+                    len(routed_strategies) == 1 and routed_strategies[0] == "normalize"
                 )
                 if not passed and is_normalize_only and pre_check_failed:
                     passed = True
@@ -1382,6 +1388,7 @@ class QueryRewriter:
                         knowledge_type=knowledge_type,
                         session_id=session_id,
                         ttl_override=self._l2_general_ttl,
+                        **({"namespace": cache_namespace} if cache_namespace is not None else {}),
                     )
 
             # Step 8: 审计日志
