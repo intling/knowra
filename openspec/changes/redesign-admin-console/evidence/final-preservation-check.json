@@ -1,0 +1,12 @@
+{
+  "ruff_findings": 39,
+  "ruff_files": 9,
+  "ruff_findings_match_baseline": true,
+  "ruff_files_unchanged_from_head": true,
+  "preserved_original_files": {
+    "openspec/changes/add-admin-console/evidence/verification.md": true,
+    "openspec/changes/add-admin-console/specs/admin-console/spec.md": true,
+    "openspec/changes/add-admin-console/tasks.md": true
+  },
+  "preserved_account_link_style": true
+}

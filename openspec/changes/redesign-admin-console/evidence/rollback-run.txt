@@ -1,0 +1,4 @@
+PASS previous production bundle opens original admin users route against new backend
+PASS old user creation contract and successful audit remain compatible
+PASS old model list and creation contract accept additive revision response
+PASS rollback preserves quotas, model bindings, every audit/probe record, ownership and vector(2560)

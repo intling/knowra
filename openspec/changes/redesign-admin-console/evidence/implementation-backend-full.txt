@@ -1,0 +1,56 @@
+Uninstalled 1 package in 0.56ms
+Installed 1 package in 1ms
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 14%]
+........................................................................ [ 19%]
+........................................................................ [ 24%]
+........................................................................ [ 28%]
+.................F...................................................... [ 33%]
+.......................................F................................ [ 38%]
+........................................................................ [ 43%]
+........................................................................ [ 48%]
+........................................................................ [ 53%]
+........................................................................ [ 57%]
+........................................................................ [ 62%]
+........................................................................ [ 67%]
+........................................................................ [ 72%]
+........................................................................ [ 77%]
+.....ssss............................................................... [ 82%]
+........................................................................ [ 86%]
+........................................................................ [ 91%]
+........................................................................ [ 96%]
+...................................................                      [100%]
+=================================== FAILURES ===================================
+_ test_read_me_returns_public_fields_role_and_permissions[admin-permissions2] __
+tests/auth/test_account_api.py:64: in test_read_me_returns_public_fields_role_and_permissions
+    assert body["permissions"] == permissions
+E   AssertionError: assert ['audit:read'...users:manage'] == ['knowledge:r...users:manage']
+E
+E     At index 0 diff: 'audit:read' != 'knowledge:read'
+E     Left contains 2 more items, first extra item: 'operations:read'
+E     Use -v to get more diff
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:29:34.190755Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:29:34.265868Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:29:34.282239Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:29:34.282572Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:29:34.265868Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:29:34.282239Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:29:34.282572Z', 'logger': 'app.core.shutdown'}
+______________ test_permissions_for_role_matrix[admin-expected2] _______________
+tests/auth/test_auth_passwords.py:127: in test_permissions_for_role_matrix
+    assert permissions_for(role) == expected
+E   AssertionError: assert ['audit:read'...users:manage'] == ['knowledge:r...users:manage']
+E
+E     At index 0 diff: 'audit:read' != 'knowledge:read'
+E     Left contains 2 more items, first extra item: 'operations:read'
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED tests/auth/test_account_api.py::test_read_me_returns_public_fields_role_and_permissions[admin-permissions2]
+FAILED tests/auth/test_auth_passwords.py::test_permissions_for_role_matrix[admin-expected2]
+2 failed, 1485 passed, 4 skipped in 57.53s

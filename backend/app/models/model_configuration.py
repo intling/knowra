@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, Column, DateTime, String, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, Integer, String, Text, text
 from sqlmodel import Field, SQLModel
 
 from app.models.user import utc_now
@@ -27,6 +27,9 @@ class ModelProfile(SQLModel, table=True):
     max_retries: int = 1
     dimensions: int | None = None
     api_format: str | None = None
+    revision: int = Field(
+        default=1, sa_column=Column(Integer, nullable=False, server_default=text("1"))
+    )
     created_at: datetime = Field(
         default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False)
     )

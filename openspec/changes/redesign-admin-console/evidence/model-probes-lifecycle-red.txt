@@ -1,0 +1,640 @@
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 1ms
+FFFFFFFFFFFFFFFFFFFFFFFFF                                                [100%]
+=================================== FAILURES ===================================
+_____________ test_explicit_probe_protocol_and_atomic_result[chat] _____________
+tests/admin_console/test_model_probes.py:49: in test_explicit_probe_protocol_and_atomic_result
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '显式诊断应返回有界结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 显式诊断应返回有界结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+---------------------------- Captured stderr setup -----------------------------
+[2m2026-10-22T10:20:05.299724Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.300302Z[0m [[32m[1minfo[0m] [1mStartup job reconciliation completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'startup_reconciliation', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.299724Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:60 {'reason': 'startup_reconciliation', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Startup job reconciliation completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.300302Z', 'logger': 'app.core.shutdown'}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.330027Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m43dddbb1-7165-416e-81ea-bd38b054ad6b[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m57dea093-bf0a-4be1-b076-579a25bd53be[0m [36mtrace_id[0m=[35m01a16320-0543-7035-9ac9-e249399b9e9c[0m
+[2m2026-10-22T10:20:05.333027Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.335235Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/57dea093-bf0a-4be1-b076-579a25bd53be/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '57dea093-bf0a-4be1-b076-579a25bd53be', 'actor_user_id': '43dddbb1-7165-416e-81ea-bd38b054ad6b', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0543-7035-9ac9-e249399b9e9c', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.330027Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/57dea093-bf0a-4be1-b076-579a25bd53be/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.407632Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.425705Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.426093Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.407632Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.425705Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.426093Z', 'logger': 'app.core.shutdown'}
+________ test_explicit_probe_protocol_and_atomic_result[query_rewrite] _________
+tests/admin_console/test_model_probes.py:49: in test_explicit_probe_protocol_and_atomic_result
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '显式诊断应返回有界结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 显式诊断应返回有界结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.464887Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m32ee49fc-d1dc-4e1e-8141-0be58f278481[0m [36mkind[0m=[35mquery_rewrite[0m [36mprofile_id[0m=[35m17419b12-a8b3-4448-84fb-969097a66a88[0m [36mtrace_id[0m=[35m01a16320-05cf-76da-b8f6-265ef5292be5[0m
+[2m2026-10-22T10:20:05.467266Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.469041Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/17419b12-a8b3-4448-84fb-969097a66a88/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '17419b12-a8b3-4448-84fb-969097a66a88', 'actor_user_id': '32ee49fc-d1dc-4e1e-8141-0be58f278481', 'kind': 'query_rewrite', 'event': '管理员创建模型配置', 'trace_id': '01a16320-05cf-76da-b8f6-265ef5292be5', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.464887Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/17419b12-a8b3-4448-84fb-969097a66a88/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.478892Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.494895Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.495234Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.478892Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.494895Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.495234Z', 'logger': 'app.core.shutdown'}
+__________ test_explicit_probe_protocol_and_atomic_result[embedding] ___________
+tests/admin_console/test_model_probes.py:49: in test_explicit_probe_protocol_and_atomic_result
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '显式诊断应返回有界结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 显式诊断应返回有界结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.529667Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m40c3e073-8d6a-4bd4-bd36-545d72235550[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35me28d06f2-1f5c-40ee-89de-424cb25df64a[0m [36mtrace_id[0m=[35m01a16320-060e-749d-801a-e40cfb490828[0m
+[2m2026-10-22T10:20:05.532175Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.534117Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/e28d06f2-1f5c-40ee-89de-424cb25df64a/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'e28d06f2-1f5c-40ee-89de-424cb25df64a', 'actor_user_id': '40c3e073-8d6a-4bd4-bd36-545d72235550', 'kind': 'embedding', 'event': '管理员创建模型配置', 'trace_id': '01a16320-060e-749d-801a-e40cfb490828', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.529667Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/e28d06f2-1f5c-40ee-89de-424cb25df64a/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.544157Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.560740Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.561127Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.544157Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.560740Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.561127Z', 'logger': 'app.core.shutdown'}
+____________ test_explicit_probe_protocol_and_atomic_result[rerank] ____________
+tests/admin_console/test_model_probes.py:49: in test_explicit_probe_protocol_and_atomic_result
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '显式诊断应返回有界结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 显式诊断应返回有界结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.597004Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35me62619cb-1612-4578-b15b-824d40906ef8[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m54e73b55-a726-4118-a0c3-2d346778e8a1[0m [36mtrace_id[0m=[35m01a16320-0652-78ce-9b50-fd3c0261f321[0m
+[2m2026-10-22T10:20:05.599548Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.601555Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/54e73b55-a726-4118-a0c3-2d346778e8a1/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '54e73b55-a726-4118-a0c3-2d346778e8a1', 'actor_user_id': 'e62619cb-1612-4578-b15b-824d40906ef8', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0652-78ce-9b50-fd3c0261f321', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.597004Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/54e73b55-a726-4118-a0c3-2d346778e8a1/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.611593Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.627801Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.628196Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.611593Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.627801Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.628196Z', 'logger': 'app.core.shutdown'}
+_______ test_probe_safe_failure_categories[auth-model_test_auth_failed] ________
+tests/admin_console/test_model_probes.py:81: in test_probe_safe_failure_categories
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '已执行的诊断失败仍返回安全结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 已执行的诊断失败仍返回安全结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.662756Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m6c76e9a4-ebcf-461a-9dae-13173effb57d[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mfd7fc499-114f-4283-b3b9-6d288eb478fb[0m [36mtrace_id[0m=[35m01a16320-0695-7731-abfa-4436add3fb11[0m
+[2m2026-10-22T10:20:05.665161Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.666994Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/fd7fc499-114f-4283-b3b9-6d288eb478fb/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'fd7fc499-114f-4283-b3b9-6d288eb478fb', 'actor_user_id': '6c76e9a4-ebcf-461a-9dae-13173effb57d', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0695-7731-abfa-4436add3fb11', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.662756Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/fd7fc499-114f-4283-b3b9-6d288eb478fb/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.676681Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.693027Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.693374Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.676681Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.693027Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.693374Z', 'logger': 'app.core.shutdown'}
+______ test_probe_safe_failure_categories[connect-model_test_unreachable] ______
+tests/admin_console/test_model_probes.py:81: in test_probe_safe_failure_categories
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '已执行的诊断失败仍返回安全结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 已执行的诊断失败仍返回安全结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.728980Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35md2b8b532-cdbb-47e0-84c6-e0495932be0e[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m7bbef94b-820a-4bf8-8059-73c7a0877305[0m [36mtrace_id[0m=[35m01a16320-06d7-7acd-a755-5ec508a2018b[0m
+[2m2026-10-22T10:20:05.731526Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.733592Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/7bbef94b-820a-4bf8-8059-73c7a0877305/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '7bbef94b-820a-4bf8-8059-73c7a0877305', 'actor_user_id': 'd2b8b532-cdbb-47e0-84c6-e0495932be0e', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-06d7-7acd-a755-5ec508a2018b', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.728980Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/7bbef94b-820a-4bf8-8059-73c7a0877305/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.743610Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.760297Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.760682Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.743610Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.760297Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.760682Z', 'logger': 'app.core.shutdown'}
+________ test_probe_safe_failure_categories[timeout-model_test_timeout] ________
+tests/admin_console/test_model_probes.py:81: in test_probe_safe_failure_categories
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '已执行的诊断失败仍返回安全结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 已执行的诊断失败仍返回安全结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.795679Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m0562d1e0-0876-47a3-bdee-e4892cb076df[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mb4eb261d-2aaf-48a3-9bbb-a76419ad07ed[0m [36mtrace_id[0m=[35m01a16320-0719-7cab-a603-9edc9504ebd8[0m
+[2m2026-10-22T10:20:05.798153Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.800056Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/b4eb261d-2aaf-48a3-9bbb-a76419ad07ed/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'b4eb261d-2aaf-48a3-9bbb-a76419ad07ed', 'actor_user_id': '0562d1e0-0876-47a3-bdee-e4892cb076df', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0719-7cab-a603-9edc9504ebd8', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.795679Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/b4eb261d-2aaf-48a3-9bbb-a76419ad07ed/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.810189Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.829522Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.830092Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.810189Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.829522Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.830092Z', 'logger': 'app.core.shutdown'}
+___ test_probe_safe_failure_categories[invalid-model_test_invalid_response] ____
+tests/admin_console/test_model_probes.py:81: in test_probe_safe_failure_categories
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '已执行的诊断失败仍返回安全结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 已执行的诊断失败仍返回安全结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.871101Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m55b38101-c583-45a1-9932-c4bf300b3f9a[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35md62c3b40-07ac-4937-b738-89aede26e42d[0m [36mtrace_id[0m=[35m01a16320-0764-7385-8811-37d14daf59f3[0m
+[2m2026-10-22T10:20:05.873526Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.875453Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/d62c3b40-07ac-4937-b738-89aede26e42d/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'd62c3b40-07ac-4937-b738-89aede26e42d', 'actor_user_id': '55b38101-c583-45a1-9932-c4bf300b3f9a', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0764-7385-8811-37d14daf59f3', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.871101Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/d62c3b40-07ac-4937-b738-89aede26e42d/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.885440Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.903100Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.903427Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.885440Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.903100Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.903427Z', 'logger': 'app.core.shutdown'}
+________ test_probe_safe_failure_categories[redirect-model_test_failed] ________
+tests/admin_console/test_model_probes.py:81: in test_probe_safe_failure_categories
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '已执行的诊断失败仍返回安全结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 已执行的诊断失败仍返回安全结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:05.937590Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mea95cdf5-89b4-4c32-87cc-244af82af38f[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m27f062e3-6459-48c0-81c1-277134497efa[0m [36mtrace_id[0m=[35m01a16320-07a8-7637-b4f0-3e367f5dd895[0m
+[2m2026-10-22T10:20:05.940752Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.943709Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/27f062e3-6459-48c0-81c1-277134497efa/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '27f062e3-6459-48c0-81c1-277134497efa', 'actor_user_id': 'ea95cdf5-89b4-4c32-87cc-244af82af38f', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-07a8-7637-b4f0-3e367f5dd895', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.937590Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/27f062e3-6459-48c0-81c1-277134497efa/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:05.953647Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.969537Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:05.969878Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.953647Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.969537Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:05.969878Z', 'logger': 'app.core.shutdown'}
+_________ test_probe_safe_failure_categories[server-model_test_failed] _________
+tests/admin_console/test_model_probes.py:81: in test_probe_safe_failure_categories
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '已执行的诊断失败仍返回安全结果')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 已执行的诊断失败仍返回安全结果：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.004352Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mbd749399-6b66-46f1-a1d8-8b66b0381996[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m386c10ab-2317-4a32-9531-a02021773d4c[0m [36mtrace_id[0m=[35m01a16320-07ea-735e-b30a-c213dc528d80[0m
+[2m2026-10-22T10:20:06.006801Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.008828Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/386c10ab-2317-4a32-9531-a02021773d4c/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '386c10ab-2317-4a32-9531-a02021773d4c', 'actor_user_id': 'bd749399-6b66-46f1-a1d8-8b66b0381996', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-07ea-735e-b30a-c213dc528d80', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.004352Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/386c10ab-2317-4a32-9531-a02021773d4c/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.018931Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.035134Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.035453Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.018931Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.035134Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.035453Z', 'logger': 'app.core.shutdown'}
+_______________ test_probe_validates_output[embedding-payload0] ________________
+tests/admin_console/test_model_probes.py:92: in test_probe_validates_output
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '须验证用途协议')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 须验证用途协议：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.069702Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m40d048b1-4e61-48a3-9146-1228577779a1[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35m8b5bd15d-9691-4e75-8a07-ab7ab54d404c[0m [36mtrace_id[0m=[35m01a16320-082c-718e-a3c5-63ef05aa79e3[0m
+[2m2026-10-22T10:20:06.072053Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.073879Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/8b5bd15d-9691-4e75-8a07-ab7ab54d404c/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '8b5bd15d-9691-4e75-8a07-ab7ab54d404c', 'actor_user_id': '40d048b1-4e61-48a3-9146-1228577779a1', 'kind': 'embedding', 'event': '管理员创建模型配置', 'trace_id': '01a16320-082c-718e-a3c5-63ef05aa79e3', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.069702Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/8b5bd15d-9691-4e75-8a07-ab7ab54d404c/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.083696Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.099726Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.100075Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.083696Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.099726Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.100075Z', 'logger': 'app.core.shutdown'}
+_______________ test_probe_validates_output[embedding-payload1] ________________
+tests/admin_console/test_model_probes.py:92: in test_probe_validates_output
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '须验证用途协议')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 须验证用途协议：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.133495Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m433b10c9-e3cd-4a2a-97ff-a6518196d0a1[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35m7398f96b-1e8e-4c53-be91-1c96d248871e[0m [36mtrace_id[0m=[35m01a16320-086c-796f-b6fe-78114cbb935d[0m
+[2m2026-10-22T10:20:06.135830Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.137663Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/7398f96b-1e8e-4c53-be91-1c96d248871e/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '7398f96b-1e8e-4c53-be91-1c96d248871e', 'actor_user_id': '433b10c9-e3cd-4a2a-97ff-a6518196d0a1', 'kind': 'embedding', 'event': '管理员创建模型配置', 'trace_id': '01a16320-086c-796f-b6fe-78114cbb935d', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.133495Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/7398f96b-1e8e-4c53-be91-1c96d248871e/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.147441Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.163523Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.163818Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.147441Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.163523Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.163818Z', 'logger': 'app.core.shutdown'}
+_________________ test_probe_validates_output[rerank-payload2] _________________
+tests/admin_console/test_model_probes.py:92: in test_probe_validates_output
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '须验证用途协议')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 须验证用途协议：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.197261Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m0b761796-47f6-4c10-a452-a8c80c0ebc5a[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m9d291943-a90f-487d-8007-81f3f2012d55[0m [36mtrace_id[0m=[35m01a16320-08ac-7cd0-b0b4-daf0b8e90335[0m
+[2m2026-10-22T10:20:06.199654Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.201533Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/9d291943-a90f-487d-8007-81f3f2012d55/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '9d291943-a90f-487d-8007-81f3f2012d55', 'actor_user_id': '0b761796-47f6-4c10-a452-a8c80c0ebc5a', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a16320-08ac-7cd0-b0b4-daf0b8e90335', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.197261Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/9d291943-a90f-487d-8007-81f3f2012d55/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.211475Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.228208Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.228581Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.211475Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.228208Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.228581Z', 'logger': 'app.core.shutdown'}
+_________________ test_probe_validates_output[rerank-payload3] _________________
+tests/admin_console/test_model_probes.py:92: in test_probe_validates_output
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '须验证用途协议')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 须验证用途协议：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.267810Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m93ee5c95-7bcf-4a9e-acfb-e5f1bd04fd9a[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m9eccfd6e-b79d-4cca-b50c-6d0427041976[0m [36mtrace_id[0m=[35m01a16320-08f2-7ee9-99b4-ddded28ab5e9[0m
+[2m2026-10-22T10:20:06.270136Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.272026Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/9eccfd6e-b79d-4cca-b50c-6d0427041976/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '9eccfd6e-b79d-4cca-b50c-6d0427041976', 'actor_user_id': '93ee5c95-7bcf-4a9e-acfb-e5f1bd04fd9a', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a16320-08f2-7ee9-99b4-ddded28ab5e9', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.267810Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/9eccfd6e-b79d-4cca-b50c-6d0427041976/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.281809Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.298056Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.298433Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.281809Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.298056Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.298433Z', 'logger': 'app.core.shutdown'}
+_ test_probe_admission_rejects_before_network[version-409-model_revision_conflict] _
+tests/admin_console/test_model_probes.py:107: in test_probe_admission_rejects_before_network
+    result = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json=payload), status, '无效请求不得启动诊断')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效请求不得启动诊断：期望 HTTP 409，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.332677Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m4e0ab311-bbbc-4d80-aa82-deba95655522[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mde885db8-dd7e-492d-b2c6-60d88453d280[0m [36mtrace_id[0m=[35m01a16320-0933-7590-aca6-85c444c70719[0m
+[2m2026-10-22T10:20:06.334954Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.336867Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/de885db8-dd7e-492d-b2c6-60d88453d280/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'de885db8-dd7e-492d-b2c6-60d88453d280', 'actor_user_id': '4e0ab311-bbbc-4d80-aa82-deba95655522', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0933-7590-aca6-85c444c70719', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.332677Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/de885db8-dd7e-492d-b2c6-60d88453d280/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.347430Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.363836Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.364209Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.347430Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.363836Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.364209Z', 'logger': 'app.core.shutdown'}
+_ test_probe_admission_rejects_before_network[key-503-model_secret_unavailable] _
+tests/admin_console/test_model_probes.py:107: in test_probe_admission_rejects_before_network
+    result = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json=payload), status, '无效请求不得启动诊断')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效请求不得启动诊断：期望 HTTP 503，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.397639Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mefb4e7e4-f2fe-4378-a6fb-df9741222cbd[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mbb2197bb-a1db-4203-941f-754add2fd022[0m [36mtrace_id[0m=[35m01a16320-0974-724e-b496-c36e599d570e[0m
+[2m2026-10-22T10:20:06.400035Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.402022Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/bb2197bb-a1db-4203-941f-754add2fd022/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'bb2197bb-a1db-4203-941f-754add2fd022', 'actor_user_id': 'efb4e7e4-f2fe-4378-a6fb-df9741222cbd', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0974-724e-b496-c36e599d570e', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.397639Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/bb2197bb-a1db-4203-941f-754add2fd022/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.411905Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.427899Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.428238Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.411905Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.427899Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.428238Z', 'logger': 'app.core.shutdown'}
+_________ test_probe_admission_rejects_before_network[extra-422-None] __________
+tests/admin_console/test_model_probes.py:107: in test_probe_admission_rejects_before_network
+    result = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json=payload), status, '无效请求不得启动诊断')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 无效请求不得启动诊断：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.462535Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mc69313f6-ee5a-424b-b545-a318e6d378b6[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mf7e4d8b3-73e0-4367-9ef8-20f3cd89392e[0m [36mtrace_id[0m=[35m01a16320-09b5-7fa4-9bed-1692c323432e[0m
+[2m2026-10-22T10:20:06.464820Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.466816Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/f7e4d8b3-73e0-4367-9ef8-20f3cd89392e/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'f7e4d8b3-73e0-4367-9ef8-20f3cd89392e', 'actor_user_id': 'c69313f6-ee5a-424b-b545-a318e6d378b6', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-09b5-7fa4-9bed-1692c323432e', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.462535Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/f7e4d8b3-73e0-4367-9ef8-20f3cd89392e/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.476616Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.492481Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.492787Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.476616Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.492481Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.492787Z', 'logger': 'app.core.shutdown'}
+____________________ test_probe_cooldown_and_expired_lease _____________________
+tests/admin_console/test_model_probes.py:118: in test_probe_cooldown_and_expired_lease
+    assert_status(auth_client.post(f"/api/admin/models/{first['id']}/test", json={'expected_revision': 1}), 200, '首次诊断')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次诊断：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.526982Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m200ca1f5-cc5e-462c-a03e-1a8993882e74[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m6fb297ca-e7e5-444e-82b4-183336a0ed58[0m [36mtrace_id[0m=[35m01a16320-09f5-7f74-8edb-debab2017b7f[0m
+[2m2026-10-22T10:20:06.529334Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.531225Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/6fb297ca-e7e5-444e-82b4-183336a0ed58/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '6fb297ca-e7e5-444e-82b4-183336a0ed58', 'actor_user_id': '200ca1f5-cc5e-462c-a03e-1a8993882e74', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-09f5-7f74-8edb-debab2017b7f', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.526982Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/6fb297ca-e7e5-444e-82b4-183336a0ed58/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.541082Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.557405Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.557733Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.541082Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.557405Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.557733Z', 'logger': 'app.core.shutdown'}
+____________________ test_probe_shutdown_rejects_admission _____________________
+tests/admin_console/test_model_probes.py:136: in test_probe_shutdown_rejects_admission
+    assert_error(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 503, 'admin_dependency_unavailable', '关闭期间不接受新诊断')
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 关闭期间不接受新诊断：期望 HTTP 503，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.592244Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mcedc83f8-e4d0-4f98-8fb0-76eae7fe2ca7[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m5ca7c8ef-1d6a-4d48-8a1a-a758555a2911[0m [36mtrace_id[0m=[35m01a16320-0a36-724f-9ce8-401f64c292cd[0m
+[2m2026-10-22T10:20:06.594606Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.596498Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/5ca7c8ef-1d6a-4d48-8a1a-a758555a2911/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '5ca7c8ef-1d6a-4d48-8a1a-a758555a2911', 'actor_user_id': 'cedc83f8-e4d0-4f98-8fb0-76eae7fe2ca7', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0a36-724f-9ce8-401f64c292cd', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.592244Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/5ca7c8ef-1d6a-4d48-8a1a-a758555a2911/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.606911Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.623384Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.623738Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.606911Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.623384Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.623738Z', 'logger': 'app.core.shutdown'}
+__________________ test_probe_total_timeout_cancels_transport __________________
+tests/admin_console/test_model_probes.py:144: in test_probe_total_timeout_cancels_transport
+    model_settings.admin_model_test_timeout_seconds = 0.03
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/pydantic/main.py:1048: in __setattr__
+    elif (setattr_handler := self._setattr_handler(name, value)) is not None:
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/pydantic/main.py:1095: in _setattr_handler
+    raise ValueError(f'"{cls.__name__}" object has no field "{name}"')
+E   ValueError: "Settings" object has no field "admin_model_test_timeout_seconds"
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.662293Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m0d1233c8-3d24-4df3-a4d5-7dd3a2f564f3[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m67e8cc5a-d4fe-4ffb-a152-224c46211903[0m [36mtrace_id[0m=[35m01a16320-0a7c-7f0d-8729-e21fbe3a68d9[0m
+[2m2026-10-22T10:20:06.664763Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '67e8cc5a-d4fe-4ffb-a152-224c46211903', 'actor_user_id': '0d1233c8-3d24-4df3-a4d5-7dd3a2f564f3', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0a7c-7f0d-8729-e21fbe3a68d9', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.662293Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.886333Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.902572Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.902965Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.886333Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.902572Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.902965Z', 'logger': 'app.core.shutdown'}
+____________ test_probe_config_change_during_network_is_stale[edit] ____________
+tests/admin_console/test_model_probes.py:170: in test_probe_config_change_during_network_is_stale
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '旧版本诊断可保存但不能代表当前配置')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 旧版本诊断可保存但不能代表当前配置：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:06.937590Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m64fae6d1-1554-47f0-9b64-044a613179f4[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m203881bb-da05-45a4-a041-08e2635c003d[0m [36mtrace_id[0m=[35m01a16320-0b90-76eb-a829-1df95150a877[0m
+[2m2026-10-22T10:20:06.939998Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.941964Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/203881bb-da05-45a4-a041-08e2635c003d/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '203881bb-da05-45a4-a041-08e2635c003d', 'actor_user_id': '64fae6d1-1554-47f0-9b64-044a613179f4', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0b90-76eb-a829-1df95150a877', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.937590Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/203881bb-da05-45a4-a041-08e2635c003d/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:06.952312Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.968516Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:06.968882Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.952312Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.968516Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:06.968882Z', 'logger': 'app.core.shutdown'}
+___________ test_probe_config_change_during_network_is_stale[delete] ___________
+tests/admin_console/test_model_probes.py:170: in test_probe_config_change_during_network_is_stale
+    body = assert_status(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '旧版本诊断可保存但不能代表当前配置')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 旧版本诊断可保存但不能代表当前配置：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:07.003655Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m1688b581-4173-49a1-bf5f-edc96e7b693b[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m4168a40e-75b8-4147-8653-fe9f3f77dac3[0m [36mtrace_id[0m=[35m01a16320-0bd1-7184-a75d-90a4810f9257[0m
+[2m2026-10-22T10:20:07.007020Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.009034Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/4168a40e-75b8-4147-8653-fe9f3f77dac3/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '4168a40e-75b8-4147-8653-fe9f3f77dac3', 'actor_user_id': '1688b581-4173-49a1-bf5f-edc96e7b693b', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0bd1-7184-a75d-90a4810f9257', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.003655Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/4168a40e-75b8-4147-8653-fe9f3f77dac3/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:07.019650Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.036628Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.037036Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.019650Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.036628Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.037036Z', 'logger': 'app.core.shutdown'}
+_______________ test_probe_database_lease_enforces_global_limit ________________
+tests/admin_console/test_model_probes.py:182: in test_probe_database_lease_enforces_global_limit
+    assert_error(result, 429, 'model_test_rate_limited', '其他 worker 的有效租约也应占用名额')
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 其他 worker 的有效租约也应占用名额：期望 HTTP 429，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:07.073013Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m828648be-e557-4590-b5e2-c01488d7a456[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m8b35b0de-3b07-4e5c-bd2a-129d88c411aa[0m [36mtrace_id[0m=[35m01a16320-0c16-75d1-b075-74445c532ac9[0m
+[2m2026-10-22T10:20:07.075504Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.081429Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/8b35b0de-3b07-4e5c-bd2a-129d88c411aa/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '8b35b0de-3b07-4e5c-bd2a-129d88c411aa', 'actor_user_id': '828648be-e557-4590-b5e2-c01488d7a456', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0c16-75d1-b075-74445c532ac9', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.073013Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/8b35b0de-3b07-4e5c-bd2a-129d88c411aa/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:07.092692Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.109136Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.109508Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.092692Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.109136Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.109508Z', 'logger': 'app.core.shutdown'}
+__________________ test_probe_result_audit_failure_is_atomic ___________________
+tests/admin_console/test_model_probes.py:191: in test_probe_result_audit_failure_is_atomic
+    assert_error(auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1}), 503, 'admin_audit_unavailable', '结果与成功审计必须同事务')
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 结果与成功审计必须同事务：期望 HTTP 503，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:20:07.146740Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mf859d774-796c-4719-b311-ee794df49325[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mfbdc847d-05aa-4bb3-bf40-b0712427c895[0m [36mtrace_id[0m=[35m01a16320-0c60-7d57-a293-d34adc88393e[0m
+[2m2026-10-22T10:20:07.149209Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.151808Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/fbdc847d-05aa-4bb3-bf40-b0712427c895/test "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'fbdc847d-05aa-4bb3-bf40-b0712427c895', 'actor_user_id': 'f859d774-796c-4719-b311-ee794df49325', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a16320-0c60-7d57-a293-d34adc88393e', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.146740Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/fbdc847d-05aa-4bb3-bf40-b0712427c895/test "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:07.163188Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.179393Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.179768Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.163188Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.179393Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.179768Z', 'logger': 'app.core.shutdown'}
+__________________ test_probe_cancel_cleans_client_and_lease ___________________
+tests/admin_console/test_model_probes.py:200: in test_probe_cancel_cleans_client_and_lease
+    service = importlib.import_module('app.services.model_probes')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1335: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'app.services.model_probes'
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:20:07.223958Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.240361Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:20:07.240739Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.223958Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.240361Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:20:07.240739Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_probes.py::test_explicit_probe_protocol_and_atomic_result[chat]
+FAILED tests/admin_console/test_model_probes.py::test_explicit_probe_protocol_and_atomic_result[query_rewrite]
+FAILED tests/admin_console/test_model_probes.py::test_explicit_probe_protocol_and_atomic_result[embedding]
+FAILED tests/admin_console/test_model_probes.py::test_explicit_probe_protocol_and_atomic_result[rerank]
+FAILED tests/admin_console/test_model_probes.py::test_probe_safe_failure_categories[auth-model_test_auth_failed]
+FAILED tests/admin_console/test_model_probes.py::test_probe_safe_failure_categories[connect-model_test_unreachable]
+FAILED tests/admin_console/test_model_probes.py::test_probe_safe_failure_categories[timeout-model_test_timeout]
+FAILED tests/admin_console/test_model_probes.py::test_probe_safe_failure_categories[invalid-model_test_invalid_response]
+FAILED tests/admin_console/test_model_probes.py::test_probe_safe_failure_categories[redirect-model_test_failed]
+FAILED tests/admin_console/test_model_probes.py::test_probe_safe_failure_categories[server-model_test_failed]
+FAILED tests/admin_console/test_model_probes.py::test_probe_validates_output[embedding-payload0]
+FAILED tests/admin_console/test_model_probes.py::test_probe_validates_output[embedding-payload1]
+FAILED tests/admin_console/test_model_probes.py::test_probe_validates_output[rerank-payload2]
+FAILED tests/admin_console/test_model_probes.py::test_probe_validates_output[rerank-payload3]
+FAILED tests/admin_console/test_model_probes.py::test_probe_admission_rejects_before_network[version-409-model_revision_conflict]
+FAILED tests/admin_console/test_model_probes.py::test_probe_admission_rejects_before_network[key-503-model_secret_unavailable]
+FAILED tests/admin_console/test_model_probes.py::test_probe_admission_rejects_before_network[extra-422-None]
+FAILED tests/admin_console/test_model_probes.py::test_probe_cooldown_and_expired_lease
+FAILED tests/admin_console/test_model_probes.py::test_probe_shutdown_rejects_admission
+FAILED tests/admin_console/test_model_probes.py::test_probe_total_timeout_cancels_transport
+FAILED tests/admin_console/test_model_probes.py::test_probe_config_change_during_network_is_stale[edit]
+FAILED tests/admin_console/test_model_probes.py::test_probe_config_change_during_network_is_stale[delete]
+FAILED tests/admin_console/test_model_probes.py::test_probe_database_lease_enforces_global_limit
+FAILED tests/admin_console/test_model_probes.py::test_probe_result_audit_failure_is_atomic
+FAILED tests/admin_console/test_model_probes.py::test_probe_cancel_cleans_client_and_lease
+25 failed in 2.07s

@@ -8,7 +8,14 @@ import type { User, UserRole } from "../../api/users"
 const PERMISSIONS: Record<UserRole, User["permissions"]> = {
   viewer: ["knowledge:read"],
   member: ["knowledge:read", "knowledge:write"],
-  admin: ["knowledge:read", "knowledge:write", "models:manage", "users:manage"],
+  admin: [
+    "audit:read",
+    "knowledge:read",
+    "knowledge:write",
+    "models:manage",
+    "operations:read",
+    "users:manage",
+  ],
 }
 
 export function makeUser(

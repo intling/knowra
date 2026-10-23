@@ -1,0 +1,9 @@
+{
+  "preserved_user_changes": {
+    "front/src/views/AdminUsersView.vue": true,
+    "openspec/changes/add-admin-console/evidence/verification.md": true,
+    "openspec/changes/add-admin-console/specs/admin-console/spec.md": true,
+    "openspec/changes/add-admin-console/tasks.md": true
+  },
+  "ruff_findings_only_in_files_unchanged_from_HEAD": true
+}

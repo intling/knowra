@@ -1,7 +1,8 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from app.schemas.common import UtcDateTime
 from app.schemas.user import UserRead
 
 
@@ -47,3 +48,25 @@ class UserPage(BaseModel):
     total: int
     offset: int
     limit: int
+
+
+class ChatLimitSnapshot(BaseModel):
+    hourly_limit: int | None
+    occupied_slots: int | None
+    remaining: int | None
+    window_seconds: int = 3600
+    observed_at: UtcDateTime
+
+
+class ChatLimitUpdate(BaseModel):
+    hourly_limit: Annotated[int, Field(strict=True, ge=1, le=100000)] | None
+
+
+class SessionRevokeResult(BaseModel):
+    revoked_count: int
+
+
+class AdminUserDetail(BaseModel):
+    user: UserRead
+    active_session_count: int
+    chat_limit: ChatLimitSnapshot

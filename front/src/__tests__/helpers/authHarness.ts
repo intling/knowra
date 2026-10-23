@@ -24,6 +24,10 @@ const ROUTES = [
   { path: "/register", name: "register" },
   { path: "/account", name: "account" },
   { path: "/admin/users", name: "admin-users" },
+  ...["overview", "models", "jobs", "audit", "system"].map((name) => ({
+    path: `/admin/${name}`,
+    name: `admin-${name}`,
+  })),
 ]
 
 export function makeTestRouter(pageName: string, component: Component): Router {

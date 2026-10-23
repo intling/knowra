@@ -1,0 +1,12 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/views/__tests__/AdminUserControls.spec.ts src/api/adminControls.test.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+
+ Test Files  2 passed (2)
+      Tests  8 passed (8)
+   Start at  18:36:19
+   Duration  2.05s (transform 531ms, setup 0ms, import 306ms, tests 891ms, environment 1.44s)

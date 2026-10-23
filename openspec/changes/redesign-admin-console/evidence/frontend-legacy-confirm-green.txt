@@ -1,0 +1,12 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/views/__tests__/AdminUserControls.spec.ts src/components/shared/__tests__/ConfirmDialog.spec.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Start at  18:58:01
+   Duration  2.15s (transform 681ms, setup 0ms, import 789ms, tests 1.12s, environment 1.18s)

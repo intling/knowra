@@ -1,0 +1,28 @@
+SIM114 [*] Combine `if` branches using logical `or` operator
+   --> app/services/admin_operations.py:358:9
+    |
+356 |       result = {}
+357 |       for field, value in row.changes_json.items():
+358 | /         if (
+359 | |             field in {"secret_changed", "endpoint_changed"}
+360 | |             and row.action in {"model.create", "model.update", "model.delete"}
+361 | |             and type(value) is bool
+362 | |         ):
+363 | |             result[field] = value
+364 | |         elif field in CHANGE_FIELDS.get(row.action, ()) and (
+365 | |             (field == "revoked_count" and type(value) is int and value >= 0)
+366 | |             or (row.action == "model.test" and _safe_value(field, value))
+367 | |             or (
+368 | |                 isinstance(value, dict)
+369 | |                 and set(value) == {"before", "after"}
+370 | |                 and all(_safe_value(field, v) for v in value.values())
+371 | |             )
+372 | |         ):
+373 | |             result[field] = value
+    | |_________________________________^
+374 |       return result
+    |
+help: Combine `if` branches
+
+Found 1 error.
+[*] 1 fixable with the `--fix` option.

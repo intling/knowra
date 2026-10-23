@@ -1,0 +1,9 @@
+src/api/client.ts 140ms
+src/api/adminUsers.ts 27ms
+src/api/adminModels.ts 20ms
+src/components/shared/AdminDrawer.vue 84ms
+src/components/shared/AdminFrame.vue 65ms
+src/components/shared/AdminError.vue 12ms
+src/components/shared/ConfirmDialog.vue 35ms
+src/views/AdminUsersView.vue 226ms
+src/shared/admin.ts 11ms

@@ -1,0 +1,13 @@
+src/views/AdminModelsView.vue 323ms
+src/views/AdminJobsView.vue 95ms
+src/views/AdminAuditView.vue 63ms
+src/views/__tests__/AdminConsole.spec.ts 63ms (unchanged)
+src/views/__tests__/AdminModelDiagnostics.spec.ts 18ms
+src/views/__tests__/AdminReadPages.spec.ts 29ms
+src/views/__tests__/AdminUserControls.spec.ts 31ms
+src/views/__tests__/AdminUsersLifecycle.spec.ts 39ms (unchanged)
+src/views/__tests__/AdminUsersView.spec.ts 18ms (unchanged)
+src/views/__tests__/AdminWorkspace.spec.ts 10ms
+src/api/adminControls.test.ts 11ms
+src/__tests__/helpers/authHarness.ts 10ms
+src/__tests__/fixtures/users.ts 4ms

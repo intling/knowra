@@ -17,7 +17,7 @@ def migration_module():
     return module
 
 
-# 验证新迁移只接在用户体系迁移之后，形成唯一迁移头而不引入分支。
+# 验证额度迁移历史父节点及后继模型迁移不变，允许唯一 head 继续增量演进。
 def test_quota_migration_follows_auth_and_is_single_head():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
@@ -27,7 +27,10 @@ def test_quota_migration_follows_auth_and_is_single_head():
     config = Config()
     config.set_main_option("script_location", str(VERSIONS.parent))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261022_0001"]
+    assert len(scripts.get_heads()) == 1, "额度迁移之后必须保持唯一迁移头，不能新增分支。"
+    assert migration.revision in {revision.revision for revision in scripts.walk_revisions()}, (
+        "额度迁移必须保留在当前 head 的祖先链中，不能改写或移除历史。"
+    )
     assert scripts.get_revision("20261022_0001").down_revision == migration.revision
 
 

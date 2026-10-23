@@ -53,10 +53,13 @@ redirect. A temporary probe failure offers retry without mounting private views.
 
 The sidebar account menu opens `/account` for profile/password settings and
 logout. Administrators also see “后台管理” at `/admin`, redirecting to
-`/admin/users`. The shared navigation links user management and `/admin/models`.
+`/admin/overview`. The independent admin workspace has desktop navigation and a
+mobile drawer, with six pages: overview, users, models, jobs, audit and system.
+The original `/admin/users` and `/admin/models` URLs remain valid.
 Users can be created with an initial password and fixed role, have passwords
 reset (revoking all sessions), be enabled/disabled, change roles, or be deleted
-after confirmation. Deletion retains historical documents. Self password changes
+after exact email confirmation (full account UUID for legacy accounts without email).
+Deletion retains historical documents and revokes sessions. Self password changes
 use account settings; self deletion and disabling are blocked.
 Members see a permission message
 when directly opening the admin route. Viewers can ask questions and read their
@@ -73,6 +76,50 @@ The UI never receives stored keys and clears entered secrets on success, close
 or leaving the page. Backend errors, including incompatible Embedding indexes,
 are shown without discarding the current list. See `backend/README.md` for the
 required migration and master key setup. Only admins receive `models:manage`.
+
+### Admin workspace
+
+| Route | Purpose |
+|---|---|
+| `/admin/overview` | Dated account/upload snapshots, original-file logical capacity, per-stage 24-hour results, attention links, effective models and recent audit |
+| `/admin/users` | Debounced server search, combined role/status filters, details, rolling quota and device-session controls |
+| `/admin/models` | Four effective-purpose cards, configuration revisions, explicit tests, editing and default changes |
+| `/admin/jobs` | Read-only parse/chunk/embedding metadata and actual-attempt timelines; no private content or cross-user actions |
+| `/admin/audit` | Time, actor UUID, action, result and trace filters with safe before/after values; no export/edit/delete |
+| `/admin/system` | Check time and instance-scoped database/pgvector/readiness status plus independently loaded effective model summaries |
+
+Operational pages require `operations:read`, audit requires `audit:read`, and users
+requires `users:manage`; only admins have these permissions. Restricted routes show
+a permission message without requesting admin data. All APIs still enforce authorization.
+
+Lists use server pagination (20 per page) and request generations so slow old responses
+cannot replace a new query. Search waits 300ms and keeps email text in page memory;
+API logs omit query strings. Refresh preserves existing results with their snapshot time
+and marks stale/error states. Successful saves outside current filters explain why the
+object is not visible. Errors offer a copyable response trace ID for investigation.
+
+Details/forms use accessible drawers; confirmation is a separate top layer. Tab cycles
+within the top dialog, Esc closes that layer, and focus returns to the trigger. Passwords
+and keys clear when forms close, succeed or unmount. Layouts were checked at 320, 768
+and 1440px. State labels use text as well as color.
+
+Quota means occupied slots in the preceding 60 minutes, including in-flight requests;
+it is not historical usage or billing. Adjustments require confirmation, preserve old
+reservations and never backfill unlimited requests. Unlimited snapshots show no usage
+estimate. Revoking another user's sessions requires confirmation and refreshes the
+active count; account settings handle the caller's own authentication.
+
+Model saving, testing and activating are separate actions. Tests send fixed short samples
+and may incur a small fee; passing checks protocol/connectivity only. Results show version
+and time, expire after 15 minutes (also while the page stays open), and become stale after
+editing. The clock only changes local labels; no automatic model calls occur. Cooldown,
+revision conflicts and Embedding space protection show the backend's reason.
+
+For release, migrate the backend before publishing the frontend. Rolling back to the
+previous frontend keeps the compatible backend, quotas, defaults, audit and diagnostic
+tables intact. It does not reverse account or model actions; never run a destructive
+database downgrade as a frontend rollback. See the
+[verification report](../openspec/changes/redesign-admin-console/evidence/verification.md).
 
 All API modules use `src/api/client.ts`, which sends same-origin Cookies and
 trace IDs and normalizes `ApiError`. A private API 401 clears the local identity

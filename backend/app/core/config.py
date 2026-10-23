@@ -167,6 +167,9 @@ class Settings(BaseSettings):
     document_model_tokenizer_name: str = "Qwen/Qwen2-7B"
     document_model_tokenizer_cache_dir: str = "storage/document-models/tokenizers"
     document_model_shutdown_timeout_seconds: float = 5.0
+    admin_model_test_timeout_seconds: float = Field(default=10, gt=0, le=30)
+    admin_model_test_cooldown_seconds: int = Field(default=30, ge=0, le=3600)
+    admin_model_test_max_concurrent: int = Field(default=2, ge=1, le=20)
 
     # --- logging ---
     log_level: str = "INFO"

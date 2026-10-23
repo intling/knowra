@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="40" skipped="0" tests="50" time="3.584" timestamp="2026-10-22T18:01:36.968106+08:00" hostname="instance-20260413-2343"><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[ALICE.LAB-expected0]" time="0.136"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['43f10890-a3...6631e95', ...] == ['43f10890-a3...f5b119e13162']&#10;  &#10;  Left contains 7 more items, first extra item: '6fa13100-4761-4901-8726-b9f50986c8f1'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['43f10890-a3...6631e95', ...] == ['43f10890-a3...f5b119e13162']
+E
+E     Left contains 7 more items, first extra item: '6fa13100-4761-4901-8726-b9f50986c8f1'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[aLpHa-expected1]" time="0.061"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['38d90e77-cc...83cbbff', ...] == ['38d90e77-cc...16bdbdfe8c8e']&#10;  &#10;  Left contains 5 more items, first extra item: '9fdbd1df-2897-4b8d-97ac-06dfa7cb661f'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['38d90e77-cc...83cbbff', ...] == ['38d90e77-cc...16bdbdfe8c8e']
+E
+E     Left contains 5 more items, first extra item: '9fdbd1df-2897-4b8d-97ac-06dfa7cb661f'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[\u5b66\u4e60\u7ec4-expected2]" time="0.069"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['f45b49e4-15...3670390', ...] == ['f45b49e4-15...3583ec65b8e4']&#10;  &#10;  Left contains 7 more items, first extra item: '6632d9c3-eaa0-42f9-a30f-ad0373cd0823'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['f45b49e4-15...3670390', ...] == ['f45b49e4-15...3583ec65b8e4']
+E
+E     Left contains 7 more items, first extra item: '6632d9c3-eaa0-42f9-a30f-ad0373cd0823'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[  ALPHA  -expected3]" time="0.070"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['4076b0cc-6a...c3f0ebe', ...] == ['4076b0cc-6a...2194c348442c']&#10;  &#10;  Left contains 5 more items, first extra item: '71249e85-1baf-4eeb-bc0b-9b96f97d6885'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['4076b0cc-6a...c3f0ebe', ...] == ['4076b0cc-6a...2194c348442c']
+E
+E     Left contains 5 more items, first extra item: '71249e85-1baf-4eeb-bc0b-9b96f97d6885'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[%-expected4]" time="0.061"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['c112226c-6d...992e8a2', ...] == ['ce6f1e01-62...e08c5d5fc330']&#10;  &#10;  At index 0 diff: 'c112226c-6d04-46e0-9f43-7bb3bf93e1c0' != 'ce6f1e01-62b9-4b2f-8f09-e08c5d5fc330'&#10;  Left contains 7 more items, first extra item: '95c036a1-1a52-4c91-ae48-0e6f8befc67c'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['c112226c-6d...992e8a2', ...] == ['ce6f1e01-62...e08c5d5fc330']
+E
+E     At index 0 diff: 'c112226c-6d04-46e0-9f43-7bb3bf93e1c0' != 'ce6f1e01-62b9-4b2f-8f09-e08c5d5fc330'
+E     Left contains 7 more items, first extra item: '95c036a1-1a52-4c91-ae48-0e6f8befc67c'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[_-expected5]" time="0.061"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['187d2a25-ac...2296d65', ...] == ['f3ebef56-2c...395032296d65']&#10;  &#10;  At index 0 diff: '187d2a25-ac12-42a5-85e9-2b30d060fb04' != 'f3ebef56-2cb8-47b8-a2b3-395032296d65'&#10;  Left contains 7 more items, first extra item: 'f638b7e5-d50b-4007-9098-03ec28e8f09d'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['187d2a25-ac...2296d65', ...] == ['f3ebef56-2c...395032296d65']
+E
+E     At index 0 diff: '187d2a25-ac12-42a5-85e9-2b30d060fb04' != 'f3ebef56-2cb8-47b8-a2b3-395032296d65'
+E     Left contains 7 more items, first extra item: 'f638b7e5-d50b-4007-9098-03ec28e8f09d'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[\\-expected6]" time="0.060"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['13c4a69f-a8...5c1daf0', ...] == ['db99f5e0-23...b768c13d5ded']&#10;  &#10;  At index 0 diff: '13c4a69f-a89e-403d-a760-ad1f1e8f6745' != 'db99f5e0-23fe-432c-a4d3-b768c13d5ded'&#10;  Left contains 7 more items, first extra item: 'f70a40de-cbac-40ae-97c6-4020b07d870c'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['13c4a69f-a8...5c1daf0', ...] == ['db99f5e0-23...b768c13d5ded']
+E
+E     At index 0 diff: '13c4a69f-a89e-403d-a760-ad1f1e8f6745' != 'db99f5e0-23fe-432c-a4d3-b768c13d5ded'
+E     Left contains 7 more items, first extra item: 'f70a40de-cbac-40ae-97c6-4020b07d870c'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[100%-expected7]" time="0.060"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['32ed1ab4-de...50b2bd9', ...] == ['6f2681a6-5c...57dbd7694d79']&#10;  &#10;  At index 0 diff: '32ed1ab4-ded8-4efe-8c3b-bedac0f3a4f4' != '6f2681a6-5ca4-4881-8398-57dbd7694d79'&#10;  Left contains 7 more items, first extra item: '71a044d2-520e-40dd-bf7c-41c536bf6c84'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['32ed1ab4-de...50b2bd9', ...] == ['6f2681a6-5c...57dbd7694d79']
+E
+E     At index 0 diff: '32ed1ab4-ded8-4efe-8c3b-bedac0f3a4f4' != '6f2681a6-5ca4-4881-8398-57dbd7694d79'
+E     Left contains 7 more items, first extra item: '71a044d2-520e-40dd-bf7c-41c536bf6c84'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[does-not-exist-expected8]" time="0.066"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['11194ac3-7c...384446a', ...] == []&#10;  &#10;  Left contains 8 more items, first extra item: '11194ac3-7c64-42ec-a272-de0306ad2446'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['11194ac3-7c...384446a', ...] == []
+E
+E     Left contains 8 more items, first extra item: '11194ac3-7c64-42ec-a272-de0306ad2446'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_matches_literal_substrings[' OR 1=1 ---expected9]" time="0.066"><failure message="AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。&#10;assert ['73b90b00-80...a695f78', ...] == []&#10;  &#10;  Left contains 8 more items, first extra item: '73b90b00-8073-40e9-9147-8a1aae55a3af'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:86: in test_search_matches_literal_substrings
+    assert [row["id"] for row in body["items"]] == [str(directory[key].id) for key in expected], (
+E   AssertionError: 账号搜索没有按字面子串匹配，或把软删除账号/未匹配账号混入结果。
+E   assert ['73b90b00-80...a695f78', ...] == []
+E
+E     Left contains 8 more items, first extra item: '73b90b00-8073-40e9-9147-8a1aae55a3af'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_role_and_status_filters[params0-expected0]" time="0.059"><failure message="AssertionError: assert ['eb45d896-38...fab47e4', ...] == ['540fc11a-d3...a4063847cf4f']&#10;  &#10;  At index 0 diff: 'eb45d896-384a-4999-a079-1b0d18112491' != '540fc11a-d3a5-4919-a1bb-724f474c517b'&#10;  Left contains 6 more items, first extra item: '0127d318-9f6e-470b-8c7c-d2c258bbb981'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:106: in test_role_and_status_filters
+    assert [item["id"] for item in body["items"]] == [str(rows[key].id) for key in expected]
+E   AssertionError: assert ['eb45d896-38...fab47e4', ...] == ['540fc11a-d3...a4063847cf4f']
+E
+E     At index 0 diff: 'eb45d896-384a-4999-a079-1b0d18112491' != '540fc11a-d3a5-4919-a1bb-724f474c517b'
+E     Left contains 6 more items, first extra item: '0127d318-9f6e-470b-8c7c-d2c258bbb981'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_role_and_status_filters[params1-expected1]" time="0.060"><failure message="AssertionError: assert ['a1769747-4f...b559d9c', ...] == ['a1769747-4f...3a99d16d6e87']&#10;  &#10;  At index 2 diff: 'a498b304-48d2-43c9-8816-3531bf19f64d' != 'fc7aa292-900e-47b4-a6bf-1e6f0b559d9c'&#10;  Left contains 4 more items, first extra item: '0dedf469-19c3-4916-8c2f-750a65da0ed7'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:106: in test_role_and_status_filters
+    assert [item["id"] for item in body["items"]] == [str(rows[key].id) for key in expected]
+E   AssertionError: assert ['a1769747-4f...b559d9c', ...] == ['a1769747-4f...3a99d16d6e87']
+E
+E     At index 2 diff: 'a498b304-48d2-43c9-8816-3531bf19f64d' != 'fc7aa292-900e-47b4-a6bf-1e6f0b559d9c'
+E     Left contains 4 more items, first extra item: '0dedf469-19c3-4916-8c2f-750a65da0ed7'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_role_and_status_filters[params2-expected2]" time="0.061"><failure message="AssertionError: assert ['b2f04dcc-b6...7038751', ...] == ['528db7fc-c6...63c506649175']&#10;  &#10;  At index 0 diff: 'b2f04dcc-b63c-405e-8b30-4d7893c54d55' != '528db7fc-c667-4bd8-a216-2f27bb95a6de'&#10;  Left contains 6 more items, first extra item: '528db7fc-c667-4bd8-a216-2f27bb95a6de'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:106: in test_role_and_status_filters
+    assert [item["id"] for item in body["items"]] == [str(rows[key].id) for key in expected]
+E   AssertionError: assert ['b2f04dcc-b6...7038751', ...] == ['528db7fc-c6...63c506649175']
+E
+E     At index 0 diff: 'b2f04dcc-b63c-405e-8b30-4d7893c54d55' != '528db7fc-c667-4bd8-a216-2f27bb95a6de'
+E     Left contains 6 more items, first extra item: '528db7fc-c667-4bd8-a216-2f27bb95a6de'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_role_and_status_filters[params3-expected3]" time="0.060"><failure message="AssertionError: assert ['d8a248ec-fb...7439472', ...] == ['d8a248ec-fb...1d5c03f64976']&#10;  &#10;  At index 1 diff: '527d04b1-652d-47fa-bdb3-8856137edd80' != '00f2d2bc-cbd2-4950-a6d6-db639af88596'&#10;  Left contains 2 more items, first extra item: 'f086918a-e25e-46ea-b0cb-5507e4f6183e'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:106: in test_role_and_status_filters
+    assert [item["id"] for item in body["items"]] == [str(rows[key].id) for key in expected]
+E   AssertionError: assert ['d8a248ec-fb...7439472', ...] == ['d8a248ec-fb...1d5c03f64976']
+E
+E     At index 1 diff: '527d04b1-652d-47fa-bdb3-8856137edd80' != '00f2d2bc-cbd2-4950-a6d6-db639af88596'
+E     Left contains 2 more items, first extra item: 'f086918a-e25e-46ea-b0cb-5507e4f6183e'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_role_and_status_filters[params4-expected4]" time="0.064"><failure message="AssertionError: assert ['2dd89983-44...86cc726', ...] == ['90d953be-a5...6fc6c7cc5446']&#10;  &#10;  At index 0 diff: '2dd89983-4461-4aee-b99e-1c9cc3700dc4' != '90d953be-a50b-4159-9f71-594e772dd110'&#10;  Left contains 6 more items, first extra item: '33bc4e8e-02fc-468b-b2e9-4803d7474beb'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:106: in test_role_and_status_filters
+    assert [item["id"] for item in body["items"]] == [str(rows[key].id) for key in expected]
+E   AssertionError: assert ['2dd89983-44...86cc726', ...] == ['90d953be-a5...6fc6c7cc5446']
+E
+E     At index 0 diff: '2dd89983-4461-4aee-b99e-1c9cc3700dc4' != '90d953be-a50b-4159-9f71-594e772dd110'
+E     Left contains 6 more items, first extra item: '33bc4e8e-02fc-468b-b2e9-4803d7474beb'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_filters_are_combined_with_and[params0-expected0]" time="0.061"><failure message="AssertionError: assert ['0254f7a2-55...44c24dd', ...] == ['0254f7a2-55...2810fad9938c']&#10;  &#10;  Left contains 7 more items, first extra item: '8f901533-5cf8-48c4-bf2c-c5a7bb06e19e'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:121: in test_filters_are_combined_with_and
+    assert [item["id"] for item in body["items"]] == [str(directory[key].id) for key in expected]
+E   AssertionError: assert ['0254f7a2-55...44c24dd', ...] == ['0254f7a2-55...2810fad9938c']
+E
+E     Left contains 7 more items, first extra item: '8f901533-5cf8-48c4-bf2c-c5a7bb06e19e'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_filters_are_combined_with_and[params1-expected1]" time="0.060"><failure message="AssertionError: assert ['77d418d0-63...99c24f7', ...] == ['bd429d68-9f...179da0b47c4a']&#10;  &#10;  At index 0 diff: '77d418d0-633e-4cc9-b017-1efb4bd65c10' != 'bd429d68-9fc6-4abe-b8f5-179da0b47c4a'&#10;  Left contains 7 more items, first extra item: 'bd429d68-9fc6-4abe-b8f5-179da0b47c4a'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:121: in test_filters_are_combined_with_and
+    assert [item["id"] for item in body["items"]] == [str(directory[key].id) for key in expected]
+E   AssertionError: assert ['77d418d0-63...99c24f7', ...] == ['bd429d68-9f...179da0b47c4a']
+E
+E     At index 0 diff: '77d418d0-633e-4cc9-b017-1efb4bd65c10' != 'bd429d68-9fc6-4abe-b8f5-179da0b47c4a'
+E     Left contains 7 more items, first extra item: 'bd429d68-9fc6-4abe-b8f5-179da0b47c4a'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_filters_are_combined_with_and[params2-expected2]" time="0.059"><failure message="AssertionError: assert ['066ebd3e-4b...6e9fdb3', ...] == []&#10;  &#10;  Left contains 8 more items, first extra item: '066ebd3e-4b1a-480b-9524-652a19bf45ac'&#10;  Use -v to get more diff">tests/admin_console/test_user_directory.py:121: in test_filters_are_combined_with_and
+    assert [item["id"] for item in body["items"]] == [str(directory[key].id) for key in expected]
+E   AssertionError: assert ['066ebd3e-4b...6e9fdb3', ...] == []
+E
+E     Left contains 8 more items, first extra item: '066ebd3e-4b1a-480b-9524-652a19bf45ac'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_search_filters_before_pagination_and_uses_uuid_tiebreak" time="0.083"><failure message="assert (26 == 3)">tests/admin_console/test_user_directory.py:145: in test_search_filters_before_pagination_and_uses_uuid_tiebreak
+    assert body["total"] == 3 and body["offset"] == 1 and body["limit"] == 1
+E   assert (26 == 3)</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_empty_search_preserves_original_list[params0]" time="0.058" /><testcase classname="tests.admin_console.test_user_directory" name="test_empty_search_preserves_original_list[params1]" time="0.065" /><testcase classname="tests.admin_console.test_user_directory" name="test_empty_search_preserves_original_list[params2]" time="0.237" /><testcase classname="tests.admin_console.test_user_directory" name="test_search_accepts_exactly_one_hundred_unicode_characters" time="0.054"><failure message="assert (2 == 1)">tests/admin_console/test_user_directory.py:165: in test_search_accepts_exactly_one_hundred_unicode_characters
+    assert body["total"] == 1 and body["items"][0]["id"] == str(target.id)
+E   assert (2 == 1)</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params0]" time="0.050"><failure message="AssertionError: 非法账号筛选 ['q'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={&quot;items&quot;:[{&quot;id&quot;:&quot;06c92bac-8936-4724-8bbf-bed74f75b920&quot;,&quot;display_name&quot;:&quot;console-admin&quot;,&quot;email&quot;:&quot;console-admin@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;admin&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T10:01:38.983587Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T10:01:38.983587Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;,&quot;knowledge:write&quot;,&quot;models:manage&quot;,&quot;users:manage&quot;]}],&quot;total&quot;:1,&quot;offset&quot;:0,&quot;limit&quot;:20}">tests/admin_console/test_user_directory.py:186: in test_invalid_directory_query_has_clear_validation_error
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法账号筛选 ['q'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={"items":[{"id":"06c92bac-8936-4724-8bbf-bed74f75b920","display_name":"console-admin","email":"console-admin@example.com","avatar_url":null,"status":"active","role":"admin","deleted_at":null,"created_at":"2026-10-22T10:01:38.983587Z","updated_at":"2026-10-22T10:01:38.983587Z","permissions":["knowledge:read","knowledge:write","models:manage","users:manage"]}],"total":1,"offset":0,"limit":20}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params1]" time="0.059"><failure message="AssertionError: 非法账号筛选 ['q'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={&quot;items&quot;:[{&quot;id&quot;:&quot;5b0afcbe-d1b1-4765-8cf7-9e3d1dba9cd8&quot;,&quot;display_name&quot;:&quot;console-admin&quot;,&quot;email&quot;:&quot;console-admin@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;admin&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T10:01:39.050773Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T10:01:39.050773Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;,&quot;knowledge:write&quot;,&quot;models:manage&quot;,&quot;users:manage&quot;]}],&quot;total&quot;:1,&quot;offset&quot;:0,&quot;limit&quot;:20}">tests/admin_console/test_user_directory.py:186: in test_invalid_directory_query_has_clear_validation_error
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法账号筛选 ['q'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={"items":[{"id":"5b0afcbe-d1b1-4765-8cf7-9e3d1dba9cd8","display_name":"console-admin","email":"console-admin@example.com","avatar_url":null,"status":"active","role":"admin","deleted_at":null,"created_at":"2026-10-22T10:01:39.050773Z","updated_at":"2026-10-22T10:01:39.050773Z","permissions":["knowledge:read","knowledge:write","models:manage","users:manage"]}],"total":1,"offset":0,"limit":20}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params2]" time="0.058"><failure message="AssertionError: 非法账号筛选 ['q'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={&quot;items&quot;:[{&quot;id&quot;:&quot;8e2d84de-9cfb-4f68-a793-a09609197e67&quot;,&quot;display_name&quot;:&quot;console-admin&quot;,&quot;email&quot;:&quot;console-admin@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;admin&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T10:01:39.119401Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T10:01:39.119401Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;,&quot;knowledge:write&quot;,&quot;models:manage&quot;,&quot;users:manage&quot;]}],&quot;total&quot;:1,&quot;offset&quot;:0,&quot;limit&quot;:20}">tests/admin_console/test_user_directory.py:186: in test_invalid_directory_query_has_clear_validation_error
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法账号筛选 ['q'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={"items":[{"id":"8e2d84de-9cfb-4f68-a793-a09609197e67","display_name":"console-admin","email":"console-admin@example.com","avatar_url":null,"status":"active","role":"admin","deleted_at":null,"created_at":"2026-10-22T10:01:39.119401Z","updated_at":"2026-10-22T10:01:39.119401Z","permissions":["knowledge:read","knowledge:write","models:manage","users:manage"]}],"total":1,"offset":0,"limit":20}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params3]" time="0.053"><failure message="AssertionError: 非法账号筛选 ['role'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={&quot;items&quot;:[{&quot;id&quot;:&quot;bd5d2ebd-df2a-4c23-a831-3ded6b331d16&quot;,&quot;display_name&quot;:&quot;console-admin&quot;,&quot;email&quot;:&quot;console-admin@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;admin&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T10:01:39.187051Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T10:01:39.187051Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;,&quot;knowledge:write&quot;,&quot;models:manage&quot;,&quot;users:manage&quot;]}],&quot;total&quot;:1,&quot;offset&quot;:0,&quot;limit&quot;:20}">tests/admin_console/test_user_directory.py:186: in test_invalid_directory_query_has_clear_validation_error
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法账号筛选 ['role'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={"items":[{"id":"bd5d2ebd-df2a-4c23-a831-3ded6b331d16","display_name":"console-admin","email":"console-admin@example.com","avatar_url":null,"status":"active","role":"admin","deleted_at":null,"created_at":"2026-10-22T10:01:39.187051Z","updated_at":"2026-10-22T10:01:39.187051Z","permissions":["knowledge:read","knowledge:write","models:manage","users:manage"]}],"total":1,"offset":0,"limit":20}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params4]" time="0.051"><failure message="AssertionError: 非法账号筛选 ['role'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={&quot;items&quot;:[{&quot;id&quot;:&quot;c6d9dc1b-3185-48d9-8e29-bf0081038b68&quot;,&quot;display_name&quot;:&quot;console-admin&quot;,&quot;email&quot;:&quot;console-admin@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;admin&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T10:01:39.251950Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T10:01:39.251950Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;,&quot;knowledge:write&quot;,&quot;models:manage&quot;,&quot;users:manage&quot;]}],&quot;total&quot;:1,&quot;offset&quot;:0,&quot;limit&quot;:20}">tests/admin_console/test_user_directory.py:186: in test_invalid_directory_query_has_clear_validation_error
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法账号筛选 ['role'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={"items":[{"id":"c6d9dc1b-3185-48d9-8e29-bf0081038b68","display_name":"console-admin","email":"console-admin@example.com","avatar_url":null,"status":"active","role":"admin","deleted_at":null,"created_at":"2026-10-22T10:01:39.251950Z","updated_at":"2026-10-22T10:01:39.251950Z","permissions":["knowledge:read","knowledge:write","models:manage","users:manage"]}],"total":1,"offset":0,"limit":20}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params5]" time="0.048"><failure message="AssertionError: 非法账号筛选 ['status'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={&quot;items&quot;:[{&quot;id&quot;:&quot;94472d57-570a-413f-a551-8f10ca41d288&quot;,&quot;display_name&quot;:&quot;console-admin&quot;,&quot;email&quot;:&quot;console-admin@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;admin&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T10:01:39.317030Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T10:01:39.317030Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;,&quot;knowledge:write&quot;,&quot;models:manage&quot;,&quot;users:manage&quot;]}],&quot;total&quot;:1,&quot;offset&quot;:0,&quot;limit&quot;:20}">tests/admin_console/test_user_directory.py:186: in test_invalid_directory_query_has_clear_validation_error
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法账号筛选 ['status'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={"items":[{"id":"94472d57-570a-413f-a551-8f10ca41d288","display_name":"console-admin","email":"console-admin@example.com","avatar_url":null,"status":"active","role":"admin","deleted_at":null,"created_at":"2026-10-22T10:01:39.317030Z","updated_at":"2026-10-22T10:01:39.317030Z","permissions":["knowledge:read","knowledge:write","models:manage","users:manage"]}],"total":1,"offset":0,"limit":20}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params6]" time="0.048"><failure message="AssertionError: 非法账号筛选 ['status'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={&quot;items&quot;:[{&quot;id&quot;:&quot;7c04581e-5573-4268-8112-d01122985f36&quot;,&quot;display_name&quot;:&quot;console-admin&quot;,&quot;email&quot;:&quot;console-admin@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;admin&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T10:01:39.375024Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T10:01:39.375024Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;,&quot;knowledge:write&quot;,&quot;models:manage&quot;,&quot;users:manage&quot;]}],&quot;total&quot;:1,&quot;offset&quot;:0,&quot;limit&quot;:20}">tests/admin_console/test_user_directory.py:186: in test_invalid_directory_query_has_clear_validation_error
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法账号筛选 ['status'] 应明确拒绝，不能返回未筛选数据：期望 HTTP 422，实际 HTTP 200；响应={"items":[{"id":"7c04581e-5573-4268-8112-d01122985f36","display_name":"console-admin","email":"console-admin@example.com","avatar_url":null,"status":"active","role":"admin","deleted_at":null,"created_at":"2026-10-22T10:01:39.375024Z","updated_at":"2026-10-22T10:01:39.375024Z","permissions":["knowledge:read","knowledge:write","models:manage","users:manage"]}],"total":1,"offset":0,"limit":20}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params7]" time="0.046" /><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params8]" time="0.044" /><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params9]" time="0.047" /><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_directory_query_has_clear_validation_error[params10]" time="0.046" /><testcase classname="tests.admin_console.test_user_directory" name="test_detail_counts_only_live_target_sessions" time="0.056"><failure message="AssertionError: 管理员应能查看账号运行详情，现有列表不能替代详情接口：期望 HTTP 200，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:211: in test_detail_counts_only_live_target_sessions
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 管理员应能查看账号运行详情，现有列表不能替代详情接口：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_detail_supports_disabled_accounts_and_current_admin[disabled]" time="0.051"><failure message="AssertionError: 禁用账号和当前管理员均属于可管理的有效记录：期望 HTTP 200，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:231: in test_detail_supports_disabled_accounts_and_current_admin
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 禁用账号和当前管理员均属于可管理的有效记录：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_detail_supports_disabled_accounts_and_current_admin[self]" time="0.044"><failure message="AssertionError: 禁用账号和当前管理员均属于可管理的有效记录：期望 HTTP 200，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:231: in test_detail_supports_disabled_accounts_and_current_admin
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 禁用账号和当前管理员均属于可管理的有效记录：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_detail_includes_readonly_rolling_quota_snapshot[None]" time="0.049"><failure message="AssertionError: 账号详情必须提供只读额度快照：期望 HTTP 200，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:260: in test_detail_includes_readonly_rolling_quota_snapshot
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 账号详情必须提供只读额度快照：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_detail_includes_readonly_rolling_quota_snapshot[1]" time="0.050"><failure message="AssertionError: 账号详情必须提供只读额度快照：期望 HTTP 200，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:260: in test_detail_includes_readonly_rolling_quota_snapshot
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 账号详情必须提供只读额度快照：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_detail_includes_readonly_rolling_quota_snapshot[3]" time="0.051"><failure message="AssertionError: 账号详情必须提供只读额度快照：期望 HTTP 200，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:260: in test_detail_includes_readonly_rolling_quota_snapshot
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 账号详情必须提供只读额度快照：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_detail_cannot_expose_auth_material_or_private_knowledge" time="0.101"><failure message="AssertionError: 伪造归属参数不能让账号详情携带私有资料或认证材料：期望 HTTP 200，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:287: in test_detail_cannot_expose_auth_material_or_private_knowledge
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 伪造归属参数不能让账号详情携带私有资料或认证材料：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_missing_or_deleted_detail_has_business_reason[False]" time="0.042"><failure message="AssertionError: 不存在或软删除账号不能出现在详情中：期望 HTTP 404，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:318: in test_missing_or_deleted_detail_has_business_reason
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 不存在或软删除账号不能出现在详情中：期望 HTTP 404，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_missing_or_deleted_detail_has_business_reason[True]" time="0.044"><failure message="AssertionError: 不存在或软删除账号不能出现在详情中：期望 HTTP 404，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:318: in test_missing_or_deleted_detail_has_business_reason
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 不存在或软删除账号不能出现在详情中：期望 HTTP 404，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_invalid_detail_id_has_validation_reason" time="0.040"><failure message="AssertionError: 账号详情 ID 必须校验 UUID 格式：期望 HTTP 422，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:328: in test_invalid_detail_id_has_validation_reason
+    body = assert_status(
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 账号详情 ID 必须校验 UUID 格式：期望 HTTP 422，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_directory_reads_require_authenticated_admin[list-None]" time="0.045" /><testcase classname="tests.admin_console.test_user_directory" name="test_directory_reads_require_authenticated_admin[list-member]" time="0.049" /><testcase classname="tests.admin_console.test_user_directory" name="test_directory_reads_require_authenticated_admin[list-viewer]" time="0.051" /><testcase classname="tests.admin_console.test_user_directory" name="test_directory_reads_require_authenticated_admin[detail-None]" time="0.042"><failure message="AssertionError: 账号列表和运行详情必须由服务端 users:manage 权限保护：期望 HTTP 401，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:344: in test_directory_reads_require_authenticated_admin
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 账号列表和运行详情必须由服务端 users:manage 权限保护：期望 HTTP 401，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_directory_reads_require_authenticated_admin[detail-member]" time="0.043"><failure message="AssertionError: 账号列表和运行详情必须由服务端 users:manage 权限保护：期望 HTTP 403，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:344: in test_directory_reads_require_authenticated_admin
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 账号列表和运行详情必须由服务端 users:manage 权限保护：期望 HTTP 403，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase><testcase classname="tests.admin_console.test_user_directory" name="test_directory_reads_require_authenticated_admin[detail-viewer]" time="0.043"><failure message="AssertionError: 账号列表和运行详情必须由服务端 users:manage 权限保护：期望 HTTP 403，实际 HTTP 405；响应={&quot;detail&quot;:&quot;Method Not Allowed&quot;}">tests/admin_console/test_user_directory.py:344: in test_directory_reads_require_authenticated_admin
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 账号列表和运行详情必须由服务端 users:manage 权限保护：期望 HTTP 403，实际 HTTP 405；响应={"detail":"Method Not Allowed"}</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_local_model_without_key_omits_authorization _______________
+tests/admin_console/test_model_probes.py:415: in test_local_model_without_key_omits_authorization
+    assert 'authorization' not in headers[0], '无密钥应省略鉴权头，不能发送空 Bearer'
+E   AssertionError: 无密钥应省略鉴权头，不能发送空 Bearer
+E   assert 'authorization' not in {'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'authorization': 'Bearer ', 'connection': 'keep-alive', ...}
+---------------------------- Captured stderr setup -----------------------------
+[2m2026-10-22T10:51:03.007832Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:51:03.008809Z[0m [[32m[1minfo[0m] [1mStartup job reconciliation completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'startup_reconciliation', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:51:03.007832Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:60 {'reason': 'startup_reconciliation', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Startup job reconciliation completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:51:03.008809Z', 'logger': 'app.core.shutdown'}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:51:03.085108Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m27dfda36-2a0a-4bed-960b-913c86c0d5c1[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m77f80ad5-fb9a-4644-a7ac-406b2908591e[0m [36mtrace_id[0m=[35m01a1633c-5e15-74ec-84dc-daa8610ec7b6[0m
+[2m2026-10-22T10:51:03.088951Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:51:03.148088Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST https://models.example/v1/chat/completions "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m01a1633c-5e33-7202-b7de-29b6a80fd666[0m
+[2m2026-10-22T10:51:03.162536Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/77f80ad5-fb9a-4644-a7ac-406b2908591e/test "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '77f80ad5-fb9a-4644-a7ac-406b2908591e', 'actor_user_id': '27dfda36-2a0a-4bed-960b-913c86c0d5c1', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1633c-5e15-74ec-84dc-daa8610ec7b6', 'level': 'info', 'timestamp': '2026-10-22T10:51:03.085108Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://models.example/v1/chat/completions "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/77f80ad5-fb9a-4644-a7ac-406b2908591e/test "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:51:03.243093Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:51:03.264524Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:51:03.264885Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:51:03.243093Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:51:03.264524Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:51:03.264885Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_probes.py::test_local_model_without_key_omits_authorization
+1 failed, 28 deselected in 0.44s

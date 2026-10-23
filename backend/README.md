@@ -45,7 +45,11 @@ on each request. There is no fallback to the old default user.
 | `GET /api/users/me` | Current user, including `role` and `permissions` |
 | `PATCH /api/users/me` | `{display_name}` → updated user |
 | `POST /api/users/me/password` | `{current_password, new_password}` → 204; revoke all sessions |
-| `GET /api/admin/users?offset=0&limit=20` | Admin-only paginated users; limit 1–100 |
+| `GET /api/admin/users?offset=0&limit=20` | Admin-only page; optional `q,role,status`; limit 1–100 |
+| `GET /api/admin/users/{id}` | Account, active session count and rolling quota snapshot |
+| `GET /api/admin/users/{id}/chat-limit` | Rolling 60-minute quota snapshot |
+| `PUT /api/admin/users/{id}/chat-limit` | `{hourly_limit: null}` for unlimited, or integer 1–100000 |
+| `POST /api/admin/users/{id}/revoke-sessions` | Revoke active sessions; `{revoked_count}`; self requests return 409 |
 | `PATCH /api/admin/users/{id}` | Admin-only `{role?, status?}` update |
 | `POST /api/admin/users` | Admin-only `{email, display_name, password, role?, status?}` → 201 user |
 | `POST /api/admin/users/{id}/reset-password` | Admin-only `{new_password}` → 204; revoke all target sessions |
@@ -53,7 +57,8 @@ on each request. There is no fallback to the old default user.
 
 Except for health and auth routes, all business APIs require a session. `admin`
 and `member` can read, search, upload and process their own documents; `viewer`
-can only read and search. Only `admin` has `users:manage` and `models:manage`. Administration does
+can only read and search. Only `admin` has `users:manage`, `models:manage`,
+`operations:read` and `audit:read`. Administration does
 not grant access to another user's documents. Foreign resources return 404;
 missing sessions return 401 and insufficient permissions return 403. Error
 responses use `{detail, code}`; validation errors retain a `detail` list with
@@ -68,11 +73,27 @@ there is no restore or physical purge button. Creation conflicts return
 `email_conflict`; self reset/delete return `cannot_reset_self` / `cannot_delete_self`.
 PostgreSQL transaction locks preserve the last administrator during concurrent changes.
 
+Account search trims leading/trailing whitespace, matches literal email/name
+substrings case-insensitively, and combines role/status with AND before pagination.
+The raw query is limited to 100 characters; `%`, `_` and `\` are literal.
+Deleted users are excluded. Details expose no credentials or session tokens.
+Revocation affects only unexpired, unrevoked sessions, is repeat-safe (0), and
+returns `cannot_revoke_self_sessions` for the caller; use account settings instead.
+
+Quota snapshots contain `hourly_limit,occupied_slots,remaining,window_seconds,observed_at`.
+The first three fields are null for unlimited accounts. Occupancy includes in-flight
+reservations; it is not an exact successful question count, historical usage or a bill.
+Shrinking a limit below occupancy leaves accepted requests intact and blocks new
+admissions; increasing it adds room. Removing a limit preserves unexpired reservations,
+which count again when a limit is restored. Unlimited requests are never backfilled.
+Admission and limit creation/removal share a stable per-account PostgreSQL advisory
+transaction lock, including when no quota row exists, and release it before model calls.
+
 ### Model administration
 
 Administrators open `/admin/models` to manage system-wide `chat`, `embedding`,
 `rerank`, and `query_rewrite` profiles. Apply `uv run alembic upgrade head`
-(revision `20261022_0001`) before starting the updated server. This creates
+before starting the updated server. The model revision `20261022_0001` creates
 `model_profiles` and four empty `model_bindings`; existing users and documents
 are retained. With no active profile, each purpose uses its environment configuration.
 
@@ -96,6 +117,8 @@ replacing the key makes existing ciphertext unreadable.
 | Endpoint | Behavior |
 |---|---|
 | `GET /api/admin/models?kind=chat&offset=0&limit=20` | Filtered page; limit 1–100 |
+| `GET /api/admin/models/effective` | Four purpose summaries: source, enabled, safe model ID, binding/profile revision and latest diagnostic |
+| `POST /api/admin/models/{id}/test` | `{expected_revision}`; fixed sample, explicit test, no default change |
 | `POST /api/admin/models` | 201 profile; required `name, kind, base_url, model` |
 | `PATCH /api/admin/models/{id}` | Partial update; kind is immutable |
 | `DELETE /api/admin/models/{id}` | 204; current defaults cannot be deleted |
@@ -108,6 +131,31 @@ Optional fields are `api_key`, `enabled`, `timeout_seconds` (1–120),
 URLs must use HTTP(S) without embedded credentials, query or fragment.
 Saving does not contact the model service. Disabled profiles cannot be activated;
 current defaults must be replaced or deactivated before disabling or deleting.
+
+Each edit increments the profile `revision`, separately from the purpose's binding
+revision. Explicit tests also support disabled profiles and use saved configuration
+only, with fixed non-private samples. They may incur a small provider charge;
+success checks connectivity/protocol, not retrieval or answer quality. A result is
+current only for the tested revision and for 15 minutes; the UI marks expiration
+without repeating the call. Editing/deleting a configuration makes old results stale.
+
+| Diagnostic variable | Default | Constraint |
+|---|---|---|
+| `ADMIN_MODEL_TEST_TIMEOUT_SECONDS` | `10` | Total deadline, greater than 0 and at most 30 seconds; zero retries |
+| `ADMIN_MODEL_TEST_COOLDOWN_SECONDS` | `30` | Per-profile cooldown, shared by workers using the same database |
+| `ADMIN_MODEL_TEST_MAX_CONCURRENT` | `2` | Global in-flight limit across those workers |
+
+Database leases enforce admission in short transactions; no database lock spans the
+network call. Expired running leases read as interrupted and release capacity.
+Clients close on completion/cancellation. Local and private deployments are supported;
+validated DNS addresses constrain the actual connection, link-local/cloud metadata
+targets are blocked, redirects and environment proxies are disabled.
+
+Executed probes return HTTP 200 with `passed/failed` and a safe code, including
+`model_test_timeout`, `model_test_auth_failed`, `model_test_unreachable` and
+`model_test_invalid_response`. Admission returns 409 `model_revision_conflict`,
+429 `model_test_rate_limited` with `Retry-After`, or 503 `model_secret_unavailable`.
+Requests cannot supply arbitrary URLs, temporary keys or custom payloads.
 
 Changes affect subsequent search requests and new vectorization tasks. A request
 resolves one independent configuration snapshot; queued tasks keep their captured
@@ -126,9 +174,59 @@ When a managed Embedding default exists, re-embed request overrides of its model
 or dimensions return 409 `embedding_configuration_managed`. Admission and default
 changes coordinate through the same PostgreSQL binding lock.
 
-Before rollback, deactivate defaults where compatible and restore the environment
-configuration. `uv run alembic downgrade 20261021_0002` removes only this change's
-model tables and configuration; existing ownership data remains.
+For a frontend rollback, keep the migrated backend and database, including defaults,
+quota changes and history. Do not downgrade model tables as a code rollback step.
+Changing defaults back to environment configuration remains an explicit operation
+subject to the same Embedding compatibility checks. Back up the database and original
+master key together with the release artifacts.
+
+### Administrative monitoring and audit
+
+`/admin` opens `/admin/overview`; the other pages are `/admin/users`, `/admin/models`,
+`/admin/jobs`, `/admin/audit` and `/admin/system`. Existing users/models URLs and write
+contracts remain compatible. Operational reads require `operations:read`; audit reads
+require `audit:read`. Members/viewers receive 403 and anonymous requests receive 401.
+
+| Endpoint | Safe read behavior |
+|---|---|
+| `GET /api/admin/overview` | Snapshot time, valid accounts/uploads, original-file logical bytes, per-stage queued/running and 24-hour outcomes, attention links |
+| `GET /api/admin/jobs` | `kind,status,owner_user_id,from,to,offset,limit`; default last 24 hours by creation time |
+| `GET /api/admin/jobs/{kind}/{id}` | Selected job plus all actual attempts for the same upload; absent stages stay absent |
+| `GET /api/admin/audit-events` | `from,to,actor_user_id,action,result,trace_id,offset,limit`; default last 7 days |
+| `GET /api/admin/system/status` | Check time, `scope:instance`, instance ID and component statuses |
+
+Time filters use UTC `[from,to)`, at most 31 days. Jobs and audit sort by
+`(created_at DESC,id DESC)`; pages return `{items,total,offset,limit}` (20 by
+default, at most 100). Jobs use `parse/chunk/embedding`; audit results use
+`success/denied/failed`. Invalid ranges return a safe 422 explanation.
+
+Overview counts exclude soft-deleted uploads and owners. Active means login-enabled,
+not online. Logical bytes exclude derived files and database overhead. Stage outcomes
+use `finished_at` in the preceding 24 hours; a zero-denominator rate is null. Unavailable
+blocks remain null and marked unavailable, with other blocks still readable.
+
+Task projections never select private filenames, titles, storage paths, document/chunk
+text, vectors, questions, answers or raw errors. Known error codes map to safe details;
+unknown errors become a generic processing failure. There is no cross-user content
+preview, download, retry, cancel or delete endpoint. Existing document APIs remain
+owner-scoped. Long-running jobs are observations, not automatic state repairs.
+
+System checks cap each active dependency probe at 2 seconds and all probes at 5 seconds.
+Database and pgvector checks are read-only; document-model readiness belongs to the
+responding process. Model source and last explicit tests load separately through
+`models/effective`. Refresh never calls model providers. `unknown`, `disabled` and
+unavailable states are explicit. If authentication's database is unavailable, the API
+returns a safe 503 `admin_dependency_unavailable`; it does not bypass authentication.
+
+Account/model writes, quota changes and session revocation commit with their successful
+audit event. Executed model results commit with their result audit. If success auditing
+fails, the business transaction rolls back with 503 `admin_audit_unavailable`.
+Rejected/failed attempts try a separate safe event after rollback. Audit events keep
+actor/resource UUIDs, fixed action/result, safe before/after values, time and trace ID.
+Passwords, ciphertext, tokens, account/display names, full URLs and private content are
+excluded; reads apply the action whitelist again. No edit, delete, export or raw-log
+reader is exposed. This release does not automatically purge audit or probe history;
+retention/archival policy is a separate operational decision.
 
 ### Administrator bootstrap and recovery
 
@@ -174,7 +272,7 @@ fallbacks do not. Accounts without a `user_chat_limits` row remain unlimited.
 
 Migration `20261021_0002` adds `user_chat_limits` (positive hourly limit per
 user) and `chat_usage` (UTC admission events, indexed by user and time).
-PostgreSQL locks the limit row for the short admission transaction; external
+PostgreSQL acquires the per-account advisory lock and then the limit row for the short admission transaction; external
 calls run after commit. Failed requests release only their own reservation.
 Graceful shutdown drains requests. A forced process kill or failed cleanup
 can conservatively occupy quota until the 60 minute window expires; expired
@@ -719,8 +817,21 @@ The auth revision `20261021_0001` adds `users.role`, `user_credentials` and
 Existing users initially have role `member` and no credentials, so operators
 must explicitly bootstrap or claim an administrator before using old data.
 
-For rollback, stop public access first, run `uv run alembic downgrade -1` with
-the auth migration still available, then restore the previous code. Credentials,
-sessions and role assignments are removed; users and document ownership remain.
-The old code restores default-user access, so keep external access closed until
-the deployment has been verified. Back up the database before migration or rollback.
+后台改版增量迁移 `20261022_0002` 新增 `admin_audit_events`、
+`model_probe_results`，并为已有模型配置补齐 `revision NOT NULL DEFAULT 1`。
+迁移本身不改变账号、会话、额度、文档、2560 维向量及默认模型绑定。
+账号创建、角色/状态调整、重置密码、软删除，以及模型创建、修改、删除和默认切换，
+现已由 `app/services/admin_audit.py` 将业务写入和成功审计同事务提交。
+审计不可写返回 503 `admin_audit_unavailable`，业务整体回滚；
+业务拒绝/失败回滚后尝试独立留痕，不能覆盖原业务错误。
+审计按动作裁剪字段，密码重置只记动作，密钥和地址只记布尔变化，
+不保存凭据、会话材料、显示名、完整地址或私有资料内容。
+六页接口与交互、真实 PostgreSQL 并发、浏览器验收及回退证据见
+[验证报告](../openspec/changes/redesign-admin-console/evidence/verification.md)。
+
+发布前备份数据库和模型加密主密钥；代码回退时保留新增表及历史，
+不自动撤销已经发生的业务操作。仅在一次性验证库执行
+`uv run alembic downgrade 20261022_0001` 再升级，以检查数据保留；
+该降级会删除新增审计和诊断历史，不能作为生产代码回退步骤。
+若需回退认证体系，应另行制定凭据和会话的数据归档方案，并保持外部访问关闭，
+因为旧版默认账号访问方式不具备当前的身份隔离。

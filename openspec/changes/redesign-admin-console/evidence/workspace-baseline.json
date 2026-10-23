@@ -1,0 +1,10 @@
+{
+  "head": "b767b6bb5f309a60d55b6a1fdd8499fdf99b4633",
+  "tracked_dirty_files": {
+    "front/src/views/AdminUsersView.vue": "c9ca2fc539e2d33c11523f61687b368b50948cc21a8d1cbc4b68bc3347449073",
+    "openspec/changes/add-admin-console/evidence/verification.md": "75cb62c58df0746d818804b8a0fd99a6dac9c36b33ea0a8ddbb6590661daf787",
+    "openspec/changes/add-admin-console/specs/admin-console/spec.md": "c08dea70bc5f917f4b808cb540a2094e2b00b7f6c03548bbafbc6d03a605ab7e",
+    "openspec/changes/add-admin-console/tasks.md": "00912b0ec09f84eda00fd2f3d680d7a6cff36646e89610d5577771aa57397a2b"
+  },
+  "status": " M front/src/views/AdminUsersView.vue\n M openspec/changes/add-admin-console/evidence/verification.md\n M openspec/changes/add-admin-console/specs/admin-console/spec.md\n M openspec/changes/add-admin-console/tasks.md\n?? .playwright-mcp/\n?? knowra-new-settings-popover.png\n?? knowra-new-welcome.png\n?? openspec/changes/redesign-admin-console/\n"
+}

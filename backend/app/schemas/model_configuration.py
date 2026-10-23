@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
+from app.schemas.common import UtcDateTime
+
 ModelKind = Literal["chat", "embedding", "rerank", "query_rewrite"]
 
 
@@ -95,6 +97,35 @@ class ModelRead(BaseModel):
     api_format: str | None
     created_at: datetime
     updated_at: datetime
+    revision: int
+
+
+class ModelProbeRead(BaseModel):
+    probe_id: UUID
+    status: Literal["running", "passed", "failed", "interrupted"]
+    code: str
+    detail: str
+    latency_ms: float | None
+    checked_at: UtcDateTime
+    config_revision: int
+    is_current: bool
+
+
+class ModelProbeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_revision: int = Field(strict=True, ge=1)
+
+
+class EffectiveModel(BaseModel):
+    kind: ModelKind
+    source: Literal["profile", "environment"]
+    enabled: bool
+    profile_id: UUID | None
+    model: str
+    profile_revision: int | None
+    binding_revision: int
+    configuration_status: Literal["ok", "unavailable", "disabled"]
+    latest_probe: ModelProbeRead | None
 
 
 class ModelPage(BaseModel):

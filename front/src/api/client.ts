@@ -17,6 +17,7 @@ export class ApiError extends Error {
     public status: number,
     public code: string | null,
     public detail: string,
+    public traceId: string | null = null,
   ) {
     super(detail)
     this.name = "ApiError"
@@ -58,7 +59,10 @@ export async function apiFetch(
   ) {
     unauthorizedHandler?.()
   }
-  log().debug("API 请求完成", { path, status: response.status })
+  log().debug("API 请求完成", {
+    path: path.split("?")[0],
+    status: response.status,
+  })
   return response
 }
 
@@ -81,7 +85,12 @@ async function readResponse<T>(response: Response): Promise<T> {
     } catch {
       /* A proxy can return a non-JSON error body. */
     }
-    throw new ApiError(response.status, code, detail)
+    throw new ApiError(
+      response.status,
+      code,
+      detail,
+      response.headers?.get?.("X-Trace-ID") ?? null,
+    )
   }
   return response.status === 204
     ? (undefined as T)
@@ -121,6 +130,10 @@ export function apiPostJson<T = void>(
 }
 export function apiPatchJson<T>(path: string, body: unknown): Promise<T> {
   return writeJson<T>("PATCH", path, body)
+}
+
+export function apiPutJson<T>(path: string, body: unknown): Promise<T> {
+  return writeJson<T>("PUT", path, body)
 }
 
 export function apiDelete(path: string): Promise<void> {

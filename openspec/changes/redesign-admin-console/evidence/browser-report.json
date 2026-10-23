@@ -1,0 +1,41 @@
+{
+  "screens": [
+    "admin-overview-1440.png",
+    "admin-users-1440.png",
+    "admin-models-1440.png",
+    "admin-jobs-1440.png",
+    "admin-audit-1440.png",
+    "admin-system-1440.png",
+    "admin-overview-768.png",
+    "admin-users-768.png",
+    "admin-models-768.png",
+    "admin-jobs-768.png",
+    "admin-audit-768.png",
+    "admin-system-768.png",
+    "admin-overview-320.png",
+    "admin-users-320.png",
+    "admin-models-320.png",
+    "admin-jobs-320.png",
+    "admin-audit-320.png",
+    "admin-system-320.png"
+  ],
+  "checks": [
+    "six pages 1440px",
+    "six pages and responsive navigation 768px",
+    "six pages and responsive navigation 320px",
+    "quota confirmation, nested Esc and focus trap",
+    "revoke live sessions, repeat-safe read and authentication effect",
+    "delete requires exact target email and cancellation",
+    "password form closes and clears secrets",
+    "local model explicit diagnostic does not activate",
+    "model edit, stale diagnostic, retest and explicit activation",
+    "task filters, real attempts and missing-stage timeline without private content",
+    "activation audit query and trace copying",
+    "real PostgreSQL/pgvector status and instance scope",
+    "320px full-screen detail without horizontal overflow",
+    "member cannot request management data or API",
+    "viewer cannot request management data or API",
+    "anonymous routes redirect to login"
+  ],
+  "errors": []
+}

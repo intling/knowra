@@ -1,6 +1,7 @@
 """系统模型配置管理、加密与不可变运行时快照。"""
 
-from uuid import UUID
+from datetime import UTC, timedelta
+from uuid import UUID, uuid4
 
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import ValidationError
@@ -9,10 +10,19 @@ from sqlmodel import Session, func, select
 from app.core.config import Settings
 from app.core.errors import AppError
 from app.core.logging import get_logger
+from app.models.admin_operations import ModelProbeResult
 from app.models.document_embedding import DocumentEmbeddingJob
 from app.models.model_configuration import MODEL_KINDS, ModelBinding, ModelProfile
 from app.models.user import User, utc_now
-from app.schemas.model_configuration import ModelCreate, ModelPage, ModelRead, ModelUpdate
+from app.schemas.model_configuration import (
+    EffectiveModel,
+    ModelCreate,
+    ModelPage,
+    ModelProbeRead,
+    ModelRead,
+    ModelUpdate,
+)
+from app.services.admin_audit import admin_operation
 from app.services.user_admin import lock_admins
 
 logger = get_logger(__name__)
@@ -101,12 +111,23 @@ def list_profiles(session: Session, *, offset: int, limit: int, kind: str | None
 def create_profile(
     session: Session, actor: User, payload: ModelCreate, settings: Settings
 ) -> ModelRead:
-    lock_admins(session, actor)
-    key = payload.api_key.get_secret_value()
-    encrypted = _cipher(settings).encrypt(key.encode()).decode() if key else None
-    profile = ModelProfile(**payload.model_dump(exclude={"api_key"}), api_key_encrypted=encrypted)
-    session.add(profile)
-    session.commit()
+    profile_id = uuid4()
+    with admin_operation(session, actor, "model.create", profile_id) as audit:
+        lock_admins(session, actor)
+        key = payload.api_key.get_secret_value()
+        encrypted = _cipher(settings).encrypt(key.encode()).decode() if key else None
+        profile = ModelProfile(
+            id=profile_id,
+            **payload.model_dump(exclude={"api_key"}),
+            api_key_encrypted=encrypted,
+        )
+        session.add(profile)
+        audit.capture(
+            {},
+            profile.model_dump(exclude={"api_key_encrypted"}),
+            secret_changed=bool(encrypted),
+            endpoint_changed=True,
+        )
     session.refresh(profile)
     logger.info(
         "管理员创建模型配置",
@@ -166,59 +187,69 @@ def guard_embedding_change(
 def update_profile(
     session: Session, actor: User, profile_id: UUID, payload: ModelUpdate, settings: Settings
 ) -> ModelRead:
-    lock_admins(session, actor)
-    profile = _profile(session, profile_id)
-    binding = lock_model_binding(session, profile.kind)
-    changes = payload.model_dump(exclude_unset=True, exclude={"api_key", "clear_api_key"})
-    key = payload.api_key.get_secret_value()
-    if (
-        not changes
-        and not key
-        and not payload.clear_api_key
-        and "api_key" not in payload.model_fields_set
-    ):
-        raise AppError(422, "empty_update", "请至少提供一项模型配置变更")
-    is_default = binding.profile_id == profile.id
-    if is_default and changes.get("enabled") is False:
-        raise AppError(409, "model_in_use", "请先切换默认模型或恢复环境配置，再禁用")
-    fields = {
-        key: getattr(profile, key)
-        for key in (
-            "kind",
-            "name",
-            "base_url",
-            "model",
-            "enabled",
-            "timeout_seconds",
-            "max_retries",
-            "dimensions",
-            "api_format",
+    with admin_operation(session, actor, "model.update", profile_id) as audit:
+        lock_admins(session, actor)
+        profile = _profile(session, profile_id)
+        binding = lock_model_binding(session, profile.kind)
+        changes = payload.model_dump(exclude_unset=True, exclude={"api_key", "clear_api_key"})
+        key = payload.api_key.get_secret_value()
+        if (
+            not changes
+            and not key
+            and not payload.clear_api_key
+            and "api_key" not in payload.model_fields_set
+        ):
+            raise AppError(422, "empty_update", "请至少提供一项模型配置变更")
+        is_default = binding.profile_id == profile.id
+        if is_default and changes.get("enabled") is False:
+            raise AppError(409, "model_in_use", "请先切换默认模型或恢复环境配置，再禁用")
+        fields = {
+            key: getattr(profile, key)
+            for key in (
+                "kind",
+                "name",
+                "base_url",
+                "model",
+                "enabled",
+                "timeout_seconds",
+                "max_retries",
+                "dimensions",
+                "api_format",
+            )
+        }
+        # 先完整验证更新后的用途字段，任何失败均不产生部分写入。
+        try:
+            validated = ModelCreate.model_validate(fields | changes)
+        except ValidationError:
+            raise AppError(
+                422, "invalid_model_configuration", "模型用途与维度或重排协议不匹配"
+            ) from None
+        candidate = ModelProfile(**validated.model_dump(exclude={"api_key"}))
+        if is_default and profile.kind == "embedding":
+            guard_embedding_change(session, settings, candidate)
+        encrypted = (
+            _cipher(settings).encrypt(key.encode()).decode() if key else profile.api_key_encrypted
         )
-    }
-    # 先完整验证更新后的用途字段，任何失败均不产生部分写入。
-    try:
-        validated = ModelCreate.model_validate(fields | changes)
-    except ValidationError:
-        raise AppError(
-            422, "invalid_model_configuration", "模型用途与维度或重排协议不匹配"
-        ) from None
-    candidate = ModelProfile(**validated.model_dump(exclude={"api_key"}))
-    if is_default and profile.kind == "embedding":
-        guard_embedding_change(session, settings, candidate)
-    encrypted = (
-        _cipher(settings).encrypt(key.encode()).decode() if key else profile.api_key_encrypted
-    )
-    if payload.clear_api_key:
-        encrypted = None
-    for field, value in validated.model_dump(exclude={"api_key"}).items():
-        setattr(profile, field, value)
-    profile.api_key_encrypted = encrypted
-    profile.updated_at = utc_now()
-    if is_default:
-        binding.revision += 1
-        session.add(binding)
-    session.add(profile)
-    session.commit()
+        if payload.clear_api_key:
+            encrypted = None
+        before = profile.model_dump(exclude={"api_key_encrypted"})
+        secret_changed = profile.api_key_encrypted != encrypted
+        endpoint_changed = profile.base_url != validated.base_url
+        for field, value in validated.model_dump(exclude={"api_key"}).items():
+            setattr(profile, field, value)
+        profile.api_key_encrypted = encrypted
+        profile.revision += 1
+        profile.updated_at = utc_now()
+        if is_default:
+            binding.revision += 1
+            session.add(binding)
+        session.add(profile)
+        audit.capture(
+            before,
+            profile.model_dump(exclude={"api_key_encrypted"}),
+            secret_changed=secret_changed,
+            endpoint_changed=endpoint_changed,
+        )
     logger.info("管理员更新模型配置", profile_id=str(profile.id), actor_user_id=str(actor.id))
     return public_profile(session, profile)
 
@@ -226,19 +257,24 @@ def update_profile(
 def change_binding(
     session: Session, actor: User, profile_id: UUID, settings: Settings, *, activate: bool
 ) -> ModelRead:
-    lock_admins(session, actor)
-    profile = _profile(session, profile_id)
-    binding = lock_model_binding(session, profile.kind)
-    if activate and not profile.enabled:
-        raise AppError(409, "model_disabled", "禁用的模型配置不能设为默认")
-    if not activate and binding.profile_id != profile.id:
-        raise AppError(409, "model_not_active", "该配置不是当前默认模型")
-    if profile.kind == "embedding":
-        guard_embedding_change(session, settings, profile if activate else None)
-    binding.profile_id = profile.id if activate else None
-    binding.revision += 1
-    session.add(binding)
-    session.commit()
+    action = "model.activate" if activate else "model.deactivate"
+    with admin_operation(session, actor, action, profile_id) as audit:
+        lock_admins(session, actor)
+        profile = _profile(session, profile_id)
+        binding = lock_model_binding(session, profile.kind)
+        if activate and not profile.enabled:
+            raise AppError(409, "model_disabled", "禁用的模型配置不能设为默认")
+        if not activate and binding.profile_id != profile.id:
+            raise AppError(409, "model_not_active", "该配置不是当前默认模型")
+        if profile.kind == "embedding":
+            guard_embedding_change(session, settings, profile if activate else None)
+        before = {"default_profile_id": binding.profile_id, "binding_revision": binding.revision}
+        binding.profile_id = profile.id if activate else None
+        binding.revision += 1
+        session.add(binding)
+        audit.capture(
+            before, {"default_profile_id": binding.profile_id, "binding_revision": binding.revision}
+        )
     logger.info(
         "管理员切换默认模型",
         profile_id=str(profile.id),
@@ -250,14 +286,116 @@ def change_binding(
 
 
 def delete_profile(session: Session, actor: User, profile_id: UUID) -> None:
-    lock_admins(session, actor)
-    profile = _profile(session, profile_id)
-    binding = lock_model_binding(session, profile.kind)
-    if binding.profile_id == profile.id:
-        raise AppError(409, "model_in_use", "请先切换默认模型或恢复环境配置，再删除")
-    session.delete(profile)
-    session.commit()
+    with admin_operation(session, actor, "model.delete", profile_id) as audit:
+        lock_admins(session, actor)
+        profile = _profile(session, profile_id)
+        binding = lock_model_binding(session, profile.kind)
+        if binding.profile_id == profile.id:
+            raise AppError(409, "model_in_use", "请先切换默认模型或恢复环境配置，再删除")
+        audit.capture(
+            profile.model_dump(exclude={"api_key_encrypted"}),
+            {},
+            secret_changed=bool(profile.api_key_encrypted),
+            endpoint_changed=True,
+        )
+        session.delete(profile)
     logger.info("管理员删除模型配置", profile_id=str(profile_id), actor_user_id=str(actor.id))
+
+
+PROBE_DETAILS = {
+    "model_test_passed": "连接与协议检查通过",
+    "model_test_timeout": "模型服务响应超时",
+    "model_test_auth_failed": "模型服务拒绝鉴权，请检查密钥",
+    "model_test_unreachable": "无法连接模型服务",
+    "model_test_invalid_response": "模型响应格式或向量维度不符合要求",
+    "model_test_failed": "模型服务测试未通过",
+    "model_test_interrupted": "测试已中断，无法确认结果",
+    "model_test_running": "测试正在进行",
+}
+
+
+def probe_read(row: ModelProbeResult, profile: ModelProfile | None) -> ModelProbeRead:
+    now = utc_now()
+    expiry = (
+        row.lease_expires_at.replace(tzinfo=UTC)
+        if row.lease_expires_at.tzinfo is None
+        else row.lease_expires_at
+    )
+    status = "interrupted" if row.status == "running" and expiry <= now else row.status
+    code = row.code or (
+        "model_test_interrupted" if status == "interrupted" else "model_test_running"
+    )
+    code = code if code in PROBE_DETAILS else "model_test_failed"
+    checked = row.finished_at or row.started_at
+    checked = checked.replace(tzinfo=UTC) if checked.tzinfo is None else checked
+    return ModelProbeRead(
+        probe_id=row.id,
+        status=status,
+        code=code,
+        detail=PROBE_DETAILS[code],
+        latency_ms=row.latency_ms,
+        checked_at=checked,
+        config_revision=row.profile_revision,
+        is_current=bool(
+            profile
+            and row.profile_revision == profile.revision
+            and status in {"passed", "failed"}
+            and now - timedelta(minutes=15) <= checked <= now
+        ),
+    )
+
+
+def effective_models(session: Session, settings: Settings) -> list[EffectiveModel]:
+    result = []
+    for kind in MODEL_KINDS:
+        binding = session.get(ModelBinding, kind, populate_existing=True)
+        profile = (
+            session.get(ModelProfile, binding.profile_id, populate_existing=True)
+            if binding and binding.profile_id
+            else None
+        )
+        prefix = "document_embedding" if kind == "embedding" else kind
+        enabled = (
+            profile.enabled
+            if profile
+            else (True if kind == "chat" else getattr(settings, f"{prefix}_enabled"))
+        )
+        model = profile.model if profile else getattr(settings, f"{prefix}_model")
+        endpoint = profile.base_url if profile else getattr(settings, f"{prefix}_api_base_url")
+        available = bool(model and endpoint)
+        if profile:
+            try:
+                _decrypt(profile.api_key_encrypted, settings)
+            except AppError:
+                available = False
+        latest = (
+            session.exec(
+                select(ModelProbeResult)
+                .where(ModelProbeResult.profile_id == profile.id)
+                .order_by(ModelProbeResult.started_at.desc(), ModelProbeResult.id.desc())
+                .limit(1)
+            ).first()
+            if profile
+            else None
+        )
+        result.append(
+            EffectiveModel(
+                kind=kind,
+                source="profile" if profile else "environment",
+                enabled=enabled,
+                profile_id=profile.id if profile else None,
+                model=model,
+                profile_revision=profile.revision if profile else None,
+                binding_revision=binding.revision if binding else 0,
+                configuration_status="disabled"
+                if not enabled
+                else "ok"
+                if available
+                else "unavailable",
+                latest_probe=probe_read(latest, profile) if latest else None,
+            )
+        )
+    return result
 
 
 def resolve_model_settings(session: Session, settings: Settings) -> Settings:

@@ -1,0 +1,29 @@
+
+> knowra-front@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts (21 tests | 1 failed) 221ms
+       × danger=true 时确认按钮使用红色样式 16ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/shared/__tests__/ConfirmDialog.spec.ts > ConfirmDialog > 危险模式 > danger=true 时确认按钮使用红色样式
+AssertionError: expected [ …(9) ] to include 'bg-red-600'
+ ❯ src/components/shared/__tests__/ConfirmDialog.spec.ts:210:29
+    208|
+    209|       const btn = wrapper.find('[data-testid="confirm-dialog-confirm-b…
+    210|       expect(btn.classes()).toContain("bg-red-600")
+       |                             ^
+    211|     })
+    212|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 57 passed (58)
+      Tests  1 failed | 646 passed (647)
+   Start at  18:42:12
+   Duration  29.08s (transform 5.32s, setup 0ms, import 7.52s, tests 21.15s, environment 45.00s)

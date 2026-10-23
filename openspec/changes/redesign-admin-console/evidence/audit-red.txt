@@ -1,0 +1,1170 @@
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 1ms
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF                          [100%]
+=================================== FAILURES ===================================
+____ test_existing_admin_writes_commit_exactly_one_safe_event[user.create] _____
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.create 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+---------------------------- Captured stderr setup -----------------------------
+[2m2026-10-22T09:28:51.999574Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.000146Z[0m [[32m[1minfo[0m] [1mStartup job reconciliation completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'startup_reconciliation', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:51.999574Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:60 {'reason': 'startup_reconciliation', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Startup job reconciliation completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.000146Z', 'logger': 'app.core.shutdown'}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.044247Z[0m [[32m[1minfo[0m] [1m管理员创建用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m0a668ba0-b56a-4fbe-8291-2cb18109d278[0m [36mtrace_id[0m=[35m56dca174-552c-4186-bd1a-4e76849ada66[0m [36muser_id[0m=[35m07f631cf-ea91-4cb3-9df8-0e18fa3554c4[0m
+[2m2026-10-22T09:28:52.046246Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:112 {'user_id': '07f631cf-ea91-4cb3-9df8-0e18fa3554c4', 'actor_user_id': '0a668ba0-b56a-4fbe-8291-2cb18109d278', 'event': '管理员创建用户', 'trace_id': '56dca174-552c-4186-bd1a-4e76849ada66', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.044247Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.133867Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.153302Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.153667Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.133867Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.153302Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.153667Z', 'logger': 'app.core.shutdown'}
+____ test_existing_admin_writes_commit_exactly_one_safe_event[user.update] _____
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.203202Z[0m [[32m[1minfo[0m] [1m管理员更新用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35me65dd651-9043-4bf2-bf65-9c91119d1990[0m [36mrole[0m=[35mviewer[0m [36mstatus[0m=[35mdisabled[0m [36mtrace_id[0m=[35md88613be-81fc-41b9-a884-040489eacd20[0m [36muser_id[0m=[35m34155d2c-cd1c-43dc-bc97-5f005b8faa95[0m
+[2m2026-10-22T09:28:52.205075Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/34155d2c-cd1c-43dc-bc97-5f005b8faa95 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:89 {'user_id': '34155d2c-cd1c-43dc-bc97-5f005b8faa95', 'actor_user_id': 'e65dd651-9043-4bf2-bf65-9c91119d1990', 'role': 'viewer', 'status': 'disabled', 'event': '管理员更新用户', 'trace_id': 'd88613be-81fc-41b9-a884-040489eacd20', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.203202Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/34155d2c-cd1c-43dc-bc97-5f005b8faa95 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.228310Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.244616Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.245138Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.228310Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.244616Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.245138Z', 'logger': 'app.core.shutdown'}
+_ test_existing_admin_writes_commit_exactly_one_safe_event[user.reset_password] _
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.reset_password 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.292349Z[0m [[32m[1minfo[0m] [1m管理员重置密码[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m68d6bf6c-e184-4bd2-98f0-ed197ebb1443[0m [36mtrace_id[0m=[35m257c888b-2d13-4823-8916-bed08d2b5ca1[0m [36muser_id[0m=[35m5c42f4e6-fe53-4eb0-8eb5-6a56fd5cb86a[0m
+[2m2026-10-22T09:28:52.293575Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users/5c42f4e6-fe53-4eb0-8eb5-6a56fd5cb86a/reset-password "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:131 {'user_id': '5c42f4e6-fe53-4eb0-8eb5-6a56fd5cb86a', 'actor_user_id': '68d6bf6c-e184-4bd2-98f0-ed197ebb1443', 'event': '管理员重置密码', 'trace_id': '257c888b-2d13-4823-8916-bed08d2b5ca1', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.292349Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users/5c42f4e6-fe53-4eb0-8eb5-6a56fd5cb86a/reset-password "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.315117Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.331121Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.331469Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.315117Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.331121Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.331469Z', 'logger': 'app.core.shutdown'}
+____ test_existing_admin_writes_commit_exactly_one_safe_event[user.delete] _____
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.delete 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.371897Z[0m [[32m[1minfo[0m] [1m管理员删除用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m45b2d45a-fb5d-4966-ae62-635318722ca9[0m [36mtrace_id[0m=[35m419dfcc3-24c2-49cc-9811-46b034ada874[0m [36muser_id[0m=[35m0547e61e-8e2c-4d33-86f3-998b59fd8914[0m
+[2m2026-10-22T09:28:52.373444Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/users/0547e61e-8e2c-4d33-86f3-998b59fd8914 "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:146 {'user_id': '0547e61e-8e2c-4d33-86f3-998b59fd8914', 'actor_user_id': '45b2d45a-fb5d-4966-ae62-635318722ca9', 'event': '管理员删除用户', 'trace_id': '419dfcc3-24c2-49cc-9811-46b034ada874', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.371897Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/users/0547e61e-8e2c-4d33-86f3-998b59fd8914 "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.393962Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.410068Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.410536Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.393962Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.410068Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.410536Z', 'logger': 'app.core.shutdown'}
+____ test_existing_admin_writes_commit_exactly_one_safe_event[model.create] ____
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.create 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.450237Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35me16b2951-73d6-4347-836a-f4f3314535f5[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35md0cea947-f244-4868-bbb6-2909c753560a[0m [36mtrace_id[0m=[35m714f7348-7703-4e5c-a5e3-b21eced2368d[0m
+[2m2026-10-22T09:28:52.452786Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:111 {'profile_id': 'd0cea947-f244-4868-bbb6-2909c753560a', 'actor_user_id': 'e16b2951-73d6-4347-836a-f4f3314535f5', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '714f7348-7703-4e5c-a5e3-b21eced2368d', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.450237Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.472318Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.488328Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.488679Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.472318Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.488328Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.488679Z', 'logger': 'app.core.shutdown'}
+____ test_existing_admin_writes_commit_exactly_one_safe_event[model.update] ____
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.530635Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m1257a9b6-0cbb-4584-905c-aad01388e1ad[0m [36mprofile_id[0m=[35m0e96474d-ff53-4938-8b6e-d735d1c391ff[0m [36mtrace_id[0m=[35maf7e8f4b-9831-4f9a-80c6-8d5fb0a63b4f[0m
+[2m2026-10-22T09:28:52.533080Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/0e96474d-ff53-4938-8b6e-d735d1c391ff "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': '0e96474d-ff53-4938-8b6e-d735d1c391ff', 'actor_user_id': '1257a9b6-0cbb-4584-905c-aad01388e1ad', 'event': '管理员更新模型配置', 'trace_id': 'af7e8f4b-9831-4f9a-80c6-8d5fb0a63b4f', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.530635Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/0e96474d-ff53-4938-8b6e-d735d1c391ff "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.553022Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.568404Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.568739Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.553022Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.568404Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.568739Z', 'logger': 'app.core.shutdown'}
+___ test_existing_admin_writes_commit_exactly_one_safe_event[model.activate] ___
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.activate 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.610747Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35md26e9b54-bfef-4ee9-aff5-baf07fd02588[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m67103275-1c51-4a40-b0a5-188c4be82960[0m [36mtrace_id[0m=[35m0311c603-1871-4b08-86ff-584449a8dc99[0m
+[2m2026-10-22T09:28:52.614232Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/67103275-1c51-4a40-b0a5-188c4be82960/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': '67103275-1c51-4a40-b0a5-188c4be82960', 'actor_user_id': 'd26e9b54-bfef-4ee9-aff5-baf07fd02588', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '0311c603-1871-4b08-86ff-584449a8dc99', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.610747Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/67103275-1c51-4a40-b0a5-188c4be82960/activate "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.635145Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.651611Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.651990Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.635145Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.651611Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.651990Z', 'logger': 'app.core.shutdown'}
+__ test_existing_admin_writes_commit_exactly_one_safe_event[model.deactivate] __
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.deactivate 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.703548Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mFalse[0m [36mactor_user_id[0m=[35md44a47fb-672b-424c-83d5-9e2141cd2c5c[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m4a1d8dc7-4058-4512-b081-5517f4debc35[0m [36mtrace_id[0m=[35m025cc7e4-6be8-44db-92cd-d6d57de092b2[0m
+[2m2026-10-22T09:28:52.705932Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/4a1d8dc7-4058-4512-b081-5517f4debc35/deactivate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': '4a1d8dc7-4058-4512-b081-5517f4debc35', 'actor_user_id': 'd44a47fb-672b-424c-83d5-9e2141cd2c5c', 'kind': 'chat', 'activate': False, 'event': '管理员切换默认模型', 'trace_id': '025cc7e4-6be8-44db-92cd-d6d57de092b2', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.703548Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/4a1d8dc7-4058-4512-b081-5517f4debc35/deactivate "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.726606Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.742854Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.743250Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.726606Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.742854Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.743250Z', 'logger': 'app.core.shutdown'}
+____ test_existing_admin_writes_commit_exactly_one_safe_event[model.delete] ____
+tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.delete 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.782247Z[0m [[32m[1minfo[0m] [1m管理员删除模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m0c4c7640-0cac-44e4-9d49-e5e336dd727b[0m [36mprofile_id[0m=[35m9165d1a5-e071-4a51-8846-c94d2ad7b652[0m [36mtrace_id[0m=[35m216a3ffe-616c-4b4f-aa87-2dc2b6264b30[0m
+[2m2026-10-22T09:28:52.783500Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/models/9165d1a5-e071-4a51-8846-c94d2ad7b652 "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:260 {'profile_id': '9165d1a5-e071-4a51-8846-c94d2ad7b652', 'actor_user_id': '0c4c7640-0cac-44e4-9d49-e5e336dd727b', 'event': '管理员删除模型配置', 'trace_id': '216a3ffe-616c-4b4f-aa87-2dc2b6264b30', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.782247Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/models/9165d1a5-e071-4a51-8846-c94d2ad7b652 "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.803589Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.819388Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.819755Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.803589Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.819388Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.819755Z', 'logger': 'app.core.shutdown'}
+____ test_model_audit_excludes_endpoint_names_and_all_secret_material[chat] ____
+tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: chat 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.852694Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mfb4d438a-d203-4196-a750-7353f66ad788[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m6a251c7d-9bd1-4550-a563-9bd278d3a90d[0m [36mtrace_id[0m=[35m01a162f1-236c-7118-8f8d-4fee72232829[0m
+[2m2026-10-22T09:28:52.855047Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.865588Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mfb4d438a-d203-4196-a750-7353f66ad788[0m [36mprofile_id[0m=[35m6a251c7d-9bd1-4550-a563-9bd278d3a90d[0m [36mtrace_id[0m=[35m01a162f1-2379-733a-9087-d94f5a7dcb4b[0m
+[2m2026-10-22T09:28:52.867683Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.874283Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35mfb4d438a-d203-4196-a750-7353f66ad788[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m6a251c7d-9bd1-4550-a563-9bd278d3a90d[0m [36mtrace_id[0m=[35m01a162f1-2385-72f2-8666-d41a1766044c[0m
+[2m2026-10-22T09:28:52.875995Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.881601Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mFalse[0m [36mactor_user_id[0m=[35mfb4d438a-d203-4196-a750-7353f66ad788[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m6a251c7d-9bd1-4550-a563-9bd278d3a90d[0m [36mtrace_id[0m=[35m01a162f1-238c-71d2-8430-20cb0c82a4c0[0m
+[2m2026-10-22T09:28:52.883374Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d/deactivate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.888814Z[0m [[32m[1minfo[0m] [1m管理员删除模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mfb4d438a-d203-4196-a750-7353f66ad788[0m [36mprofile_id[0m=[35m6a251c7d-9bd1-4550-a563-9bd278d3a90d[0m [36mtrace_id[0m=[35m01a162f1-2394-777c-a0f9-c8ce9c379902[0m
+[2m2026-10-22T09:28:52.890009Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:111 {'profile_id': '6a251c7d-9bd1-4550-a563-9bd278d3a90d', 'actor_user_id': 'fb4d438a-d203-4196-a750-7353f66ad788', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a162f1-236c-7118-8f8d-4fee72232829', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.852694Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': '6a251c7d-9bd1-4550-a563-9bd278d3a90d', 'actor_user_id': 'fb4d438a-d203-4196-a750-7353f66ad788', 'event': '管理员更新模型配置', 'trace_id': '01a162f1-2379-733a-9087-d94f5a7dcb4b', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.865588Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': '6a251c7d-9bd1-4550-a563-9bd278d3a90d', 'actor_user_id': 'fb4d438a-d203-4196-a750-7353f66ad788', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-2385-72f2-8666-d41a1766044c', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.874283Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d/activate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': '6a251c7d-9bd1-4550-a563-9bd278d3a90d', 'actor_user_id': 'fb4d438a-d203-4196-a750-7353f66ad788', 'kind': 'chat', 'activate': False, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-238c-71d2-8430-20cb0c82a4c0', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.881601Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d/deactivate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:260 {'profile_id': '6a251c7d-9bd1-4550-a563-9bd278d3a90d', 'actor_user_id': 'fb4d438a-d203-4196-a750-7353f66ad788', 'event': '管理员删除模型配置', 'trace_id': '01a162f1-2394-777c-a0f9-c8ce9c379902', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.888814Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/models/6a251c7d-9bd1-4550-a563-9bd278d3a90d "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:52.904897Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.920611Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.920999Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.904897Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.920611Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.920999Z', 'logger': 'app.core.shutdown'}
+_ test_model_audit_excludes_endpoint_names_and_all_secret_material[embedding] __
+tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: embedding 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:52.953335Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb2b70a5a-ee39-4b0d-8094-a3ea94c42fad[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35mbdb390b0-a1a4-4846-92c5-1b75aee49635[0m [36mtrace_id[0m=[35m01a162f1-23d1-7884-8d04-e99cce4b89f5[0m
+[2m2026-10-22T09:28:52.955636Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.966200Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb2b70a5a-ee39-4b0d-8094-a3ea94c42fad[0m [36mprofile_id[0m=[35mbdb390b0-a1a4-4846-92c5-1b75aee49635[0m [36mtrace_id[0m=[35m01a162f1-23dd-750e-8799-0cf203d652e6[0m
+[2m2026-10-22T09:28:52.968231Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.976223Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35mb2b70a5a-ee39-4b0d-8094-a3ea94c42fad[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35mbdb390b0-a1a4-4846-92c5-1b75aee49635[0m [36mtrace_id[0m=[35m01a162f1-23e9-71e0-b020-d52708a497cb[0m
+[2m2026-10-22T09:28:52.977989Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.984390Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mFalse[0m [36mactor_user_id[0m=[35mb2b70a5a-ee39-4b0d-8094-a3ea94c42fad[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35mbdb390b0-a1a4-4846-92c5-1b75aee49635[0m [36mtrace_id[0m=[35m01a162f1-23f2-7047-ad32-c96daf6acb38[0m
+[2m2026-10-22T09:28:52.986112Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635/deactivate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:52.991476Z[0m [[32m[1minfo[0m] [1m管理员删除模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb2b70a5a-ee39-4b0d-8094-a3ea94c42fad[0m [36mprofile_id[0m=[35mbdb390b0-a1a4-4846-92c5-1b75aee49635[0m [36mtrace_id[0m=[35m01a162f1-23fb-74e4-a65f-b681bdd5c671[0m
+[2m2026-10-22T09:28:52.992522Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635 "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:111 {'profile_id': 'bdb390b0-a1a4-4846-92c5-1b75aee49635', 'actor_user_id': 'b2b70a5a-ee39-4b0d-8094-a3ea94c42fad', 'kind': 'embedding', 'event': '管理员创建模型配置', 'trace_id': '01a162f1-23d1-7884-8d04-e99cce4b89f5', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.953335Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': 'bdb390b0-a1a4-4846-92c5-1b75aee49635', 'actor_user_id': 'b2b70a5a-ee39-4b0d-8094-a3ea94c42fad', 'event': '管理员更新模型配置', 'trace_id': '01a162f1-23dd-750e-8799-0cf203d652e6', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.966200Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635 "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': 'bdb390b0-a1a4-4846-92c5-1b75aee49635', 'actor_user_id': 'b2b70a5a-ee39-4b0d-8094-a3ea94c42fad', 'kind': 'embedding', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-23e9-71e0-b020-d52708a497cb', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.976223Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635/activate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': 'bdb390b0-a1a4-4846-92c5-1b75aee49635', 'actor_user_id': 'b2b70a5a-ee39-4b0d-8094-a3ea94c42fad', 'kind': 'embedding', 'activate': False, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-23f2-7047-ad32-c96daf6acb38', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.984390Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635/deactivate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:260 {'profile_id': 'bdb390b0-a1a4-4846-92c5-1b75aee49635', 'actor_user_id': 'b2b70a5a-ee39-4b0d-8094-a3ea94c42fad', 'event': '管理员删除模型配置', 'trace_id': '01a162f1-23fb-74e4-a65f-b681bdd5c671', 'level': 'info', 'timestamp': '2026-10-22T09:28:52.991476Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/models/bdb390b0-a1a4-4846-92c5-1b75aee49635 "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.007385Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.023623Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.024019Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.007385Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.023623Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.024019Z', 'logger': 'app.core.shutdown'}
+___ test_model_audit_excludes_endpoint_names_and_all_secret_material[rerank] ___
+tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: rerank 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.058240Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb80a591c-9b80-44e2-9b79-a162bec874dd[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m9e418d8a-126f-46aa-80f3-94ae8488d80f[0m [36mtrace_id[0m=[35m01a162f1-2439-797b-84a6-474513926a20[0m
+[2m2026-10-22T09:28:53.060482Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.071189Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb80a591c-9b80-44e2-9b79-a162bec874dd[0m [36mprofile_id[0m=[35m9e418d8a-126f-46aa-80f3-94ae8488d80f[0m [36mtrace_id[0m=[35m01a162f1-2446-7ff4-b230-c4b193929c9b[0m
+[2m2026-10-22T09:28:53.073570Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.080136Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35mb80a591c-9b80-44e2-9b79-a162bec874dd[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m9e418d8a-126f-46aa-80f3-94ae8488d80f[0m [36mtrace_id[0m=[35m01a162f1-2453-7c59-b540-deb803921602[0m
+[2m2026-10-22T09:28:53.082007Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.087967Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mFalse[0m [36mactor_user_id[0m=[35mb80a591c-9b80-44e2-9b79-a162bec874dd[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m9e418d8a-126f-46aa-80f3-94ae8488d80f[0m [36mtrace_id[0m=[35m01a162f1-245b-713c-9f9f-d3b640b7e6e7[0m
+[2m2026-10-22T09:28:53.089623Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f/deactivate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.094674Z[0m [[32m[1minfo[0m] [1m管理员删除模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb80a591c-9b80-44e2-9b79-a162bec874dd[0m [36mprofile_id[0m=[35m9e418d8a-126f-46aa-80f3-94ae8488d80f[0m [36mtrace_id[0m=[35m01a162f1-2462-7ba8-b219-fc10a4989c75[0m
+[2m2026-10-22T09:28:53.095674Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:111 {'profile_id': '9e418d8a-126f-46aa-80f3-94ae8488d80f', 'actor_user_id': 'b80a591c-9b80-44e2-9b79-a162bec874dd', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a162f1-2439-797b-84a6-474513926a20', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.058240Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': '9e418d8a-126f-46aa-80f3-94ae8488d80f', 'actor_user_id': 'b80a591c-9b80-44e2-9b79-a162bec874dd', 'event': '管理员更新模型配置', 'trace_id': '01a162f1-2446-7ff4-b230-c4b193929c9b', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.071189Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': '9e418d8a-126f-46aa-80f3-94ae8488d80f', 'actor_user_id': 'b80a591c-9b80-44e2-9b79-a162bec874dd', 'kind': 'rerank', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-2453-7c59-b540-deb803921602', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.080136Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f/activate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': '9e418d8a-126f-46aa-80f3-94ae8488d80f', 'actor_user_id': 'b80a591c-9b80-44e2-9b79-a162bec874dd', 'kind': 'rerank', 'activate': False, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-245b-713c-9f9f-d3b640b7e6e7', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.087967Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f/deactivate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:260 {'profile_id': '9e418d8a-126f-46aa-80f3-94ae8488d80f', 'actor_user_id': 'b80a591c-9b80-44e2-9b79-a162bec874dd', 'event': '管理员删除模型配置', 'trace_id': '01a162f1-2462-7ba8-b219-fc10a4989c75', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.094674Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/models/9e418d8a-126f-46aa-80f3-94ae8488d80f "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.116069Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.134702Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.135149Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.116069Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.134702Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.135149Z', 'logger': 'app.core.shutdown'}
+_ test_model_audit_excludes_endpoint_names_and_all_secret_material[query_rewrite] _
+tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: query_rewrite 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.172751Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mf03042f6-c6fb-4635-8e43-533c310644c1[0m [36mkind[0m=[35mquery_rewrite[0m [36mprofile_id[0m=[35me62284e2-c03b-4ec7-bbf7-5e1fe5a27306[0m [36mtrace_id[0m=[35m01a162f1-24ab-7299-ac79-9e013d5b5331[0m
+[2m2026-10-22T09:28:53.175263Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.186383Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mf03042f6-c6fb-4635-8e43-533c310644c1[0m [36mprofile_id[0m=[35me62284e2-c03b-4ec7-bbf7-5e1fe5a27306[0m [36mtrace_id[0m=[35m01a162f1-24b9-7165-9804-e16329d31216[0m
+[2m2026-10-22T09:28:53.188785Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.195656Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35mf03042f6-c6fb-4635-8e43-533c310644c1[0m [36mkind[0m=[35mquery_rewrite[0m [36mprofile_id[0m=[35me62284e2-c03b-4ec7-bbf7-5e1fe5a27306[0m [36mtrace_id[0m=[35m01a162f1-24c6-79ed-bd70-3380972987ab[0m
+[2m2026-10-22T09:28:53.197553Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.206428Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mFalse[0m [36mactor_user_id[0m=[35mf03042f6-c6fb-4635-8e43-533c310644c1[0m [36mkind[0m=[35mquery_rewrite[0m [36mprofile_id[0m=[35me62284e2-c03b-4ec7-bbf7-5e1fe5a27306[0m [36mtrace_id[0m=[35m01a162f1-24ce-7f78-bcfa-88939a3c1cb7[0m
+[2m2026-10-22T09:28:53.208758Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306/deactivate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.222981Z[0m [[32m[1minfo[0m] [1m管理员删除模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mf03042f6-c6fb-4635-8e43-533c310644c1[0m [36mprofile_id[0m=[35me62284e2-c03b-4ec7-bbf7-5e1fe5a27306[0m [36mtrace_id[0m=[35m01a162f1-24d9-7232-bfc8-27ee6dfdea0c[0m
+[2m2026-10-22T09:28:53.224170Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306 "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:111 {'profile_id': 'e62284e2-c03b-4ec7-bbf7-5e1fe5a27306', 'actor_user_id': 'f03042f6-c6fb-4635-8e43-533c310644c1', 'kind': 'query_rewrite', 'event': '管理员创建模型配置', 'trace_id': '01a162f1-24ab-7299-ac79-9e013d5b5331', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.172751Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': 'e62284e2-c03b-4ec7-bbf7-5e1fe5a27306', 'actor_user_id': 'f03042f6-c6fb-4635-8e43-533c310644c1', 'event': '管理员更新模型配置', 'trace_id': '01a162f1-24b9-7165-9804-e16329d31216', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.186383Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306 "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': 'e62284e2-c03b-4ec7-bbf7-5e1fe5a27306', 'actor_user_id': 'f03042f6-c6fb-4635-8e43-533c310644c1', 'kind': 'query_rewrite', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-24c6-79ed-bd70-3380972987ab', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.195656Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306/activate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': 'e62284e2-c03b-4ec7-bbf7-5e1fe5a27306', 'actor_user_id': 'f03042f6-c6fb-4635-8e43-533c310644c1', 'kind': 'query_rewrite', 'activate': False, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-24ce-7f78-bcfa-88939a3c1cb7', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.206428Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306/deactivate "HTTP/1.1 200 OK"
+INFO     app.services.model_configuration:model_configuration.py:260 {'profile_id': 'e62284e2-c03b-4ec7-bbf7-5e1fe5a27306', 'actor_user_id': 'f03042f6-c6fb-4635-8e43-533c310644c1', 'event': '管理员删除模型配置', 'trace_id': '01a162f1-24d9-7232-bfc8-27ee6dfdea0c', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.222981Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/models/e62284e2-c03b-4ec7-bbf7-5e1fe5a27306 "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.240188Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.258829Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.261585Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.240188Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.258829Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.261585Z', 'logger': 'app.core.shutdown'}
+____ test_account_audit_excludes_credentials_sessions_and_private_documents ____
+tests/admin_console/test_audit_transactions.py:383: in test_account_audit_excludes_credentials_sessions_and_private_documents
+    assert len(rows) == 4, "账号创建、重置、更新和删除应有四条持久审计，不能只输出应用日志。"
+E   AssertionError: 账号创建、重置、更新和删除应有四条持久审计，不能只输出应用日志。
+E   assert 0 == 4
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.300005Z[0m [[32m[1minfo[0m] [1m管理员创建用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35mf4b23071-a504-4e8d-9708-8dbf463584f6[0m [36mtrace_id[0m=[35m01a162f1-2528-7e4f-89e8-fa77995bd9b8[0m [36muser_id[0m=[35md0cea004-fb98-4424-a9a2-9afbfe3a4dcc[0m
+[2m2026-10-22T09:28:53.302506Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.361838Z[0m [[32m[1minfo[0m] [1m管理员重置密码[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35mf4b23071-a504-4e8d-9708-8dbf463584f6[0m [36mtrace_id[0m=[35m01a162f1-2569-7dde-ac32-fb381f9751ca[0m [36muser_id[0m=[35md0cea004-fb98-4424-a9a2-9afbfe3a4dcc[0m
+[2m2026-10-22T09:28:53.363115Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users/d0cea004-fb98-4424-a9a2-9afbfe3a4dcc/reset-password "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.373345Z[0m [[32m[1minfo[0m] [1m管理员更新用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35mf4b23071-a504-4e8d-9708-8dbf463584f6[0m [36mrole[0m=[35mviewer[0m [36mstatus[0m=[35mdisabled[0m [36mtrace_id[0m=[35m01a162f1-2574-7ccc-8f7c-5927f68399c4[0m [36muser_id[0m=[35md0cea004-fb98-4424-a9a2-9afbfe3a4dcc[0m
+[2m2026-10-22T09:28:53.375036Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/d0cea004-fb98-4424-a9a2-9afbfe3a4dcc "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.381558Z[0m [[32m[1minfo[0m] [1m管理员删除用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35mf4b23071-a504-4e8d-9708-8dbf463584f6[0m [36mtrace_id[0m=[35m01a162f1-2580-7122-9928-90adbd42f0e4[0m [36muser_id[0m=[35md0cea004-fb98-4424-a9a2-9afbfe3a4dcc[0m
+[2m2026-10-22T09:28:53.382675Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/users/d0cea004-fb98-4424-a9a2-9afbfe3a4dcc "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:112 {'user_id': 'd0cea004-fb98-4424-a9a2-9afbfe3a4dcc', 'actor_user_id': 'f4b23071-a504-4e8d-9708-8dbf463584f6', 'event': '管理员创建用户', 'trace_id': '01a162f1-2528-7e4f-89e8-fa77995bd9b8', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.300005Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"
+INFO     app.services.user_admin:user_admin.py:131 {'user_id': 'd0cea004-fb98-4424-a9a2-9afbfe3a4dcc', 'actor_user_id': 'f4b23071-a504-4e8d-9708-8dbf463584f6', 'event': '管理员重置密码', 'trace_id': '01a162f1-2569-7dde-ac32-fb381f9751ca', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.361838Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users/d0cea004-fb98-4424-a9a2-9afbfe3a4dcc/reset-password "HTTP/1.1 204 No Content"
+INFO     app.services.user_admin:user_admin.py:89 {'user_id': 'd0cea004-fb98-4424-a9a2-9afbfe3a4dcc', 'actor_user_id': 'f4b23071-a504-4e8d-9708-8dbf463584f6', 'role': 'viewer', 'status': 'disabled', 'event': '管理员更新用户', 'trace_id': '01a162f1-2574-7ccc-8f7c-5927f68399c4', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.373345Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/d0cea004-fb98-4424-a9a2-9afbfe3a4dcc "HTTP/1.1 200 OK"
+INFO     app.services.user_admin:user_admin.py:146 {'user_id': 'd0cea004-fb98-4424-a9a2-9afbfe3a4dcc', 'actor_user_id': 'f4b23071-a504-4e8d-9708-8dbf463584f6', 'event': '管理员删除用户', 'trace_id': '01a162f1-2580-7122-9928-90adbd42f0e4', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.381558Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/users/d0cea004-fb98-4424-a9a2-9afbfe3a4dcc "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.398762Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.415797Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.416213Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.398762Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.415797Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.416213Z', 'logger': 'app.core.shutdown'}
+_ test_model_audit_distinguishes_secret_and_endpoint_intent[payload0-False-False] _
+tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.457355Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mc4978cfa-ccf8-4afa-8870-31f9c6d54167[0m [36mprofile_id[0m=[35m9139acb3-202b-43af-b4ce-420798888741[0m [36mtrace_id[0m=[35m166f1124-f1c6-4c6f-bbeb-eec4bacdb4a1[0m
+[2m2026-10-22T09:28:53.459950Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/9139acb3-202b-43af-b4ce-420798888741 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': '9139acb3-202b-43af-b4ce-420798888741', 'actor_user_id': 'c4978cfa-ccf8-4afa-8870-31f9c6d54167', 'event': '管理员更新模型配置', 'trace_id': '166f1124-f1c6-4c6f-bbeb-eec4bacdb4a1', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.457355Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/9139acb3-202b-43af-b4ce-420798888741 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.481343Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.501893Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.502321Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.481343Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.501893Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.502321Z', 'logger': 'app.core.shutdown'}
+_ test_model_audit_distinguishes_secret_and_endpoint_intent[payload1-False-False] _
+tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.542893Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m4588381b-f0fe-4ae8-8744-3735c79854bc[0m [36mprofile_id[0m=[35mfc3c1bc3-ec31-4345-9176-4e6d7f4342f0[0m [36mtrace_id[0m=[35m8f6553cc-5837-42ba-8f86-34b8740d1a3d[0m
+[2m2026-10-22T09:28:53.545257Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/fc3c1bc3-ec31-4345-9176-4e6d7f4342f0 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': 'fc3c1bc3-ec31-4345-9176-4e6d7f4342f0', 'actor_user_id': '4588381b-f0fe-4ae8-8744-3735c79854bc', 'event': '管理员更新模型配置', 'trace_id': '8f6553cc-5837-42ba-8f86-34b8740d1a3d', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.542893Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/fc3c1bc3-ec31-4345-9176-4e6d7f4342f0 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.570307Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.587017Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.587370Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.570307Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.587017Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.587370Z', 'logger': 'app.core.shutdown'}
+_ test_model_audit_distinguishes_secret_and_endpoint_intent[payload2-True-False] _
+tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.808811Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m542731ab-0558-4504-9a4c-7e0272f17da4[0m [36mprofile_id[0m=[35m3233d362-ec84-4472-bfcf-14921efc2439[0m [36mtrace_id[0m=[35mef59df79-6898-4c6e-9989-722a0eede6b7[0m
+[2m2026-10-22T09:28:53.811113Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/3233d362-ec84-4472-bfcf-14921efc2439 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': '3233d362-ec84-4472-bfcf-14921efc2439', 'actor_user_id': '542731ab-0558-4504-9a4c-7e0272f17da4', 'event': '管理员更新模型配置', 'trace_id': 'ef59df79-6898-4c6e-9989-722a0eede6b7', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.808811Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/3233d362-ec84-4472-bfcf-14921efc2439 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.831673Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.848229Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.848604Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.831673Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.848229Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.848604Z', 'logger': 'app.core.shutdown'}
+_ test_model_audit_distinguishes_secret_and_endpoint_intent[payload3-True-False] _
+tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.888984Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m67ba8ffb-14f9-478f-8123-3f31239a0050[0m [36mprofile_id[0m=[35m45b403da-6c8a-47b1-beef-8950b7438616[0m [36mtrace_id[0m=[35m19f318d0-e41a-4e78-b152-94890d194200[0m
+[2m2026-10-22T09:28:53.891309Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/45b403da-6c8a-47b1-beef-8950b7438616 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': '45b403da-6c8a-47b1-beef-8950b7438616', 'actor_user_id': '67ba8ffb-14f9-478f-8123-3f31239a0050', 'event': '管理员更新模型配置', 'trace_id': '19f318d0-e41a-4e78-b152-94890d194200', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.888984Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/45b403da-6c8a-47b1-beef-8950b7438616 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.912067Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.927859Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:53.928216Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.912067Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.927859Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.928216Z', 'logger': 'app.core.shutdown'}
+_ test_model_audit_distinguishes_secret_and_endpoint_intent[payload4-False-True] _
+tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:53.967527Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mbcb41209-259a-4715-aa7e-3c8d15966c93[0m [36mprofile_id[0m=[35mc5f49a1c-edd0-4f62-ab3c-c4db9c16855c[0m [36mtrace_id[0m=[35m440ec46e-fda0-4b5b-9c3d-a20203ffef8c[0m
+[2m2026-10-22T09:28:53.970769Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/c5f49a1c-edd0-4f62-ab3c-c4db9c16855c "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': 'c5f49a1c-edd0-4f62-ab3c-c4db9c16855c', 'actor_user_id': 'bcb41209-259a-4715-aa7e-3c8d15966c93', 'event': '管理员更新模型配置', 'trace_id': '440ec46e-fda0-4b5b-9c3d-a20203ffef8c', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.967527Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/c5f49a1c-edd0-4f62-ab3c-c4db9c16855c "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:53.992337Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.010421Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.010782Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:53.992337Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.010421Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.010782Z', 'logger': 'app.core.shutdown'}
+_________ test_business_denial_is_persisted_after_rollback[last_admin] _________
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.066495Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/4b1cb311-6686-4941-bc80-72ba2c895b95 "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/4b1cb311-6686-4941-bc80-72ba2c895b95 "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.089527Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.106517Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.107129Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.089527Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.106517Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.107129Z', 'logger': 'app.core.shutdown'}
+____ test_business_denial_is_persisted_after_rollback[cannot_disable_self] _____
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.154682Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/5da1b35d-6157-4725-86b6-8fb961ca3916 "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/5da1b35d-6157-4725-86b6-8fb961ca3916 "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.186227Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.202651Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.203021Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.186227Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.202651Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.203021Z', 'logger': 'app.core.shutdown'}
+_____ test_business_denial_is_persisted_after_rollback[cannot_reset_self] ______
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.reset_password 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.250379Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users/b85df360-3e5d-409f-81a1-168a0afda11d/reset-password "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users/b85df360-3e5d-409f-81a1-168a0afda11d/reset-password "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.277016Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.292985Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.293312Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.277016Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.292985Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.293312Z', 'logger': 'app.core.shutdown'}
+_____ test_business_denial_is_persisted_after_rollback[cannot_delete_self] _____
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.delete 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.342237Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/users/4816fa06-2cdc-44ce-89bb-aacbca4421b9 "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/users/4816fa06-2cdc-44ce-89bb-aacbca4421b9 "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.366392Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.382888Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.383364Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.366392Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.382888Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.383364Z', 'logger': 'app.core.shutdown'}
+_______ test_business_denial_is_persisted_after_rollback[email_conflict] _______
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.create 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.431027Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.454005Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.470344Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.470693Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.454005Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.470344Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.470693Z', 'logger': 'app.core.shutdown'}
+_______ test_business_denial_is_persisted_after_rollback[weak_password] ________
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.reset_password 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.520817Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users/7ad9b223-c6b3-4aa4-a8a6-573d5328b586/reset-password "HTTP/1.1 422 Unprocessable Entity"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users/7ad9b223-c6b3-4aa4-a8a6-573d5328b586/reset-password "HTTP/1.1 422 Unprocessable Entity"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.549948Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.566636Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.567019Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.549948Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.566636Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.567019Z', 'logger': 'app.core.shutdown'}
+_______ test_business_denial_is_persisted_after_rollback[user_not_found] _______
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.615215Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/cd9d10b9-6242-46b5-a523-cf8997543cd9 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/cd9d10b9-6242-46b5-a523-cf8997543cd9 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.637994Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.654070Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.654494Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.637994Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.654070Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.654494Z', 'logger': 'app.core.shutdown'}
+________ test_business_denial_is_persisted_after_rollback[empty_update] ________
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.701250Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/32842c7a-e002-47e2-bf9f-77f8cf042d21 "HTTP/1.1 422 Unprocessable Entity"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/32842c7a-e002-47e2-bf9f-77f8cf042d21 "HTTP/1.1 422 Unprocessable Entity"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.723497Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.738964Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.739294Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.723497Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.738964Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.739294Z', 'logger': 'app.core.shutdown'}
+_______ test_business_denial_is_persisted_after_rollback[model_disabled] _______
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.activate 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.827184Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/81477ade-7f04-4bf7-8b7e-cca480c2f3fa/activate "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/81477ade-7f04-4bf7-8b7e-cca480c2f3fa/activate "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.857692Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.875057Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.875459Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.857692Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.875057Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.875459Z', 'logger': 'app.core.shutdown'}
+________ test_business_denial_is_persisted_after_rollback[model_in_use] ________
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.delete 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:54.932527Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/models/e0f89550-1bcf-4881-8b3a-2f58d1e75e51 "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/models/e0f89550-1bcf-4881-8b3a-2f58d1e75e51 "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:54.960401Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.976445Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:54.976817Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.960401Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.976445Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:54.976817Z', 'logger': 'app.core.shutdown'}
+______ test_business_denial_is_persisted_after_rollback[model_not_active] ______
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.deactivate 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.025097Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/c3eca2e8-7db9-4141-894f-36ec09caaa30/deactivate "HTTP/1.1 409 Conflict"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/c3eca2e8-7db9-4141-894f-36ec09caaa30/deactivate "HTTP/1.1 409 Conflict"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.047208Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.062718Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.063073Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.047208Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.062718Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.063073Z', 'logger': 'app.core.shutdown'}
+______ test_business_denial_is_persisted_after_rollback[model_not_found] _______
+tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.110803Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/ca83845d-35d1-4107-97c4-ffff89dd3a42 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/ca83845d-35d1-4107-97c4-ffff89dd3a42 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.133364Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.149112Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.149468Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.133364Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.149112Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.149468Z', 'logger': 'app.core.shutdown'}
+______ test_dependency_failure_records_failed_without_partial_model_write ______
+tests/admin_console/test_audit_transactions.py:593: in test_dependency_failure_records_failed_without_partial_model_write
+    row = only_event(auth_db, trace_id, "model.create", "failed")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.create 请求必须持久化且仅持久化一条 failed 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.190010Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 503 Service Unavailable"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 503 Service Unavailable"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.212581Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.228643Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.229044Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.212581Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.228643Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.229044Z', 'logger': 'app.core.shutdown'}
+__ test_unwritable_audit_rolls_back_entire_business_transaction[user.create] ___
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.create 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 201；响应={"id":"8c5b6205-ffd2-45b1-a499-642a83b35ba0","display_name":"不应入审计的新用户显示名","email":"audit-new-user@example.com","avatar_url":null,"status":"active","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:55.281129Z","updated_at":"2026-10-22T09:28:55.281142Z","permissions":["knowledge:read"]}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.283128Z[0m [[32m[1minfo[0m] [1m管理员创建用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35mb0c169b0-c787-43a2-9917-de4b9b74d171[0m [36mtrace_id[0m=[35m01a162f1-2cea-7051-85da-e17df14dc45f[0m [36muser_id[0m=[35m8c5b6205-ffd2-45b1-a499-642a83b35ba0[0m
+[2m2026-10-22T09:28:55.284660Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:112 {'user_id': '8c5b6205-ffd2-45b1-a499-642a83b35ba0', 'actor_user_id': 'b0c169b0-c787-43a2-9917-de4b9b74d171', 'event': '管理员创建用户', 'trace_id': '01a162f1-2cea-7051-85da-e17df14dc45f', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.283128Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.300977Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.317197Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.317573Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.300977Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.317197Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.317573Z', 'logger': 'app.core.shutdown'}
+__ test_unwritable_audit_rolls_back_entire_business_transaction[user.update] ___
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.update 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"e46f8b77-0cbe-44f4-8300-de0e107abac9","display_name":"audit-target","email":"audit-target@example.com","avatar_url":null,"status":"disabled","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:55.341306Z","updated_at":"2026-10-22T09:28:55.364330Z","permissions":["knowledge:read"]}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.367597Z[0m [[32m[1minfo[0m] [1m管理员更新用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m507c5f03-770a-46b4-a356-54ceb73a02f7[0m [36mrole[0m=[35mviewer[0m [36mstatus[0m=[35mdisabled[0m [36mtrace_id[0m=[35m01a162f1-2d3e-75d8-ad27-9eed1fbfba50[0m [36muser_id[0m=[35me46f8b77-0cbe-44f4-8300-de0e107abac9[0m
+[2m2026-10-22T09:28:55.369112Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/e46f8b77-0cbe-44f4-8300-de0e107abac9 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:89 {'user_id': 'e46f8b77-0cbe-44f4-8300-de0e107abac9', 'actor_user_id': '507c5f03-770a-46b4-a356-54ceb73a02f7', 'role': 'viewer', 'status': 'disabled', 'event': '管理员更新用户', 'trace_id': '01a162f1-2d3e-75d8-ad27-9eed1fbfba50', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.367597Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/e46f8b77-0cbe-44f4-8300-de0e107abac9 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.384574Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.400411Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.400737Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.384574Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.400411Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.400737Z', 'logger': 'app.core.shutdown'}
+_ test_unwritable_audit_rolls_back_entire_business_transaction[user.reset_password] _
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.reset_password 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.450953Z[0m [[32m[1minfo[0m] [1m管理员重置密码[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m2a9acdc7-8781-4ed7-a58a-d78008e44446[0m [36mtrace_id[0m=[35m01a162f1-2d90-7d96-9647-8d6a32428a4d[0m [36muser_id[0m=[35m1003aef5-2127-4393-b575-e0c7c5b9052f[0m
+[2m2026-10-22T09:28:55.452216Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users/1003aef5-2127-4393-b575-e0c7c5b9052f/reset-password "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:131 {'user_id': '1003aef5-2127-4393-b575-e0c7c5b9052f', 'actor_user_id': '2a9acdc7-8781-4ed7-a58a-d78008e44446', 'event': '管理员重置密码', 'trace_id': '01a162f1-2d90-7d96-9647-8d6a32428a4d', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.450953Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users/1003aef5-2127-4393-b575-e0c7c5b9052f/reset-password "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.467588Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.484350Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.484710Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.467588Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.484350Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.484710Z', 'logger': 'app.core.shutdown'}
+__ test_unwritable_audit_rolls_back_entire_business_transaction[user.delete] ___
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.delete 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.544842Z[0m [[32m[1minfo[0m] [1m管理员删除用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m03e9d855-6913-4ea5-a706-f252f18089c1[0m [36mtrace_id[0m=[35m01a162f1-2ded-7b72-b8a2-827ba21dc888[0m [36muser_id[0m=[35m028570fa-4e33-4fb2-bb63-171679363dfa[0m
+[2m2026-10-22T09:28:55.546334Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/users/028570fa-4e33-4fb2-bb63-171679363dfa "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:146 {'user_id': '028570fa-4e33-4fb2-bb63-171679363dfa', 'actor_user_id': '03e9d855-6913-4ea5-a706-f252f18089c1', 'event': '管理员删除用户', 'trace_id': '01a162f1-2ded-7b72-b8a2-827ba21dc888', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.544842Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/users/028570fa-4e33-4fb2-bb63-171679363dfa "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.569719Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.587105Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.587482Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.569719Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.587105Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.587482Z', 'logger': 'app.core.shutdown'}
+__ test_unwritable_audit_rolls_back_entire_business_transaction[model.create] __
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.create 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 201；响应={"id":"3e82c57f-7183-4b42-a55a-56cf883c9979","name":"测试 chat 配置","kind":"chat","base_url":"https://models.example/v1","model":"test-chat","enabled":true,"is_default":false,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.633679","updated_at":"2026-10-22T09:28:55.633691"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.635703Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mcc3b6383-64f3-48d4-bbe8-e95686d937e8[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m3e82c57f-7183-4b42-a55a-56cf883c9979[0m [36mtrace_id[0m=[35m01a162f1-2e4c-7f47-8e9f-b336abc313d8[0m
+[2m2026-10-22T09:28:55.638247Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:111 {'profile_id': '3e82c57f-7183-4b42-a55a-56cf883c9979', 'actor_user_id': 'cc3b6383-64f3-48d4-bbe8-e95686d937e8', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a162f1-2e4c-7f47-8e9f-b336abc313d8', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.635703Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.654472Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.671805Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.672190Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.654472Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.671805Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.672190Z', 'logger': 'app.core.shutdown'}
+__ test_unwritable_audit_rolls_back_entire_business_transaction[model.update] __
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.update 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"040e095b-01b6-421a-9c5f-454b29e2e951","name":"另一个不应入审计的显示名","kind":"chat","base_url":"https://replacement.example/v1/new-endpoint-canary","model":"audit-chat-v2","enabled":true,"is_default":false,"has_api_key":true,"timeout_seconds":20.0,"max_retries":0,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.700877","updated_at":"2026-10-22T09:28:55.721750"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.723999Z[0m [[32m[1minfo[0m] [1m管理员更新模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m35a53c98-6112-4109-b351-b4f58cb16fe6[0m [36mprofile_id[0m=[35m040e095b-01b6-421a-9c5f-454b29e2e951[0m [36mtrace_id[0m=[35m01a162f1-2ea2-7131-ae03-91ed1162819a[0m
+[2m2026-10-22T09:28:55.726397Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/models/040e095b-01b6-421a-9c5f-454b29e2e951 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:222 {'profile_id': '040e095b-01b6-421a-9c5f-454b29e2e951', 'actor_user_id': '35a53c98-6112-4109-b351-b4f58cb16fe6', 'event': '管理员更新模型配置', 'trace_id': '01a162f1-2ea2-7131-ae03-91ed1162819a', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.723999Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/models/040e095b-01b6-421a-9c5f-454b29e2e951 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.741990Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.757746Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.758144Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.741990Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.757746Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.758144Z', 'logger': 'app.core.shutdown'}
+_ test_unwritable_audit_rolls_back_entire_business_transaction[model.activate] _
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.activate 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"c51ecfc1-8852-4ae0-8443-5fa1ef29953a","name":"不应入审计的配置显示名","kind":"chat","base_url":"https://private-model.example/v1/endpoint-canary","model":"audit-chat","enabled":true,"is_default":true,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.784545","updated_at":"2026-10-22T09:28:55.784557"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.806470Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35m0d787f4f-2f20-4834-8676-bc882b592fde[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mc51ecfc1-8852-4ae0-8443-5fa1ef29953a[0m [36mtrace_id[0m=[35m01a162f1-2ef6-79cd-ab60-3f66f21a9fbf[0m
+[2m2026-10-22T09:28:55.808848Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/c51ecfc1-8852-4ae0-8443-5fa1ef29953a/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': 'c51ecfc1-8852-4ae0-8443-5fa1ef29953a', 'actor_user_id': '0d787f4f-2f20-4834-8676-bc882b592fde', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-2ef6-79cd-ab60-3f66f21a9fbf', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.806470Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/c51ecfc1-8852-4ae0-8443-5fa1ef29953a/activate "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.824901Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.840907Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.841311Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.824901Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.840907Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.841311Z', 'logger': 'app.core.shutdown'}
+_ test_unwritable_audit_rolls_back_entire_business_transaction[model.deactivate] _
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.deactivate 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"fdbc8884-7fad-4017-a10e-b063a45b9ce7","name":"不应入审计的配置显示名","kind":"chat","base_url":"https://private-model.example/v1/endpoint-canary","model":"audit-chat","enabled":true,"is_default":false,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.868371","updated_at":"2026-10-22T09:28:55.868383"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.897040Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mFalse[0m [36mactor_user_id[0m=[35m3d59447b-31b3-44ee-8ab5-11c20e183c71[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mfdbc8884-7fad-4017-a10e-b063a45b9ce7[0m [36mtrace_id[0m=[35m01a162f1-2f50-747f-a6cd-1c64ba70bd95[0m
+[2m2026-10-22T09:28:55.899407Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/fdbc8884-7fad-4017-a10e-b063a45b9ce7/deactivate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': 'fdbc8884-7fad-4017-a10e-b063a45b9ce7', 'actor_user_id': '3d59447b-31b3-44ee-8ab5-11c20e183c71', 'kind': 'chat', 'activate': False, 'event': '管理员切换默认模型', 'trace_id': '01a162f1-2f50-747f-a6cd-1c64ba70bd95', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.897040Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/fdbc8884-7fad-4017-a10e-b063a45b9ce7/deactivate "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.915810Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.931659Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:55.932078Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.915810Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.931659Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.932078Z', 'logger': 'app.core.shutdown'}
+__ test_unwritable_audit_rolls_back_entire_business_transaction[model.delete] __
+tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.delete 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:55.981745Z[0m [[32m[1minfo[0m] [1m管理员删除模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35me95622ab-9903-4196-8007-08152e0a7e38[0m [36mprofile_id[0m=[35m932c1a98-729c-496d-ae3e-9df26e579e05[0m [36mtrace_id[0m=[35m01a162f1-2fa5-745a-9264-1b83c9922e54[0m
+[2m2026-10-22T09:28:55.983039Z[0m [[32m[1minfo[0m] [1mHTTP Request: DELETE http://testserver/api/admin/models/932c1a98-729c-496d-ae3e-9df26e579e05 "HTTP/1.1 204 No Content"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:260 {'profile_id': '932c1a98-729c-496d-ae3e-9df26e579e05', 'actor_user_id': 'e95622ab-9903-4196-8007-08152e0a7e38', 'event': '管理员删除模型配置', 'trace_id': '01a162f1-2fa5-745a-9264-1b83c9922e54', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.981745Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: DELETE http://testserver/api/admin/models/932c1a98-729c-496d-ae3e-9df26e579e05 "HTTP/1.1 204 No Content"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:55.999594Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.017188Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.017576Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:55.999594Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.017188Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.017576Z', 'logger': 'app.core.shutdown'}
+_ test_rolled_back_attempt_then_retry_keeps_one_committed_success[user.create] _
+tests/admin_console/test_audit_transactions.py:630: in test_rolled_back_attempt_then_retry_keeps_one_committed_success
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 201；响应={"id":"cd7d5a74-9f81-4f7c-a43d-8db6e74f03d3","display_name":"不应入审计的新用户显示名","email":"audit-new-user@example.com","avatar_url":null,"status":"active","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:56.057464Z","updated_at":"2026-10-22T09:28:56.057476Z","permissions":["knowledge:read"]}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:56.059357Z[0m [[32m[1minfo[0m] [1m管理员创建用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m5e748afd-e80e-4b6f-b3f9-c0af67398acf[0m [36mtrace_id[0m=[35mf8d9c159-0b00-4372-964a-ad05a5b7b9d2[0m [36muser_id[0m=[35mcd7d5a74-9f81-4f7c-a43d-8db6e74f03d3[0m
+[2m2026-10-22T09:28:56.060894Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:112 {'user_id': 'cd7d5a74-9f81-4f7c-a43d-8db6e74f03d3', 'actor_user_id': '5e748afd-e80e-4b6f-b3f9-c0af67398acf', 'event': '管理员创建用户', 'trace_id': 'f8d9c159-0b00-4372-964a-ad05a5b7b9d2', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.059357Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/users "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:56.077234Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.093858Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.094290Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.077234Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.093858Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.094290Z', 'logger': 'app.core.shutdown'}
+_ test_rolled_back_attempt_then_retry_keeps_one_committed_success[user.update] _
+tests/admin_console/test_audit_transactions.py:630: in test_rolled_back_attempt_then_retry_keeps_one_committed_success
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 200；响应={"id":"562c9e74-566d-43c1-8adc-f4639b221290","display_name":"audit-target","email":"audit-target@example.com","avatar_url":null,"status":"disabled","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:56.118706Z","updated_at":"2026-10-22T09:28:56.133786Z","permissions":["knowledge:read"]}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:56.136795Z[0m [[32m[1minfo[0m] [1m管理员更新用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35m5a1e184a-f11d-460b-b013-96d6434fafac[0m [36mrole[0m=[35mviewer[0m [36mstatus[0m=[35mdisabled[0m [36mtrace_id[0m=[35m3b74bf47-4d4a-45e0-a13f-53307f338349[0m [36muser_id[0m=[35m562c9e74-566d-43c1-8adc-f4639b221290[0m
+[2m2026-10-22T09:28:56.138450Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/562c9e74-566d-43c1-8adc-f4639b221290 "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:89 {'user_id': '562c9e74-566d-43c1-8adc-f4639b221290', 'actor_user_id': '5a1e184a-f11d-460b-b013-96d6434fafac', 'role': 'viewer', 'status': 'disabled', 'event': '管理员更新用户', 'trace_id': '3b74bf47-4d4a-45e0-a13f-53307f338349', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.136795Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/562c9e74-566d-43c1-8adc-f4639b221290 "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:56.154217Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.170033Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.170422Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.154217Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.170033Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.170422Z', 'logger': 'app.core.shutdown'}
+_ test_rolled_back_attempt_then_retry_keeps_one_committed_success[model.activate] _
+tests/admin_console/test_audit_transactions.py:630: in test_rolled_back_attempt_then_retry_keeps_one_committed_success
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 200；响应={"id":"372ad4f2-5990-4841-8819-209144c7b6d4","name":"不应入审计的配置显示名","kind":"chat","base_url":"https://private-model.example/v1/endpoint-canary","model":"audit-chat","enabled":true,"is_default":true,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:56.197101","updated_at":"2026-10-22T09:28:56.197113"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:56.210101Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35m74cbc5ef-c811-4111-9167-e790990d6be8[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m372ad4f2-5990-4841-8819-209144c7b6d4[0m [36mtrace_id[0m=[35mb46c1f8b-15be-4139-ad00-b2acf086ca27[0m
+[2m2026-10-22T09:28:56.212490Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/372ad4f2-5990-4841-8819-209144c7b6d4/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:242 {'profile_id': '372ad4f2-5990-4841-8819-209144c7b6d4', 'actor_user_id': '74cbc5ef-c811-4111-9167-e790990d6be8', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': 'b46c1f8b-15be-4139-ad00-b2acf086ca27', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.210101Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/372ad4f2-5990-4841-8819-209144c7b6d4/activate "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:56.228262Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.244353Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.244723Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.228262Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.244353Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.244723Z', 'logger': 'app.core.shutdown'}
+______ test_shared_trace_does_not_deduplicate_distinct_successful_changes ______
+tests/admin_console/test_audit_transactions.py:658: in test_shared_trace_does_not_deduplicate_distinct_successful_changes
+    assert len(rows) == 2 and all(row.result == "success" for row in rows), (
+E   AssertionError: trace ID 不能充当幂等键而静默丢弃第二个已提交变更的审计。
+E   assert (0 == 2)
+E    +  where 0 = len([])
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T09:28:56.282684Z[0m [[32m[1minfo[0m] [1m管理员更新用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35medd42899-cdcb-4153-aefb-512338964964[0m [36mrole[0m=[35mviewer[0m [36mtrace_id[0m=[35m58fc2511-e746-4f32-8a4a-bafedc87a70f[0m [36muser_id[0m=[35m696489f2-24df-4cff-a152-5ba378c411ef[0m
+[2m2026-10-22T09:28:56.284239Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/696489f2-24df-4cff-a152-5ba378c411ef "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.290329Z[0m [[32m[1minfo[0m] [1m管理员更新用户[0m [[0m[1m[34mapp.services.user_admin[0m][0m [36mactor_user_id[0m=[35medd42899-cdcb-4153-aefb-512338964964[0m [36mrole[0m=[35mmember[0m [36mtrace_id[0m=[35m58fc2511-e746-4f32-8a4a-bafedc87a70f[0m [36muser_id[0m=[35m696489f2-24df-4cff-a152-5ba378c411ef[0m
+[2m2026-10-22T09:28:56.291656Z[0m [[32m[1minfo[0m] [1mHTTP Request: PATCH http://testserver/api/admin/users/696489f2-24df-4cff-a152-5ba378c411ef "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.user_admin:user_admin.py:89 {'user_id': '696489f2-24df-4cff-a152-5ba378c411ef', 'actor_user_id': 'edd42899-cdcb-4153-aefb-512338964964', 'role': 'viewer', 'event': '管理员更新用户', 'trace_id': '58fc2511-e746-4f32-8a4a-bafedc87a70f', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.282684Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/696489f2-24df-4cff-a152-5ba378c411ef "HTTP/1.1 200 OK"
+INFO     app.services.user_admin:user_admin.py:89 {'user_id': '696489f2-24df-4cff-a152-5ba378c411ef', 'actor_user_id': 'edd42899-cdcb-4153-aefb-512338964964', 'role': 'member', 'event': '管理员更新用户', 'trace_id': '58fc2511-e746-4f32-8a4a-bafedc87a70f', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.290329Z', 'logger': 'app.services.user_admin'}
+INFO     httpx:_client.py:1025 HTTP Request: PATCH http://testserver/api/admin/users/696489f2-24df-4cff-a152-5ba378c411ef "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:56.312569Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.328440Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.328793Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.312569Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.328440Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.328793Z', 'logger': 'app.core.shutdown'}
+_____________ test_inflight_actor_losing_admin_role_records_denial _____________
+tests/admin_console/test_audit_transactions.py:682: in test_inflight_actor_losing_admin_role_records_denial
+    assert len(rows) == 1 and rows[0].result == "denied", "在途失权需要持久化拒绝审计。"
+E   AssertionError: 在途失权需要持久化拒绝审计。
+E   assert (0 == 1)
+E    +  where 0 = len([])
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:56.375339Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.391308Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.391646Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.375339Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.391308Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.391646Z', 'logger': 'app.core.shutdown'}
+____ test_failure_audit_outage_preserves_original_error_and_logs_safe_event ____
+tests/admin_console/test_audit_transactions.py:698: in test_failure_audit_outage_preserves_original_error_and_logs_safe_event
+    assert "管理失败审计写入失败" in caplog.text, "失败留痕不可写时需要固定结构化故障事件。"
+E   AssertionError: 失败留痕不可写时需要固定结构化故障事件。
+E   assert '管理失败审计写入失败' in ''
+E    +  where '' = <_pytest.logging.LogCaptureFixture object at 0xedc2dd1830e0>.text
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T09:28:56.434957Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.451447Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T09:28:56.451815Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.434957Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.451447Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T09:28:56.451815Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[user.create]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[user.update]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[user.reset_password]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[user.delete]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[model.create]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[model.update]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[model.activate]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[model.deactivate]
+FAILED tests/admin_console/test_audit_transactions.py::test_existing_admin_writes_commit_exactly_one_safe_event[model.delete]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_excludes_endpoint_names_and_all_secret_material[chat]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_excludes_endpoint_names_and_all_secret_material[embedding]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_excludes_endpoint_names_and_all_secret_material[rerank]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_excludes_endpoint_names_and_all_secret_material[query_rewrite]
+FAILED tests/admin_console/test_audit_transactions.py::test_account_audit_excludes_credentials_sessions_and_private_documents
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_distinguishes_secret_and_endpoint_intent[payload0-False-False]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_distinguishes_secret_and_endpoint_intent[payload1-False-False]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_distinguishes_secret_and_endpoint_intent[payload2-True-False]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_distinguishes_secret_and_endpoint_intent[payload3-True-False]
+FAILED tests/admin_console/test_audit_transactions.py::test_model_audit_distinguishes_secret_and_endpoint_intent[payload4-False-True]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[last_admin]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[cannot_disable_self]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[cannot_reset_self]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[cannot_delete_self]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[email_conflict]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[weak_password]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[user_not_found]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[empty_update]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[model_disabled]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[model_in_use]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[model_not_active]
+FAILED tests/admin_console/test_audit_transactions.py::test_business_denial_is_persisted_after_rollback[model_not_found]
+FAILED tests/admin_console/test_audit_transactions.py::test_dependency_failure_records_failed_without_partial_model_write
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[user.create]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[user.update]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[user.reset_password]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[user.delete]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[model.create]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[model.update]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[model.activate]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[model.deactivate]
+FAILED tests/admin_console/test_audit_transactions.py::test_unwritable_audit_rolls_back_entire_business_transaction[model.delete]
+FAILED tests/admin_console/test_audit_transactions.py::test_rolled_back_attempt_then_retry_keeps_one_committed_success[user.create]
+FAILED tests/admin_console/test_audit_transactions.py::test_rolled_back_attempt_then_retry_keeps_one_committed_success[user.update]
+FAILED tests/admin_console/test_audit_transactions.py::test_rolled_back_attempt_then_retry_keeps_one_committed_success[model.activate]
+FAILED tests/admin_console/test_audit_transactions.py::test_shared_trace_does_not_deduplicate_distinct_successful_changes
+FAILED tests/admin_console/test_audit_transactions.py::test_inflight_actor_losing_admin_role_records_denial
+FAILED tests/admin_console/test_audit_transactions.py::test_failure_audit_outage_preserves_original_error_and_logs_safe_event
+47 failed in 4.60s

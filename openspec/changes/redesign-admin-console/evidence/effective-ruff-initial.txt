@@ -1,0 +1,165 @@
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 1ms
+E501 Line too long (118 > 100)
+   --> app/services/model_configuration.py:319:101
+    |
+317 | def probe_read(row: ModelProbeResult, profile: ModelProfile | None) -> ModelProbeRead:
+318 |     now = utc_now()
+319 |     expiry = row.lease_expires_at.replace(tzinfo=UTC) if row.lease_expires_at.tzinfo is None else row.lease_expires_at
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^
+320 |     status = "interrupted" if row.status == "running" and expiry <= now else row.status
+321 |     code = row.code or ("model_test_interrupted" if status == "interrupted" else "model_test_running")
+    |
+
+E501 Line too long (102 > 100)
+   --> app/services/model_configuration.py:321:101
+    |
+319 |     expiry = row.lease_expires_at.replace(tzinfo=UTC) if row.lease_expires_at.tzinfo is None else row.lease_expires_at
+320 |     status = "interrupted" if row.status == "running" and expiry <= now else row.status
+321 |     code = row.code or ("model_test_interrupted" if status == "interrupted" else "model_test_running")
+    |                                                                                                     ^^
+322 |     code = code if code in PROBE_DETAILS else "model_test_failed"
+323 |     checked = row.finished_at or row.started_at
+    |
+
+E501 Line too long (131 > 100)
+   --> app/services/model_configuration.py:337:101
+    |
+335 |     for kind in MODEL_KINDS:
+336 |         binding = session.get(ModelBinding, kind, populate_existing=True)
+337 |         profile = session.get(ModelProfile, binding.profile_id, populate_existing=True) if binding and binding.profile_id else None
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+338 |         prefix = "document_embedding" if kind == "embedding" else kind
+339 |         enabled = profile.enabled if profile else (True if kind == "chat" else getattr(settings, f"{prefix}_enabled"))
+    |
+
+E501 Line too long (118 > 100)
+   --> app/services/model_configuration.py:339:101
+    |
+337 |         profile = session.get(ModelProfile, binding.profile_id, populate_existing=True) if binding and binding.profile_id else None
+338 |         prefix = "document_embedding" if kind == "embedding" else kind
+339 |         enabled = profile.enabled if profile else (True if kind == "chat" else getattr(settings, f"{prefix}_enabled"))
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^
+340 |         model = profile.model if profile else getattr(settings, f"{prefix}_model")
+341 |         endpoint = profile.base_url if profile else getattr(settings, f"{prefix}_api_base_url")
+    |
+
+E501 Line too long (215 > 100)
+   --> app/services/model_configuration.py:348:101
+    |
+346 | …
+347 | …
+348 | …profile.id).order_by(ModelProbeResult.started_at.desc(), ModelProbeResult.id.desc()).limit(1)).first() if profile else None
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+349 | …t",
+350 | …None,
+    |
+
+E501 Line too long (105 > 100)
+   --> app/services/model_configuration.py:351:101
+    |
+349 |         result.append(EffectiveModel(kind=kind, source="profile" if profile else "environment",
+350 |                                      enabled=enabled, profile_id=profile.id if profile else None,
+351 |                                      model=model, profile_revision=profile.revision if profile else None,
+    |                                                                                                     ^^^^^
+352 |                                      binding_revision=binding.revision if binding else 0,
+353 |                                      configuration_status="disabled" if not enabled else "ok" if available else "unavailable",
+    |
+
+E501 Line too long (126 > 100)
+   --> app/services/model_configuration.py:353:101
+    |
+351 |                                      model=model, profile_revision=profile.revision if profile else None,
+352 |                                      binding_revision=binding.revision if binding else 0,
+353 |                                      configuration_status="disabled" if not enabled else "ok" if available else "unavailable",
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+354 |                                      latest_probe=probe_read(latest, profile) if latest else None))
+355 |     return result
+    |
+
+E501 Line too long (128 > 100)
+  --> tests/admin_console/test_effective_models.py:18:101
+   |
+16 |     assert {r['kind'] for r in rows} == {'chat', 'embedding', 'rerank', 'query_rewrite'}
+17 |     assert all(r['source'] == 'environment' and r['profile_id'] is None for r in rows)
+18 |     assert {r['kind']: r['enabled'] for r in rows} == {'chat': True, 'embedding': True, 'rerank': False, 'query_rewrite': False}
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |     assert 'environment-chat-test-key' not in json.dumps(rows)
+20 |     assert all(r['latest_probe'] is None for r in rows)
+   |
+
+E501 Line too long (108 > 100)
+  --> tests/admin_console/test_effective_models.py:25:101
+   |
+23 | # 验证配置修订号逐次编辑递增，切换默认只增加绑定版本，两种版本互不混淆。
+24 | @pytest.mark.parametrize('kind', ['chat', 'embedding', 'rerank', 'query_rewrite'])
+25 | def test_profile_and_binding_versions_are_distinct(auth_client, auth_db, admin_actor, model_settings, kind):
+   |                                                                                                     ^^^^^^^^
+26 |     first = create_profile(auth_client, kind)
+27 |     assert first.get('revision') == 1, '配置公开响应应新增修订号'
+   |
+
+E501 Line too long (136 > 100)
+  --> tests/admin_console/test_effective_models.py:30:100
+   |
+28 | …
+29 | …
+30 | …/admin/models/{first['id']}", json={'name': '新的名称'}), 200, '编辑应递增配置版本')
+   |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+31 | …
+32 | …/models/effective'), 200, '应返回生效配置')
+   |
+
+E501 Line too long (158 > 100)
+  --> tests/admin_console/test_effective_models.py:43:101
+   |
+42 | …
+43 | … 'passed', True), (2, 1, 'passed', False), (1, 16, 'passed', False), (1, 1, 'running', False)])
+   |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+44 | …actor, model_settings, revision, age, status, current):
+45 | …
+   |
+
+E501 Line too long (118 > 100)
+  --> tests/admin_console/test_effective_models.py:44:101
+   |
+42 | # 验证诊断参考必须同时满足配置版本和 15 分钟时效，租约到期不能冒充成功。
+43 | @pytest.mark.parametrize('revision,age,status,current', [(1, 1, 'passed', True), (2, 1, 'passed', False), (1, 16, 'passed', False), (1…
+44 | def test_effective_probe_freshness(auth_client, auth_db, admin_actor, model_settings, revision, age, status, current):
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^
+45 |     from uuid import UUID
+46 |     profile = create_profile(auth_client)
+   |
+
+E501 Line too long (377 > 100)
+  --> tests/admin_console/test_effective_models.py:49:101
+   |
+47 | …
+48 | …
+49 | …or_user_id=admin_actor.id, status=status, code='model_test_passed' if status == 'passed' else None, started_at=now-timedelta(minutes=age), finished_at=now-timedelta(minutes=age) if status == 'passed' else None, lease_expires_at=now-timedelta(seconds=1), trace_id='probe-freshness'))
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+50 | …
+51 | …[0]
+   |
+
+E501 Line too long (107 > 100)
+  --> tests/admin_console/test_effective_models.py:51:93
+   |
+49 |     auth_db.add(ModelProbeResult(profile_id=UUID(profile['id']), profile_revision=revision, actor_user_id=admin_actor.id, status=statu…
+50 |     auth_db.commit()
+51 |     effective = assert_status(auth_client.get('/api/admin/models/effective'), 200, '应包含最新诊断摘要')[0]
+   |                                                                                                     ^^^^^^^
+52 |     probe = effective['latest_probe']
+53 |     assert probe['is_current'] is current
+   |
+
+E501 Line too long (113 > 100)
+  --> tests/admin_console/test_effective_models.py:65:96
+   |
+63 |     else:
+64 |         auth_client.cookies.clear()
+65 |     assert_status(auth_client.get('/api/admin/models/effective'), 403 if role else 401, '生效配置必须要求管理员')
+   |                                                                                                      ^^^^^^^^^^^^
+   |
+
+Found 19 errors (4 fixed, 15 remaining).

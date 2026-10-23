@@ -16,6 +16,7 @@ export interface ModelProfile {
   api_format: "compatible" | "dashscope" | null
   created_at: string
   updated_at: string
+  revision: number
 }
 export interface ModelWrite {
   name: string
@@ -66,4 +67,37 @@ export function activateModel(id: string): Promise<ModelProfile> {
 }
 export function deactivateModel(id: string): Promise<ModelProfile> {
   return apiPostJson(`/admin/models/${encodeURIComponent(id)}/deactivate`)
+}
+
+export interface ModelProbe {
+  probe_id: string
+  status: "running" | "passed" | "failed" | "interrupted"
+  code: string
+  detail: string
+  latency_ms: number | null
+  checked_at: string
+  config_revision: number
+  is_current: boolean
+}
+export interface EffectiveModel {
+  kind: ModelKind
+  source: "profile" | "environment"
+  enabled: boolean
+  profile_id: string | null
+  model: string
+  profile_revision: number | null
+  binding_revision: number
+  configuration_status: "ok" | "unavailable" | "disabled"
+  latest_probe: ModelProbe | null
+}
+export function getEffectiveModels(): Promise<EffectiveModel[]> {
+  return apiGet("/admin/models/effective")
+}
+export function testModel(
+  id: string,
+  expected_revision: number,
+): Promise<ModelProbe> {
+  return apiPostJson(`/admin/models/${encodeURIComponent(id)}/test`, {
+    expected_revision,
+  })
 }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -108,6 +109,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = app_settings
+    app.state.admin_instance_id = uuid4().hex
     app.add_exception_handler(AppError, handle_app_error)
     app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.state.document_model_bootstrap_service_factory = lambda: DocumentModelBootstrapService(

@@ -1,0 +1,15 @@
+
+> knowra-front@0.1.0 lint
+> eslint .
+
+
+/root/project/knowra/front/src/views/__tests__/AdminReadPages.spec.ts
+  2:33  error  'describe' is defined but never used  @typescript-eslint/no-unused-vars
+
+/root/project/knowra/front/src/views/__tests__/AdminUserControls.spec.ts
+  2:33  error  'describe' is defined but never used  @typescript-eslint/no-unused-vars
+
+/root/project/knowra/front/src/views/__tests__/AdminWorkspace.spec.ts
+  3:21  error  'describe' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 3 problems (3 errors, 0 warnings)

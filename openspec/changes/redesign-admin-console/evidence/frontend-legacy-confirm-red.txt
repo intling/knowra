@@ -1,0 +1,36 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/views/__tests__/AdminUserControls.spec.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+stderr | src/views/__tests__/AdminUserControls.spec.ts > 无邮箱旧账号删除使用唯一账号标识
+[Vue Router warn]: No match found for location with path "/admin"
+
+ ❯ src/views/__tests__/AdminUserControls.spec.ts (7 tests | 1 failed) 687ms
+   × 无邮箱旧账号删除使用唯一账号标识 29ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/views/__tests__/AdminUserControls.spec.ts > 无邮箱旧账号删除使用唯一账号标识
+AssertionError: 旧账号没有邮箱时应明确要求完整 UUID: expected '知知寻 管理后台返回知识书房 ↗账户 菜单  工作空间 / WORKSPA…' to contain '输入完整账号 UUID 以确认'
+
+Expected: "输入完整账号 UUID 以确认"
+Received: "知知寻 管理后台返回知识书房 ↗账户 菜单  工作空间 / WORKSPACE 01运行总览02用户管理●03模型服务04处理任务05操作审计06系统状态 运行维护与访问管理私有资料始终按账号隔离  管理后台 /用户管理用户管理维护账号、角色与访问状态。管理员权限不包含读取他人的私有资料。搜索账号角色全部角色管理员成员只读状态全部状态正常已停用共 1 个账号 新增用户 数据截至 2026/10/22 18:57:37成员小张 未设置邮箱 创建于 2026/10/20 08:00:00正常角色管理员成员只读 查看详情 禁用 重置密码  删除  共 1 个账号 · 第 1 页  上一页 下一页 删除账号删除 成员小张 后，该账号立即失效，历史资料与归属会保留。此操作无法在后台恢复，确认删除？ 输入目标邮箱以确认 取消确认"
+
+ ❯ src/views/__tests__/AdminUserControls.spec.ts:187:50
+    185|   await mountUsers()
+    186|   await wrapper.get('[data-testid="admin-user-delete"]').trigger("clic…
+    187|   expect(wrapper.text(), "旧账号没有邮箱时应明确要求完整 UUID").toContain("输入完整账号 UUI…
+       |                                                  ^
+    188|   const input = wrapper.get('[data-testid="confirm-dialog-input"]')
+    189|   await input.setValue(legacy.display_name)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  18:57:35
+   Duration  1.66s (transform 421ms, setup 0ms, import 275ms, tests 687ms, environment 548ms)

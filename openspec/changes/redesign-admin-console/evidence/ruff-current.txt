@@ -1,0 +1,24 @@
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> app/services/admin_operations.py:364:9
+    |
+362 |           ):
+363 |               result[field] = value
+364 | /         elif field in CHANGE_FIELDS.get(row.action, ()):
+365 | |             if (
+366 | |                 field == "revoked_count"
+367 | |                 and type(value) is int
+368 | |                 and value >= 0
+369 | |                 or row.action == "model.test"
+370 | |                 and _safe_value(field, value)
+371 | |                 or isinstance(value, dict)
+372 | |                 and set(value) == {"before", "after"}
+373 | |                 and all(_safe_value(field, v) for v in value.values())
+374 | |             ):
+    | |______________^
+375 |                   result[field] = value
+376 |       return result
+    |
+help: Combine `if` statements using `and`
+
+Found 3 errors (2 fixed, 1 remaining).
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).

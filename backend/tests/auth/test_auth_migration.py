@@ -34,21 +34,20 @@ def foreign_targets(column: sa.Column) -> set[str]:
     return {fk.target_fullname for fk in column.foreign_keys}
 
 
-# 验证新迁移接在当前唯一 head 之后，且自身成为新的唯一 head（不改写历史迁移）。
+# 验证认证迁移历史父节点不变，且仍处于唯一 head 的祖先链，允许后续增量迁移。
 def test_auth_migration_is_new_single_head() -> None:
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
     migration = load_auth_migration()
     assert migration.down_revision == "20260812_0002"
-    revisions: set[str] = set()
-    parents: set[str] = set()
-    for path in VERSIONS_DIR.glob("*.py"):
-        source = path.read_text(encoding="utf-8")
-        for line in source.splitlines():
-            if line.startswith("revision"):
-                revisions.add(line.split("=")[-1].strip().strip('"'))
-            if line.startswith("down_revision"):
-                parents.add(line.split("=")[-1].strip().strip('"'))
-    assert migration.revision in revisions
-    assert revisions - parents == {"20261022_0001"}
+    config = Config()
+    config.set_main_option("script_location", str(VERSIONS_DIR.parent))
+    scripts = ScriptDirectory.from_config(config)
+    assert len(scripts.get_heads()) == 1, "认证迁移之后必须保持唯一迁移头，不能新增分支。"
+    assert migration.revision in {revision.revision for revision in scripts.walk_revisions()}, (
+        "认证迁移必须保留在当前 head 的祖先链中，不能改写或移除历史。"
+    )
 
 
 # 验证 upgrade：users 增加带默认值和 CHECK 的 role；新建凭据表与会话表；不改写资源或默认用户数据。

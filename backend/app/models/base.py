@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel
 
+from app.models.admin_operations import AdminAuditEvent, ModelProbeResult
 from app.models.chat_quota import ChatUsage, UserChatLimit
 from app.models.document_chunking import DocumentChunk, DocumentChunkJob
 from app.models.document_embedding import DocumentEmbedding, DocumentEmbeddingJob
@@ -12,7 +13,9 @@ from app.models.user import User, UserCredential, UserSession
 metadata = SQLModel.metadata
 
 __all__ = [
+    "AdminAuditEvent",
     "ModelBinding",
+    "ModelProbeResult",
     "ModelProfile",
     "ChatUsage",
     "DocumentChunk",

@@ -1,0 +1,509 @@
+{
+  "source": "git archive b767b6bb5f309a60d55b6a1fdd8499fdf99b4633 front",
+  "checks": [
+    "previous production bundle opens original admin users route against new backend",
+    "old user creation contract and successful audit remain compatible",
+    "old model list and creation contract accept additive revision response",
+    "rollback preserves quotas, model bindings, every audit/probe record, ownership and vector(2560)"
+  ],
+  "before": {
+    "revision": "20261022_0002",
+    "accounts": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "0fcf9b76-b682-4e0c-8c46-f4e5c3ed960b",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "192851ca-0e0e-4ec2-adb9-daa6d7e15a2f",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "1c30b2cf-8337-4d85-bd0d-98c9ac516e61",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "32b48ae1-9fa3-41ce-85b9-2193b2c1b14f",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "3684378d-055e-4907-a3b3-7fcd54273ef5",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "3fb364ec-cd34-4a24-b487-0c8ce52f482b",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "3fe76a36-c422-4c42-849e-5600591c4ffa",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "44f6d3b3-3592-4d37-a40b-0d7ae083f923",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "5454c6bf-5e39-43e5-8510-105dd1ea0816",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "5ea45005-3e8f-48f9-b73c-3997e93e8db6",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "708c6831-094f-4950-aba4-0f40ee4ed59f",
+        "role": "admin",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "709128d5-1b6d-4bf1-afdf-5218dc77daed",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "76ffb46e-12ed-4688-b68c-46ca0f04b043",
+        "role": "viewer",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "7a37d5c5-b60c-4ee0-9535-b1f9ef3c7a71",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "8115a257-9f75-4572-8d0a-331a78791e53",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "83adc193-8074-4bc3-8df3-cbf457b1db8a",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "85870900-26e4-4270-8a9b-8bc25ae2b577",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "9ad56d2a-5f8f-49f4-b699-76d874e952d7",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "9d33f387-ba24-4442-a10f-2888fed7a438",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "9f599d70-a796-4a14-b6a8-cf4e50186385",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "a2c1eb99-cbc6-4f5f-92ea-2ce7559b1d46",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "abb08841-e77b-44f1-8a4f-7f584ff30257",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "abfc7a98-1a3e-46c9-a3cb-d9e2604cd574",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "c79ccefa-5902-49ac-aabf-58d3800dd2c0",
+        "role": "member",
+        "status": "disabled",
+        "deleted_at": null
+      },
+      {
+        "id": "ce1e98ee-53ed-4e31-8ee4-f0ed0a12fa78",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "e4be3408-6c35-4114-9c27-2d4b47c2363a",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "e598e0ca-8ea4-4288-a2bf-7e910f1aa6a7",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "fd4a02c9-9f7b-424f-a73f-ba3e7bf2d24f",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      }
+    ],
+    "quota": [
+      {
+        "user_id": "3fe76a36-c422-4c42-849e-5600591c4ffa",
+        "hourly_limit": 2
+      }
+    ],
+    "bindings": [
+      {
+        "kind": "chat",
+        "profile_id": "31812e11-de6e-40f2-9c4a-3b61a4c44b95",
+        "revision": 2
+      },
+      {
+        "kind": "embedding",
+        "profile_id": null,
+        "revision": 0
+      },
+      {
+        "kind": "query_rewrite",
+        "profile_id": null,
+        "revision": 0
+      },
+      {
+        "kind": "rerank",
+        "profile_id": null,
+        "revision": 0
+      }
+    ],
+    "audit_ids": [
+      "075f034a-4a91-4a08-aba1-52fc33829a13",
+      "0b316ca1-56ef-430d-97de-0ccd170a216c",
+      "0ca72ec0-b825-4d7c-8158-259ff9c334b1",
+      "107adc06-982b-41dd-bbbc-1e97b39ec3c1",
+      "299e53eb-a163-46ac-867b-c64bb40f74c4",
+      "3e68ad97-a3a2-4f05-ac12-ce6091712350",
+      "424470c5-da53-41b0-9df6-af0caaa28c88",
+      "553bb0f5-ef7b-4388-8c0c-e4f91a5c4dd6",
+      "6c597404-336f-4f9f-8fe8-c022dc9d9b5c",
+      "6fa626d2-9888-4bd7-98d2-ddf0e72b349e",
+      "874a84f5-b8f5-4db1-9786-88b801790593",
+      "8df3cbbd-f0d4-439a-86f9-90f3af39d516",
+      "8faadd94-a568-4f54-b80a-7525a18b9007",
+      "928e8d97-c53d-4204-adf6-9b98910f9955",
+      "9c28e14c-2b8b-47a1-aa3e-fc7037478d85",
+      "a4bf57dc-fbad-40ba-87a1-6025052edeb9",
+      "b03b4645-0c94-41f5-9cde-e97274f0f2a0",
+      "b11ed01f-424d-4063-ae91-951ff2db9273",
+      "c33e1bad-7758-4859-b98f-0b479d793699",
+      "cf76f6da-a111-4f49-abf1-f067db7d5833",
+      "d0a728ca-c5df-42d7-89a6-59aa30d91881",
+      "d926719d-5568-43b1-b482-aba1cee1112b",
+      "e8a2b889-2be7-4ee4-ad05-d56d7808b2b0",
+      "f54a36a6-e5cc-45af-aeae-9e7ded52520a",
+      "f808c329-43c0-4a20-bfa8-985d7a85488b",
+      "f9fd5d70-94bb-4ed1-aef8-59229336efce"
+    ],
+    "probe_ids": [
+      "06419f85-dc65-4cc8-853e-f2b3f0b88236",
+      "14c20eae-e36c-4ad0-b327-8744f19e3380",
+      "3d0aaf32-bb19-4494-a20a-4301484794ce",
+      "499be9e9-a018-441b-a923-18786fe82124",
+      "5fc4552a-0aa6-4ada-84ad-46d654bbc3fc",
+      "d0e41c42-14e8-48c3-9830-00efbf8db5dd"
+    ],
+    "upload_ownership": "535b6d8213eef1d6ee812006ac9938e9",
+    "vector_count": 0,
+    "vector_type": "vector(2560)"
+  },
+  "after": {
+    "revision": "20261022_0002",
+    "accounts": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "0fcf9b76-b682-4e0c-8c46-f4e5c3ed960b",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "192851ca-0e0e-4ec2-adb9-daa6d7e15a2f",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "1c30b2cf-8337-4d85-bd0d-98c9ac516e61",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "32b48ae1-9fa3-41ce-85b9-2193b2c1b14f",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "3684378d-055e-4907-a3b3-7fcd54273ef5",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "3fb364ec-cd34-4a24-b487-0c8ce52f482b",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "3fe76a36-c422-4c42-849e-5600591c4ffa",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "44f6d3b3-3592-4d37-a40b-0d7ae083f923",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "5454c6bf-5e39-43e5-8510-105dd1ea0816",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "5ea45005-3e8f-48f9-b73c-3997e93e8db6",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "708c6831-094f-4950-aba4-0f40ee4ed59f",
+        "role": "admin",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "709128d5-1b6d-4bf1-afdf-5218dc77daed",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "76ffb46e-12ed-4688-b68c-46ca0f04b043",
+        "role": "viewer",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "7a37d5c5-b60c-4ee0-9535-b1f9ef3c7a71",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "8115a257-9f75-4572-8d0a-331a78791e53",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "83adc193-8074-4bc3-8df3-cbf457b1db8a",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "85870900-26e4-4270-8a9b-8bc25ae2b577",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "9171d58b-3c43-42fd-9d38-364ff4802b20",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "9ad56d2a-5f8f-49f4-b699-76d874e952d7",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "9d33f387-ba24-4442-a10f-2888fed7a438",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "9f599d70-a796-4a14-b6a8-cf4e50186385",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "a2c1eb99-cbc6-4f5f-92ea-2ce7559b1d46",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "abb08841-e77b-44f1-8a4f-7f584ff30257",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "abfc7a98-1a3e-46c9-a3cb-d9e2604cd574",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "c79ccefa-5902-49ac-aabf-58d3800dd2c0",
+        "role": "member",
+        "status": "disabled",
+        "deleted_at": null
+      },
+      {
+        "id": "ce1e98ee-53ed-4e31-8ee4-f0ed0a12fa78",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "e4be3408-6c35-4114-9c27-2d4b47c2363a",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "e598e0ca-8ea4-4288-a2bf-7e910f1aa6a7",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      },
+      {
+        "id": "fd4a02c9-9f7b-424f-a73f-ba3e7bf2d24f",
+        "role": "member",
+        "status": "active",
+        "deleted_at": null
+      }
+    ],
+    "quota": [
+      {
+        "user_id": "3fe76a36-c422-4c42-849e-5600591c4ffa",
+        "hourly_limit": 2
+      }
+    ],
+    "bindings": [
+      {
+        "kind": "chat",
+        "profile_id": "31812e11-de6e-40f2-9c4a-3b61a4c44b95",
+        "revision": 2
+      },
+      {
+        "kind": "embedding",
+        "profile_id": null,
+        "revision": 0
+      },
+      {
+        "kind": "query_rewrite",
+        "profile_id": null,
+        "revision": 0
+      },
+      {
+        "kind": "rerank",
+        "profile_id": null,
+        "revision": 0
+      }
+    ],
+    "audit_ids": [
+      "075f034a-4a91-4a08-aba1-52fc33829a13",
+      "0b316ca1-56ef-430d-97de-0ccd170a216c",
+      "0ca72ec0-b825-4d7c-8158-259ff9c334b1",
+      "107adc06-982b-41dd-bbbc-1e97b39ec3c1",
+      "299e53eb-a163-46ac-867b-c64bb40f74c4",
+      "3e68ad97-a3a2-4f05-ac12-ce6091712350",
+      "424470c5-da53-41b0-9df6-af0caaa28c88",
+      "47efe53b-687b-4405-84d2-442a1d7c0065",
+      "553bb0f5-ef7b-4388-8c0c-e4f91a5c4dd6",
+      "6c597404-336f-4f9f-8fe8-c022dc9d9b5c",
+      "6fa626d2-9888-4bd7-98d2-ddf0e72b349e",
+      "874a84f5-b8f5-4db1-9786-88b801790593",
+      "8df3cbbd-f0d4-439a-86f9-90f3af39d516",
+      "8faadd94-a568-4f54-b80a-7525a18b9007",
+      "928e8d97-c53d-4204-adf6-9b98910f9955",
+      "9c28e14c-2b8b-47a1-aa3e-fc7037478d85",
+      "a4bf57dc-fbad-40ba-87a1-6025052edeb9",
+      "b03b4645-0c94-41f5-9cde-e97274f0f2a0",
+      "b11ed01f-424d-4063-ae91-951ff2db9273",
+      "bb0d77e1-d714-4c5e-998a-b30a2a8a9ec3",
+      "c33e1bad-7758-4859-b98f-0b479d793699",
+      "cf76f6da-a111-4f49-abf1-f067db7d5833",
+      "d0a728ca-c5df-42d7-89a6-59aa30d91881",
+      "d926719d-5568-43b1-b482-aba1cee1112b",
+      "e8a2b889-2be7-4ee4-ad05-d56d7808b2b0",
+      "f54a36a6-e5cc-45af-aeae-9e7ded52520a",
+      "f808c329-43c0-4a20-bfa8-985d7a85488b",
+      "f9fd5d70-94bb-4ed1-aef8-59229336efce"
+    ],
+    "probe_ids": [
+      "06419f85-dc65-4cc8-853e-f2b3f0b88236",
+      "14c20eae-e36c-4ad0-b327-8744f19e3380",
+      "3d0aaf32-bb19-4494-a20a-4301484794ce",
+      "499be9e9-a018-441b-a923-18786fe82124",
+      "5fc4552a-0aa6-4ada-84ad-46d654bbc3fc",
+      "d0e41c42-14e8-48c3-9830-00efbf8db5dd"
+    ],
+    "upload_ownership": "535b6d8213eef1d6ee812006ac9938e9",
+    "vector_count": 0,
+    "vector_type": "vector(2560)"
+  }
+}

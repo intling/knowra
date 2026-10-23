@@ -10,6 +10,8 @@ const props = defineProps<{
   confirmText?: string
   cancelText?: string
   danger?: boolean
+  confirmationText?: string
+  confirmationLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -20,9 +22,12 @@ const emit = defineEmits<{
 const titleId = uniqueId("confirm-title")
 const dialogRef = ref<HTMLElement | null>(null)
 const cancelRef = ref<HTMLButtonElement | null>(null)
+const confirmation = ref("")
 
 function handleOverlayClick(event: MouseEvent) {
-  if ((event.target as HTMLElement).dataset.testid === "confirm-dialog-overlay") {
+  if (
+    (event.target as HTMLElement).dataset.testid === "confirm-dialog-overlay"
+  ) {
     emit("cancel")
   }
 }
@@ -47,6 +52,7 @@ watch(
   () => props.visible,
   async (visible) => {
     if (!visible) return
+    confirmation.value = ""
     await nextTick()
     cancelRef.value?.focus()
   },
@@ -73,13 +79,30 @@ onUnmounted(() => document.removeEventListener("keydown", handleKeydown, true))
       @click.stop
     >
       <div class="px-5 pt-5">
-        <h3 :id="titleId" class="font-display text-lg font-semibold text-ink">{{ title }}</h3>
+        <h3 :id="titleId" class="font-display text-lg font-semibold text-ink">
+          {{ title }}
+        </h3>
       </div>
 
       <div class="px-5 pt-2 pb-5">
         <slot>
-          <p v-if="message" class="text-sm leading-6 text-ink-muted [overflow-wrap:anywhere]">{{ message }}</p>
+          <p
+            v-if="message"
+            class="text-sm leading-6 text-ink-muted [overflow-wrap:anywhere]"
+          >
+            {{ message }}
+          </p>
         </slot>
+        <label v-if="confirmationText !== undefined" class="account-label mt-4">
+          {{ confirmationLabel ?? "输入目标邮箱以确认" }}
+          <input
+            v-model="confirmation"
+            data-testid="confirm-dialog-input"
+            class="account-input mt-2"
+            autocomplete="off"
+            :placeholder="confirmationText"
+          />
+        </label>
       </div>
 
       <div class="flex justify-end gap-2 border-t border-line px-5 py-3.5">
@@ -98,10 +121,17 @@ onUnmounted(() => document.removeEventListener("keydown", handleKeydown, true))
           class="rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium text-white transition-colors"
           :class="
             danger
-              ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
+              ? 'bg-cite hover:opacity-90'
               : 'bg-brand-700 hover:bg-brand-800 active:bg-brand-900'
           "
-          @click="emit('confirm')"
+          :disabled="
+            confirmationText !== undefined && confirmation !== confirmationText
+          "
+          @click="
+            (confirmationText === undefined ||
+              confirmation === confirmationText) &&
+            emit('confirm')
+          "
         >
           {{ confirmText ?? "确认" }}
         </button>

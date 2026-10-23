@@ -1,0 +1,939 @@
+[
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 28,
+      "row": 11
+    },
+    "filename": "/root/project/knowra/backend/alembic/versions/20260812_0002_partial_unique_dedup_index.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from collections.abc import Sequence\n\nfrom sqlalchemy import text\n\nfrom alembic import op\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 13
+          },
+          "location": {
+            "column": 1,
+            "row": 8
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 8
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "noqa_row": 8,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 82,
+      "row": 48
+    },
+    "filename": "/root/project/knowra/backend/alembic/versions/20260812_0002_partial_unique_dedup_index.py",
+    "fix": null,
+    "location": {
+      "column": 82,
+      "row": 48
+    },
+    "message": "Line too long (101 > 100)",
+    "noqa_row": 48,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 103,
+      "row": 299
+    },
+    "filename": "/root/project/knowra/backend/app/services/postprocessor.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 299
+    },
+    "message": "Line too long (102 > 100)",
+    "noqa_row": 299,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 102,
+      "row": 379
+    },
+    "filename": "/root/project/knowra/backend/app/services/postprocessor.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 379
+    },
+    "message": "Line too long (101 > 100)",
+    "noqa_row": 379,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 120,
+      "row": 105
+    },
+    "filename": "/root/project/knowra/backend/app/services/uploads.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 105
+    },
+    "message": "Line too long (119 > 100)",
+    "noqa_row": 105,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 80,
+      "row": 152
+    },
+    "filename": "/root/project/knowra/backend/app/services/uploads.py",
+    "fix": null,
+    "location": {
+      "column": 78,
+      "row": 152
+    },
+    "message": "Line too long (104 > 100)",
+    "noqa_row": 152,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 104,
+      "row": 195
+    },
+    "filename": "/root/project/knowra/backend/app/services/uploads.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 195
+    },
+    "message": "Line too long (103 > 100)",
+    "noqa_row": 195,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 104,
+      "row": 229
+    },
+    "filename": "/root/project/knowra/backend/app/services/uploads.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 229
+    },
+    "message": "Line too long (103 > 100)",
+    "noqa_row": 229,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "UP017",
+    "end_location": {
+      "column": 40,
+      "row": 249
+    },
+    "filename": "/root/project/knowra/backend/app/services/uploads.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from datetime import datetime, timezone, UTC",
+          "end_location": {
+            "column": 40,
+            "row": 3
+          },
+          "location": {
+            "column": 1,
+            "row": 3
+          }
+        },
+        {
+          "content": "UTC",
+          "end_location": {
+            "column": 40,
+            "row": 249
+          },
+          "location": {
+            "column": 28,
+            "row": 249
+          }
+        }
+      ],
+      "message": "Convert to `datetime.UTC` alias"
+    },
+    "location": {
+      "column": 28,
+      "row": 249
+    },
+    "message": "Use `datetime.UTC` alias",
+    "noqa_row": 249,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/datetime-timezone-utc"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 96,
+      "row": 436
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_query_rewriter.py",
+    "fix": null,
+    "location": {
+      "column": 95,
+      "row": 436
+    },
+    "message": "Line too long (101 > 100)",
+    "noqa_row": 436,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 87,
+      "row": 1319
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_query_rewriter_integration.py",
+    "fix": null,
+    "location": {
+      "column": 86,
+      "row": 1319
+    },
+    "message": "Line too long (101 > 100)",
+    "noqa_row": 1319,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 84,
+      "row": 1322
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_query_rewriter_integration.py",
+    "fix": null,
+    "location": {
+      "column": 83,
+      "row": 1322
+    },
+    "message": "Line too long (101 > 100)",
+    "noqa_row": 1322,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 81,
+      "row": 1343
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_query_rewriter_integration.py",
+    "fix": null,
+    "location": {
+      "column": 78,
+      "row": 1343
+    },
+    "message": "Line too long (105 > 100)",
+    "noqa_row": 1343,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 94,
+      "row": 1365
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_query_rewriter_integration.py",
+    "fix": null,
+    "location": {
+      "column": 83,
+      "row": 1365
+    },
+    "message": "Line too long (115 > 100)",
+    "noqa_row": 1365,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "UP041",
+    "end_location": {
+      "column": 43,
+      "row": 944
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_query_rewriter_phase2.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "TimeoutError",
+          "end_location": {
+            "column": 43,
+            "row": 944
+          },
+          "location": {
+            "column": 23,
+            "row": 944
+          }
+        }
+      ],
+      "message": "Replace `asyncio.TimeoutError` with builtin `TimeoutError`"
+    },
+    "location": {
+      "column": 23,
+      "row": 944
+    },
+    "message": "Replace aliased errors with `TimeoutError`",
+    "noqa_row": 944,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/timeout-error-alias"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 19,
+      "row": 949
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_query_rewriter_phase2.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 22,
+            "row": 949
+          },
+          "location": {
+            "column": 13,
+            "row": 949
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `result`"
+    },
+    "location": {
+      "column": 13,
+      "row": 949
+    },
+    "message": "Local variable `result` is assigned to but never used",
+    "noqa_row": 949,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 55
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 55
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 55,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 102
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 102
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 102,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 157
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 157
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 157,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 225
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 225
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 225,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 314
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 314
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 314,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 416
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 416
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 416,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 460
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 460
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 460,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 503
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 503
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 503,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 809
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 809
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 809,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 856
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 856
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 856,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 928
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 928
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 928,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 981
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 981
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 981,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "E501",
+    "end_location": {
+      "column": 123,
+      "row": 1052
+    },
+    "filename": "/root/project/knowra/backend/tests/services/query_rewriter/test_semantic_cache_l2.py",
+    "fix": null,
+    "location": {
+      "column": 101,
+      "row": 1052
+    },
+    "message": "Line too long (122 > 100)",
+    "noqa_row": 1052,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/line-too-long"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 17,
+      "row": 459
+    },
+    "filename": "/root/project/knowra/backend/tests/services/test_upload_service.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 20,
+            "row": 459
+          },
+          "location": {
+            "column": 5,
+            "row": 459
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `UploadedFile`"
+    },
+    "location": {
+      "column": 5,
+      "row": 459
+    },
+    "message": "Local variable `UploadedFile` is assigned to but never used",
+    "noqa_row": 459,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 15,
+      "row": 10
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 11
+          },
+          "location": {
+            "column": 1,
+            "row": 10
+          }
+        }
+      ],
+      "message": "Remove unused import: `hashlib`"
+    },
+    "location": {
+      "column": 8,
+      "row": 10
+    },
+    "message": "`hashlib` imported but unused",
+    "noqa_row": 10,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 36,
+      "row": 13
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 14
+          },
+          "location": {
+            "column": 1,
+            "row": 13
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 27,
+      "row": 13
+    },
+    "message": "`unittest.mock.MagicMock` imported but unused",
+    "noqa_row": 13,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 43,
+      "row": 13
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 14
+          },
+          "location": {
+            "column": 1,
+            "row": 13
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 38,
+      "row": 13
+    },
+    "message": "`unittest.mock.patch` imported but unused",
+    "noqa_row": 13,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F811",
+    "end_location": {
+      "column": 23,
+      "row": 244
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 245
+          },
+          "location": {
+            "column": 1,
+            "row": 244
+          }
+        }
+      ],
+      "message": "Remove definition: `hashlib`"
+    },
+    "location": {
+      "column": 16,
+      "row": 244
+    },
+    "message": "Redefinition of unused `hashlib` from line 10: `hashlib` redefined here",
+    "noqa_row": 244,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/redefined-while-unused"
+  },
+  {
+    "cell": null,
+    "code": "UP041",
+    "end_location": {
+      "column": 44,
+      "row": 306
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "TimeoutError",
+          "end_location": {
+            "column": 44,
+            "row": 306
+          },
+          "location": {
+            "column": 24,
+            "row": 306
+          }
+        }
+      ],
+      "message": "Replace `asyncio.TimeoutError` with builtin `TimeoutError`"
+    },
+    "location": {
+      "column": 24,
+      "row": 306
+    },
+    "message": "Replace aliased errors with `TimeoutError`",
+    "noqa_row": 306,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/timeout-error-alias"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 62,
+      "row": 416
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "        import inspect\n\n        from app.services.query_rewriter import QueryRewriter\n",
+          "end_location": {
+            "column": 1,
+            "row": 417
+          },
+          "location": {
+            "column": 1,
+            "row": 415
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 9,
+      "row": 415
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "noqa_row": 415,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 60,
+      "row": 609
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "        import inspect\n\n        from app.services.cache_manager import CacheManager\n",
+          "end_location": {
+            "column": 1,
+            "row": 610
+          },
+          "location": {
+            "column": 1,
+            "row": 608
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 9,
+      "row": 608
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "noqa_row": 608,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 55,
+      "row": 682
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "        import inspect\n\n        from app.services.uploads import UploadService\n",
+          "end_location": {
+            "column": 1,
+            "row": 683
+          },
+          "location": {
+            "column": 1,
+            "row": 681
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 9,
+      "row": 681
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "noqa_row": 681,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 19,
+      "row": 785
+    },
+    "filename": "/root/project/knowra/backend/tests/verify_review_issues.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 786
+          },
+          "location": {
+            "column": 1,
+            "row": 785
+          }
+        }
+      ],
+      "message": "Remove unused import: `ast`"
+    },
+    "location": {
+      "column": 16,
+      "row": 785
+    },
+    "message": "`ast` imported but unused",
+    "noqa_row": 785,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  }
+]

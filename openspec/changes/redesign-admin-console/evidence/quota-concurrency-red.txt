@@ -1,0 +1,32 @@
+Uninstalled 1 package in 0.57ms
+Installed 1 package in 2ms
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_______ test_quota_change_serializes_admission_even_without_row[None-1] ________
+tests/admin_console/test_postgres_concurrency.py:441: in test_quota_change_serializes_admission_even_without_row
+    chat_quota.lock_account_quota(writer, target_id)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'app.services.chat_quota' has no attribute 'lock_account_quota'
+_______ test_quota_change_serializes_admission_even_without_row[2-None] ________
+tests/admin_console/test_postgres_concurrency.py:441: in test_quota_change_serializes_admission_even_without_row
+    chat_quota.lock_account_quota(writer, target_id)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'app.services.chat_quota' has no attribute 'lock_account_quota'
+_________ test_quota_change_serializes_admission_even_without_row[2-1] _________
+tests/admin_console/test_postgres_concurrency.py:441: in test_quota_change_serializes_admission_even_without_row
+    chat_quota.lock_account_quota(writer, target_id)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'app.services.chat_quota' has no attribute 'lock_account_quota'
+_________ test_unlimited_admission_releases_transaction_before_network _________
+tests/admin_console/test_postgres_concurrency.py:458: in test_unlimited_admission_releases_transaction_before_network
+    assert not session.in_transaction(), '不限额路径也应完成短事务，不能持锁等待模型'
+E   AssertionError: 不限额路径也应完成短事务，不能持锁等待模型
+E   assert not True
+E    +  where True = in_transaction()
+E    +    where in_transaction = <sqlmodel.orm.session.Session object at 0xe23bd592a6c0>.in_transaction
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_postgres_concurrency.py::test_quota_change_serializes_admission_even_without_row[None-1]
+FAILED tests/admin_console/test_postgres_concurrency.py::test_quota_change_serializes_admission_even_without_row[2-None]
+FAILED tests/admin_console/test_postgres_concurrency.py::test_quota_change_serializes_admission_even_without_row[2-1]
+FAILED tests/admin_console/test_postgres_concurrency.py::test_unlimited_admission_releases_transaction_before_network
+4 failed, 15 deselected in 0.91s

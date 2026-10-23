@@ -1,0 +1,7 @@
+Would reformat: app/services/postprocessor.py
+Would reformat: app/services/uploads.py
+Would reformat: tests/services/query_rewriter/test_query_rewriter.py
+Would reformat: tests/services/query_rewriter/test_query_rewriter_integration.py
+Would reformat: tests/services/query_rewriter/test_semantic_cache_l2.py
+Would reformat: tests/verify_review_issues.py
+6 files would be reformatted, 222 files already formatted

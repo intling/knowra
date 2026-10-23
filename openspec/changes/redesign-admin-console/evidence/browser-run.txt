@@ -1,0 +1,16 @@
+PASS six pages 1440px
+PASS six pages and responsive navigation 768px
+PASS six pages and responsive navigation 320px
+PASS quota confirmation, nested Esc and focus trap
+PASS revoke live sessions, repeat-safe read and authentication effect
+PASS delete requires exact target email and cancellation
+PASS password form closes and clears secrets
+PASS local model explicit diagnostic does not activate
+PASS model edit, stale diagnostic, retest and explicit activation
+PASS task filters, real attempts and missing-stage timeline without private content
+PASS activation audit query and trace copying
+PASS real PostgreSQL/pgvector status and instance scope
+PASS 320px full-screen detail without horizontal overflow
+PASS member cannot request management data or API
+PASS viewer cannot request management data or API
+PASS anonymous routes redirect to login

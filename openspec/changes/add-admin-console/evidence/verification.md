@@ -49,3 +49,13 @@ PostgreSQL 的真实向量任务 INSERT 并发测试暴露管理员 `FOR UPDATE`
 ## 使用与边界
 
 管理员从账户菜单“后台管理”或 `/admin` 进入。启动更新版本前执行迁移，并按 [后端说明](../../../../backend/README.md#model-administration) 设置和独立备份 `MODEL_CONFIG_ENCRYPTION_KEY`。默认绑定仅影响后续请求；未绑定时沿用环境配置。首版使用固定角色和 2560 维向量，已有索引或未完成任务时拒绝变更空间，不自动重建索引。管理员不读取他人的私有资料，用户删除只做软删除。
+
+## 当前账号改密入口样式修复（2026-10-22）
+
+用户反馈“修改我的密码”入口与相邻操作样式不一致。该入口仅设置文字样式，缺少按钮边框和内边距；修复为复用 `account-secondary`，保留 RouterLink 的 `/account` 导航。
+
+使用本地 Vite 15581 与 Chromium，拦截 API 返回虚构管理员/成员数据，不连接生产 API 或数据库。修复前先运行浏览器断言：1440px、390px、320px 均因缺少按钮边框失败；改密入口高度为 20px、边框 0px、内边距 0，相邻按钮高度为 38px、边框 1px、上下/左右内边距为 8px/16px。
+
+修复后同一组浏览器断言全部通过：入口高度 38px、边框 1px、圆角 8px、内边距和字重与相邻按钮一致；桌面同一行底部对齐，390px 和 320px 无横向溢出。鼠标点击和键盘 Enter 均进入 `/account`，无浏览器运行异常；桌面和 320px 截图已人工复核。
+
+本次实际验证：`npm run lint` 通过；`npm run test` 为 53 文件、628 项通过；`npm run build` 通过；`openspec validate add-admin-console --strict` 与 `git diff --check` 通过。本次仅修改仓库前端与相关工件，未发布生产服务。

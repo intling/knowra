@@ -46,7 +46,7 @@ describe("路由表", () => {
   })
 
   // 新增页面需同步更新路由总数断言。
-  it("共 10 条路由", () => {
-    expect(router.getRoutes()).toHaveLength(10)
+  it("共 14 条路由", () => {
+    expect(router.getRoutes()).toHaveLength(14)
   })
 })

@@ -1,0 +1,9 @@
+src/api/adminOperations.ts 90ms
+src/shared/useAdminResource.ts 26ms
+src/components/shared/AdminLoadState.vue 60ms
+src/components/shared/EffectiveModelCards.vue 30ms
+src/views/AdminJobsView.vue 105ms
+src/views/AdminSystemView.vue 22ms
+src/views/AdminAuditView.vue 62ms
+src/views/AdminOverviewView.vue 71ms
+src/router/index.ts 13ms

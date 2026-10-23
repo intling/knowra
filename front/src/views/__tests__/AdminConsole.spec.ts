@@ -104,14 +104,14 @@ describe("后台入口和模型配置", () => {
     vi.unstubAllGlobals()
   })
 
-  // 验证后台根入口兼容跳转至既有用户管理，模型页带会话和显式权限元数据。
-  it("后台入口跳转用户管理并声明模型管理权限", async () => {
+  // 验证后台根入口兼容跳转至运行总览，模型页带会话和显式权限元数据。
+  it("后台入口跳转运行总览并声明模型管理权限", async () => {
     const { router } = await mountModels()
     const models = router.resolve("/admin/models")
     expect(models.meta.requiresAuth).toBe(true)
     expect(models.meta.permission).toBe("models:manage")
     await router.push("/admin")
-    expect(router.currentRoute.value.path).toBe("/admin/users")
+    expect(router.currentRoute.value.path).toBe("/admin/overview")
   })
 
   // 验证账户菜单将管理员引导到统一后台，而非只有原用户管理单页入口。

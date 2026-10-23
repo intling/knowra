@@ -1,0 +1,356 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/views/__tests__/AdminWorkspace.spec.ts src/views/__tests__/AdminUserControls.spec.ts src/router/__tests__/index.spec.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+stderr | src/views/__tests__/AdminUserControls.spec.ts > 服务端搜索防抖并组合角色状态
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminUserControls.spec.ts > 过期响应不覆盖最新结果
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminUserControls.spec.ts > 详情与撤销设备会话
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminUserControls.spec.ts > 额度修改确认与失败恢复
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminUserControls.spec.ts > 删除账号必须输入目标邮箱并恢复焦点
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+stderr | src/views/__tests__/AdminUserControls.spec.ts > 自身会话引导账户页面
+[Vue Router warn]: No match found for location with path "/admin/models"
+
+ ❯ src/views/__tests__/AdminUserControls.spec.ts (6 tests | 6 failed) 331ms
+   × 服务端搜索防抖并组合角色状态 217ms
+   × 过期响应不覆盖最新结果 28ms
+   × 详情与撤销设备会话 20ms
+   × 额度修改确认与失败恢复 24ms
+   × 删除账号必须输入目标邮箱并恢复焦点 24ms
+   × 自身会话引导账户页面 16ms
+ ❯ src/router/__tests__/index.spec.ts (5 tests | 1 failed) 34ms
+     × 共 14 条路由 20ms
+stderr | src/views/__tests__/AdminWorkspace.spec.ts > 六个管理页面声明固定权限
+[Vue Router warn]: No match found for location with path "/admin/overview"
+
+ ❯ src/views/__tests__/AdminWorkspace.spec.ts (2 tests | 2 failed) 1028ms
+   × 六个管理页面声明固定权限 976ms
+   × 管理侧栏与窄屏抽屉可访问 51ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/router/__tests__/index.spec.ts > 路由表 > 共 14 条路由
+AssertionError: expected [ …(10) ] to have a length of 14 but got 10
+
+- Expected
++ Received
+
+- 14
++ 10
+
+ ❯ src/router/__tests__/index.spec.ts:50:32
+     48|   // 新增页面需同步更新路由总数断言。
+     49|   it("共 14 条路由", () => {
+     50|     expect(router.getRoutes()).toHaveLength(14)
+       |                                ^
+     51|   })
+     52| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/views/__tests__/AdminUserControls.spec.ts > 服务端搜索防抖并组合角色状态
+Error: Unable to get [data-testid="admin-user-search"] within: <main class="min-h-dvh bg-paper px-4 py-8 text-ink sm:py-12">
+  <div class="mx-auto w-full min-w-0 max-w-3xl"><a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700"><span class="grid size-8 place-items-center rounded-lg bg-brand-700 font-display text-lg text-white" aria-hidden="true">知</span> 知寻 · KNOWRA </a>
+    <header class="my-8">
+      <h1 class="font-display text-3xl font-semibold">用户管理</h1>
+      <p class="mt-3 text-sm leading-6 text-ink-muted">维护账号、角色与访问状态。管理员权限不包含读取他人的私有资料。</p>
+    </header>
+    <nav class="mb-6 flex flex-wrap gap-2 border-b border-line pb-4 text-sm" aria-label="后台导航"><a aria-current="page" href="/admin/users" class="!bg-brand-50 !text-brand-700 router-link-exact-active rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">用户管理</a><a href="/admin/models" class="rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">模型配置</a><a href="/" class="ml-auto px-3 py-2 text-brand-700">返回知识书房 ↗</a></nav>
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-ink-muted">共 1 个账号</p><button data-testid="admin-create-user" class="account-primary"> 新增用户 </button>
+    </div>
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <ul class="space-y-3" aria-label="用户列表">
+      <li data-testid="admin-user-row" class="account-card" aria-busy="false">
+        <div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium break-all">成员小张
+              <!--v-if-->
+            </p>
+            <p class="mt-1 text-sm break-all text-ink-muted">member@example.com</p>
+            <p class="mt-2 text-xs text-brand-700">正常</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3"><label class="text-xs text-ink-muted">角色<select aria-label="成员小张 的角色" class="account-input mt-1 !w-auto" value="member">
+                <option value="admin">管理员</option>
+                <option value="member">成员</option>
+                <option value="viewer">只读</option>
+              </select></label><button data-testid="status-toggle" class="account-secondary">禁用</button><button data-testid="admin-user-reset" class="account-secondary"> 重置密码 </button><button data-testid="admin-user-delete" class="account-secondary !text-cite"> 删除 </button></div>
+        </div>
+        <!--v-if-->
+      </li>
+    </ul>
+    <!--v-if-->
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="用户列表分页">
+      <p class="text-ink-muted"> 共 1 个账号 · 第 1 页 </p>
+      <div class="flex gap-2"><button class="account-secondary" disabled=""> 上一页</button><button data-testid="admin-next-page" class="account-secondary" disabled=""> 下一页 </button></div>
+    </nav>
+    <!--v-if-->
+  </div>
+</main>
+ ❯ VueWrapper.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:7195:15
+ ❯ src/views/__tests__/AdminUserControls.spec.ts:24:16
+     22| it('服务端搜索防抖并组合角色状态',async()=>{
+     23|  await mountUsers();vi.useFakeTimers({toFake:['setTimeout','clearTimeo…
+     24|  await wrapper.get('[data-testid="admin-user-search"]').setValue('memb…
+       |                ^
+     25|  await vi.advanceTimersByTimeAsync(299);expect(api.listUsers).toHaveBe…
+     26|  await vi.advanceTimersByTimeAsync(1);await flushPromises()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/views/__tests__/AdminUserControls.spec.ts > 过期响应不覆盖最新结果
+Error: Unable to get [data-testid="admin-role-filter"] within: <main class="min-h-dvh bg-paper px-4 py-8 text-ink sm:py-12">
+  <div class="mx-auto w-full min-w-0 max-w-3xl"><a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700"><span class="grid size-8 place-items-center rounded-lg bg-brand-700 font-display text-lg text-white" aria-hidden="true">知</span> 知寻 · KNOWRA </a>
+    <header class="my-8">
+      <h1 class="font-display text-3xl font-semibold">用户管理</h1>
+      <p class="mt-3 text-sm leading-6 text-ink-muted">维护账号、角色与访问状态。管理员权限不包含读取他人的私有资料。</p>
+    </header>
+    <nav class="mb-6 flex flex-wrap gap-2 border-b border-line pb-4 text-sm" aria-label="后台导航"><a aria-current="page" href="/admin/users" class="!bg-brand-50 !text-brand-700 router-link-exact-active rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">用户管理</a><a href="/admin/models" class="rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">模型配置</a><a href="/" class="ml-auto px-3 py-2 text-brand-700">返回知识书房 ↗</a></nav>
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-ink-muted">共 1 个账号</p><button data-testid="admin-create-user" class="account-primary"> 新增用户 </button>
+    </div>
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <ul class="space-y-3" aria-label="用户列表">
+      <li data-testid="admin-user-row" class="account-card" aria-busy="false">
+        <div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium break-all">成员小张
+              <!--v-if-->
+            </p>
+            <p class="mt-1 text-sm break-all text-ink-muted">member@example.com</p>
+            <p class="mt-2 text-xs text-brand-700">正常</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3"><label class="text-xs text-ink-muted">角色<select aria-label="成员小张 的角色" class="account-input mt-1 !w-auto" value="member">
+                <option value="admin">管理员</option>
+                <option value="member">成员</option>
+                <option value="viewer">只读</option>
+              </select></label><button data-testid="status-toggle" class="account-secondary">禁用</button><button data-testid="admin-user-reset" class="account-secondary"> 重置密码 </button><button data-testid="admin-user-delete" class="account-secondary !text-cite"> 删除 </button></div>
+        </div>
+        <!--v-if-->
+      </li>
+    </ul>
+    <!--v-if-->
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="用户列表分页">
+      <p class="text-ink-muted"> 共 1 个账号 · 第 1 页 </p>
+      <div class="flex gap-2"><button class="account-secondary" disabled=""> 上一页</button><button data-testid="admin-next-page" class="account-secondary" disabled=""> 下一页 </button></div>
+    </nav>
+    <!--v-if-->
+  </div>
+</main>
+ ❯ VueWrapper.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:7195:15
+ ❯ src/views/__tests__/AdminUserControls.spec.ts:37:16
+     35|  await mountUsers();let old!:(value:unknown)=>void
+     36|  api.listUsers.mockImplementationOnce(()=>new Promise(resolve=>{old=re…
+     37|  await wrapper.get('[data-testid="admin-role-filter"]').setValue('admi…
+       |                ^
+     38|  await wrapper.get('[data-testid="admin-role-filter"]').setValue('view…
+     39|  old({items:[target],total:1,offset:0,limit:20});await flushPromises()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/views/__tests__/AdminUserControls.spec.ts > 详情与撤销设备会话
+Error: Unable to get [data-testid="admin-user-detail-open"] within: <main class="min-h-dvh bg-paper px-4 py-8 text-ink sm:py-12">
+  <div class="mx-auto w-full min-w-0 max-w-3xl"><a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700"><span class="grid size-8 place-items-center rounded-lg bg-brand-700 font-display text-lg text-white" aria-hidden="true">知</span> 知寻 · KNOWRA </a>
+    <header class="my-8">
+      <h1 class="font-display text-3xl font-semibold">用户管理</h1>
+      <p class="mt-3 text-sm leading-6 text-ink-muted">维护账号、角色与访问状态。管理员权限不包含读取他人的私有资料。</p>
+    </header>
+    <nav class="mb-6 flex flex-wrap gap-2 border-b border-line pb-4 text-sm" aria-label="后台导航"><a aria-current="page" href="/admin/users" class="!bg-brand-50 !text-brand-700 router-link-exact-active rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">用户管理</a><a href="/admin/models" class="rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">模型配置</a><a href="/" class="ml-auto px-3 py-2 text-brand-700">返回知识书房 ↗</a></nav>
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-ink-muted">共 1 个账号</p><button data-testid="admin-create-user" class="account-primary"> 新增用户 </button>
+    </div>
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <ul class="space-y-3" aria-label="用户列表">
+      <li data-testid="admin-user-row" class="account-card" aria-busy="false">
+        <div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium break-all">成员小张
+              <!--v-if-->
+            </p>
+            <p class="mt-1 text-sm break-all text-ink-muted">member@example.com</p>
+            <p class="mt-2 text-xs text-brand-700">正常</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3"><label class="text-xs text-ink-muted">角色<select aria-label="成员小张 的角色" class="account-input mt-1 !w-auto" value="member">
+                <option value="admin">管理员</option>
+                <option value="member">成员</option>
+                <option value="viewer">只读</option>
+              </select></label><button data-testid="status-toggle" class="account-secondary">禁用</button><button data-testid="admin-user-reset" class="account-secondary"> 重置密码 </button><button data-testid="admin-user-delete" class="account-secondary !text-cite"> 删除 </button></div>
+        </div>
+        <!--v-if-->
+      </li>
+    </ul>
+    <!--v-if-->
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="用户列表分页">
+      <p class="text-ink-muted"> 共 1 个账号 · 第 1 页 </p>
+      <div class="flex gap-2"><button class="account-secondary" disabled=""> 上一页</button><button data-testid="admin-next-page" class="account-secondary" disabled=""> 下一页 </button></div>
+    </nav>
+    <!--v-if-->
+  </div>
+</main>
+ ❯ VueWrapper.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:7195:15
+ ❯ detail src/views/__tests__/AdminUserControls.spec.ts:17:39
+
+ ❯ src/views/__tests__/AdminUserControls.spec.ts:45:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/views/__tests__/AdminUserControls.spec.ts > 额度修改确认与失败恢复
+Error: Unable to get [data-testid="admin-user-detail-open"] within: <main class="min-h-dvh bg-paper px-4 py-8 text-ink sm:py-12">
+  <div class="mx-auto w-full min-w-0 max-w-3xl"><a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700"><span class="grid size-8 place-items-center rounded-lg bg-brand-700 font-display text-lg text-white" aria-hidden="true">知</span> 知寻 · KNOWRA </a>
+    <header class="my-8">
+      <h1 class="font-display text-3xl font-semibold">用户管理</h1>
+      <p class="mt-3 text-sm leading-6 text-ink-muted">维护账号、角色与访问状态。管理员权限不包含读取他人的私有资料。</p>
+    </header>
+    <nav class="mb-6 flex flex-wrap gap-2 border-b border-line pb-4 text-sm" aria-label="后台导航"><a aria-current="page" href="/admin/users" class="!bg-brand-50 !text-brand-700 router-link-exact-active rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">用户管理</a><a href="/admin/models" class="rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">模型配置</a><a href="/" class="ml-auto px-3 py-2 text-brand-700">返回知识书房 ↗</a></nav>
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-ink-muted">共 1 个账号</p><button data-testid="admin-create-user" class="account-primary"> 新增用户 </button>
+    </div>
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <ul class="space-y-3" aria-label="用户列表">
+      <li data-testid="admin-user-row" class="account-card" aria-busy="false">
+        <div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium break-all">成员小张
+              <!--v-if-->
+            </p>
+            <p class="mt-1 text-sm break-all text-ink-muted">member@example.com</p>
+            <p class="mt-2 text-xs text-brand-700">正常</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3"><label class="text-xs text-ink-muted">角色<select aria-label="成员小张 的角色" class="account-input mt-1 !w-auto" value="member">
+                <option value="admin">管理员</option>
+                <option value="member">成员</option>
+                <option value="viewer">只读</option>
+              </select></label><button data-testid="status-toggle" class="account-secondary">禁用</button><button data-testid="admin-user-reset" class="account-secondary"> 重置密码 </button><button data-testid="admin-user-delete" class="account-secondary !text-cite"> 删除 </button></div>
+        </div>
+        <!--v-if-->
+      </li>
+    </ul>
+    <!--v-if-->
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="用户列表分页">
+      <p class="text-ink-muted"> 共 1 个账号 · 第 1 页 </p>
+      <div class="flex gap-2"><button class="account-secondary" disabled=""> 上一页</button><button data-testid="admin-next-page" class="account-secondary" disabled=""> 下一页 </button></div>
+    </nav>
+    <!--v-if-->
+  </div>
+</main>
+ ❯ VueWrapper.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:7195:15
+ ❯ detail src/views/__tests__/AdminUserControls.spec.ts:17:39
+
+ ❯ src/views/__tests__/AdminUserControls.spec.ts:57:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/views/__tests__/AdminUserControls.spec.ts > 删除账号必须输入目标邮箱并恢复焦点
+AssertionError: expected undefined to be defined
+ ❯ src/views/__tests__/AdminUserControls.spec.ts:69:41
+     67|  await mountUsers();const button=wrapper.get('[data-testid="admin-user…
+     68|  const confirm=wrapper.get('[data-testid="confirm-dialog-confirm-btn"]…
+     69|  expect(confirm.attributes('disabled')).toBeDefined()
+       |                                         ^
+     70|  await wrapper.get('[data-testid="confirm-dialog-input"]').setValue('w…
+     71|  expect(confirm.attributes('disabled')).toBeDefined()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/views/__tests__/AdminUserControls.spec.ts > 自身会话引导账户页面
+Error: Unable to get [data-testid="admin-user-detail-open"] within: <main class="min-h-dvh bg-paper px-4 py-8 text-ink sm:py-12">
+  <div class="mx-auto w-full min-w-0 max-w-3xl"><a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700"><span class="grid size-8 place-items-center rounded-lg bg-brand-700 font-display text-lg text-white" aria-hidden="true">知</span> 知寻 · KNOWRA </a>
+    <header class="my-8">
+      <h1 class="font-display text-3xl font-semibold">用户管理</h1>
+      <p class="mt-3 text-sm leading-6 text-ink-muted">维护账号、角色与访问状态。管理员权限不包含读取他人的私有资料。</p>
+    </header>
+    <nav class="mb-6 flex flex-wrap gap-2 border-b border-line pb-4 text-sm" aria-label="后台导航"><a aria-current="page" href="/admin/users" class="!bg-brand-50 !text-brand-700 router-link-exact-active rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">用户管理</a><a href="/admin/models" class="rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">模型配置</a><a href="/" class="ml-auto px-3 py-2 text-brand-700">返回知识书房 ↗</a></nav>
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-ink-muted">共 1 个账号</p><button data-testid="admin-create-user" class="account-primary"> 新增用户 </button>
+    </div>
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <ul class="space-y-3" aria-label="用户列表">
+      <li data-testid="admin-user-row" class="account-card" aria-busy="false">
+        <div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium break-all">管理员小王 <span class="text-xs text-brand-700">（你）</span></p>
+            <p class="mt-1 text-sm break-all text-ink-muted">admin@example.com</p>
+            <p class="mt-2 text-xs text-brand-700">正常</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3"><label class="text-xs text-ink-muted">角色<select aria-label="管理员小王 的角色" class="account-input mt-1 !w-auto" value="admin">
+                <option value="admin">管理员</option>
+                <option value="member">成员</option>
+                <option value="viewer">只读</option>
+              </select></label><button data-testid="status-toggle" class="account-secondary" disabled="">禁用</button><a href="/account" class="account-secondary">修改我的密码</a><button data-testid="admin-user-delete" class="account-secondary !text-cite" disabled=""> 删除 </button></div>
+        </div>
+        <!--v-if-->
+      </li>
+    </ul>
+    <!--v-if-->
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="用户列表分页">
+      <p class="text-ink-muted"> 共 1 个账号 · 第 1 页 </p>
+      <div class="flex gap-2"><button class="account-secondary" disabled=""> 上一页</button><button data-testid="admin-next-page" class="account-secondary" disabled=""> 下一页 </button></div>
+    </nav>
+    <!--v-if-->
+  </div>
+</main>
+ ❯ VueWrapper.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:7195:15
+ ❯ detail src/views/__tests__/AdminUserControls.spec.ts:17:39
+
+ ❯ src/views/__tests__/AdminUserControls.spec.ts:79:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/views/__tests__/AdminWorkspace.spec.ts > 六个管理页面声明固定权限
+AssertionError: 缺少管理页面 overview: expected 0 to be greater than 0
+ ❯ src/views/__tests__/AdminWorkspace.spec.ts:17:52
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/views/__tests__/AdminWorkspace.spec.ts > 管理侧栏与窄屏抽屉可访问
+AssertionError: expected [] to have a length of 6 but got +0
+
+- Expected
++ Received
+
+- 6
++ 0
+
+ ❯ src/views/__tests__/AdminWorkspace.spec.ts:29:61
+     27|   await router.push('/admin/users')
+     28|   wrapper = mount(AdminFrame,{props:{title:'用户管理'},global:{plugins:[pi…
+     29|   expect(wrapper.findAll('[data-testid="admin-nav-link"]')).toHaveLeng…
+       |                                                             ^
+     30|   expect(wrapper.find('a[href="/account"]').exists()).toBe(true)
+     31|   expect(wrapper.find('a[href="/"]').text()).toContain('知识书房')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  9 failed | 4 passed (13)
+   Start at  18:31:10
+   Duration  2.37s (transform 1.77s, setup 0ms, import 1.52s, tests 1.39s, environment 1.97s)

@@ -1,0 +1,104 @@
+Uninstalled 1 package in 0.57ms
+Installed 1 package in 1ms
+.FFFF                                                                    [100%]
+=================================== FAILURES ===================================
+__________________ test_probe_cancel_cleans_client_and_lease ___________________
+tests/admin_console/test_model_probes.py:361: in test_probe_cancel_cleans_client_and_lease
+    assert auth_db.exec(select(AdminAuditEvent).where(AdminAuditEvent.action == "model.test")).one().changes_json["status"] == "interrupted"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/sqlalchemy/engine/result.py:1840: in one
+    return self._only_one_row(
+.venv/lib/python3.14/site-packages/sqlalchemy/engine/result.py:772: in _only_one_row
+    raise exc.NoResultFound(
+E   sqlalchemy.exc.NoResultFound: No row was found when one was required
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:22:19.784195Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb8e2eda6-542c-4460-b74f-41f94412cc70[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m35dd08e3-d706-40b1-bd28-f3d05137700d[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '35dd08e3-d706-40b1-bd28-f3d05137700d', 'actor_user_id': 'b8e2eda6-542c-4460-b74f-41f94412cc70', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:19.784195Z', 'logger': 'app.services.model_configuration'}
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:22:19.914785Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:19.931681Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:19.932038Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:19.914785Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:19.931681Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:19.932038Z', 'logger': 'app.core.shutdown'}
+_______ test_rerank_protocol_matches_production_adapter[True-rows0-True] _______
+tests/admin_console/test_model_probes.py:374: in test_rerank_protocol_matches_production_adapter
+    assert body['status'] == ('passed' if passed else 'failed')
+E   AssertionError: assert 'failed' == 'passed'
+E
+E     - passed
+E     + failed
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:22:19.969026Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m44360a7a-f84d-4af3-88ed-8740f38a8c74[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m3f5f13af-e568-4068-b1a9-1a5b682af67f[0m [36mtrace_id[0m=[35m01a16322-1335-7c23-b74b-de162c4f0239[0m
+[2m2026-10-22T10:22:19.971563Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:19.995006Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/3f5f13af-e568-4068-b1a9-1a5b682af67f/test "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '3f5f13af-e568-4068-b1a9-1a5b682af67f', 'actor_user_id': '44360a7a-f84d-4af3-88ed-8740f38a8c74', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a16322-1335-7c23-b74b-de162c4f0239', 'level': 'info', 'timestamp': '2026-10-22T10:22:19.969026Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/3f5f13af-e568-4068-b1a9-1a5b682af67f/test "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:22:20.004615Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.022936Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.023297Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.004615Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.022936Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.023297Z', 'logger': 'app.core.shutdown'}
+______ test_rerank_protocol_matches_production_adapter[False-rows1-False] ______
+tests/admin_console/test_model_probes.py:374: in test_rerank_protocol_matches_production_adapter
+    assert body['status'] == ('passed' if passed else 'failed')
+E   AssertionError: assert 'passed' == 'failed'
+E
+E     - failed
+E     + passed
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:22:20.058186Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mcb393ebc-41bd-47ca-9fcf-22fc2ce9f57a[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35m53ac94f2-0d58-4337-804a-d2667962757b[0m [36mtrace_id[0m=[35m01a16322-1390-72d4-87dd-cf732b3420ed[0m
+[2m2026-10-22T10:22:20.060565Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.077974Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST https://models.example/v1/rerank "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m01a16322-139d-7b73-9191-90dfe5a7b3df[0m
+[2m2026-10-22T10:22:20.084958Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/53ac94f2-0d58-4337-804a-d2667962757b/test "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': '53ac94f2-0d58-4337-804a-d2667962757b', 'actor_user_id': 'cb393ebc-41bd-47ca-9fcf-22fc2ce9f57a', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a16322-1390-72d4-87dd-cf732b3420ed', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.058186Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://models.example/v1/rerank "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/53ac94f2-0d58-4337-804a-d2667962757b/test "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:22:20.099050Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.115596Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.115949Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.099050Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.115596Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.115949Z', 'logger': 'app.core.shutdown'}
+______ test_rerank_protocol_matches_production_adapter[False-rows2-False] ______
+tests/admin_console/test_model_probes.py:374: in test_rerank_protocol_matches_production_adapter
+    assert body['status'] == ('passed' if passed else 'failed')
+E   AssertionError: assert 'passed' == 'failed'
+E
+E     - failed
+E     + passed
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:22:20.151246Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb73ac5c3-b2c1-499b-ba14-78692557587c[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35md12fae49-3ca1-4042-b5f5-c1680ccae9df[0m [36mtrace_id[0m=[35m01a16322-13ed-70d7-94fd-9d7625dd8bd7[0m
+[2m2026-10-22T10:22:20.153708Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.172070Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST https://models.example/v1/rerank "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m01a16322-13fa-7000-9c94-40b892a043f9[0m
+[2m2026-10-22T10:22:20.178051Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/d12fae49-3ca1-4042-b5f5-c1680ccae9df/test "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:132 {'profile_id': 'd12fae49-3ca1-4042-b5f5-c1680ccae9df', 'actor_user_id': 'b73ac5c3-b2c1-499b-ba14-78692557587c', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a16322-13ed-70d7-94fd-9d7625dd8bd7', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.151246Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://models.example/v1/rerank "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/d12fae49-3ca1-4042-b5f5-c1680ccae9df/test "HTTP/1.1 200 OK"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:22:20.187693Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.204141Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:22:20.204482Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.187693Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.204141Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:22:20.204482Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_model_probes.py::test_probe_cancel_cleans_client_and_lease
+FAILED tests/admin_console/test_model_probes.py::test_rerank_protocol_matches_production_adapter[True-rows0-True]
+FAILED tests/admin_console/test_model_probes.py::test_rerank_protocol_matches_production_adapter[False-rows1-False]
+FAILED tests/admin_console/test_model_probes.py::test_rerank_protocol_matches_production_adapter[False-rows2-False]
+4 failed, 1 passed, 23 deselected in 0.71s

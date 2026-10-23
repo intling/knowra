@@ -1,0 +1,297 @@
+Uninstalled 1 package in 0.53ms
+Installed 1 package in 1ms
+FFFFFFFFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+______________________ test_effective_environment_sources ______________________
+tests/admin_console/test_effective_models.py:16: in test_effective_environment_sources
+    rows = assert_status(auth_client.get('/api/admin/models/effective'), 200, '应有四用途生效摘要')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 应有四用途生效摘要：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+---------------------------- Captured stderr setup -----------------------------
+[2m2026-10-22T10:16:49.536813Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.537376Z[0m [[32m[1minfo[0m] [1mStartup job reconciliation completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'startup_reconciliation', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.536813Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:60 {'reason': 'startup_reconciliation', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Startup job reconciliation completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.537376Z', 'logger': 'app.core.shutdown'}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:49.553243Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:49.620209Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.638582Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.639105Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.620209Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.638582Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.639105Z', 'logger': 'app.core.shutdown'}
+_____________ test_profile_and_binding_versions_are_distinct[chat] _____________
+tests/admin_console/test_effective_models.py:28: in test_profile_and_binding_versions_are_distinct
+    assert first.get('revision') == 1, '配置公开响应应新增修订号'
+E   AssertionError: 配置公开响应应新增修订号
+E   assert None == 1
+E    +  where None = <built-in method get of dict object at 0xeaba626c7b40>('revision')
+E    +    where <built-in method get of dict object at 0xeaba626c7b40> = {'api_format': None, 'base_url': 'https://models.example/v1', 'created_at': '2026-10-22T10:16:49.673755', 'dimensions': None, ...}.get
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:49.678975Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m78d89fc6-c21e-48c1-b9ed-5876c34f208d[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mef897699-fd1b-4d85-bfa3-4215c05cd9d5[0m [36mtrace_id[0m=[35m01a1631d-0901-7c50-bcd4-764f6f71a953[0m
+[2m2026-10-22T10:16:49.681794Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': 'ef897699-fd1b-4d85-bfa3-4215c05cd9d5', 'actor_user_id': '78d89fc6-c21e-48c1-b9ed-5876c34f208d', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-0901-7c50-bcd4-764f6f71a953', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.678975Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:49.686741Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.703196Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.703501Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.686741Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.703196Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.703501Z', 'logger': 'app.core.shutdown'}
+__________ test_profile_and_binding_versions_are_distinct[embedding] ___________
+tests/admin_console/test_effective_models.py:28: in test_profile_and_binding_versions_are_distinct
+    assert first.get('revision') == 1, '配置公开响应应新增修订号'
+E   AssertionError: 配置公开响应应新增修订号
+E   assert None == 1
+E    +  where None = <built-in method get of dict object at 0xeaba62714a40>('revision')
+E    +    where <built-in method get of dict object at 0xeaba62714a40> = {'api_format': None, 'base_url': 'https://models.example/v1', 'created_at': '2026-10-22T10:16:49.734662', 'dimensions': 2560, ...}.get
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:49.738532Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35md3a14379-6152-4f55-8b88-7a02a834d8db[0m [36mkind[0m=[35membedding[0m [36mprofile_id[0m=[35m477a2b2d-8942-401d-be7a-01a09cdb53ad[0m [36mtrace_id[0m=[35m01a1631d-0940-7020-9827-a2b8449ec890[0m
+[2m2026-10-22T10:16:49.741002Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': '477a2b2d-8942-401d-be7a-01a09cdb53ad', 'actor_user_id': 'd3a14379-6152-4f55-8b88-7a02a834d8db', 'kind': 'embedding', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-0940-7020-9827-a2b8449ec890', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.738532Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:49.745518Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.761720Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.762059Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.745518Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.761720Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.762059Z', 'logger': 'app.core.shutdown'}
+____________ test_profile_and_binding_versions_are_distinct[rerank] ____________
+tests/admin_console/test_effective_models.py:28: in test_profile_and_binding_versions_are_distinct
+    assert first.get('revision') == 1, '配置公开响应应新增修订号'
+E   AssertionError: 配置公开响应应新增修订号
+E   assert None == 1
+E    +  where None = <built-in method get of dict object at 0xeaba6258ac00>('revision')
+E    +    where <built-in method get of dict object at 0xeaba6258ac00> = {'api_format': 'compatible', 'base_url': 'https://models.example/v1', 'created_at': '2026-10-22T10:16:49.799161', 'dimensions': None, ...}.get
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:49.803049Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mbbcb9aec-d6a4-4dae-8124-9e43f66331db[0m [36mkind[0m=[35mrerank[0m [36mprofile_id[0m=[35me205c09c-b087-4c5e-a5f5-3b259e6d3719[0m [36mtrace_id[0m=[35m01a1631d-0981-7c7d-b69e-bfd6bb761ac0[0m
+[2m2026-10-22T10:16:49.805452Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': 'e205c09c-b087-4c5e-a5f5-3b259e6d3719', 'actor_user_id': 'bbcb9aec-d6a4-4dae-8124-9e43f66331db', 'kind': 'rerank', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-0981-7c7d-b69e-bfd6bb761ac0', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.803049Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:49.809984Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.825657Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.826006Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.809984Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.825657Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.826006Z', 'logger': 'app.core.shutdown'}
+________ test_profile_and_binding_versions_are_distinct[query_rewrite] _________
+tests/admin_console/test_effective_models.py:28: in test_profile_and_binding_versions_are_distinct
+    assert first.get('revision') == 1, '配置公开响应应新增修订号'
+E   AssertionError: 配置公开响应应新增修订号
+E   assert None == 1
+E    +  where None = <built-in method get of dict object at 0xeaba62628d80>('revision')
+E    +    where <built-in method get of dict object at 0xeaba62628d80> = {'api_format': None, 'base_url': 'https://models.example/v1', 'created_at': '2026-10-22T10:16:49.856501', 'dimensions': None, ...}.get
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:49.860409Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m26598d53-44de-47eb-8710-b927c6752efe[0m [36mkind[0m=[35mquery_rewrite[0m [36mprofile_id[0m=[35me845d7b1-ab04-442c-a7ce-ba290d0ba705[0m [36mtrace_id[0m=[35m01a1631d-09b9-7241-80b4-b8fdaaf3aa4f[0m
+[2m2026-10-22T10:16:49.862881Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': 'e845d7b1-ab04-442c-a7ce-ba290d0ba705', 'actor_user_id': '26598d53-44de-47eb-8710-b927c6752efe', 'kind': 'query_rewrite', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-09b9-7241-80b4-b8fdaaf3aa4f', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.860409Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:49.866948Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.882739Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.883081Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.866948Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.882739Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.883081Z', 'logger': 'app.core.shutdown'}
+_______________ test_effective_probe_freshness[1-1-passed-True] ________________
+tests/admin_console/test_effective_models.py:52: in test_effective_probe_freshness
+    effective = assert_status(auth_client.get('/api/admin/models/effective'), 200, '应包含最新诊断摘要')[0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 应包含最新诊断摘要：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:49.918424Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m11a5dd7d-92a8-479c-82c8-4f458059579a[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m9eda3d0f-f09b-4831-98a6-18ae3739bcb7[0m [36mtrace_id[0m=[35m01a1631d-09f3-79f9-a58d-2b390a6c60d5[0m
+[2m2026-10-22T10:16:49.920861Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.931725Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35m11a5dd7d-92a8-479c-82c8-4f458059579a[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m9eda3d0f-f09b-4831-98a6-18ae3739bcb7[0m [36mtrace_id[0m=[35m01a1631d-0a01-73d4-a53e-4739ab25bffb[0m
+[2m2026-10-22T10:16:49.933971Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/9eda3d0f-f09b-4831-98a6-18ae3739bcb7/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.937443Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': '9eda3d0f-f09b-4831-98a6-18ae3739bcb7', 'actor_user_id': '11a5dd7d-92a8-479c-82c8-4f458059579a', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-09f3-79f9-a58d-2b390a6c60d5', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.918424Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:268 {'profile_id': '9eda3d0f-f09b-4831-98a6-18ae3739bcb7', 'actor_user_id': '11a5dd7d-92a8-479c-82c8-4f458059579a', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a1631d-0a01-73d4-a53e-4739ab25bffb', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.931725Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/9eda3d0f-f09b-4831-98a6-18ae3739bcb7/activate "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:49.943304Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.959508Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:49.959814Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.943304Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.959508Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.959814Z', 'logger': 'app.core.shutdown'}
+_______________ test_effective_probe_freshness[2-1-passed-False] _______________
+tests/admin_console/test_effective_models.py:52: in test_effective_probe_freshness
+    effective = assert_status(auth_client.get('/api/admin/models/effective'), 200, '应包含最新诊断摘要')[0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 应包含最新诊断摘要：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:49.995496Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35mb1a95aa4-a0f5-430d-8005-98801b94d92f[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m45cc7c9d-8fec-4349-8362-baf26f63de61[0m [36mtrace_id[0m=[35m01a1631d-0a41-7600-a97b-cccbfd57b05c[0m
+[2m2026-10-22T10:16:49.997931Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.009507Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35mb1a95aa4-a0f5-430d-8005-98801b94d92f[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m45cc7c9d-8fec-4349-8362-baf26f63de61[0m [36mtrace_id[0m=[35m01a1631d-0a4e-709e-a385-89dd7ce6322c[0m
+[2m2026-10-22T10:16:50.011897Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/45cc7c9d-8fec-4349-8362-baf26f63de61/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.015268Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': '45cc7c9d-8fec-4349-8362-baf26f63de61', 'actor_user_id': 'b1a95aa4-a0f5-430d-8005-98801b94d92f', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-0a41-7600-a97b-cccbfd57b05c', 'level': 'info', 'timestamp': '2026-10-22T10:16:49.995496Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:268 {'profile_id': '45cc7c9d-8fec-4349-8362-baf26f63de61', 'actor_user_id': 'b1a95aa4-a0f5-430d-8005-98801b94d92f', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a1631d-0a4e-709e-a385-89dd7ce6322c', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.009507Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/45cc7c9d-8fec-4349-8362-baf26f63de61/activate "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:50.020652Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.037123Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.037466Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.020652Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.037123Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.037466Z', 'logger': 'app.core.shutdown'}
+______________ test_effective_probe_freshness[1-16-passed-False] _______________
+tests/admin_console/test_effective_models.py:52: in test_effective_probe_freshness
+    effective = assert_status(auth_client.get('/api/admin/models/effective'), 200, '应包含最新诊断摘要')[0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 应包含最新诊断摘要：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:50.075278Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m0fd32c57-1c97-4002-8e39-d3df7d0cc8da[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mf4efe4af-803c-4af2-a96f-fa7777e0e9c0[0m [36mtrace_id[0m=[35m01a1631d-0a90-755a-ae34-cc89fe85ba87[0m
+[2m2026-10-22T10:16:50.077634Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.088139Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35m0fd32c57-1c97-4002-8e39-d3df7d0cc8da[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35mf4efe4af-803c-4af2-a96f-fa7777e0e9c0[0m [36mtrace_id[0m=[35m01a1631d-0a9e-7792-97e8-38da9ec68c5b[0m
+[2m2026-10-22T10:16:50.090618Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/f4efe4af-803c-4af2-a96f-fa7777e0e9c0/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.093953Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': 'f4efe4af-803c-4af2-a96f-fa7777e0e9c0', 'actor_user_id': '0fd32c57-1c97-4002-8e39-d3df7d0cc8da', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-0a90-755a-ae34-cc89fe85ba87', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.075278Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:268 {'profile_id': 'f4efe4af-803c-4af2-a96f-fa7777e0e9c0', 'actor_user_id': '0fd32c57-1c97-4002-8e39-d3df7d0cc8da', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a1631d-0a9e-7792-97e8-38da9ec68c5b', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.088139Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/f4efe4af-803c-4af2-a96f-fa7777e0e9c0/activate "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:50.100112Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.116604Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.116972Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.100112Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.116604Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.116972Z', 'logger': 'app.core.shutdown'}
+______________ test_effective_probe_freshness[1-1-running-False] _______________
+tests/admin_console/test_effective_models.py:52: in test_effective_probe_freshness
+    effective = assert_status(auth_client.get('/api/admin/models/effective'), 200, '应包含最新诊断摘要')[0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 应包含最新诊断摘要：期望 HTTP 200，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:50.153772Z[0m [[32m[1minfo[0m] [1m管理员创建模型配置[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactor_user_id[0m=[35m33ec7728-a767-47c3-84ca-cfc26886dcb9[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m4f3a16a7-b284-4467-9341-894e061a9fb9[0m [36mtrace_id[0m=[35m01a1631d-0ae0-77eb-8760-0ff65a50d0c7[0m
+[2m2026-10-22T10:16:50.156185Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.170772Z[0m [[32m[1minfo[0m] [1m管理员切换默认模型[0m [[0m[1m[34mapp.services.model_configuration[0m][0m [36mactivate[0m=[35mTrue[0m [36mactor_user_id[0m=[35m33ec7728-a767-47c3-84ca-cfc26886dcb9[0m [36mkind[0m=[35mchat[0m [36mprofile_id[0m=[35m4f3a16a7-b284-4467-9341-894e061a9fb9[0m [36mtrace_id[0m=[35m01a1631d-0aed-7643-9627-b2a6cbc02115[0m
+[2m2026-10-22T10:16:50.173029Z[0m [[32m[1minfo[0m] [1mHTTP Request: POST http://testserver/api/admin/models/4f3a16a7-b284-4467-9341-894e061a9fb9/activate "HTTP/1.1 200 OK"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.176077Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     app.services.model_configuration:model_configuration.py:123 {'profile_id': '4f3a16a7-b284-4467-9341-894e061a9fb9', 'actor_user_id': '33ec7728-a767-47c3-84ca-cfc26886dcb9', 'kind': 'chat', 'event': '管理员创建模型配置', 'trace_id': '01a1631d-0ae0-77eb-8760-0ff65a50d0c7', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.153772Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models "HTTP/1.1 201 Created"
+INFO     app.services.model_configuration:model_configuration.py:268 {'profile_id': '4f3a16a7-b284-4467-9341-894e061a9fb9', 'actor_user_id': '33ec7728-a767-47c3-84ca-cfc26886dcb9', 'kind': 'chat', 'activate': True, 'event': '管理员切换默认模型', 'trace_id': '01a1631d-0aed-7643-9627-b2a6cbc02115', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.170772Z', 'logger': 'app.services.model_configuration'}
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/admin/models/4f3a16a7-b284-4467-9341-894e061a9fb9/activate "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:50.181442Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.197668Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.198008Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.181442Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.197668Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.198008Z', 'logger': 'app.core.shutdown'}
+________________ test_effective_requires_model_permission[None] ________________
+tests/admin_console/test_effective_models.py:66: in test_effective_requires_model_permission
+    assert_status(auth_client.get('/api/admin/models/effective'), 403 if role else 401, '生效配置必须要求管理员')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 生效配置必须要求管理员：期望 HTTP 401，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:50.215843Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:50.222453Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.238124Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.238501Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.222453Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.238124Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.238501Z', 'logger': 'app.core.shutdown'}
+_______________ test_effective_requires_model_permission[member] _______________
+tests/admin_console/test_effective_models.py:66: in test_effective_requires_model_permission
+    assert_status(auth_client.get('/api/admin/models/effective'), 403 if role else 401, '生效配置必须要求管理员')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 生效配置必须要求管理员：期望 HTTP 403，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:50.262151Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:50.267396Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.283161Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.283475Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.267396Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.283161Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.283475Z', 'logger': 'app.core.shutdown'}
+_______________ test_effective_requires_model_permission[viewer] _______________
+tests/admin_console/test_effective_models.py:66: in test_effective_requires_model_permission
+    assert_status(auth_client.get('/api/admin/models/effective'), 403 if role else 401, '生效配置必须要求管理员')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 生效配置必须要求管理员：期望 HTTP 403，实际 HTTP 405；响应={"detail":"Method Not Allowed"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:16:50.307231Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/models/effective "HTTP/1.1 405 Method Not Allowed"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:16:50.312371Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.328165Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:16:50.328493Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.312371Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.328165Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:16:50.328493Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_effective_models.py::test_effective_environment_sources
+FAILED tests/admin_console/test_effective_models.py::test_profile_and_binding_versions_are_distinct[chat]
+FAILED tests/admin_console/test_effective_models.py::test_profile_and_binding_versions_are_distinct[embedding]
+FAILED tests/admin_console/test_effective_models.py::test_profile_and_binding_versions_are_distinct[rerank]
+FAILED tests/admin_console/test_effective_models.py::test_profile_and_binding_versions_are_distinct[query_rewrite]
+FAILED tests/admin_console/test_effective_models.py::test_effective_probe_freshness[1-1-passed-True]
+FAILED tests/admin_console/test_effective_models.py::test_effective_probe_freshness[2-1-passed-False]
+FAILED tests/admin_console/test_effective_models.py::test_effective_probe_freshness[1-16-passed-False]
+FAILED tests/admin_console/test_effective_models.py::test_effective_probe_freshness[1-1-running-False]
+FAILED tests/admin_console/test_effective_models.py::test_effective_requires_model_permission[None]
+FAILED tests/admin_console/test_effective_models.py::test_effective_requires_model_permission[member]
+FAILED tests/admin_console/test_effective_models.py::test_effective_requires_model_permission[viewer]
+12 failed in 0.90s

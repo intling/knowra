@@ -1,0 +1,454 @@
+I001 [*] Import block is un-sorted or un-formatted
+  --> alembic/versions/20260812_0002_partial_unique_dedup_index.py:8:1
+   |
+ 6 |   """
+ 7 |
+ 8 | / from collections.abc import Sequence
+ 9 | |
+10 | | from alembic import op
+11 | | from sqlalchemy import text
+   | |___________________________^
+12 |
+13 |   revision: str = "20260812_0002"
+   |
+help: Organize imports
+
+E501 Line too long (101 > 100)
+  --> alembic/versions/20260812_0002_partial_unique_dedup_index.py:48:82
+   |
+46 |     )
+47 |
+48 |     # 创建 partial unique index：同一用户下，未软删除的记录 (owner_user_id, checksum_sha256) 必须唯一
+   |                                                                                                      ^
+49 |     op.create_index(
+50 |         "ix_uploaded_files_dedup",
+   |
+
+E501 Line too long (102 > 100)
+   --> app/services/postprocessor.py:299:101
+    |
+297 |         return retained / len(original_tokens)
+298 |
+299 |     def pre_check(self, original_query: str, rewritten_query: str, intent: str | None = None) -> dict:
+    |                                                                                                     ^^
+300 |         """确定性预检查（零 LLM 成本）。
+    |
+
+E501 Line too long (101 > 100)
+   --> app/services/postprocessor.py:379:101
+    |
+377 |     # ── 质量评估 ──────────────────────────────────────────────────────────
+378 |
+379 |     def evaluate(self, original_query: str, rewritten_query: str, intent: str | None = None) -> dict:
+    |                                                                                                     ^
+380 |         """完整质量评估管线：确定性预检查 → LLM 质量评估。
+    |
+
+E501 Line too long (119 > 100)
+   --> app/services/uploads.py:105:101
+    |
+103 |         self.allowed_content_types = allowed_content_types
+104 |
+105 |     def create_upload(self, *, current_user: User, file: UploadFile, force: bool = False) -> tuple[UploadedFile, bool]:
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^
+106 |         content_type = file.content_type
+107 |         if not self._is_allowed_content_type(content_type, file.filename):
+    |
+
+E501 Line too long (104 > 100)
+   --> app/services/uploads.py:152:78
+    |
+150 |                 return existing, False
+151 |             else:
+152 |                 # 强制替换模式：软删除旧记录（含其下游 parsed/chunks/embeddings 由搜索层 filtered 屏蔽）
+    |                                                                                                     ^^^^
+153 |                 self._soft_delete_duplicate(current_user.id, stored_file.checksum_sha256)
+154 |                 logger.info(
+    |
+
+E501 Line too long (103 > 100)
+   --> app/services/uploads.py:195:101
+    |
+193 |                 checksum_sha256=stored_file.checksum_sha256,
+194 |             )
+195 |             raise UploadMetadataError("Duplicate upload conflict, existing record not found") from None
+    |                                                                                                     ^^^
+196 |         except Exception as exc:
+197 |             self.session.rollback()
+    |
+
+E501 Line too long (103 > 100)
+   --> app/services/uploads.py:229:101
+    |
+227 |         )
+228 |
+229 |     def _find_active_duplicate(self, owner_user_id: UUID, checksum_sha256: str) -> UploadedFile | None:
+    |                                                                                                     ^^^
+230 |         """查找同一用户下、内容哈希相同且未被软删除的已有上传记录。"""
+231 |         from sqlmodel import select as sm_select
+    |
+
+UP017 [*] Use `datetime.UTC` alias
+   --> app/services/uploads.py:249:28
+    |
+247 |         from sqlmodel import select as sm_select
+248 |
+249 |         now = datetime.now(timezone.utc)
+    |                            ^^^^^^^^^^^^
+250 |         duplicates = self.session.exec(
+251 |             sm_select(UploadedFile).where(
+    |
+help: Convert to `datetime.UTC` alias
+
+E501 Line too long (101 > 100)
+   --> tests/services/query_rewriter/test_query_rewriter.py:436:95
+    |
+434 |         )
+435 |
+436 |         result = await rewriter.rewrite("如何优化 JVM 参数", session_id="test-session", history=None)
+    |                                                                                                     ^
+437 |
+438 |         assert result.cache_hit is True
+    |
+
+E501 Line too long (101 > 100)
+    --> tests/services/query_rewriter/test_query_rewriter_integration.py:1319:86
+     |
+1317 |         pp = self._make_postprocessor()
+1318 |         # "基本操作" → tokens: ["基本", "本操", "操作"]
+1319 |         # 改写中只保留 "操作" → 留存率 1/3 ≈ 0.33 < 默认 0.70，但 > procedural 0.50? No, still < 0.50
+     |                                                                                                     ^
+1320 |         # 需要设计留存率在 0.50-0.70 之间的用例
+1321 |         # "基本操作指南" → tokens: ["基本", "本操", "操作", "作指", "指南"]
+     |
+
+E501 Line too long (101 > 100)
+    --> tests/services/query_rewriter/test_query_rewriter_integration.py:1322:83
+     |
+1320 |         # 需要设计留存率在 0.50-0.70 之间的用例
+1321 |         # "基本操作指南" → tokens: ["基本", "本操", "操作", "作指", "指南"]
+1322 |         # 改写 "操作指南概述" → "基本" not in, "本操" not in, "操作" ✓, "作指" ✓, "指南" ✓ → 3/5=0.60
+     |                                                                                                     ^
+1323 |         original = "基本操作指南"
+1324 |         rewritten = "操作指南概述"
+     |
+
+E501 Line too long (105 > 100)
+    --> tests/services/query_rewriter/test_query_rewriter_integration.py:1343:78
+     |
+1341 |         """factual 意图使用 0.80 阈值 —— 高于默认 0.70 的留存率也会被拒。"""
+1342 |         pp = self._make_postprocessor()
+1343 |         # "什么是深度学习模型" → tokens: ["什么", "么是", "是深", "深度", "度学", "学习", "习模", "模型"]
+     |                                                                                                      ^^^^
+1344 |         # After stop words: "什么" filtered, "么是" not filtered, "是深" not filtered...
+1345 |         # Actually let me reconsider. Stop words include "什么", "怎么", "如何", "哪些" etc.
+     |
+
+E501 Line too long (115 > 100)
+    --> tests/services/query_rewriter/test_query_rewriter_integration.py:1365:83
+     |
+1363 | …     # 0.60 < factual 0.80, but also < default 0.70. We need it to be in the 0.70-0.80 range.
+1364 | …     #
+1365 | …     # Let me try: original "深度学习框架对比" → bigrams: "深度", "度学", "学习", "习框", "框架", "架对", "对比"
+     |                                                                                                   ^^^^^^^^^^^^^^^
+1366 | …     # 7 tokens. Rewritten "深度学习框架比较分析" →
+1367 | …     # "深度" ✓, "度学" ✓, "学习" ✓, "习框" ✓, "框架" ✓, "架对" not in, "对比" not in
+     |
+
+UP041 [*] Replace aliased errors with `TimeoutError`
+   --> tests/services/query_rewriter/test_query_rewriter_phase2.py:944:23
+    |
+942 |             # 仅当 func 是 normalize_rewriter.rewrite 时才触发超时
+943 |             if func is mock_normalize_rewriter.rewrite:
+944 |                 raise asyncio.TimeoutError("simulated hard timeout")
+    |                       ^^^^^^^^^^^^^^^^^^^^
+945 |             # 其他调用（strategy_router、term_align 等）→ 正常
+946 |             return await _orig_run_sync(func, *args, **kwargs)
+    |
+help: Replace `asyncio.TimeoutError` with builtin `TimeoutError`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/services/query_rewriter/test_query_rewriter_phase2.py:949:13
+    |
+948 |         with patch.object(rewriter, "_run_sync_in_thread", _patched_run_sync):
+949 |             result = await rewriter.rewrite("查询文本", history=None)
+    |             ^^^^^^
+950 |
+951 |         # normalize 因超时被跳过（未调用底层 rewriter）
+    |
+help: Remove assignment to unused variable `result`
+
+E501 Line too long (122 > 100)
+  --> tests/services/query_rewriter/test_semantic_cache_l2.py:55:101
+   |
+53 |         )
+54 |         mock_cache_manager_with_l2.lookup.return_value = None
+55 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+56 |         )
+57 |         mock_protector_phase2.protect.return_value = ("怎么提升数据库的性能", {})
+   |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:102:101
+    |
+100 |         )
+101 |         mock_cache_manager_with_l2.lookup.return_value = None
+102 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+103 |         )
+104 |         mock_protector_phase2.protect.side_effect = [
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:157:101
+    |
+155 |         )
+156 |         mock_cache_manager_with_l2.lookup.return_value = None
+157 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+158 |         )
+159 |         mock_protector_phase2.protect.return_value = (
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:225:101
+    |
+223 |         )
+224 |         mock_cache_manager_with_l2.lookup.return_value = None
+225 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+226 |         )
+227 |         mock_protector_phase2.protect.return_value = ("怎么配置 Nginx", {})
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:314:101
+    |
+312 |         )
+313 |         mock_cache_manager_with_l2.lookup.return_value = None
+314 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+315 |         )
+316 |         mock_protector_phase2.protect.return_value = ("微服务架构怎么设计", {})
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:416:101
+    |
+414 |         )
+415 |         mock_cache_manager_with_l2.lookup.return_value = None
+416 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+417 |         )
+418 |         mock_protector_phase2.protect.return_value = ("报销需要什么材料", {})
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:460:101
+    |
+458 |         )
+459 |         mock_cache_manager_with_l2.lookup.return_value = None
+460 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+461 |         )
+462 |         mock_protector_phase2.protect.return_value = ("Python 基础语法", {})
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:503:101
+    |
+501 |         )
+502 |         mock_cache_manager_with_l2.lookup.return_value = None
+503 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+504 |         )
+505 |         mock_protector_phase2.protect.return_value = ("RESTful API 是啥", {})
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:809:101
+    |
+807 |         )
+808 |         mock_cache_manager_with_l2.lookup.return_value = None
+809 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+810 |         )
+811 |         mock_protector_phase2.protect.return_value = ("怎么提升数据库的性能", {})
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:856:101
+    |
+854 |         )
+855 |         mock_cache_manager_with_l2.lookup.return_value = None
+856 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="context_dependent"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+857 |         )
+858 |         # 校验器判定为依赖上下文 → 校验失败
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:928:101
+    |
+926 |         )
+927 |         mock_cache_manager_with_l2.lookup.return_value = None
+928 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+929 |         )
+930 |         mock_context_verifier.verify.return_value = {
+    |
+
+E501 Line too long (122 > 100)
+   --> tests/services/query_rewriter/test_semantic_cache_l2.py:981:101
+    |
+979 |         )
+980 |         mock_cache_manager_with_l2.lookup.return_value = None
+981 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="context_dependent"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+982 |         )
+983 |         mock_context_verifier.verify.return_value = {
+    |
+
+E501 Line too long (122 > 100)
+    --> tests/services/query_rewriter/test_semantic_cache_l2.py:1052:101
+     |
+1050 |         )
+1051 |         mock_cache_manager_with_l2.lookup.return_value = None
+1052 |         mock_cache_manager_with_l2.lookup_l2.return_value = make_l2_cache_entry(cached, knowledge_type="general_knowledge"
+     |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+1053 |         )
+1054 |         # 校验 LLM 调用失败
+     |
+
+F841 Local variable `UploadedFile` is assigned to but never used
+   --> tests/services/test_upload_service.py:459:5
+    |
+457 | ) -> None:
+458 |     """force=True 时旧记录被软删除，新管线结果替换旧结果。"""
+459 |     UploadedFile = get_uploaded_file_model()
+    |     ^^^^^^^^^^^^
+460 |     content = b"file to replace"
+461 |     service = make_service(session=session, storage_root=tmp_path)
+    |
+help: Remove assignment to unused variable `UploadedFile`
+
+F401 [*] `hashlib` imported but unused
+  --> tests/verify_review_issues.py:10:8
+   |
+ 9 | import asyncio
+10 | import hashlib
+   |        ^^^^^^^
+11 | import threading
+12 | import time
+   |
+help: Remove unused import: `hashlib`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/verify_review_issues.py:13:27
+   |
+11 | import threading
+12 | import time
+13 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+14 |
+15 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/verify_review_issues.py:13:38
+   |
+11 | import threading
+12 | import time
+13 | from unittest.mock import MagicMock, patch
+   |                                      ^^^^^
+14 |
+15 | import pytest
+   |
+help: Remove unused import
+
+F811 [*] Redefinition of unused `hashlib` from line 10
+   --> tests/verify_review_issues.py:244:16
+    |
+242 |         软删除只设置 uploaded_files.deleted_at，不影响 embeddings 表和 jobs 表。
+243 |         """
+244 |         import hashlib
+    |                ^^^^^^^ `hashlib` redefined here
+245 |
+246 |         # 模拟: 删除前
+    |
+   ::: tests/verify_review_issues.py:10:8
+    |
+  9 | import asyncio
+ 10 | import hashlib
+    |        ------- previous definition of `hashlib` here
+ 11 | import threading
+ 12 | import time
+    |
+help: Remove definition: `hashlib`
+
+UP041 [*] Replace aliased errors with `TimeoutError`
+   --> tests/verify_review_issues.py:306:24
+    |
+304 |                     )
+305 |                     result_container["waited"] = waited
+306 |                 except asyncio.TimeoutError:
+    |                        ^^^^^^^^^^^^^^^^^^^^
+307 |                     result_container["timeout"] = True
+308 |                 except Exception as e:
+    |
+help: Replace `asyncio.TimeoutError` with builtin `TimeoutError`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/verify_review_issues.py:415:9
+    |
+413 |       def test_codebase_uses_threading_event_not_asyncio_event(self):
+414 |           """修复验证：QueryRewriter 使用 threading.Event 而非 asyncio.Event。"""
+415 | /         import inspect
+416 | |         from app.services.query_rewriter import QueryRewriter
+    | |_____________________________________________________________^
+417 |
+418 |           source = inspect.getsource(QueryRewriter.__init__)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/verify_review_issues.py:608:9
+    |
+606 |           排除注释和 docstring 中的提及 (如 "生产环境中将替换为..."）。
+607 |           """
+608 | /         import inspect
+609 | |         from app.services.cache_manager import CacheManager
+    | |___________________________________________________________^
+610 |
+611 |           source = inspect.getsource(CacheManager.lookup_l2)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/verify_review_issues.py:681:9
+    |
+679 |       def test_create_upload_handles_integrity_error(self):
+680 |           """修复后：create_upload 有 IntegrityError 处理实现原子 upsert。"""
+681 | /         import inspect
+682 | |         from app.services.uploads import UploadService
+    | |______________________________________________________^
+683 |
+684 |           source = inspect.getsource(UploadService.create_upload)
+    |
+help: Organize imports
+
+F401 [*] `ast` imported but unused
+   --> tests/verify_review_issues.py:785:16
+    |
+783 |         禁用路径现在返回 None，与成功/失败路径区分。
+784 |         """
+785 |         import ast
+    |                ^^^
+786 |         from pathlib import Path
+    |
+help: Remove unused import: `ast`
+
+Found 39 errors.
+[*] 12 fixable with the `--fix` option (2 hidden fixes can be enabled with the `--unsafe-fixes` option).

@@ -1,0 +1,785 @@
+Uninstalled 1 package in 0.56ms
+Installed 1 package in 1ms
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF                                   [100%]
+=================================== FAILURES ===================================
+____________ test_operations_permissions[/api/admin/overview-admin] ____________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+---------------------------- Captured stderr setup -----------------------------
+[2m2026-10-22T10:25:21.820903Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:21.821461Z[0m [[32m[1minfo[0m] [1mStartup job reconciliation completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mstartup_reconciliation[0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'startup_reconciliation', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.820903Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:60 {'reason': 'startup_reconciliation', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Startup job reconciliation completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.821461Z', 'logger': 'app.core.shutdown'}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:21.837213Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=3cc93888-2dca-47ae-806a-9d94c280c21c "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=3cc93888-2dca-47ae-806a-9d94c280c21c "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:21.909232Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:21.927836Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:21.928258Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.909232Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.927836Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.928258Z', 'logger': 'app.core.shutdown'}
+___________ test_operations_permissions[/api/admin/overview-member] ____________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:21.955479Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=d7070991-496b-410e-adbd-9d8ebdfe07b3 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=d7070991-496b-410e-adbd-9d8ebdfe07b3 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:21.970363Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:21.986705Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:21.987131Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.970363Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.986705Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:21.987131Z', 'logger': 'app.core.shutdown'}
+___________ test_operations_permissions[/api/admin/overview-viewer] ____________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.037871Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=6d33638f-5c67-430e-9ff1-abc0f4b0dff6 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=6d33638f-5c67-430e-9ff1-abc0f4b0dff6 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.051143Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.072013Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.072406Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.051143Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.072013Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.072406Z', 'logger': 'app.core.shutdown'}
+____________ test_operations_permissions[/api/admin/overview-None] _____________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 401，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.092427Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=16c353a2-31c9-483b-b131-24b43ceb322e "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/overview?role=admin&owner_user_id=16c353a2-31c9-483b-b131-24b43ceb322e "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.103547Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.119879Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.120283Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.103547Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.119879Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.120283Z', 'logger': 'app.core.shutdown'}
+______________ test_operations_permissions[/api/admin/jobs-admin] ______________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.147515Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=8cc64c97-9152-482a-b61e-80b802e6ff29 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=8cc64c97-9152-482a-b61e-80b802e6ff29 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.157492Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.174269Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.174656Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.157492Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.174269Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.174656Z', 'logger': 'app.core.shutdown'}
+_____________ test_operations_permissions[/api/admin/jobs-member] ______________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.201687Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=a1a8345a-bb88-4964-a415-5c85e6a0beaa "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=a1a8345a-bb88-4964-a415-5c85e6a0beaa "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.211602Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.227665Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.228076Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.211602Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.227665Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.228076Z', 'logger': 'app.core.shutdown'}
+_____________ test_operations_permissions[/api/admin/jobs-viewer] ______________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.255395Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=57599b47-c75b-4be4-900d-48ba289630ba "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=57599b47-c75b-4be4-900d-48ba289630ba "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.265821Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.282339Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.282730Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.265821Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.282339Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.282730Z', 'logger': 'app.core.shutdown'}
+______________ test_operations_permissions[/api/admin/jobs-None] _______________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 401，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.304263Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=aa060236-4a9a-4f14-b871-6799724efb7e "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?role=admin&owner_user_id=aa060236-4a9a-4f14-b871-6799724efb7e "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.315657Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.331974Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.332357Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.315657Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.331974Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.332357Z', 'logger': 'app.core.shutdown'}
+_________ test_operations_permissions[/api/admin/system/status-admin] __________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.358775Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=3e5c5af8-946b-4b6d-9f46-24d26c4d67b6 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=3e5c5af8-946b-4b6d-9f46-24d26c4d67b6 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.370906Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.387316Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.387708Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.370906Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.387316Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.387708Z', 'logger': 'app.core.shutdown'}
+_________ test_operations_permissions[/api/admin/system/status-member] _________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.414868Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=ce10a91d-8e97-481e-aa36-63f32e5b76f4 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=ce10a91d-8e97-481e-aa36-63f32e5b76f4 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.424604Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.440860Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.441264Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.424604Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.440860Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.441264Z', 'logger': 'app.core.shutdown'}
+_________ test_operations_permissions[/api/admin/system/status-viewer] _________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.467849Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=77290c6f-834e-46bc-992a-2ad0eae07329 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=77290c6f-834e-46bc-992a-2ad0eae07329 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.477623Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.493871Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.494285Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.477623Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.493871Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.494285Z', 'logger': 'app.core.shutdown'}
+__________ test_operations_permissions[/api/admin/system/status-None] __________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 401，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.515083Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=7c47bd1d-0136-4c35-ac75-1a5dd91312ee "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/system/status?role=admin&owner_user_id=7c47bd1d-0136-4c35-ac75-1a5dd91312ee "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.526192Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.542608Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.543033Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.526192Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.542608Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.543033Z', 'logger': 'app.core.shutdown'}
+__________ test_operations_permissions[/api/admin/audit-events-admin] __________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.569977Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=d91c28df-c857-4c38-947a-11bdea5b1662 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=d91c28df-c857-4c38-947a-11bdea5b1662 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.579759Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.596730Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.597141Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.579759Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.596730Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.597141Z', 'logger': 'app.core.shutdown'}
+_________ test_operations_permissions[/api/admin/audit-events-member] __________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.624265Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=6fa9817c-3519-4d4c-9885-47a59f900eb0 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=6fa9817c-3519-4d4c-9885-47a59f900eb0 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.633987Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.650734Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.651199Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.633987Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.650734Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.651199Z', 'logger': 'app.core.shutdown'}
+_________ test_operations_permissions[/api/admin/audit-events-viewer] __________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 403，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.677710Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=a78760f5-74e4-4c58-80b3-ff90261794a3 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=a78760f5-74e4-4c58-80b3-ff90261794a3 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.687190Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.703040Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.703419Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.687190Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.703040Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.703419Z', 'logger': 'app.core.shutdown'}
+__________ test_operations_permissions[/api/admin/audit-events-None] ___________
+tests/admin_console/test_operational_reads.py:28: in test_operations_permissions
+    assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 运行数据仅允许真实管理员读取：期望 HTTP 401，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.723051Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=a5541016-f5a0-44a9-b493-9e13a537d5a1 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?role=admin&owner_user_id=a5541016-f5a0-44a9-b493-9e13a537d5a1 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.736196Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.752264Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.752654Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.736196Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.752264Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.752654Z', 'logger': 'app.core.shutdown'}
+____________ test_jobs_union_filter_pagination_and_safe_projection _____________
+tests/admin_console/test_operational_reads.py:56: in test_jobs_union_filter_pagination_and_safe_projection
+    body = assert_status(auth_client.get('/api/admin/jobs', params={'limit': 2}), 200, '统一任务列表应支持三阶段')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 统一任务列表应支持三阶段：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.819780Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?limit=2 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?limit=2 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.829999Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.846697Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.847120Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.829999Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.846697Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.847120Z', 'logger': 'app.core.shutdown'}
+___________ test_job_detail_tracks_actual_attempts_and_missing_stage ___________
+tests/admin_console/test_operational_reads.py:78: in test_job_detail_tracks_actual_attempts_and_missing_stage
+    body = assert_status(auth_client.get(f'/api/admin/jobs/chunk/{jobs[1].id}'), 200, '任务详情应关联实际上传所有尝试')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务详情应关联实际上传所有尝试：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.923956Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs/chunk/bb2d40ff-0c7c-4b5d-a02b-a6642009b534 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs/chunk/bb2d40ff-0c7c-4b5d-a02b-a6642009b534 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.933831Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.951322Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:22.951709Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.933831Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.951322Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.951709Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params0] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:22.976419Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?kind=unknown "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?kind=unknown "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:22.985839Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.001894Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.002348Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:22.985839Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.001894Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.002348Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params1] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.027088Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?status=done "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?status=done "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.041642Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.058962Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.059356Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.041642Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.058962Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.059356Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params2] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.253111Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?owner_user_id=wrong "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?owner_user_id=wrong "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.263324Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.279733Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.280153Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.263324Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.279733Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.280153Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params3] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.305111Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?limit=101 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?limit=101 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.314912Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.331220Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.331589Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.314912Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.331220Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.331589Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params4] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.355797Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?offset=-1 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?offset=-1 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.365569Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.381867Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.382320Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.365569Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.381867Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.382320Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params5] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.406555Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?from=2026-10-22T00%3A00%3A00Z&to=2026-10-21T00%3A00%3A00Z "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?from=2026-10-22T00%3A00%3A00Z&to=2026-10-21T00%3A00%3A00Z "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.416474Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.433068Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.433450Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.416474Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.433068Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.433450Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params6] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.458474Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?from=2026-01-01T00%3A00%3A00Z&to=2026-10-22T00%3A00%3A00Z "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?from=2026-01-01T00%3A00%3A00Z&to=2026-10-22T00%3A00%3A00Z "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.468157Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.484579Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.484983Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.468157Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.484579Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.484983Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_validate_filters[params7] ______________________
+tests/admin_console/test_operational_reads.py:93: in test_jobs_validate_filters
+    assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务查询需明确拒绝非法条件：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.510009Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?from=bad "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?from=bad "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.520379Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.536841Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.537261Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.520379Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.536841Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.537261Z', 'logger': 'app.core.shutdown'}
+_____________________ test_jobs_utc_boundaries_and_missing _____________________
+tests/admin_console/test_operational_reads.py:100: in test_jobs_utc_boundaries_and_missing
+    body = assert_status(auth_client.get('/api/admin/jobs', params={'kind': 'parse', 'from': timestamp.isoformat(), 'to': (timestamp+timedelta(seconds=1)).isoformat()}), 200, '任务时间应使用半开区间')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 任务时间应使用半开区间：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.599646Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/jobs?kind=parse&from=2026-10-22T10%3A22%3A23.593778%2B00%3A00&to=2026-10-22T10%3A22%3A24.593778%2B00%3A00 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/jobs?kind=parse&from=2026-10-22T10%3A22%3A23.593778%2B00%3A00&to=2026-10-22T10%3A22%3A24.593778%2B00%3A00 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.609367Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.625738Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.626163Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.609367Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.625738Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.626163Z', 'logger': 'app.core.shutdown'}
+___________________ test_overview_counts_and_finished_window ___________________
+tests/admin_console/test_operational_reads.py:118: in test_overview_counts_and_finished_window
+    body = assert_status(auth_client.get('/api/admin/overview'), 200, '总览应聚合真实有效记录')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 总览应聚合真实有效记录：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.717976Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/overview "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/overview "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.727842Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.744046Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.744439Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.727842Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.744046Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.744439Z', 'logger': 'app.core.shutdown'}
+______________ test_overview_zero_denominator_and_partial_failure ______________
+tests/admin_console/test_operational_reads.py:129: in test_overview_zero_denominator_and_partial_failure
+    service = importlib.import_module('app.services.admin_operations')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1335: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'app.services.admin_operations'
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.785434Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.801623Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.802040Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.785434Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.801623Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.802040Z', 'logger': 'app.core.shutdown'}
+_________________ test_system_status_scope_and_no_model_calls __________________
+tests/admin_console/test_operational_reads.py:146: in test_system_status_scope_and_no_model_calls
+    body = assert_status(auth_client.get('/api/admin/system/status'), 200, '系统状态应返回依赖检查')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 系统状态应返回依赖检查：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.826472Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/system/status "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/system/status "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.835951Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.853007Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.853393Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.835951Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.853007Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.853393Z', 'logger': 'app.core.shutdown'}
+____________________ test_operations_auth_dependency_outage ____________________
+tests/admin_console/test_operational_reads.py:161: in test_operations_auth_dependency_outage
+    body = assert_error(auth_client.get('/api/admin/system/status'), 503, 'admin_dependency_unavailable', '认证依赖失效应安全报告')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 认证依赖失效应安全报告：期望 HTTP 503，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.883059Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/system/status "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/system/status "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.893031Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.909372Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.909764Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.893031Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.909372Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.909764Z', 'logger': 'app.core.shutdown'}
+________________ test_audit_query_filters_history_and_whitelist ________________
+tests/admin_console/test_operational_reads.py:171: in test_audit_query_filters_history_and_whitelist
+    body = assert_status(auth_client.get('/api/admin/audit-events', params={'limit': 1, 'offset': 1, 'action': 'user.update', 'actor_user_id': str(admin_actor.id)}), 200, '审计应全量筛选并稳定分页')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 审计应全量筛选并稳定分页：期望 HTTP 200，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.938054Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?limit=1&offset=1&action=user.update&actor_user_id=0627e17d-8efe-4f44-b798-87948faf6808 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?limit=1&offset=1&action=user.update&actor_user_id=0627e17d-8efe-4f44-b798-87948faf6808 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:23.947723Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.964651Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:23.965076Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.947723Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.964651Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:23.965076Z', 'logger': 'app.core.shutdown'}
+_____________________ test_audit_invalid_queries[params0] ______________________
+tests/admin_console/test_operational_reads.py:183: in test_audit_invalid_queries
+    assert_status(auth_client.get('/api/admin/audit-events', params=params), 422, '非法审计查询应有原因')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法审计查询应有原因：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:23.991121Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?action=user.export "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?action=user.export "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:24.000627Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.018181Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.018603Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.000627Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.018181Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.018603Z', 'logger': 'app.core.shutdown'}
+_____________________ test_audit_invalid_queries[params1] ______________________
+tests/admin_console/test_operational_reads.py:183: in test_audit_invalid_queries
+    assert_status(auth_client.get('/api/admin/audit-events', params=params), 422, '非法审计查询应有原因')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法审计查询应有原因：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:24.042736Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?result=unknown "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?result=unknown "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:24.052441Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.069020Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.069408Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.052441Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.069020Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.069408Z', 'logger': 'app.core.shutdown'}
+_____________________ test_audit_invalid_queries[params2] ______________________
+tests/admin_console/test_operational_reads.py:183: in test_audit_invalid_queries
+    assert_status(auth_client.get('/api/admin/audit-events', params=params), 422, '非法审计查询应有原因')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法审计查询应有原因：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:24.094121Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?actor_user_id=wrong "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?actor_user_id=wrong "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:24.103603Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.120586Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.121000Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.103603Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.120586Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.121000Z', 'logger': 'app.core.shutdown'}
+_____________________ test_audit_invalid_queries[params3] ______________________
+tests/admin_console/test_operational_reads.py:183: in test_audit_invalid_queries
+    assert_status(auth_client.get('/api/admin/audit-events', params=params), 422, '非法审计查询应有原因')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法审计查询应有原因：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:24.145391Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?limit=101 "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?limit=101 "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:24.155142Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.171823Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.172232Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.155142Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.171823Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.172232Z', 'logger': 'app.core.shutdown'}
+_____________________ test_audit_invalid_queries[params4] ______________________
+tests/admin_console/test_operational_reads.py:183: in test_audit_invalid_queries
+    assert_status(auth_client.get('/api/admin/audit-events', params=params), 422, '非法审计查询应有原因')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法审计查询应有原因：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:24.198657Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?from=2026-10-22T00%3A00%3A00Z&to=2026-10-21T00%3A00%3A00Z "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?from=2026-10-22T00%3A00%3A00Z&to=2026-10-21T00%3A00%3A00Z "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:24.208158Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.225995Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.226414Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.208158Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.225995Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.226414Z', 'logger': 'app.core.shutdown'}
+_____________________ test_audit_invalid_queries[params5] ______________________
+tests/admin_console/test_operational_reads.py:183: in test_audit_invalid_queries
+    assert_status(auth_client.get('/api/admin/audit-events', params=params), 422, '非法审计查询应有原因')
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 非法审计查询应有原因：期望 HTTP 422，实际 HTTP 404；响应={"detail":"Not Found"}
+----------------------------- Captured stderr call -----------------------------
+[2m2026-10-22T10:25:24.250168Z[0m [[32m[1minfo[0m] [1mHTTP Request: GET http://testserver/api/admin/audit-events?from=2026-01-01T00%3A00%3A00Z&to=2026-10-22T00%3A00%3A00Z "HTTP/1.1 404 Not Found"[0m [[0m[1m[34mhttpx[0m][0m [36mtrace_id[0m=[35m-[0m
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/admin/audit-events?from=2026-01-01T00%3A00%3A00Z&to=2026-10-22T00%3A00%3A00Z "HTTP/1.1 404 Not Found"
+--------------------------- Captured stderr teardown ---------------------------
+[2m2026-10-22T10:25:24.259706Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown started[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mfirst_call[0m=[35mTrue[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.276439Z[0m [[32m[1minfo[0m] [1mMarked incomplete embedding jobs as failed for shutdown[0m [[0m[1m[34mapp.services.document_embedding[0m][0m [36mcount[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+[2m2026-10-22T10:25:24.276835Z[0m [[32m[1minfo[0m] [1mApplication graceful shutdown completed[0m [[0m[1m[34mapp.core.shutdown[0m][0m [36mchunk_jobs[0m=[35m0[0m [36membedding_jobs[0m=[35m0[0m [36mparse_jobs[0m=[35m0[0m [36mreason[0m=[35mlifespan_teardown[0m [36mtrace_id[0m=[35m-[0m
+---------------------------- Captured log teardown -----------------------------
+INFO     app.core.shutdown:shutdown.py:106 {'reason': 'lifespan_teardown', 'first_call': True, 'event': 'Application graceful shutdown started', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.259706Z', 'logger': 'app.core.shutdown'}
+INFO     app.services.document_embedding:document_embedding.py:398 {'reason': 'lifespan_teardown', 'count': 0, 'event': 'Marked incomplete embedding jobs as failed for shutdown', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.276439Z', 'logger': 'app.services.document_embedding'}
+INFO     app.core.shutdown:shutdown.py:141 {'reason': 'lifespan_teardown', 'parse_jobs': 0, 'chunk_jobs': 0, 'embedding_jobs': 0, 'event': 'Application graceful shutdown completed', 'trace_id': '-', 'level': 'info', 'timestamp': '2026-10-22T10:25:24.276835Z', 'logger': 'app.core.shutdown'}
+=========================== short test summary info ============================
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/overview-admin]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/overview-member]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/overview-viewer]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/overview-None]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/jobs-admin]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/jobs-member]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/jobs-viewer]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/jobs-None]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/system/status-admin]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/system/status-member]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/system/status-viewer]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/system/status-None]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/audit-events-admin]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/audit-events-member]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/audit-events-viewer]
+FAILED tests/admin_console/test_operational_reads.py::test_operations_permissions[/api/admin/audit-events-None]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_union_filter_pagination_and_safe_projection
+FAILED tests/admin_console/test_operational_reads.py::test_job_detail_tracks_actual_attempts_and_missing_stage
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params0]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params1]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params2]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params3]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params4]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params5]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params6]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_validate_filters[params7]
+FAILED tests/admin_console/test_operational_reads.py::test_jobs_utc_boundaries_and_missing
+FAILED tests/admin_console/test_operational_reads.py::test_overview_counts_and_finished_window
+FAILED tests/admin_console/test_operational_reads.py::test_overview_zero_denominator_and_partial_failure
+FAILED tests/admin_console/test_operational_reads.py::test_system_status_scope_and_no_model_calls
+FAILED tests/admin_console/test_operational_reads.py::test_operations_auth_dependency_outage
+FAILED tests/admin_console/test_operational_reads.py::test_audit_query_filters_history_and_whitelist
+FAILED tests/admin_console/test_operational_reads.py::test_audit_invalid_queries[params0]
+FAILED tests/admin_console/test_operational_reads.py::test_audit_invalid_queries[params1]
+FAILED tests/admin_console/test_operational_reads.py::test_audit_invalid_queries[params2]
+FAILED tests/admin_console/test_operational_reads.py::test_audit_invalid_queries[params3]
+FAILED tests/admin_console/test_operational_reads.py::test_audit_invalid_queries[params4]
+FAILED tests/admin_console/test_operational_reads.py::test_audit_invalid_queries[params5]
+38 failed in 2.59s

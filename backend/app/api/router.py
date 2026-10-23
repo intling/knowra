@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.deps import get_current_user, verify_trusted_origin
 from app.api.routes import (
     admin_models,
+    admin_operations,
     admin_users,
     auth,
     document_chunking,
@@ -20,6 +21,7 @@ api_router.include_router(health.router)
 api_router.include_router(auth.router)
 for private_router in (
     admin_models.router,
+    admin_operations.router,
     uploads.router,
     document_parsing.router,
     document_chunking.router,

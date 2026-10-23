@@ -1,0 +1,416 @@
+Uninstalled 1 package in 0.60ms
+Installed 1 package in 1ms
+E501 Line too long (103 > 100)
+  --> app/services/model_probes.py:54:101
+   |
+52 |         running = session.exec(select(ModelProbeResult).where(
+53 |             ModelProbeResult.status == 'running', ModelProbeResult.lease_expires_at > now)).all()
+54 |         latest = session.exec(select(ModelProbeResult).where(ModelProbeResult.profile_id == profile_id)
+   |                                                                                                     ^^^
+55 |                               .order_by(ModelProbeResult.started_at.desc()).limit(1)).first()
+56 |         cooldown = settings.admin_model_test_cooldown_seconds
+   |
+
+E501 Line too long (101 > 100)
+  --> app/services/model_probes.py:95:101
+   |
+93 |         if snapshot.api_format == 'dashscope':
+94 |             return '/text-rerank/text-rerank', {'model': snapshot.model, 'input': fields,
+95 |                                                'parameters': {'top_n': 2, 'return_documents': False}}
+   |                                                                                                     ^
+96 |         return '/rerank', {'model': snapshot.model, **fields, 'top_n': 2, 'return_documents': False}
+97 |     return '/chat/completions', {'model': snapshot.model, 'messages': [
+   |
+
+E501 Line too long (106 > 100)
+   --> app/services/model_probes.py:109:101
+    |
+107 |         if snapshot.kind == 'rerank':
+108 |             rows = (body['output'] if snapshot.api_format == 'dashscope' else body)['results']
+109 |             return bool(rows) and len(rows) <= 2 and len({r['index'] for r in rows}) == len(rows) and all(
+    |                                                                                                     ^^^^^^
+110 |                 type(r['index']) is int and 0 <= r['index'] < 2 and
+111 |                 type(r['relevance_score']) in (int, float) and math.isfinite(r['relevance_score']) for r in rows)
+    |
+
+E501 Line too long (113 > 100)
+   --> app/services/model_probes.py:111:101
+    |
+109 |             return bool(rows) and len(rows) <= 2 and len({r['index'] for r in rows}) == len(rows) and all(
+110 |                 type(r['index']) is int and 0 <= r['index'] < 2 and
+111 |                 type(r['relevance_score']) in (int, float) and math.isfinite(r['relevance_score']) for r in rows)
+    |                                                                                                     ^^^^^^^^^^^^^
+112 |         return isinstance(body['choices'][0]['message']['content'], str) and bool(body['choices'][0]['message']['content'].strip())
+113 |     except (KeyError, TypeError, IndexError, ValueError):
+    |
+
+E501 Line too long (131 > 100)
+   --> app/services/model_probes.py:112:101
+    |
+110 |                 type(r['index']) is int and 0 <= r['index'] < 2 and
+111 |                 type(r['relevance_score']) in (int, float) and math.isfinite(r['relevance_score']) for r in rows)
+112 |         return isinstance(body['choices'][0]['message']['content'], str) and bool(body['choices'][0]['message']['content'].strip())
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+113 |     except (KeyError, TypeError, IndexError, ValueError):
+114 |         return False
+    |
+
+E501 Line too long (124 > 100)
+   --> app/services/model_probes.py:125:101
+    |
+123 |                 # 有界流式读取，既不持久化也不向调用者返回上游输出。
+124 |                 async with client.stream('POST', snapshot.base_url.rstrip('/') + path,
+125 |                                          json=payload, headers={'Authorization': f'Bearer {snapshot.api_key}'}) as response:
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+126 |                     if response.status_code in (401, 403):
+127 |                         return 'model_test_auth_failed'
+    |
+
+E501 Line too long (114 > 100)
+   --> app/services/model_probes.py:140:101
+    |
+138 |                     except (ValueError, UnicodeError):
+139 |                         return 'model_test_invalid_response'
+140 |                     return 'model_test_passed' if _valid_output(snapshot, body) else 'model_test_invalid_response'
+    |                                                                                                     ^^^^^^^^^^^^^^
+141 |     except (TimeoutError, httpx.TimeoutException):
+142 |         return 'model_test_timeout'
+    |
+
+E501 Line too long (103 > 100)
+   --> app/services/model_probes.py:164:101
+    |
+162 | async def run_probe(session: Session, actor: User, profile_id: UUID, expected_revision: int,
+163 |                     settings: Settings, shutdown):
+164 |     probe_id, snapshot = admit_probe(session, actor, profile_id, expected_revision, settings, shutdown)
+    |                                                                                                     ^^^
+165 |     started = monotonic()
+166 |     completed = False
+    |
+
+E501 Line too long (102 > 100)
+   --> app/services/model_probes.py:189:93
+    |
+187 |             except Exception:
+188 |                 session.rollback()
+189 |                 logger.warning('模型诊断清理失败', probe_id=str(probe_id), profile_id=str(profile_id))
+    |                                                                                                     ^^
+    |
+
+E501 Line too long (121 > 100)
+  --> tests/admin_console/test_model_probes.py:41:101
+   |
+39 | # 验证四用途只发送固定短样例，禁用配置也可测试，不持数据库事务等待网络且不切换默认。
+40 | @pytest.mark.parametrize('kind', ['chat', 'query_rewrite', 'embedding', 'rerank'])
+41 | def test_explicit_probe_protocol_and_atomic_result(auth_client, auth_db, admin_actor, model_settings, monkeypatch, kind):
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^
+42 |     profile = create_profile(auth_client, kind, enabled=False)
+43 |     requests = []
+   |
+
+E501 Line too long (147 > 100)
+  --> tests/admin_console/test_model_probes.py:49:101
+   |
+47 | …))
+48 | …
+49 | …dels/{profile['id']}/test", json={'expected_revision': 1}), 200, '显式诊断应返回有界结果')
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+50 | … 'model_test_passed' and body['is_current']
+51 | …无重试且客户端必须关闭'
+   |
+
+E501 Line too long (102 > 100)
+  --> tests/admin_console/test_model_probes.py:61:101
+   |
+59 |     rows = auth_db.exec(select(ModelProbeResult)).all()
+60 |     assert len(rows) == 1 and rows[0].status == 'passed'
+61 |     events = auth_db.exec(select(AdminAuditEvent).where(AdminAuditEvent.action == 'model.test')).all()
+   |                                                                                                     ^^
+62 |     assert len(events) == 1 and events[0].result == 'success'
+63 |     assert set(events[0].changes_json) == {'profile_revision', 'status', 'code', 'latency_ms'}
+   |
+
+E501 Line too long (264 > 100)
+  --> tests/admin_console/test_model_probes.py:68:101
+   |
+67 | …
+68 | …l_test_unreachable'), ('timeout', 'model_test_timeout'), ('invalid', 'model_test_invalid_response'), ('redirect', 'model_test_failed'), ('server', 'model_test_failed')])
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+69 | …ypatch, failure, code):
+70 | …
+   |
+
+E501 Line too long (118 > 100)
+  --> tests/admin_console/test_model_probes.py:69:101
+   |
+67 | # 验证上游鉴权、网络、格式、重定向及异常响应以固定安全码返回，响应原文不得外泄。
+68 | @pytest.mark.parametrize('failure,code', [('auth', 'model_test_auth_failed'), ('connect', 'model_test_unreachable'), ('timeout', 'mode…
+69 | def test_probe_safe_failure_categories(auth_client, auth_db, admin_actor, model_settings, monkeypatch, failure, code):
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^
+70 |     profile = create_profile(auth_client)
+71 |     calls = []
+   |
+
+E501 Line too long (155 > 100)
+  --> tests/admin_console/test_model_probes.py:81:101
+   |
+79 | …TE'}, headers={'Location': 'http://169.254.169.254/'})
+80 | …
+81 | …/{profile['id']}/test", json={'expected_revision': 1}), 200, '已执行的诊断失败仍返回安全结果')
+   |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+82 | …e
+83 | …
+   |
+
+E501 Line too long (242 > 100)
+  --> tests/admin_console/test_model_probes.py:88:101
+   |
+87 | …
+88 | …bedding', {'data': [{'embedding': ['bad'] * 2560}]}), ('rerank', {'results': [{'index': 99, 'relevance_score': 1}]}), ('rerank', {'results': []})])
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+89 | …yload):
+90 | …
+   |
+
+E501 Line too long (102 > 100)
+  --> tests/admin_console/test_model_probes.py:89:101
+   |
+87 | # 验证 Embedding 维度与重排索引结构，不将 HTTP 200 等同于协议通过。
+88 | @pytest.mark.parametrize('kind,payload', [('embedding', {'data': [{'embedding': [1,2]}]}), ('embedding', {'data': [{'embedding': ['bad…
+89 | def test_probe_validates_output(auth_client, admin_actor, model_settings, monkeypatch, kind, payload):
+   |                                                                                                     ^^
+90 |     profile = create_profile(auth_client, kind)
+91 |     fake_client(monkeypatch, lambda _: httpx.Response(200, json=payload))
+   |
+
+E501 Line too long (139 > 100)
+  --> tests/admin_console/test_model_probes.py:92:101
+   |
+90 | …
+91 | …(200, json=payload))
+92 | …n/models/{profile['id']}/test", json={'expected_revision': 1}), 200, '须验证用途协议')
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+93 | …se'
+   |
+
+E501 Line too long (155 > 100)
+  --> tests/admin_console/test_model_probes.py:97:101
+   |
+96 | …
+97 | … 'model_revision_conflict'), ('key', 503, 'model_secret_unavailable'), ('extra', 422, None)])
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+98 | …uth_db, admin_actor, model_settings, monkeypatch, case, status, code):
+99 | …
+   |
+
+E501 Line too long (132 > 100)
+   --> tests/admin_console/test_model_probes.py:98:101
+    |
+ 96 | …
+ 97 | …rsion', 409, 'model_revision_conflict'), ('key', 503, 'model_secret_unavailable'), ('extra', 422, None)])
+ 98 | …th_client, auth_db, admin_actor, model_settings, monkeypatch, case, status, code):
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 99 | …
+100 | …
+    |
+
+E501 Line too long (133 > 100)
+   --> tests/admin_console/test_model_probes.py:107:101
+    |
+105 | …
+106 | …nd(req))
+107 | …admin/models/{profile['id']}/test", json=payload), status, '无效请求不得启动诊断')
+    |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+108 | …
+109 | …
+    |
+
+E501 Line too long (106 > 100)
+   --> tests/admin_console/test_model_probes.py:115:101
+    |
+114 | # 验证重复测试在服务端限流，有正数 Retry-After；过期运行租约不能永久占用并发。
+115 | def test_probe_cooldown_and_expired_lease(auth_client, auth_db, admin_actor, model_settings, monkeypatch):
+    |                                                                                                     ^^^^^^
+116 |     first = create_profile(auth_client)
+117 |     fake_client(monkeypatch, lambda _: httpx.Response(200, json=response_for('chat')))
+    |
+
+E501 Line too long (124 > 100)
+   --> tests/admin_console/test_model_probes.py:118:101
+    |
+116 |     first = create_profile(auth_client)
+117 |     fake_client(monkeypatch, lambda _: httpx.Response(200, json=response_for('chat')))
+118 |     assert_status(auth_client.post(f"/api/admin/models/{first['id']}/test", json={'expected_revision': 1}), 200, '首次诊断')
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+119 |     response = auth_client.post(f"/api/admin/models/{first['id']}/test", json={'expected_revision': 1})
+120 |     assert_error(response, 429, 'model_test_rate_limited', '重复诊断应冷却')
+    |
+
+E501 Line too long (103 > 100)
+   --> tests/admin_console/test_model_probes.py:119:101
+    |
+117 |     fake_client(monkeypatch, lambda _: httpx.Response(200, json=response_for('chat')))
+118 |     assert_status(auth_client.post(f"/api/admin/models/{first['id']}/test", json={'expected_revision': 1}), 200, '首次诊断')
+119 |     response = auth_client.post(f"/api/admin/models/{first['id']}/test", json={'expected_revision': 1})
+    |                                                                                                     ^^^
+120 |     assert_error(response, 429, 'model_test_rate_limited', '重复诊断应冷却')
+121 |     assert int(response.headers['Retry-After']) > 0
+    |
+
+E501 Line too long (263 > 100)
+   --> tests/admin_console/test_model_probes.py:125:101
+    |
+123 | …
+124 | …
+125 | …er_id=admin_actor.id, status='running', started_at=datetime.now(UTC)-timedelta(minutes=2), lease_expires_at=datetime.now(UTC)-timedelta(seconds=1), trace_id='expired'))
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+126 | …
+127 | …vision': 1}), 200, '到期租约不能占用名额')
+    |
+
+E501 Line too long (137 > 100)
+   --> tests/admin_console/test_model_probes.py:127:101
+    |
+125 | …first['id']), profile_revision=1, actor_user_id=admin_actor.id, status='running', started_at=datetime.now(UTC)-timedelta(minutes=2),…
+126 | …
+127 | …s/{second['id']}/test", json={'expected_revision': 1}), 200, '到期租约不能占用名额')
+    |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (173 > 100)
+   --> tests/admin_console/test_model_probes.py:136:101
+    |
+134 | …
+135 | …
+136 | …]}/test", json={'expected_revision': 1}), 503, 'admin_dependency_unavailable', '关闭期间不接受新诊断')
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+137 | …
+138 | …
+    |
+
+E501 Line too long (111 > 100)
+   --> tests/admin_console/test_model_probes.py:142:101
+    |
+141 | # 验证总截止时间可取消慢响应，并在 finally 关闭客户端、写入终态。
+142 | def test_probe_total_timeout_cancels_transport(auth_client, auth_db, admin_actor, model_settings, monkeypatch):
+    |                                                                                                     ^^^^^^^^^^^
+143 |     profile = create_profile(auth_client)
+144 |     model_settings.admin_model_test_timeout_seconds = 0.03
+    |
+
+E501 Line too long (153 > 100)
+   --> tests/admin_console/test_model_probes.py:149:101
+    |
+147 | …
+148 | …
+149 | …/{profile['id']}/test", json={'expected_revision': 1}), 200, '总截止时间应覆盖整个网络调用')
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+150 | …].is_closed
+151 | …s == 'failed'
+    |
+
+E501 Line too long (125 > 100)
+   --> tests/admin_console/test_model_probes.py:156:101
+    |
+154 | # 验证诊断期间编辑或删除配置后结果仍关联旧版本，不被标为当前可用。
+155 | @pytest.mark.parametrize('change', ['edit', 'delete'])
+156 | def test_probe_config_change_during_network_is_stale(auth_client, auth_db, admin_actor, model_settings, monkeypatch, change):
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+157 |     from uuid import UUID
+    |
+
+E501 Line too long (159 > 100)
+   --> tests/admin_console/test_model_probes.py:171:101
+    |
+169 | …
+170 | …
+171 | …rofile['id']}/test", json={'expected_revision': 1}), 200, '旧版本诊断可保存但不能代表当前配置')
+    |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+172 | …s False
+    |
+
+E501 Line too long (103 > 100)
+   --> tests/admin_console/test_model_probes.py:176:101
+    |
+175 | # 验证跨 worker 名额使用数据库 running 租约计数，而非进程内信号量。
+176 | def test_probe_database_lease_enforces_global_limit(auth_client, auth_db, admin_actor, model_settings):
+    |                                                                                                     ^^^
+177 |     profile = create_profile(auth_client)
+178 |     other = make_account(auth_db, role='admin')
+    |
+
+E501 Line too long (164 > 100)
+   --> tests/admin_console/test_model_probes.py:180:101
+    |
+178 | …
+179 | …
+180 | …r_id=other.id, lease_expires_at=datetime.now(UTC)+timedelta(seconds=20), trace_id='other-worker'))
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+181 | …
+182 | …test", json={'expected_revision': 1})
+    |
+
+E501 Line too long (103 > 100)
+   --> tests/admin_console/test_model_probes.py:182:101
+    |
+180 |         auth_db.add(ModelProbeResult(profile_revision=1, actor_user_id=other.id, lease_expires_at=datetime.now(UTC)+timedelta(seconds…
+181 |     auth_db.commit()
+182 |     result = auth_client.post(f"/api/admin/models/{profile['id']}/test", json={'expected_revision': 1})
+    |                                                                                                     ^^^
+183 |     assert_error(result, 429, 'model_test_rate_limited', '其他 worker 的有效租约也应占用名额')
+    |
+
+E501 Line too long (110 > 100)
+   --> tests/admin_console/test_model_probes.py:187:101
+    |
+186 | # 验证完成事务审计失败时不能留下 passed 结果，清理后不再占用运行名额。
+187 | def test_probe_result_audit_failure_is_atomic(auth_client, auth_db, admin_actor, model_settings, monkeypatch):
+    |                                                                                                     ^^^^^^^^^^
+188 |     from tests.admin_console.test_audit_transactions import reject_audit_inserts
+189 |     profile = create_profile(auth_client)
+    |
+
+E501 Line too long (172 > 100)
+   --> tests/admin_console/test_model_probes.py:192:101
+    |
+190 | …son=response_for('chat')))
+191 | …
+192 | …']}/test", json={'expected_revision': 1}), 503, 'admin_audit_unavailable', '结果与成功审计必须同事务')
+    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+193 | …
+194 | …
+    |
+
+E501 Line too long (103 > 100)
+   --> tests/admin_console/test_model_probes.py:200:101
+    |
+198 | # 验证请求取消触发 finally 关闭客户端，并保留安全中断终态。
+199 | @pytest.mark.asyncio
+200 | async def test_probe_cancel_cleans_client_and_lease(auth_db, admin_actor, model_settings, monkeypatch):
+    |                                                                                                     ^^^
+201 |     service = importlib.import_module('app.services.model_probes')
+202 |     from app.schemas.model_configuration import ModelCreate
+    |
+
+E501 Line too long (140 > 100)
+   --> tests/admin_console/test_model_probes.py:211:101
+    |
+209 | …
+210 | …
+211 | …db, admin_actor, profile.id, 1, model_settings, app.state.application_shutdown_state))
+    |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+212 | …
+213 | …
+    |
+
+E501 Line too long (255 > 100)
+  --> tests/admin_console/test_probe_transport.py:8:101
+   |
+ 7 | …
+ 8 | …rue), ('192.168.1.2', True), ('169.254.169.254', False), ('100.100.100.200', False), ('fe80::1', False), ('::ffff:169.254.169.254', False), ('0.0.0.0', False)])
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 | …
+10 | …
+   |
+
+Found 42 errors (3 fixed, 39 remaining).

@@ -82,6 +82,16 @@ async function fillCreate(
 }
 
 async function clickConfirmation(action: "confirm" | "cancel") {
+  if (action === "confirm") {
+    const input = document.querySelector<HTMLInputElement>(
+      '[data-testid="confirm-dialog-input"]',
+    )
+    if (input) {
+      input.value = TARGET.email!
+      input.dispatchEvent(new Event("input", { bubbles: true }))
+      await flushPromises()
+    }
+  }
   const button = document.querySelector<HTMLButtonElement>(
     `[data-testid="confirm-dialog-${action}-btn"]`,
   )

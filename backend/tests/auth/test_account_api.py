@@ -44,7 +44,17 @@ def assert_error(response, *, status: int, code: str) -> dict:
     [
         ("viewer", ["knowledge:read"]),
         ("member", ["knowledge:read", "knowledge:write"]),
-        ("admin", ["knowledge:read", "knowledge:write", "models:manage", "users:manage"]),
+        (
+            "admin",
+            [
+                "audit:read",
+                "knowledge:read",
+                "knowledge:write",
+                "models:manage",
+                "operations:read",
+                "users:manage",
+            ],
+        ),
     ],
 )
 def test_read_me_returns_public_fields_role_and_permissions(

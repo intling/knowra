@@ -113,10 +113,13 @@ def revoke_session(session: Session, token: str | None, *, commit: bool = True) 
         logger.info("会话已撤销", user_id=str(row.user_id), reason="logout_or_rotation")
 
 
-def revoke_user_sessions(session: Session, user_id: UUID, *, commit: bool = True) -> int:
-    rows = session.exec(
-        select(UserSession).where(UserSession.user_id == user_id, UserSession.revoked_at.is_(None))
-    ).all()
+def revoke_user_sessions(
+    session: Session, user_id: UUID, *, commit: bool = True, only_active: bool = False
+) -> int:
+    filters = [UserSession.user_id == user_id, UserSession.revoked_at.is_(None)]
+    if only_active:
+        filters.append(UserSession.expires_at > utc_now())
+    rows = session.exec(select(UserSession).where(*filters)).all()
     for row in rows:
         row.revoked_at = utc_now()
         session.add(row)

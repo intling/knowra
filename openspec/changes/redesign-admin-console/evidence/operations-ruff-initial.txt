@@ -1,0 +1,822 @@
+Uninstalled 1 package in 0.57ms
+Installed 1 package in 1ms
+E501 Line too long (105 > 100)
+  --> app/api/deps.py:39:85
+   |
+37 |     except SQLAlchemyError:
+38 |         session.rollback()
+39 |         raise AppError(503, "admin_dependency_unavailable", "身份验证服务暂不可用，请稍后重试") from None
+   |                                                                                                     ^^^^^
+40 |     if user is None:
+41 |         logger.info(
+   |
+
+E501 Line too long (113 > 100)
+  --> app/api/routes/admin_operations.py:57:101
+   |
+55 |     start, end = service.time_range(start, end, days=7)
+56 |     return service.list_audit_events(session, start=start, end=end, actor_user_id=actor_user_id,
+57 |                                      action=action, result=result, trace_id=trace_id, offset=offset, limit=limit)
+   |                                                                                                     ^^^^^^^^^^^^^
+   |
+
+E501 Line too long (106 > 100)
+  --> app/api/routes/admin_operations.py:66:101
+   |
+65 | @router.get('/system/status', response_model=SystemStatus)
+66 | async def read_system(admin: OperationsDep, session: SessionDep, settings: SettingsDep, request: Request):
+   |                                                                                                     ^^^^^^
+67 |     state = request.app.state
+68 |     return await system_status(session, settings, getattr(state, 'document_model_readiness', None),
+   |
+
+E501 Line too long (105 > 100)
+  --> app/core/permissions.py:11:101
+   |
+ 9 |     "viewer": (KNOWLEDGE_READ,),
+10 |     "member": (KNOWLEDGE_READ, KNOWLEDGE_WRITE),
+11 |     "admin": (KNOWLEDGE_READ, KNOWLEDGE_WRITE, USERS_MANAGE, MODELS_MANAGE, OPERATIONS_READ, AUDIT_READ),
+   |                                                                                                     ^^^^^
+12 | }
+   |
+
+E501 Line too long (105 > 100)
+  --> app/schemas/admin_operations.py:14:101
+   |
+12 | AuditAction = Literal['user.create', 'user.update', 'user.reset_password', 'user.delete',
+13 |                       'user.chat_limit.update', 'user.sessions.revoke', 'model.create',
+14 |                       'model.update', 'model.activate', 'model.deactivate', 'model.delete', 'model.test']
+   |                                                                                                     ^^^^^
+15 | AuditResult = Literal['success', 'denied', 'failed']
+   |
+
+E501 Line too long (102 > 100)
+  --> app/services/admin_operations.py:32:101
+   |
+31 | logger = get_logger(__name__)
+32 | JOB_MODELS = {'parse': DocumentParseJob, 'chunk': DocumentChunkJob, 'embedding': DocumentEmbeddingJob}
+   |                                                                                                     ^^
+33 | SAFE_JOB_ERRORS = {
+34 |     'model_not_ready': '处理模型尚未就绪',
+   |
+
+E501 Line too long (102 > 100)
+  --> app/services/admin_operations.py:47:101
+   |
+45 |     'model_revision_conflict', 'model_test_rate_limited', 'model_secret_unavailable',
+46 |     'admin_dependency_unavailable', 'admin_audit_unavailable', 'admin_operation_failed',
+47 |     'empty_update', 'invalid_model_configuration', 'email_conflict', 'weak_password', 'invalid_email'}
+   |                                                                                                     ^^
+   |
+
+E501 Line too long (107 > 100)
+  --> app/services/admin_operations.py:54:77
+   |
+52 |     start = start or end-timedelta(days=days)
+53 |     if start.tzinfo is None or end.tzinfo is None or start >= end or end-start > timedelta(days=31):
+54 |         raise AppError(422, 'invalid_time_range', '请使用带时区的起止时间，结束晚于开始且范围不超过 31 天')
+   |                                                                                                     ^^^^^^^
+55 |     return start.astimezone(UTC), end.astimezone(UTC)
+   |
+
+E501 Line too long (121 > 100)
+  --> app/services/admin_operations.py:62:101
+   |
+60 |     for kind, model in JOB_MODELS.items():
+61 |         uploaded = model.uploaded_file_id if kind == 'parse' else ParsedDocument.uploaded_file_id
+62 |         count = model.chunk_count if kind == 'chunk' else model.embedding_count if kind == 'embedding' else literal(None)
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^
+63 |         query = select(model.id.label('id'), literal(kind).label('kind'), uploaded.label('uploaded_file_id'),
+64 |             model.owner_user_id, User.deleted_at.label('owner_deleted'), model.status, model.attempt_count,
+   |
+
+E501 Line too long (109 > 100)
+  --> app/services/admin_operations.py:63:101
+   |
+61 |         uploaded = model.uploaded_file_id if kind == 'parse' else ParsedDocument.uploaded_file_id
+62 |         count = model.chunk_count if kind == 'chunk' else model.embedding_count if kind == 'embedding' else literal(None)
+63 |         query = select(model.id.label('id'), literal(kind).label('kind'), uploaded.label('uploaded_file_id'),
+   |                                                                                                     ^^^^^^^^^
+64 |             model.owner_user_id, User.deleted_at.label('owner_deleted'), model.status, model.attempt_count,
+65 |             model.created_at, model.started_at, model.finished_at, count.label('item_count'), model.error_code).select_from(model)
+   |
+
+E501 Line too long (107 > 100)
+  --> app/services/admin_operations.py:64:101
+   |
+62 |         count = model.chunk_count if kind == 'chunk' else model.embedding_count if kind == 'embedding' else literal(None)
+63 |         query = select(model.id.label('id'), literal(kind).label('kind'), uploaded.label('uploaded_file_id'),
+64 |             model.owner_user_id, User.deleted_at.label('owner_deleted'), model.status, model.attempt_count,
+   |                                                                                                     ^^^^^^^
+65 |             model.created_at, model.started_at, model.finished_at, count.label('item_count'), model.error_code).select_from(model)
+66 |         if kind != 'parse':
+   |
+
+E501 Line too long (130 > 100)
+  --> app/services/admin_operations.py:65:101
+   |
+63 |         query = select(model.id.label('id'), literal(kind).label('kind'), uploaded.label('uploaded_file_id'),
+64 |             model.owner_user_id, User.deleted_at.label('owner_deleted'), model.status, model.attempt_count,
+65 |             model.created_at, model.started_at, model.finished_at, count.label('item_count'), model.error_code).select_from(model)
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+66 |         if kind != 'parse':
+67 |             query = query.join(ParsedDocument, ParsedDocument.id == model.parsed_document_id)
+   |
+
+E501 Line too long (113 > 100)
+  --> app/services/admin_operations.py:82:94
+   |
+80 | def job_read(row):
+81 |     data = dict(row)
+82 |     data['owner_label'] = '已删除账号' if data.pop('owner_deleted') else f"账号 {str(data['owner_user_id'])[:8]}"
+   |                                                                                                     ^^^^^^^^^^^^^
+83 |     started, finished = _utc(data['started_at']), _utc(data['finished_at'])
+84 |     data['duration_ms'] = max(0, ((finished or utc_now())-started).total_seconds()*1000) if started else None
+   |
+
+E501 Line too long (109 > 100)
+  --> app/services/admin_operations.py:84:101
+   |
+82 |     data['owner_label'] = '已删除账号' if data.pop('owner_deleted') else f"账号 {str(data['owner_user_id'])[:8]}"
+83 |     started, finished = _utc(data['started_at']), _utc(data['finished_at'])
+84 |     data['duration_ms'] = max(0, ((finished or utc_now())-started).total_seconds()*1000) if started else None
+   |                                                                                                     ^^^^^^^^^
+85 |     status = data['status']
+86 |     data['status'] = status if status in {'queued', 'running', 'succeeded', 'failed', 'superseded'} else 'unknown'
+   |
+
+E501 Line too long (114 > 100)
+  --> app/services/admin_operations.py:86:101
+   |
+84 |     data['duration_ms'] = max(0, ((finished or utc_now())-started).total_seconds()*1000) if started else None
+85 |     status = data['status']
+86 |     data['status'] = status if status in {'queued', 'running', 'succeeded', 'failed', 'superseded'} else 'unknown'
+   |                                                                                                     ^^^^^^^^^^^^^^
+87 |     code = data['error_code']
+88 |     data['error_code'] = code if code in SAFE_JOB_ERRORS else 'processing_failed' if status == 'failed' else None
+   |
+
+E501 Line too long (113 > 100)
+  --> app/services/admin_operations.py:88:101
+   |
+86 |     data['status'] = status if status in {'queued', 'running', 'succeeded', 'failed', 'superseded'} else 'unknown'
+87 |     code = data['error_code']
+88 |     data['error_code'] = code if code in SAFE_JOB_ERRORS else 'processing_failed' if status == 'failed' else None
+   |                                                                                                     ^^^^^^^^^^^^^
+89 |     data['error_detail'] = SAFE_JOB_ERRORS.get(data['error_code'])
+90 |     return AdminJobRead(**data)
+   |
+
+E501 Line too long (111 > 100)
+  --> app/services/admin_operations.py:93:101
+   |
+93 | def list_jobs(session: Session, *, start, end, kind=None, status=None, owner_user_id=None, offset=0, limit=20):
+   |                                                                                                     ^^^^^^^^^^^
+94 |     table = jobs_projection()
+95 |     filters = [table.c.created_at >= start, table.c.created_at < end]
+   |
+
+E501 Line too long (111 > 100)
+   --> app/services/admin_operations.py:100:101
+    |
+ 98 |             filters.append(table.c[field] == value)
+ 99 |     total = session.execute(select(func.count()).select_from(table).where(*filters)).scalar_one()
+100 |     rows = session.execute(select(table).where(*filters).order_by(table.c.created_at.desc(), table.c.id.desc())
+    |                                                                                                     ^^^^^^^^^^^
+101 |                            .offset(offset).limit(limit)).mappings().all()
+102 |     return AdminJobPage(items=[job_read(r) for r in rows], total=total, offset=offset, limit=limit)
+    |
+
+E501 Line too long (109 > 100)
+   --> app/services/admin_operations.py:107:101
+    |
+105 | def job_detail(session, kind, job_id):
+106 |     table = jobs_projection()
+107 |     row = session.execute(select(table).where(table.c.kind == kind, table.c.id == job_id)).mappings().first()
+    |                                                                                                     ^^^^^^^^^
+108 |     if row is None:
+109 |         raise AppError(404, 'admin_job_not_found', '处理任务不存在')
+    |
+
+E501 Line too long (102 > 100)
+   --> app/services/admin_operations.py:113:101
+    |
+111 |                            .order_by(table.c.created_at, table.c.id)).mappings().all()
+112 |     return AdminJobDetail(job=job_read(row), timeline=[job_read(r) for r in rows],
+113 |                           missing_kinds=[k for k in JOB_MODELS if k not in {r['kind'] for r in rows}])
+    |                                                                                                     ^^
+    |
+
+E501 Line too long (101 > 100)
+   --> app/services/admin_operations.py:117:101
+    |
+116 | def user_totals(session):
+117 |     row = session.execute(select(func.count(), func.sum(case((User.status == 'active', 1), else_=0)),
+    |                                                                                                     ^
+118 |                                  func.sum(case((User.status == 'disabled', 1), else_=0)))
+119 |                           .where(User.deleted_at.is_(None))).one()
+    |
+
+E501 Line too long (102 > 100)
+   --> app/services/admin_operations.py:125:101
+    |
+123 | def upload_totals(session):
+124 |     row = session.execute(select(func.count(), func.coalesce(func.sum(UploadedFile.byte_size), 0))
+125 |                           .select_from(UploadedFile).join(User, User.id == UploadedFile.owner_user_id)
+    |                                                                                                     ^^
+126 |                           .where(UploadedFile.deleted_at.is_(None), User.deleted_at.is_(None))).one()
+127 |     return UploadTotals(status='ok', total=row[0], logical_bytes=row[1])
+    |
+
+E501 Line too long (101 > 100)
+   --> app/services/admin_operations.py:126:101
+    |
+124 |     row = session.execute(select(func.count(), func.coalesce(func.sum(UploadedFile.byte_size), 0))
+125 |                           .select_from(UploadedFile).join(User, User.id == UploadedFile.owner_user_id)
+126 |                           .where(UploadedFile.deleted_at.is_(None), User.deleted_at.is_(None))).one()
+    |                                                                                                     ^
+127 |     return UploadTotals(status='ok', total=row[0], logical_bytes=row[1])
+    |
+
+E501 Line too long (123 > 100)
+   --> app/services/admin_operations.py:138:101
+    |
+136 |             condition = condition & (model.finished_at >= cutoff) & (model.finished_at < now)
+137 |         return func.coalesce(func.sum(case((condition, 1), else_=0)), 0)
+138 |     row = session.execute(select(count('queued'), count('running'), count('succeeded', True), count('failed', True))).one()
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^
+139 |     return JobTotals(kind=kind, status='ok', queued=row[0], running=row[1], succeeded_24h=row[2],
+140 |                      failed_24h=row[3], success_rate_24h=row[2]/(row[2]+row[3]) if row[2]+row[3] else None)
+    |
+
+E501 Line too long (107 > 100)
+   --> app/services/admin_operations.py:140:101
+    |
+138 |     row = session.execute(select(count('queued'), count('running'), count('succeeded', True), count('failed', True))).one()
+139 |     return JobTotals(kind=kind, status='ok', queued=row[0], running=row[1], succeeded_24h=row[2],
+140 |                      failed_24h=row[3], success_rate_24h=row[2]/(row[2]+row[3]) if row[2]+row[3] else None)
+    |                                                                                                     ^^^^^^^
+    |
+
+E501 Line too long (139 > 100)
+   --> app/services/admin_operations.py:154:101
+    |
+152 | …
+153 | …
+154 | …s(session), UserTotals(status='unavailable', total=None, active=None, disabled=None))
+    |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+155 | …_totals(session), UploadTotals(status='unavailable', total=None, logical_bytes=None))
+156 | …tals(session, k, now), JobTotals(kind=kind, status='unavailable', queued=None, running=None, succeeded_24h=None, failed_24h=None, su…
+    |
+
+E501 Line too long (139 > 100)
+   --> app/services/admin_operations.py:155:101
+    |
+153 | …
+154 | …s(session), UserTotals(status='unavailable', total=None, active=None, disabled=None))
+155 | …_totals(session), UploadTotals(status='unavailable', total=None, logical_bytes=None))
+    |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+156 | …tals(session, k, now), JobTotals(kind=kind, status='unavailable', queued=None, running=None, succeeded_24h=None, failed_24h=None, su…
+157 | …ail=f'{j.kind} 阶段最近 24 小时有失败任务', count=j.failed_24h, href=f'/admin/jobs?kind={j.kind}&status=failed') for j in jobs if j.f          …
+    |
+
+E501 Line too long (231 > 100)
+   --> app/services/admin_operations.py:156:101
+    |
+154 | …e', total=None, active=None, disabled=None))
+155 | …available', total=None, logical_bytes=None))
+156 | …d, status='unavailable', queued=None, running=None, succeeded_24h=None, failed_24h=None, success_rate_24h=None)) for kind in JOB_MODELS]
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+157 | …failed_24h, href=f'/admin/jobs?kind={j.kind}&status=failed') for j in jobs if j.failed_24h]
+158 | …
+    |
+
+E501 Line too long (197 > 100)
+   --> app/services/admin_operations.py:157:90
+    |
+155 | …s(status='unavailable', total=None, logical_bytes=None))
+156 | …als(kind=kind, status='unavailable', queued=None, running=None, succeeded_24h=None, failed_24h=None, success_rate_24h=None)) for kin…
+157 | …务', count=j.failed_24h, href=f'/admin/jobs?kind={j.kind}&status=failed') for j in jobs if j.failed_24h]
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+158 | …
+159 | …模型未就绪或状态未知', href='/admin/system'))
+    |
+
+E501 Line too long (130 > 100)
+   --> app/services/admin_operations.py:159:92
+    |
+157 | … detail=f'{j.kind} 阶段最近 24 小时有失败任务', count=j.failed_24h, href=f'/admin/jobs?kind={j.kind}&status=failed') for j in jobs if          …
+158 | … in {'ready', 'skipped'}:
+159 | …ent_models_not_ready', detail='文档模型未就绪或状态未知', href='/admin/system'))
+    |                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+160 | …ers, uploads=uploads, jobs_by_kind=jobs, attention_items=attention)
+    |
+
+E501 Line too long (117 > 100)
+   --> app/services/admin_operations.py:160:101
+    |
+158 |     if getattr(readiness, 'status', 'unknown') not in {'ready', 'skipped'}:
+159 |         attention.append(AttentionItem(code='document_models_not_ready', detail='文档模型未就绪或状态未知', href='/admin/system'))
+160 |     return AdminOverview(snapshot_at=now, users=users, uploads=uploads, jobs_by_kind=jobs, attention_items=attention)
+    |                                                                                                     ^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (118 > 100)
+   --> app/services/admin_operations.py:169:101
+    |
+167 |         return value in {'admin', 'member', 'viewer'} if isinstance(value, str) else False
+168 |     if field == 'status':
+169 |         return value in {'active', 'disabled', 'passed', 'failed', 'interrupted'} if isinstance(value, str) else False
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^
+170 |     if field in {'enabled', 'deleted'}:
+171 |         return type(value) is bool
+    |
+
+E501 Line too long (114 > 100)
+   --> app/services/admin_operations.py:172:101
+    |
+170 |     if field in {'enabled', 'deleted'}:
+171 |         return type(value) is bool
+172 |     if field in {'hourly_limit', 'revision', 'binding_revision', 'profile_revision', 'dimensions', 'max_retries'}:
+    |                                                                                                     ^^^^^^^^^^^^^^
+173 |         return type(value) is int and value >= 0
+174 |     if field in {'timeout_seconds', 'latency_ms'}:
+    |
+
+E501 Line too long (109 > 100)
+   --> app/services/admin_operations.py:177:101
+    |
+175 |         return type(value) in (int, float) and value >= 0
+176 |     if field == 'kind':
+177 |         return value in {'chat', 'embedding', 'rerank', 'query_rewrite'} if isinstance(value, str) else False
+    |                                                                                                     ^^^^^^^^^
+178 |     if field == 'code':
+179 |         return value in PROBE_DETAILS if isinstance(value, str) else False
+    |
+
+E501 Line too long (150 > 100)
+   --> app/services/admin_operations.py:196:101
+    |
+194 | …
+195 | …
+196 | …and row.action in {'model.create', 'model.update', 'model.delete'} and type(value) is bool:
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+197 | …
+198 | …
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> app/services/admin_operations.py:198:9
+    |
+196 |   …     if field in {'secret_changed', 'endpoint_changed'} and row.action in {'model.create', 'model.update', 'model.delete'} and type(value) is bool:
+197 |   …         result[field] = value
+198 | / …     elif field in CHANGE_FIELDS.get(row.action, ()):
+199 | | …         if field == 'revoked_count' and type(value) is int and value >= 0 or row.action == 'model.test' and _safe_value(field, value) or isinstance(value, dict) and set(value) == {'before', 'after'} and all(_safe_value(field, v) for v in value.values()):
+    | |________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________^
+200 |   …             result[field] = value
+201 |   … return result
+    |
+help: Combine `if` statements using `and`
+
+E501 Line too long (258 > 100)
+   --> app/services/admin_operations.py:199:101
+    |
+197 | …
+198 | …
+199 | …'model.test' and _safe_value(field, value) or isinstance(value, dict) and set(value) == {'before', 'after'} and all(_safe_value(field, v) for v in value.values()):
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+200 | …
+201 | …
+    |
+
+E501 Line too long (127 > 100)
+   --> app/services/admin_operations.py:204:101
+    |
+204 | def list_audit_events(session, *, start, end, actor_user_id=None, action=None, result=None, trace_id=None, offset=0, limit=20):
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+205 |     model = AdminAuditEvent
+206 |     filters = [model.created_at >= start, model.created_at < end, model.action.in_(list(CHANGE_FIELDS))]
+    |
+
+E501 Line too long (104 > 100)
+   --> app/services/admin_operations.py:206:101
+    |
+204 | def list_audit_events(session, *, start, end, actor_user_id=None, action=None, result=None, trace_id=None, offset=0, limit=20):
+205 |     model = AdminAuditEvent
+206 |     filters = [model.created_at >= start, model.created_at < end, model.action.in_(list(CHANGE_FIELDS))]
+    |                                                                                                     ^^^^
+207 |     for field, value in [('actor_user_id', actor_user_id), ('action', action), ('result', result), ('trace_id', trace_id)]:
+208 |         if value is not None:
+    |
+
+E501 Line too long (123 > 100)
+   --> app/services/admin_operations.py:207:101
+    |
+205 |     model = AdminAuditEvent
+206 |     filters = [model.created_at >= start, model.created_at < end, model.action.in_(list(CHANGE_FIELDS))]
+207 |     for field, value in [('actor_user_id', actor_user_id), ('action', action), ('result', result), ('trace_id', trace_id)]:
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^
+208 |         if value is not None:
+209 |             filters.append(getattr(model, field) == value)
+    |
+
+E501 Line too long (152 > 100)
+   --> app/services/admin_operations.py:211:101
+    |
+209 | …
+210 | …(model).where(*filters)).scalar_one()
+211 | …er_by(model.created_at.desc(), model.id.desc()).offset(offset).limit(limit)).scalars().all()
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+212 | …_json', 'error_code'}), changes_json=safe_changes(r),
+213 | …or_code in SAFE_AUDIT_ERRORS else 'admin_operation_failed' if r.error_code else None) for r in rows]
+    |
+
+E501 Line too long (113 > 100)
+   --> app/services/admin_operations.py:212:101
+    |
+210 |     total = session.execute(select(func.count()).select_from(model).where(*filters)).scalar_one()
+211 |     rows = session.execute(select(model).where(*filters).order_by(model.created_at.desc(), model.id.desc()).offset(offset).limit(limi…
+212 |     items = [AuditEventRead(**r.model_dump(exclude={'changes_json', 'error_code'}), changes_json=safe_changes(r),
+    |                                                                                                     ^^^^^^^^^^^^^
+213 |                             error_code=r.error_code if r.error_code in SAFE_AUDIT_ERRORS else 'admin_operation_failed' if r.error_cod…
+214 |     return AuditEventPage(items=items, total=total, offset=offset, limit=limit)
+    |
+
+E501 Line too long (160 > 100)
+   --> app/services/admin_operations.py:213:101
+    |
+211 | …y(model.created_at.desc(), model.id.desc()).offset(offset).limit(limit)).scalars().all()
+212 | …n', 'error_code'}), changes_json=safe_changes(r),
+213 | …ode in SAFE_AUDIT_ERRORS else 'admin_operation_failed' if r.error_code else None) for r in rows]
+    |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+214 | …t, limit=limit)
+    |
+
+E501 Line too long (101 > 100)
+  --> app/services/admin_system.py:17:90
+   |
+15 |     if engine.dialect.name != 'postgresql':
+16 |         if component == 'pgvector':
+17 |             return StatusComponent(name=component, status='unknown', detail='当前数据库不支持此检查')
+   |                                                                                                     ^
+18 |         session.execute(text('SELECT 1'))
+19 |         return StatusComponent(name=component, status='ok', detail='数据库可访问')
+   |
+
+E501 Line too long (123 > 100)
+  --> app/services/admin_system.py:22:101
+   |
+20 |     args, kwargs = engine.dialect.create_connect_args(engine.url)
+21 |     # 连接建立、查询、取消及连接关闭都位于单项 2 秒截止时间内。
+22 |     async with await AsyncConnection.connect(*args, **(kwargs | {'connect_timeout': 2, 'autocommit': True})) as connection:
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^
+23 |         if component == 'database':
+24 |             await connection.execute('SELECT 1')
+   |
+
+E501 Line too long (103 > 100)
+  --> app/services/admin_system.py:26:101
+   |
+24 |             await connection.execute('SELECT 1')
+25 |             return StatusComponent(name=component, status='ok', detail='数据库可访问')
+26 |         cursor = await connection.execute("SELECT extversion FROM pg_extension WHERE extname='vector'")
+   |                                                                                                     ^^^
+27 |         installed = await cursor.fetchone()
+28 |         return StatusComponent(name=component, status='ok' if installed else 'unavailable',
+   |
+
+E501 Line too long (103 > 100)
+  --> app/services/admin_system.py:40:92
+   |
+38 |                 component = await database_check(session, name)
+39 |         except TimeoutError:
+40 |             component = StatusComponent(name=name, status='unavailable', detail='检查超时，请稍后重试')
+   |                                                                                                      ^^
+41 |         except Exception:
+42 |             component = StatusComponent(name=name, status='unavailable', detail='依赖检查失败，请检查服务连接')
+   |
+
+E501 Line too long (111 > 100)
+  --> app/services/admin_system.py:42:92
+   |
+40 |             component = StatusComponent(name=name, status='unavailable', detail='检查超时，请稍后重试')
+41 |         except Exception:
+42 |             component = StatusComponent(name=name, status='unavailable', detail='依赖检查失败，请检查服务连接')
+   |                                                                                                      ^^^^^^^^^^
+43 |         components.append(component)
+44 |     status = getattr(readiness, 'status', 'unknown')
+   |
+
+E501 Line too long (124 > 100)
+  --> app/services/admin_system.py:59:101
+   |
+57 | …     state = model.configuration_status
+58 | …     if state == 'ok':
+59 | …         state = 'unknown' if not probe or not probe.is_current else 'ok' if probe.status == 'passed' else 'degraded'
+   |                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^
+60 | …     components.append(StatusComponent(name=f'model:{model.kind}', status=state,
+61 | …                                      detail='未主动调用模型；参考最近显式测试' if model.enabled else '此用途未启用'))
+   |
+
+E501 Line too long (125 > 100)
+  --> app/services/admin_system.py:61:85
+   |
+59 |                 state = 'unknown' if not probe or not probe.is_current else 'ok' if probe.status == 'passed' else 'degraded'
+60 |             components.append(StatusComponent(name=f'model:{model.kind}', status=state,
+61 |                                              detail='未主动调用模型；参考最近显式测试' if model.enabled else '此用途未启用'))
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+62 |     except Exception:
+63 |         components.append(StatusComponent(name='models', status='unavailable', detail='生效配置暂不可读取'))
+   |
+
+E501 Line too long (108 > 100)
+  --> app/services/admin_system.py:63:95
+   |
+61 |                                              detail='未主动调用模型；参考最近显式测试' if model.enabled else '此用途未启用'))
+62 |     except Exception:
+63 |         components.append(StatusComponent(name='models', status='unavailable', detail='生效配置暂不可读取'))
+   |                                                                                                      ^^^^^^^
+64 |     return SystemStatus(checked_at=utc_now(), instance_id=instance_id, components=components)
+   |
+
+E501 Line too long (131 > 100)
+  --> tests/admin_console/test_operational_reads.py:19:101
+   |
+17 | # 验证新增两项固定权限只授予管理员，不能通过客户端 owner 或 role 提权。
+18 | @pytest.mark.parametrize('role', ['admin', 'member', 'viewer', None])
+19 | @pytest.mark.parametrize('path', ['/api/admin/overview', '/api/admin/jobs', '/api/admin/system/status', '/api/admin/audit-events'])
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 | def test_operations_permissions(auth_client, auth_db, model_settings, role, path):
+21 |     if role:
+   |
+
+E501 Line too long (109 > 100)
+  --> tests/admin_console/test_operational_reads.py:26:91
+   |
+24 |         auth_client.cookies.clear()
+25 |     response = auth_client.get(path, params={'role': 'admin', 'owner_user_id': str(uuid4())})
+26 |     assert_status(response, 200 if role == 'admin' else 403 if role else 401, '运行数据仅允许真实管理员读取')
+   |                                                                                                      ^^^^^^^^
+27 |     if role == 'admin':
+28 |         me = auth_client.get('/api/users/me').json()
+   |
+
+E501 Line too long (113 > 100)
+  --> tests/admin_console/test_operational_reads.py:37:101
+   |
+35 |     upload, parsed, chunk, chunks, _ = seed_knowledge_chain(auth_db, tmp_path, target, vectors=1)
+36 |     parse = auth_db.get(DocumentParseJob, parsed.parse_job_id)
+37 |     embed = auth_db.exec(select(DocumentEmbeddingJob).where(DocumentEmbeddingJob.chunk_job_id == chunk.id)).one()
+   |                                                                                                     ^^^^^^^^^^^^^
+38 |     now = datetime.now(UTC)
+39 |     for i, row in enumerate([parse, chunk, embed]):
+   |
+
+E501 Line too long (104 > 100)
+  --> tests/admin_console/test_operational_reads.py:52:101
+   |
+51 | # 验证三表全量分页、阶段筛选与安全投影，原错误、资料名与正文不出现在结果中。
+52 | def test_jobs_union_filter_pagination_and_safe_projection(auth_client, auth_db, admin_actor, job_chain):
+   |                                                                                                     ^^^^
+53 |     target, upload, parsed, jobs, chunks = job_chain
+54 |     body = assert_status(auth_client.get('/api/admin/jobs', params={'limit': 2}), 200, '统一任务列表应支持三阶段')
+   |
+
+E501 Line too long (114 > 100)
+  --> tests/admin_console/test_operational_reads.py:54:95
+   |
+52 | def test_jobs_union_filter_pagination_and_safe_projection(auth_client, auth_db, admin_actor, job_chain):
+53 |     target, upload, parsed, jobs, chunks = job_chain
+54 |     body = assert_status(auth_client.get('/api/admin/jobs', params={'limit': 2}), 200, '统一任务列表应支持三阶段')
+   |                                                                                                     ^^^^^^^^^^^^^^
+55 |     assert body['total'] == 3 and len(body['items']) == 2
+56 |     assert [i['kind'] for i in body['items']] == ['embedding', 'chunk']
+   |
+
+E501 Line too long (170 > 100)
+  --> tests/admin_console/test_operational_reads.py:57:101
+   |
+55 | …
+56 | …']
+57 | …s={'kind': 'chunk', 'status': 'failed', 'owner_user_id': str(target.id)}), 200, '组合筛选作用于全量')
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+58 | …
+59 | …
+   |
+
+E501 Line too long (124 > 100)
+  --> tests/admin_console/test_operational_reads.py:63:101
+   |
+61 |     assert item['duration_ms'] >= 0 and item['owner_user_id'] == str(target.id)
+62 |     all_text = json.dumps(body, ensure_ascii=False) + json.dumps(filtered, ensure_ascii=False)
+63 |     for private in ['PRIVATE', upload.original_filename, upload.storage_key, chunks[0].text, chunks[0].contextualized_text]:
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+64 |         assert private not in all_text, '运行端点不得泄露资料或原始错误'
+65 |     assert auth_client.get('/api/parsed-documents').json() == [], '管理员不得借任务读取其他账号正文'
+   |
+
+E501 Line too long (117 > 100)
+  --> tests/admin_console/test_operational_reads.py:69:101
+   |
+68 | # 验证详情使用上传/解析真实关系，保留多次任务尝试，不把同账号其他资料拼入时间线。
+69 | def test_job_detail_tracks_actual_attempts_and_missing_stage(auth_client, auth_db, admin_actor, job_chain, tmp_path):
+   |                                                                                                     ^^^^^^^^^^^^^^^^^
+70 |     target, upload, parsed, jobs, _ = job_chain
+71 |     other = seed_knowledge_chain(auth_db, tmp_path, target, vectors=1)
+   |
+
+E501 Line too long (119 > 100)
+  --> tests/admin_console/test_operational_reads.py:76:95
+   |
+74 |     auth_db.delete(jobs[2])
+75 |     auth_db.commit()
+76 |     body = assert_status(auth_client.get(f'/api/admin/jobs/chunk/{jobs[1].id}'), 200, '任务详情应关联实际上传所有尝试')
+   |                                                                                                      ^^^^^^^^^^^^^^^^^^
+77 |     assert body['job']['id'] == str(jobs[1].id)
+78 |     assert len(body['timeline']) == 3
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> tests/admin_console/test_operational_reads.py:83:24
+   |
+81 |     assert str(other[0].id) not in json.dumps(body)
+82 |     target.deleted_at = datetime.now(UTC)
+83 |     auth_db.add(target); auth_db.commit()
+   |                        ^
+84 |     page = assert_status(auth_client.get('/api/admin/jobs', params={'owner_user_id': str(target.id)}), 200, '历史任务应保留')
+85 |     assert all(i['owner_label'] == '已删除账号' for i in page['items'])
+   |
+
+E501 Line too long (125 > 100)
+  --> tests/admin_console/test_operational_reads.py:84:101
+   |
+82 |     target.deleted_at = datetime.now(UTC)
+83 |     auth_db.add(target); auth_db.commit()
+84 |     page = assert_status(auth_client.get('/api/admin/jobs', params={'owner_user_id': str(target.id)}), 200, '历史任务应保留')
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+85 |     assert all(i['owner_label'] == '已删除账号' for i in page['items'])
+   |
+
+E501 Line too long (282 > 100)
+  --> tests/admin_console/test_operational_reads.py:89:101
+   |
+88 | …
+89 | …'wrong'}, {'limit': 101}, {'offset': -1}, {'from': '2026-10-22T00:00:00Z', 'to': '2026-10-21T00:00:00Z'}, {'from': '2026-01-01T00:00:00Z', 'to': '2026-10-22T00:00:00Z'}, {'from': 'bad'}])
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+90 | …
+91 | …
+   |
+
+E501 Line too long (103 > 100)
+  --> tests/admin_console/test_operational_reads.py:91:89
+   |
+89 | @pytest.mark.parametrize('params', [{'kind': 'unknown'}, {'status': 'done'}, {'owner_user_id': 'wrong'}, {'limit': 101}, {'offset': -1…
+90 | def test_jobs_validate_filters(auth_client, admin_actor, params):
+91 |     assert_status(auth_client.get('/api/admin/jobs', params=params), 422, '任务查询需明确拒绝非法条件')
+   |                                                                                                      ^^
+   |
+
+E501 Line too long (200 > 100)
+   --> tests/admin_console/test_operational_reads.py:98:101
+    |
+ 96 | …
+ 97 | …
+ 98 | … 'from': timestamp.isoformat(), 'to': (timestamp+timedelta(seconds=1)).isoformat()}), 200, '任务时间应使用半开区间')
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 99 | …
+100 | …stamp-timedelta(seconds=1)).isoformat(), 'to': timestamp.isoformat()}).json()
+    |
+
+E501 Line too long (161 > 100)
+   --> tests/admin_console/test_operational_reads.py:100:101
+    |
+ 98 | …s={'kind': 'parse', 'from': timestamp.isoformat(), 'to': (timestamp+timedelta(seconds=1)).isoformat()}), 200, '任务时间应使用半开区间          …
+ 99 | …
+100 | …rse', 'from': (timestamp-timedelta(seconds=1)).isoformat(), 'to': timestamp.isoformat()}).json()
+    |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+101 | …
+102 | …}'), 404, 'admin_job_not_found', '不存在任务需明确说明')
+    |
+
+E501 Line too long (121 > 100)
+   --> tests/admin_console/test_operational_reads.py:102:101
+    |
+100 |     body = auth_client.get('/api/admin/jobs', params={'kind': 'parse', 'from': (timestamp-timedelta(seconds=1)).isoformat(), 'to': ti…
+101 |     assert body['total'] == 0
+102 |     assert_error(auth_client.get(f'/api/admin/jobs/parse/{uuid4()}'), 404, 'admin_job_not_found', '不存在任务需明确说明')
+    |                                                                                                      ^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (101 > 100)
+   --> tests/admin_console/test_operational_reads.py:106:101
+    |
+105 | # 验证总览排除软删除资料/账号，容量仅为原文件字节数，阶段结果按完成时间计算。
+106 | def test_overview_counts_and_finished_window(auth_client, auth_db, admin_actor, job_chain, tmp_path):
+    |                                                                                                     ^
+107 |     target, upload, parsed, jobs, _ = job_chain
+108 |     deleted = make_account(auth_db, deleted=True)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> tests/admin_console/test_operational_reads.py:115:25
+    |
+113 |     jobs[0].created_at = datetime.now(UTC)-timedelta(days=3)
+114 |     jobs[0].finished_at = datetime.now(UTC)-timedelta(minutes=5)
+115 |     auth_db.add(jobs[0]); auth_db.commit()
+    |                         ^
+116 |     body = assert_status(auth_client.get('/api/admin/overview'), 200, '总览应聚合真实有效记录')
+117 |     assert body['users']['total'] == 2
+    |
+
+E501 Line too long (110 > 100)
+   --> tests/admin_console/test_operational_reads.py:149:101
+    |
+147 |     assert components['database']['status'] == 'ok'
+148 |     assert components['pgvector']['status'] == 'unknown', 'SQLite 测试环境不能假装有 pgvector'
+149 |     assert components['document_models']['status'] in {'unknown', 'disabled', 'ok', 'degraded', 'unavailable'}
+    |                                                                                                     ^^^^^^^^^^
+    |
+
+E501 Line too long (131 > 100)
+   --> tests/admin_console/test_operational_reads.py:160:101
+    |
+158 | …Exception('PRIVATE'))
+159 | …r', fail)
+160 | …n/system/status'), 503, 'admin_dependency_unavailable', '认证依赖失效应安全报告')
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+161 | …
+    |
+
+E501 Line too long (401 > 100)
+   --> tests/admin_console/test_operational_reads.py:168:101
+    |
+166 | …
+167 | …
+168 | …='user', resource_id=target.id, result=result, trace_id=f'filter-{index}', created_at=now-timedelta(minutes=index), changes_json={'role': {'before': 'member', 'after': 'viewer'}, 'password': 'PRIVATE SECRET', 'display_name': 'PRIVATE NAME'}) for index, result in enumerate(['success', 'denied', 'failed'])]
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+169 | …
+170 | …': 1, 'action': 'user.update', 'actor_user_id': str(admin_actor.id)}), 200, '审计应全量筛选并稳定分页')
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> tests/admin_console/test_operational_reads.py:169:28
+    |
+167 |     now = datetime.now(UTC)
+168 |     events = [AdminAuditEvent(actor_user_id=admin_actor.id, action='user.update', resource_type='user', resource_id=target.id, result…
+169 |     auth_db.add_all(events); auth_db.commit()
+    |                            ^
+170 |     body = assert_status(auth_client.get('/api/admin/audit-events', params={'limit': 1, 'offset': 1, 'action': 'user.update', 'actor_…
+171 |     assert body['total'] == 3 and body['items'][0]['id'] == str(events[1].id)
+    |
+
+E501 Line too long (198 > 100)
+   --> tests/admin_console/test_operational_reads.py:170:101
+    |
+168 | …esource_type='user', resource_id=target.id, result=result, trace_id=f'filter-{index}', created_at=now-timedelta(minutes=index), chan…
+169 | …
+170 | …: 1, 'offset': 1, 'action': 'user.update', 'actor_user_id': str(admin_actor.id)}), 200, '审计应全量筛选并稳定分页')
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+171 | …
+172 | …
+    |
+
+E501 Line too long (118 > 100)
+   --> tests/admin_console/test_operational_reads.py:173:101
+    |
+171 |     assert body['total'] == 3 and body['items'][0]['id'] == str(events[1].id)
+172 |     assert 'PRIVATE' not in json.dumps(body)
+173 |     filtered = auth_client.get('/api/admin/audit-events', params={'result': 'success', 'trace_id': 'filter-0'}).json()
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^
+174 |     assert filtered['total'] == 1 and filtered['items'][0]['resource_id'] == str(target.id)
+175 |     assert filtered['items'][0]['changes_json'] == {'role': {'before': 'member', 'after': 'viewer'}}
+    |
+
+E501 Line too long (111 > 100)
+   --> tests/admin_console/test_operational_reads.py:176:95
+    |
+174 |     assert filtered['total'] == 1 and filtered['items'][0]['resource_id'] == str(target.id)
+175 |     assert filtered['items'][0]['changes_json'] == {'role': {'before': 'member', 'after': 'viewer'}}
+176 |     assert_status(auth_client.delete(f'/api/admin/audit-events/{events[0].id}'), 404, '不提供修改删除台账入口')
+    |                                                                                                      ^^^^^^^^^^
+    |
+
+E501 Line too long (258 > 100)
+   --> tests/admin_console/test_operational_reads.py:180:101
+    |
+179 | …
+180 | …ser_id': 'wrong'}, {'limit': 101}, {'from': '2026-10-22T00:00:00Z', 'to': '2026-10-21T00:00:00Z'}, {'from': '2026-01-01T00:00:00Z', 'to': '2026-10-22T00:00:00Z'}])
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+181 | …
+182 | …
+    |
+
+E501 Line too long (105 > 100)
+   --> tests/admin_console/test_operational_reads.py:182:93
+    |
+180 | @pytest.mark.parametrize('params', [{'action': 'user.export'}, {'result': 'unknown'}, {'actor_user_id': 'wrong'}, {'limit': 101}, {'f…
+181 | def test_audit_invalid_queries(auth_client, admin_actor, params):
+182 |     assert_status(auth_client.get('/api/admin/audit-events', params=params), 422, '非法审计查询应有原因')
+    |                                                                                                      ^^^^
+    |
+
+Found 87 errors (9 fixed, 78 remaining).

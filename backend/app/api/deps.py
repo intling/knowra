@@ -5,6 +5,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, Request
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session
 
 from app.core.config import Settings, get_settings
@@ -31,7 +32,13 @@ def get_model_settings(
 
 def get_current_user(request: Request, session: SessionDep) -> User:
     token = request.cookies.get(SESSION_COOKIE)
-    user = resolve_session_user(session, token)
+    try:
+        user = resolve_session_user(session, token)
+    except SQLAlchemyError:
+        session.rollback()
+        raise AppError(
+            503, "admin_dependency_unavailable", "身份验证服务暂不可用，请稍后重试"
+        ) from None
     if user is None:
         logger.info(
             "认证失败",

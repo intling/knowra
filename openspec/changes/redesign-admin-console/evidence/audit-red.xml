@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="47" skipped="0" tests="47" time="4.599" timestamp="2026-10-22T17:28:51.854752+08:00" hostname="instance-20260413-2343"><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[user.create]" time="0.144"><failure message="AssertionError: user.create 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.create 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[user.update]" time="0.070"><failure message="AssertionError: user.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[user.reset_password]" time="0.067"><failure message="AssertionError: user.reset_password 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.reset_password 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[user.delete]" time="0.061"><failure message="AssertionError: user.delete 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.delete 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[model.create]" time="0.060"><failure message="AssertionError: model.create 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.create 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[model.update]" time="0.062"><failure message="AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[model.activate]" time="0.064"><failure message="AssertionError: model.activate 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.activate 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[model.deactivate]" time="0.073"><failure message="AssertionError: model.deactivate 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.deactivate 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_existing_admin_writes_commit_exactly_one_safe_event[model.delete]" time="0.058"><failure message="AssertionError: model.delete 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:238: in test_existing_admin_writes_commit_exactly_one_safe_event
+    row = only_event(auth_db, trace_id, action, "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.delete 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_excludes_endpoint_names_and_all_secret_material[chat]" time="0.088"><failure message="AssertionError: chat 配置的五次成功操作都必须持久化审计，实际 0 条。&#10;assert 0 == 5&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: chat 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_excludes_endpoint_names_and_all_secret_material[embedding]" time="0.090"><failure message="AssertionError: embedding 配置的五次成功操作都必须持久化审计，实际 0 条。&#10;assert 0 == 5&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: embedding 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_excludes_endpoint_names_and_all_secret_material[rerank]" time="0.092"><failure message="AssertionError: rerank 配置的五次成功操作都必须持久化审计，实际 0 条。&#10;assert 0 == 5&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: rerank 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_excludes_endpoint_names_and_all_secret_material[query_rewrite]" time="0.112"><failure message="AssertionError: query_rewrite 配置的五次成功操作都必须持久化审计，实际 0 条。&#10;assert 0 == 5&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:309: in test_model_audit_excludes_endpoint_names_and_all_secret_material
+    assert len(rows) == 5, f"{kind} 配置的五次成功操作都必须持久化审计，实际 {len(rows)} 条。"
+E   AssertionError: query_rewrite 配置的五次成功操作都必须持久化审计，实际 0 条。
+E   assert 0 == 5
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_account_audit_excludes_credentials_sessions_and_private_documents" time="0.140"><failure message="AssertionError: 账号创建、重置、更新和删除应有四条持久审计，不能只输出应用日志。&#10;assert 0 == 4&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:383: in test_account_audit_excludes_credentials_sessions_and_private_documents
+    assert len(rows) == 4, "账号创建、重置、更新和删除应有四条持久审计，不能只输出应用日志。"
+E   AssertionError: 账号创建、重置、更新和删除应有四条持久审计，不能只输出应用日志。
+E   assert 0 == 4
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_distinguishes_secret_and_endpoint_intent[payload0-False-False]" time="0.067"><failure message="AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_distinguishes_secret_and_endpoint_intent[payload1-False-False]" time="0.062"><failure message="AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_distinguishes_secret_and_endpoint_intent[payload2-True-False]" time="0.242"><failure message="AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_distinguishes_secret_and_endpoint_intent[payload3-True-False]" time="0.061"><failure message="AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_model_audit_distinguishes_secret_and_endpoint_intent[payload4-False-True]" time="0.064"><failure message="AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:425: in test_model_audit_distinguishes_secret_and_endpoint_intent
+    row = only_event(auth_db, trace_id, "model.update", "success")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 success 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[last_admin]" time="0.077"><failure message="AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[cannot_disable_self]" time="0.070"><failure message="AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[cannot_reset_self]" time="0.068"><failure message="AssertionError: user.reset_password 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.reset_password 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[cannot_delete_self]" time="0.070"><failure message="AssertionError: user.delete 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.delete 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[email_conflict]" time="0.068"><failure message="AssertionError: user.create 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.create 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[weak_password]" time="0.072"><failure message="AssertionError: user.reset_password 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.reset_password 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[user_not_found]" time="0.069"><failure message="AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[empty_update]" time="0.067"><failure message="AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: user.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[model_disabled]" time="0.113"><failure message="AssertionError: model.activate 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.activate 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[model_in_use]" time="0.084"><failure message="AssertionError: model.delete 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.delete 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[model_not_active]" time="0.068"><failure message="AssertionError: model.deactivate 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.deactivate 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_business_denial_is_persisted_after_rollback[model_not_found]" time="0.068"><failure message="AssertionError: model.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:565: in test_business_denial_is_persisted_after_rollback
+    row = only_event(auth_db, trace_id, action, "denied")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.update 请求必须持久化且仅持久化一条 denied 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_dependency_failure_records_failed_without_partial_model_write" time="0.061"><failure message="AssertionError: model.create 请求必须持久化且仅持久化一条 failed 审计，实际为 0 条；业务成功或失败不能只写应用日志。&#10;assert 0 == 1&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:593: in test_dependency_failure_records_failed_without_partial_model_write
+    row = only_event(auth_db, trace_id, "model.create", "failed")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/test_audit_transactions.py:87: in only_event
+    assert len(rows) == 1, (
+E   AssertionError: model.create 请求必须持久化且仅持久化一条 failed 审计，实际为 0 条；业务成功或失败不能只写应用日志。
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[user.create]" time="0.073"><failure message="AssertionError: user.create 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 201；响应={&quot;id&quot;:&quot;8c5b6205-ffd2-45b1-a499-642a83b35ba0&quot;,&quot;display_name&quot;:&quot;不应入审计的新用户显示名&quot;,&quot;email&quot;:&quot;audit-new-user@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;viewer&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:55.281129Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:55.281142Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;]}">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.create 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 201；响应={"id":"8c5b6205-ffd2-45b1-a499-642a83b35ba0","display_name":"不应入审计的新用户显示名","email":"audit-new-user@example.com","avatar_url":null,"status":"active","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:55.281129Z","updated_at":"2026-10-22T09:28:55.281142Z","permissions":["knowledge:read"]}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[user.update]" time="0.069"><failure message="AssertionError: user.update 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={&quot;id&quot;:&quot;e46f8b77-0cbe-44f4-8300-de0e107abac9&quot;,&quot;display_name&quot;:&quot;audit-target&quot;,&quot;email&quot;:&quot;audit-target@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;disabled&quot;,&quot;role&quot;:&quot;viewer&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:55.341306Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:55.364330Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;]}">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.update 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"e46f8b77-0cbe-44f4-8300-de0e107abac9","display_name":"audit-target","email":"audit-target@example.com","avatar_url":null,"status":"disabled","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:55.341306Z","updated_at":"2026-10-22T09:28:55.364330Z","permissions":["knowledge:read"]}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[user.reset_password]" time="0.070"><failure message="AssertionError: user.reset_password 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.reset_password 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[user.delete]" time="0.080"><failure message="AssertionError: user.delete 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: user.delete 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[model.create]" time="0.070"><failure message="AssertionError: model.create 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 201；响应={&quot;id&quot;:&quot;3e82c57f-7183-4b42-a55a-56cf883c9979&quot;,&quot;name&quot;:&quot;测试 chat 配置&quot;,&quot;kind&quot;:&quot;chat&quot;,&quot;base_url&quot;:&quot;https://models.example/v1&quot;,&quot;model&quot;:&quot;test-chat&quot;,&quot;enabled&quot;:true,&quot;is_default&quot;:false,&quot;has_api_key&quot;:true,&quot;timeout_seconds&quot;:12.0,&quot;max_retries&quot;:1,&quot;dimensions&quot;:null,&quot;api_format&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:55.633679&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:55.633691&quot;}">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.create 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 201；响应={"id":"3e82c57f-7183-4b42-a55a-56cf883c9979","name":"测试 chat 配置","kind":"chat","base_url":"https://models.example/v1","model":"test-chat","enabled":true,"is_default":false,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.633679","updated_at":"2026-10-22T09:28:55.633691"}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[model.update]" time="0.072"><failure message="AssertionError: model.update 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={&quot;id&quot;:&quot;040e095b-01b6-421a-9c5f-454b29e2e951&quot;,&quot;name&quot;:&quot;另一个不应入审计的显示名&quot;,&quot;kind&quot;:&quot;chat&quot;,&quot;base_url&quot;:&quot;https://replacement.example/v1/new-endpoint-canary&quot;,&quot;model&quot;:&quot;audit-chat-v2&quot;,&quot;enabled&quot;:true,&quot;is_default&quot;:false,&quot;has_api_key&quot;:true,&quot;timeout_seconds&quot;:20.0,&quot;max_retries&quot;:0,&quot;dimensions&quot;:null,&quot;api_format&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:55.700877&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:55.721750&quot;}">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.update 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"040e095b-01b6-421a-9c5f-454b29e2e951","name":"另一个不应入审计的显示名","kind":"chat","base_url":"https://replacement.example/v1/new-endpoint-canary","model":"audit-chat-v2","enabled":true,"is_default":false,"has_api_key":true,"timeout_seconds":20.0,"max_retries":0,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.700877","updated_at":"2026-10-22T09:28:55.721750"}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[model.activate]" time="0.068"><failure message="AssertionError: model.activate 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={&quot;id&quot;:&quot;c51ecfc1-8852-4ae0-8443-5fa1ef29953a&quot;,&quot;name&quot;:&quot;不应入审计的配置显示名&quot;,&quot;kind&quot;:&quot;chat&quot;,&quot;base_url&quot;:&quot;https://private-model.example/v1/endpoint-canary&quot;,&quot;model&quot;:&quot;audit-chat&quot;,&quot;enabled&quot;:true,&quot;is_default&quot;:true,&quot;has_api_key&quot;:true,&quot;timeout_seconds&quot;:12.0,&quot;max_retries&quot;:1,&quot;dimensions&quot;:null,&quot;api_format&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:55.784545&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:55.784557&quot;}">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.activate 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"c51ecfc1-8852-4ae0-8443-5fa1ef29953a","name":"不应入审计的配置显示名","kind":"chat","base_url":"https://private-model.example/v1/endpoint-canary","model":"audit-chat","enabled":true,"is_default":true,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.784545","updated_at":"2026-10-22T09:28:55.784557"}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[model.deactivate]" time="0.075"><failure message="AssertionError: model.deactivate 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={&quot;id&quot;:&quot;fdbc8884-7fad-4017-a10e-b063a45b9ce7&quot;,&quot;name&quot;:&quot;不应入审计的配置显示名&quot;,&quot;kind&quot;:&quot;chat&quot;,&quot;base_url&quot;:&quot;https://private-model.example/v1/endpoint-canary&quot;,&quot;model&quot;:&quot;audit-chat&quot;,&quot;enabled&quot;:true,&quot;is_default&quot;:false,&quot;has_api_key&quot;:true,&quot;timeout_seconds&quot;:12.0,&quot;max_retries&quot;:1,&quot;dimensions&quot;:null,&quot;api_format&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:55.868371&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:55.868383&quot;}">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.deactivate 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 200；响应={"id":"fdbc8884-7fad-4017-a10e-b063a45b9ce7","name":"不应入审计的配置显示名","kind":"chat","base_url":"https://private-model.example/v1/endpoint-canary","model":"audit-chat","enabled":true,"is_default":false,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:55.868371","updated_at":"2026-10-22T09:28:55.868383"}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_unwritable_audit_rolls_back_entire_business_transaction[model.delete]" time="0.070"><failure message="AssertionError: model.delete 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=">tests/admin_console/test_audit_transactions.py:608: in test_unwritable_audit_rolls_back_entire_business_transaction
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: model.delete 审计不可写时必须整体失败，不能先提交业务再补写日志：期望 HTTP 503，实际 HTTP 204；响应=</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_rolled_back_attempt_then_retry_keeps_one_committed_success[user.create]" time="0.062"><failure message="AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 201；响应={&quot;id&quot;:&quot;cd7d5a74-9f81-4f7c-a43d-8db6e74f03d3&quot;,&quot;display_name&quot;:&quot;不应入审计的新用户显示名&quot;,&quot;email&quot;:&quot;audit-new-user@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;active&quot;,&quot;role&quot;:&quot;viewer&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:56.057464Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:56.057476Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;]}">tests/admin_console/test_audit_transactions.py:630: in test_rolled_back_attempt_then_retry_keeps_one_committed_success
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 201；响应={"id":"cd7d5a74-9f81-4f7c-a43d-8db6e74f03d3","display_name":"不应入审计的新用户显示名","email":"audit-new-user@example.com","avatar_url":null,"status":"active","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:56.057464Z","updated_at":"2026-10-22T09:28:56.057476Z","permissions":["knowledge:read"]}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_rolled_back_attempt_then_retry_keeps_one_committed_success[user.update]" time="0.061"><failure message="AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 200；响应={&quot;id&quot;:&quot;562c9e74-566d-43c1-8adc-f4639b221290&quot;,&quot;display_name&quot;:&quot;audit-target&quot;,&quot;email&quot;:&quot;audit-target@example.com&quot;,&quot;avatar_url&quot;:null,&quot;status&quot;:&quot;disabled&quot;,&quot;role&quot;:&quot;viewer&quot;,&quot;deleted_at&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:56.118706Z&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:56.133786Z&quot;,&quot;permissions&quot;:[&quot;knowledge:read&quot;]}">tests/admin_console/test_audit_transactions.py:630: in test_rolled_back_attempt_then_retry_keeps_one_committed_success
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 200；响应={"id":"562c9e74-566d-43c1-8adc-f4639b221290","display_name":"audit-target","email":"audit-target@example.com","avatar_url":null,"status":"disabled","role":"viewer","deleted_at":null,"created_at":"2026-10-22T09:28:56.118706Z","updated_at":"2026-10-22T09:28:56.133786Z","permissions":["knowledge:read"]}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_rolled_back_attempt_then_retry_keeps_one_committed_success[model.activate]" time="0.060"><failure message="AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 200；响应={&quot;id&quot;:&quot;372ad4f2-5990-4841-8819-209144c7b6d4&quot;,&quot;name&quot;:&quot;不应入审计的配置显示名&quot;,&quot;kind&quot;:&quot;chat&quot;,&quot;base_url&quot;:&quot;https://private-model.example/v1/endpoint-canary&quot;,&quot;model&quot;:&quot;audit-chat&quot;,&quot;enabled&quot;:true,&quot;is_default&quot;:true,&quot;has_api_key&quot;:true,&quot;timeout_seconds&quot;:12.0,&quot;max_retries&quot;:1,&quot;dimensions&quot;:null,&quot;api_format&quot;:null,&quot;created_at&quot;:&quot;2026-10-22T09:28:56.197101&quot;,&quot;updated_at&quot;:&quot;2026-10-22T09:28:56.197113&quot;}">tests/admin_console/test_audit_transactions.py:630: in test_rolled_back_attempt_then_retry_keeps_one_committed_success
+    assert_error(
+tests/admin_console/helpers.py:15: in assert_error
+    body = assert_status(response, status, condition)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/admin_console/helpers.py:8: in assert_status
+    assert response.status_code == expected, (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: 首次事务必须因审计不可写回滚：期望 HTTP 503，实际 HTTP 200；响应={"id":"372ad4f2-5990-4841-8819-209144c7b6d4","name":"不应入审计的配置显示名","kind":"chat","base_url":"https://private-model.example/v1/endpoint-canary","model":"audit-chat","enabled":true,"is_default":true,"has_api_key":true,"timeout_seconds":12.0,"max_retries":1,"dimensions":null,"api_format":null,"created_at":"2026-10-22T09:28:56.197101","updated_at":"2026-10-22T09:28:56.197113"}</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_shared_trace_does_not_deduplicate_distinct_successful_changes" time="0.065"><failure message="AssertionError: trace ID 不能充当幂等键而静默丢弃第二个已提交变更的审计。&#10;assert (0 == 2)&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:658: in test_shared_trace_does_not_deduplicate_distinct_successful_changes
+    assert len(rows) == 2 and all(row.result == "success" for row in rows), (
+E   AssertionError: trace ID 不能充当幂等键而静默丢弃第二个已提交变更的审计。
+E   assert (0 == 2)
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_inflight_actor_losing_admin_role_records_denial" time="0.049"><failure message="AssertionError: 在途失权需要持久化拒绝审计。&#10;assert (0 == 1)&#10; +  where 0 = len([])">tests/admin_console/test_audit_transactions.py:682: in test_inflight_actor_losing_admin_role_records_denial
+    assert len(rows) == 1 and rows[0].result == "denied", "在途失权需要持久化拒绝审计。"
+E   AssertionError: 在途失权需要持久化拒绝审计。
+E   assert (0 == 1)
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.admin_console.test_audit_transactions" name="test_failure_audit_outage_preserves_original_error_and_logs_safe_event" time="0.048"><failure message="AssertionError: 失败留痕不可写时需要固定结构化故障事件。&#10;assert '管理失败审计写入失败' in ''&#10; +  where '' = &lt;_pytest.logging.LogCaptureFixture object at 0xedc2dd1830e0&gt;.text">tests/admin_console/test_audit_transactions.py:698: in test_failure_audit_outage_preserves_original_error_and_logs_safe_event
+    assert "管理失败审计写入失败" in caplog.text, "失败留痕不可写时需要固定结构化故障事件。"
+E   AssertionError: 失败留痕不可写时需要固定结构化故障事件。
+E   assert '管理失败审计写入失败' in ''
+E    +  where '' = &lt;_pytest.logging.LogCaptureFixture object at 0xedc2dd1830e0&gt;.text</failure></testcase></testsuite></testsuites>

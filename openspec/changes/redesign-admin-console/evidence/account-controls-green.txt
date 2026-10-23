@@ -1,0 +1,5 @@
+Uninstalled 1 package in 0.53ms
+Installed 1 package in 3ms
+........................................................................ [ 80%]
+................s                                                        [100%]
+88 passed, 1 skipped in 4.90s

@@ -1,0 +1,17 @@
+Uninstalled 1 package in 0.53ms
+Installed 1 package in 1ms
+2026-10-22 17:19:27 [info     ] 数据库引擎已创建                       database_url=postgresql+psycopg://knowra:***@localhost:5432/knowra echo=True
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 20261022_0001 -> 20261022_0002, 增加后台审计、模型诊断历史及配置版本，保留既有业务记录。
+[2m2026-10-22T09:19:30.789100Z[0m [[32m[1minfo[0m] [1m隔离数据库迁移数据保留验证通过[0m [[0m[1m[34m__main__[0m][0m [36mlegacy_row_count[0m=[35m19[0m [36mlegacy_table_count[0m=[35m15[0m [36mrevision[0m=[35m20261022_0002[0m [36mstage[0m=[35mupgrade[0m [36mtrace_id[0m=[35m-[0m [36mvector_dimensions[0m=[35m2560[0m
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 20261022_0002 -> 20261022_0001, 增加后台审计、模型诊断历史及配置版本，保留既有业务记录。
+[2m2026-10-22T09:19:31.786778Z[0m [[32m[1minfo[0m] [1m隔离数据库迁移数据保留验证通过[0m [[0m[1m[34m__main__[0m][0m [36mlegacy_row_count[0m=[35m19[0m [36mlegacy_table_count[0m=[35m15[0m [36mrevision[0m=[35m20261022_0001[0m [36mstage[0m=[35mdowngrade[0m [36mtrace_id[0m=[35m-[0m [36mvector_dimensions[0m=[35m2560[0m
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 20261022_0001 -> 20261022_0002, 增加后台审计、模型诊断历史及配置版本，保留既有业务记录。
+[2m2026-10-22T09:19:32.876577Z[0m [[32m[1minfo[0m] [1m隔离数据库迁移数据保留验证通过[0m [[0m[1m[34m__main__[0m][0m [36mlegacy_row_count[0m=[35m19[0m [36mlegacy_table_count[0m=[35m15[0m [36mrevision[0m=[35m20261022_0002[0m [36mstage[0m=[35mre-upgrade[0m [36mtrace_id[0m=[35m-[0m [36mvector_dimensions[0m=[35m2560[0m

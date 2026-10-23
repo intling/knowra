@@ -3,16 +3,19 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 
 from app.api.deps import SessionDep, require_permission
 from app.core.config import Settings, get_settings
 from app.core.permissions import MODELS_MANAGE
 from app.models.user import User
 from app.schemas.model_configuration import (
+    EffectiveModel,
     ModelCreate,
     ModelKind,
     ModelPage,
+    ModelProbeRead,
+    ModelProbeRequest,
     ModelRead,
     ModelUpdate,
 )
@@ -32,6 +35,11 @@ def list_models(
     kind: ModelKind | None = None,
 ):
     return service.list_profiles(session, offset=offset, limit=limit, kind=kind)
+
+
+@router.get("/effective", response_model=list[EffectiveModel])
+def read_effective_models(admin: AdminDep, session: SessionDep, settings: SettingsDep):
+    return service.effective_models(session, settings)
 
 
 @router.post("", response_model=ModelRead, status_code=201)
@@ -59,6 +67,27 @@ def delete_model(profile_id: UUID, admin: AdminDep, session: SessionDep) -> Resp
 @router.post("/{profile_id}/activate", response_model=ModelRead)
 def activate_model(profile_id: UUID, admin: AdminDep, session: SessionDep, settings: SettingsDep):
     return service.change_binding(session, admin, profile_id, settings, activate=True)
+
+
+@router.post("/{profile_id}/test", response_model=ModelProbeRead)
+async def test_model(
+    profile_id: UUID,
+    payload: ModelProbeRequest,
+    admin: AdminDep,
+    session: SessionDep,
+    settings: SettingsDep,
+    request: Request,
+):
+    from app.services.model_probes import run_probe
+
+    return await run_probe(
+        session,
+        admin,
+        profile_id,
+        payload.expected_revision,
+        settings,
+        request.app.state.application_shutdown_state,
+    )
 
 
 @router.post("/{profile_id}/deactivate", response_model=ModelRead)

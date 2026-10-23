@@ -7,6 +7,10 @@ import RegisterView from "../views/RegisterView.vue"
 import AccountView from "../views/AccountView.vue"
 import AdminUsersView from "../views/AdminUsersView.vue"
 import AdminModelsView from "../views/AdminModelsView.vue"
+import AdminOverviewView from "../views/AdminOverviewView.vue"
+import AdminJobsView from "../views/AdminJobsView.vue"
+import AdminAuditView from "../views/AdminAuditView.vue"
+import AdminSystemView from "../views/AdminSystemView.vue"
 import { useUserStore } from "../stores/user"
 import { sanitizeRedirect } from "../shared/auth/redirect"
 
@@ -16,9 +20,38 @@ export function createAppRouter(history: RouterHistory = createWebHistory()) {
     routes: [
       {
         path: "/admin",
-        redirect: "/admin/users",
+        redirect: "/admin/overview",
         meta: { requiresAuth: true },
       },
+      ...[
+        {
+          path: "/admin/overview",
+          name: "admin-overview",
+          component: AdminOverviewView,
+          permission: "operations:read",
+        },
+        {
+          path: "/admin/jobs",
+          name: "admin-jobs",
+          component: AdminJobsView,
+          permission: "operations:read",
+        },
+        {
+          path: "/admin/audit",
+          name: "admin-audit",
+          component: AdminAuditView,
+          permission: "audit:read",
+        },
+        {
+          path: "/admin/system",
+          name: "admin-system",
+          component: AdminSystemView,
+          permission: "operations:read",
+        },
+      ].map(({ permission, ...route }) => ({
+        ...route,
+        meta: { requiresAuth: true, permission },
+      })),
       {
         path: "/admin/models",
         name: "admin-models",

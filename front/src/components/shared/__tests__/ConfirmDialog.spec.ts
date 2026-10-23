@@ -20,7 +20,9 @@ describe("ConfirmDialog", () => {
       })
 
       // 当 visible=false 时，DOM 中不应有 dialog 结构
-      expect(wrapper.find('[data-testid="confirm-dialog-overlay"]').exists()).toBe(false)
+      expect(
+        wrapper.find('[data-testid="confirm-dialog-overlay"]').exists(),
+      ).toBe(false)
     })
 
     it("visible=true 时渲染对话框", () => {
@@ -32,7 +34,9 @@ describe("ConfirmDialog", () => {
         },
       })
 
-      expect(wrapper.find('[data-testid="confirm-dialog-overlay"]').exists()).toBe(true)
+      expect(
+        wrapper.find('[data-testid="confirm-dialog-overlay"]').exists(),
+      ).toBe(true)
     })
 
     it("渲染标题", () => {
@@ -70,7 +74,9 @@ describe("ConfirmDialog", () => {
         },
       })
 
-      await wrapper.find('[data-testid="confirm-dialog-confirm-btn"]').trigger("click")
+      await wrapper
+        .find('[data-testid="confirm-dialog-confirm-btn"]')
+        .trigger("click")
 
       expect(wrapper.emitted("confirm")).toBeTruthy()
       expect(wrapper.emitted("confirm")).toHaveLength(1)
@@ -85,7 +91,9 @@ describe("ConfirmDialog", () => {
         },
       })
 
-      await wrapper.find('[data-testid="confirm-dialog-cancel-btn"]').trigger("click")
+      await wrapper
+        .find('[data-testid="confirm-dialog-cancel-btn"]')
+        .trigger("click")
 
       expect(wrapper.emitted("cancel")).toBeTruthy()
       expect(wrapper.emitted("cancel")).toHaveLength(1)
@@ -100,7 +108,9 @@ describe("ConfirmDialog", () => {
         },
       })
 
-      await wrapper.find('[data-testid="confirm-dialog-overlay"]').trigger("click")
+      await wrapper
+        .find('[data-testid="confirm-dialog-overlay"]')
+        .trigger("click")
 
       expect(wrapper.emitted("cancel")).toBeTruthy()
     })
@@ -118,7 +128,9 @@ describe("ConfirmDialog", () => {
         },
       })
 
-      expect(wrapper.find('[data-testid="custom-slot-content"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="custom-slot-content"]').exists()).toBe(
+        true,
+      )
       expect(wrapper.text()).toContain("自定义内容区域")
     })
 
@@ -135,7 +147,9 @@ describe("ConfirmDialog", () => {
       })
 
       // 插槽内容应渲染
-      expect(wrapper.find('[data-testid="custom-slot-content"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="custom-slot-content"]').exists()).toBe(
+        true,
+      )
       // 当有插槽时，插槽内容替代 message
       expect(wrapper.text()).toContain("插槽自定义消息")
     })
@@ -196,7 +210,7 @@ describe("ConfirmDialog", () => {
   })
 
   describe("危险模式", () => {
-    it("danger=true 时确认按钮使用红色样式", () => {
+    it("danger=true 时确认按钮使用危险语义色", () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           visible: true,
@@ -207,7 +221,7 @@ describe("ConfirmDialog", () => {
       })
 
       const btn = wrapper.find('[data-testid="confirm-dialog-confirm-btn"]')
-      expect(btn.classes()).toContain("bg-red-600")
+      expect(btn.classes()).toContain("bg-cite")
     })
 
     it("danger=false 时确认按钮使用品牌蓝样式", () => {
@@ -265,7 +279,9 @@ describe("ConfirmDialog 可访问性", () => {
       attachTo: document.body,
     })
 
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    )
 
     expect(wrapper.emitted("cancel")).toHaveLength(1)
     expect(wrapper.emitted("confirm")).toBeUndefined()
@@ -279,7 +295,9 @@ describe("ConfirmDialog 可访问性", () => {
       attachTo: document.body,
     })
 
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    )
 
     expect(wrapper.emitted("cancel")).toBeUndefined()
     wrapper.unmount()
@@ -291,15 +309,30 @@ describe("ConfirmDialog 可访问性", () => {
       props: { visible: true, title: "删除这段对话？" },
       attachTo: document.body,
     })
-    const cancel = wrapper.find('[data-testid="confirm-dialog-cancel-btn"]').element as HTMLElement
-    const confirm = wrapper.find('[data-testid="confirm-dialog-confirm-btn"]').element as HTMLElement
+    const cancel = wrapper.find('[data-testid="confirm-dialog-cancel-btn"]')
+      .element as HTMLElement
+    const confirm = wrapper.find('[data-testid="confirm-dialog-confirm-btn"]')
+      .element as HTMLElement
 
     confirm.focus()
-    confirm.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }))
+    confirm.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Tab",
+        bubbles: true,
+        cancelable: true,
+      }),
+    )
     expect(document.activeElement).toBe(cancel)
 
     cancel.focus()
-    cancel.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true }))
+    cancel.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Tab",
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    )
     expect(document.activeElement).toBe(confirm)
     wrapper.unmount()
   })

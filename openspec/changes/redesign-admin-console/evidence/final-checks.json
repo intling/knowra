@@ -1,0 +1,14 @@
+{
+  "tasks_complete": 36,
+  "tasks_remaining": 0,
+  "git_diff_check_exit_code": 0,
+  "backend_tests": true,
+  "frontend_tests": true,
+  "browser_checks": 16,
+  "browser_errors": [],
+  "rollback_checks": 4,
+  "cleanup": {
+    "test_container_removed": true,
+    "test_service_pids_stopped": true
+  }
+}

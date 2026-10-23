@@ -1,0 +1,126 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/views/__tests__/AdminModelDiagnostics.spec.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ❯ src/views/__tests__/AdminModelDiagnostics.spec.ts (3 tests | 3 failed) 329ms
+   × 四用途生效卡片 278ms
+   × 测试须确认费用且不改变默认 30ms
+   × 测试结果过期与版本冲突 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/views/__tests__/AdminModelDiagnostics.spec.ts > 四用途生效卡片
+AssertionError: expected [] to have a length of 4 but got +0
+
+- Expected
++ Received
+
+- 4
++ 0
+
+ ❯ src/views/__tests__/AdminModelDiagnostics.spec.ts:14:101
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/views/__tests__/AdminModelDiagnostics.spec.ts > 测试须确认费用且不改变默认
+Error: Unable to get [data-testid="admin-model-test"] within: <main class="min-h-dvh bg-paper px-4 py-8 text-ink sm:py-12">
+  <div class="mx-auto w-full min-w-0 max-w-3xl"><a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700"><span class="grid size-8 place-items-center rounded-lg bg-brand-700 font-display text-lg text-white" aria-hidden="true">知</span> 知寻 · KNOWRA </a>
+    <header class="my-8">
+      <h1 class="font-display text-3xl font-semibold">模型配置</h1>
+      <p class="mt-3 text-sm leading-6 text-ink-muted">为问答和资料处理选择合适的模型服务。</p>
+    </header>
+    <nav class="mb-6 flex flex-wrap gap-2 border-b border-line pb-4 text-sm" aria-label="后台导航"><a href="/admin/users" class="rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">用户管理</a><a aria-current="page" href="/admin/models" class="!bg-brand-50 !text-brand-700 router-link-exact-active rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">模型配置</a><a href="/" class="ml-auto px-3 py-2 text-brand-700">返回知识书房 ↗</a></nav>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-4"><label class="text-sm text-ink-muted">模型用途<select class="account-input mt-1">
+          <option value="">全部用途</option>
+          <option value="chat">聊天与回答</option>
+          <option value="embedding">Embedding 向量化</option>
+          <option value="rerank">检索重排</option>
+          <option value="query_rewrite">查询改写</option>
+        </select></label><button data-testid="admin-create-model" class="account-primary"> 新增模型配置 </button></div>
+    <p class="mb-5 text-sm leading-6 text-ink-muted"> 每种用途可选一个默认模型。未指定默认模型时使用服务器环境配置；修改默认模型在下一次请求生效。 </p>
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <ul class="space-y-4" aria-label="模型配置列表">
+      <li data-testid="admin-model-row" class="account-card">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="min-w-0 font-semibold break-all">聊天候选</h2><span class="text-xs text-brand-700">已禁用</span>
+        </div>
+        <p class="mt-2 text-xs text-ink-muted">聊天与回答 · 已配置密钥 · 超时 15 秒 </p>
+        <p class="mt-3 text-sm break-all">chat-one</p>
+        <p class="mt-1 text-sm break-all text-ink-muted">http://localhost:9000/v1</p>
+        <div class="mt-4 flex flex-wrap gap-2"><button data-testid="admin-model-edit" class="account-secondary"> 编辑 </button><button data-testid="admin-model-activate" class="account-secondary" disabled=""> 设为默认 </button><button class="account-secondary">启用</button><button data-testid="admin-model-delete" class="account-secondary !text-cite"> 删除 </button></div>
+      </li>
+    </ul>
+    <!--v-if-->
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="模型配置分页">
+      <p class="text-ink-muted"> 共 1 项 · 第 1 页 </p>
+      <div class="flex gap-2"><button class="account-secondary" disabled=""> 上一页</button><button class="account-secondary" disabled=""> 下一页 </button></div>
+    </nav>
+    <!--v-if-->
+  </div>
+</main>
+ ❯ VueWrapper.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:7195:15
+ ❯ src/views/__tests__/AdminModelDiagnostics.spec.ts:17:29
+     15| // 验证禁用配置也可测试，确认前说明固定内容与费用，测试不自动切换默认。
+     16| it('测试须确认费用且不改变默认',async()=>{
+     17|  await open();await wrapper.get('[data-testid="admin-model-test"]').tr…
+       |                             ^
+     18|  expect(wrapper.text()).toContain('少量费用');expect(api.testModel).not.to…
+     19|  api.testModel.mockResolvedValue({probe_id:'probe1',status:'passed',co…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/views/__tests__/AdminModelDiagnostics.spec.ts > 测试结果过期与版本冲突
+Error: Unable to get [data-testid="admin-model-test"] within: <main class="min-h-dvh bg-paper px-4 py-8 text-ink sm:py-12">
+  <div class="mx-auto w-full min-w-0 max-w-3xl"><a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-700"><span class="grid size-8 place-items-center rounded-lg bg-brand-700 font-display text-lg text-white" aria-hidden="true">知</span> 知寻 · KNOWRA </a>
+    <header class="my-8">
+      <h1 class="font-display text-3xl font-semibold">模型配置</h1>
+      <p class="mt-3 text-sm leading-6 text-ink-muted">为问答和资料处理选择合适的模型服务。</p>
+    </header>
+    <nav class="mb-6 flex flex-wrap gap-2 border-b border-line pb-4 text-sm" aria-label="后台导航"><a href="/admin/users" class="rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">用户管理</a><a aria-current="page" href="/admin/models" class="!bg-brand-50 !text-brand-700 router-link-exact-active rounded-lg px-3 py-2 text-ink-muted hover:bg-paper-deep">模型配置</a><a href="/" class="ml-auto px-3 py-2 text-brand-700">返回知识书房 ↗</a></nav>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-4"><label class="text-sm text-ink-muted">模型用途<select class="account-input mt-1">
+          <option value="">全部用途</option>
+          <option value="chat">聊天与回答</option>
+          <option value="embedding">Embedding 向量化</option>
+          <option value="rerank">检索重排</option>
+          <option value="query_rewrite">查询改写</option>
+        </select></label><button data-testid="admin-create-model" class="account-primary"> 新增模型配置 </button></div>
+    <p class="mb-5 text-sm leading-6 text-ink-muted"> 每种用途可选一个默认模型。未指定默认模型时使用服务器环境配置；修改默认模型在下一次请求生效。 </p>
+    <!--v-if-->
+    <!--v-if-->
+    <!--v-if-->
+    <ul class="space-y-4" aria-label="模型配置列表">
+      <li data-testid="admin-model-row" class="account-card">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="min-w-0 font-semibold break-all">聊天候选</h2><span class="text-xs text-brand-700">已禁用</span>
+        </div>
+        <p class="mt-2 text-xs text-ink-muted">聊天与回答 · 已配置密钥 · 超时 15 秒 </p>
+        <p class="mt-3 text-sm break-all">chat-one</p>
+        <p class="mt-1 text-sm break-all text-ink-muted">http://localhost:9000/v1</p>
+        <div class="mt-4 flex flex-wrap gap-2"><button data-testid="admin-model-edit" class="account-secondary"> 编辑 </button><button data-testid="admin-model-activate" class="account-secondary" disabled=""> 设为默认 </button><button class="account-secondary">启用</button><button data-testid="admin-model-delete" class="account-secondary !text-cite"> 删除 </button></div>
+      </li>
+    </ul>
+    <!--v-if-->
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="模型配置分页">
+      <p class="text-ink-muted"> 共 1 项 · 第 1 页 </p>
+      <div class="flex gap-2"><button class="account-secondary" disabled=""> 上一页</button><button class="account-secondary" disabled=""> 下一页 </button></div>
+    </nav>
+    <!--v-if-->
+  </div>
+</main>
+ ❯ VueWrapper.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:7195:15
+ ❯ src/views/__tests__/AdminModelDiagnostics.spec.ts:26:16
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  18:33:03
+   Duration  1.30s (transform 334ms, setup 0ms, import 259ms, tests 329ms, environment 552ms)

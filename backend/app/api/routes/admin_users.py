@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response
@@ -6,14 +6,27 @@ from fastapi import APIRouter, Depends, Query, Response
 from app.api.deps import SessionDep, require_permission
 from app.core.permissions import USERS_MANAGE
 from app.models.user import User
-from app.schemas.auth import AdminPasswordReset, AdminUserCreate, AdminUserUpdate, UserPage
+from app.schemas.auth import (
+    AdminPasswordReset,
+    AdminUserCreate,
+    AdminUserDetail,
+    AdminUserUpdate,
+    ChatLimitSnapshot,
+    ChatLimitUpdate,
+    SessionRevokeResult,
+    UserPage,
+)
 from app.schemas.user import UserRead
 from app.services.user_admin import (
     create_user,
     delete_user,
     list_users,
+    read_chat_limit,
     reset_password,
+    revoke_sessions,
+    set_chat_limit,
     update_user,
+    user_detail,
 )
 
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
@@ -26,8 +39,31 @@ def read_users(
     session: SessionDep,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    role: Literal["admin", "member", "viewer"] | None = None,
+    status: Literal["active", "disabled"] | None = None,
 ) -> UserPage:
-    return list_users(session, offset=offset, limit=limit)
+    return list_users(session, offset=offset, limit=limit, q=q, role=role, status=status)
+
+
+@router.get("/{user_id}", response_model=AdminUserDetail)
+def read_user(user_id: UUID, admin: AdminDep, session: SessionDep) -> AdminUserDetail:
+    return user_detail(session, user_id)
+
+
+@router.get("/{user_id}/chat-limit", response_model=ChatLimitSnapshot)
+def get_chat_limit(user_id: UUID, admin: AdminDep, session: SessionDep):
+    return read_chat_limit(session, user_id)
+
+
+@router.put("/{user_id}/chat-limit", response_model=ChatLimitSnapshot)
+def put_chat_limit(user_id: UUID, payload: ChatLimitUpdate, admin: AdminDep, session: SessionDep):
+    return set_chat_limit(session, admin, user_id, payload.hourly_limit)
+
+
+@router.post("/{user_id}/revoke-sessions", response_model=SessionRevokeResult)
+def post_revoke_sessions(user_id: UUID, admin: AdminDep, session: SessionDep):
+    return SessionRevokeResult(revoked_count=revoke_sessions(session, admin, user_id))
 
 
 @router.patch("/{user_id}", response_model=UserRead)
