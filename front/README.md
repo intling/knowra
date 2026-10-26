@@ -34,11 +34,15 @@ The app starts at `http://localhost:5173`. API requests under `/api` are proxied
   when open it traps Tab, closes on Esc / overlay / close button / selecting or creating a conversation, and returns focus to the menu button.
 - **Sidebar**: 新对话, 资料库 (`GET /api/parsed-documents` → "N 份已解析资料", with retry and a 流程验证 link), 最近对话
   (rename; delete asks for confirmation in an accessible dialog).
-- **Welcome**: three steps 上传资料 → 提问 → 核对来源. The upload button reuses the composer's file input;
+- **Welcome**: 可直接提问，上传资料可增强回答；three steps 上传资料 → 提问 → 核对来源. The upload button reuses the composer's file input;
   suggestions only fill the composer and focus it (never auto-send).
 - **Composer**: textarea on its own row, toolbar below (资料 / 检索 N 段 settings popover with Top-K and replace-on-upload / send).
   Enter sends, Shift/Ctrl/Cmd+Enter inserts a newline, Enter during IME composition is ignored.
-- **Turns**: question bubble → answer (seal + reading column, copy, citation stats, token total with details in tooltip)
+- **自适应回答**：`general` 显示正文、复制、真实 token 与“基于通用知识”，省略空来源与零引用；
+  `clarification` 展示资料引导，不伪造用量；`summary` 显示真实来源与覆盖统计，部分覆盖说明“基于部分资料总结”，
+  不显示语义分数；`rag` 保留来源与折叠诊断。`unavailable` 单独提示检索暂不可用，生成错误保持失败状态。
+  响应新增模式/覆盖字段可选，兼容旧 localStorage 对话；`searchChunks` 支持可选 `document_ids`（1–20 个 UUID）。
+- **Turns**（资料回答）: question bubble → answer (seal + reading column, copy, citation stats, token total with details in tooltip)
   → `SourceList` (grouped by `parsed_document_id`, pages, chunk ids, preview; expand for exact API text and rank)
   → `RetrievalDetails` (collapsed; query rewrite, retrieval results, prompt preview).
   Pending turns show 正在检索资料… / 正在生成回答… with `aria-live`. On an explicit send only the message

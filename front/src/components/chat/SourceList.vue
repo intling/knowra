@@ -10,9 +10,10 @@ import { computed, ref } from "vue"
 import type { SearchResultItem } from "../../api/search"
 import { uniqueId } from "../../shared/a11y/focus"
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   results: SearchResultItem[]
-}>()
+  summary?: boolean
+}>(), { summary: false })
 
 interface SourceGroup {
   key: string
@@ -128,7 +129,7 @@ function toggle(key: string) {
         >
           <article v-for="chunk in group.chunks" :key="chunk.chunk_id" data-testid="source-chunk" class="min-w-0">
             <p class="mb-1 flex flex-wrap gap-x-3 text-[11px] text-ink-faint tabular-nums">
-              <span>检索排名 #{{ chunk.rank }}</span>
+              <span>{{ summary ? "片段顺序" : "检索排名" }} #{{ chunk.rank }}</span>
               <span>分块 #{{ chunk.sequence_index }}</span>
               <span v-if="chunk.page_numbers && chunk.page_numbers.length > 0">第 {{ chunk.page_numbers.join("、") }} 页</span>
               <span v-if="chunk.heading_path && chunk.heading_path.length > 0" class="[overflow-wrap:anywhere]">{{

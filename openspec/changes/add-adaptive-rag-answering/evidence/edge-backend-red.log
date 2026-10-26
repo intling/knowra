@@ -1,0 +1,30 @@
+Uninstalled 1 package in 0.57ms
+Installed 1 package in 1ms
+....................FF..............FF                                   [100%]
+=================================== FAILURES ===================================
+E   AssertionError: assert 'general' == 'clarification'
+
+      - clarification
+      + general
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:295: AssertionError: assert 'general' == 'clarification'
+E   AssertionError: assert 'general' == 'clarification'
+
+      - clarification
+      + general
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:295: AssertionError: assert 'general' == 'clarification'
+E   AssertionError: assert {UUID('5592e6...ba74bebd68c')} == {UUID('5592e6...6cdc3b0dd5d')}
+
+      Extra items in the left set:
+      UUID('900b2597-7ef8-4e96-bf18-dba74bebd68c')
+      Use -v to get more diff
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:352: AssertionError: assert {UUID('5592e6...ba74bebd68c')} == {UUID('5592e6...6cdc3b0dd5d')}
+E   AssertionError: assert UUID('fe392924-836e-499f-9b84-0a7da3258890') == UUID('b0ac1ca3-7160-438c-a1d2-2aefade1f5f0')
+     +  where UUID('fe392924-836e-499f-9b84-0a7da3258890') = SearchResult(rank=1, score=0.0, chunk_id=UUID('fe392924-836e-499f-9b84-0a7da3258890'), parsed_document_id=UUID('effcbb..., text='旧内容，第 1 段。', contextualized_text='旧内容，第 1 段。', token_count=10, heading_path=['Course Notes'], page_numbers=[1]).chunk_id
+     +  and   UUID('b0ac1ca3-7160-438c-a1d2-2aefade1f5f0') = DocumentChunk(id=UUID('b0ac1ca3-7160-438c-a1d2-2aefade1f5f0'), page_numbers=None, source_segment_indices=None, created... sequence_index=0, chunk_job_id=UUID('0f809c33-9f2c-464f-925a-bccfff42a607'), heading_path=None, text_storage_key=None).id
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:377: AssertionError: assert UUID('fe392924-836e-499f-9b84-0a7da3258890') == UUID('b0ac1ca3-7160-438c-a1d2-2aefade1f5f0')
+=========================== short test summary info ============================
+FAILED tests/services/test_adaptive_rag_answering.py::test_explicit_private_file_reference_requires_evidence[\u8fd9\u4efd\u5408\u540c\u7684\u91d1\u989d\u662f\u591a\u5c11\uff1f]
+FAILED tests/services/test_adaptive_rag_answering.py::test_explicit_private_file_reference_requires_evidence[\u6839\u636e\u6211\u4e0a\u4f20\u7684\u9644\u4ef6\uff0c\u9879\u76ee\u9884\u7b97\u662f\u591a\u5c11\uff1f]
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_cache_refreshes_when_visible_scope_changes
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_cache_refreshes_after_rechunk_without_embedding
+4 failed, 34 passed in 1.88s

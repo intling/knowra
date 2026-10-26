@@ -3,10 +3,11 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
 import { marked } from "marked"
 import DOMPurify from "dompurify"
 
-import type { AnswerTokens } from "../api/search"
+import type { AnswerTokens, SearchResponse } from "../api/search"
 
 const props = withDefaults(
   defineProps<{
+    answerMode?: SearchResponse["answer_mode"]
     answer?: string
     answerTokens?: AnswerTokens | null
     chatModel?: string | null
@@ -15,6 +16,7 @@ const props = withDefaults(
     generationError?: string | null
   }>(),
   {
+    answerMode: undefined,
     answer: "",
     answerTokens: null,
     chatModel: null,
@@ -42,8 +44,7 @@ const tokenDetail = computed(() => {
 const isDegraded = computed(
   () =>
     props.generationError !== null &&
-    props.generationError !== "Chat generation is disabled" &&
-    (!props.answer || props.answer.length === 0),
+    props.generationError !== "Chat generation is disabled",
 )
 
 async function handleCopy() {
@@ -166,7 +167,7 @@ onUnmounted(() => {
       >
         <p class="text-sm font-medium text-amber-900">AI 回答生成失败</p>
         <p class="mt-0.5 text-xs text-amber-800 [overflow-wrap:anywhere]">{{ generationError }}</p>
-        <p class="mt-1.5 text-xs text-amber-700">下方仍列出了检索到的资料片段，可直接核对原文。</p>
+        <p class="mt-1.5 text-xs text-amber-700">请稍后重试。<template v-if="totalResults > 0">也可核对下方资料原文。</template></p>
       </div>
 
       <div
@@ -203,10 +204,11 @@ onUnmounted(() => {
             </svg>
             {{ copyLabel }}
           </button>
-          <span data-testid="citation-stats" class="tabular-nums">
+          <span v-if="!answerMode || answerMode === 'rag' || answerMode === 'summary'" data-testid="citation-stats" class="tabular-nums">
             引用 {{ totalResults }} 个分块 · 来自 {{ documentCount }} 个文档
           </span>
-          <span v-if="answerTokens" data-testid="token-stats" class="tabular-nums" :title="tokenDetail">
+          <span v-if="answerMode === 'general'" class="text-ink-muted">基于通用知识</span>
+          <span v-if="answerTokens && answerMode !== 'clarification'" data-testid="token-stats" class="tabular-nums" :title="tokenDetail">
             <span data-testid="token-total">{{ answerTokens.total_tokens.toLocaleString() }} tokens</span>
             <span class="sr-only">，{{ tokenDetail }}</span>
           </span>

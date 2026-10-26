@@ -45,6 +45,7 @@ export interface RewriteInfo {
 }
 
 export interface SearchRequest {
+  document_ids?: string[] | null
   query: string
   top_k?: number
   /** Optional conversation history for pronoun resolution during query rewriting. */
@@ -73,7 +74,19 @@ export interface SearchResultItem {
   page_numbers: number[] | null
 }
 
+export interface SummaryCoverage {
+  document_count: number
+  included_document_count: number
+  total_chunks: number
+  included_chunks: number
+  truncated: boolean
+}
+
 export interface SearchResponse {
+  /** 可选，以兼容已保存的旧对话。 */
+  answer_mode?: "general" | "rag" | "summary" | "clarification"
+  retrieval_status?: "skipped" | "matched" | "no_match" | "empty" | "unavailable"
+  summary_coverage?: SummaryCoverage | null
   query: string
   query_embedding_preview: number[]
   embedding_model: string
@@ -137,6 +150,7 @@ export async function searchChunks(
 ): Promise<SearchResponse> {
   const start = performance.now()
   const body = JSON.stringify({
+    ...(request.document_ids != null ? { document_ids: request.document_ids } : {}),
     query: request.query,
     top_k: request.top_k ?? 5,
     ...(request.history != null ? { history: request.history } : {}),

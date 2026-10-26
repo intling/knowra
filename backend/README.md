@@ -267,8 +267,8 @@ Three successful requests in the preceding 60 minutes block a fourth with
 HTTP 429, `{code: "chat_quota_exceeded", detail: "…"}` and a positive
 `Retry-After` in seconds. The window rolls from each admission time and is
 shared across devices, login sessions and chat threads. Cached successes count;
-invalid requests, no indexed documents, failures and `generation_error`
-fallbacks do not. Accounts without a `user_chat_limits` row remain unlimited.
+invalid requests, evidence clarifications, failures and `generation_error`
+fallbacks do not. Successful general answers count even without indexed documents. Accounts without a `user_chat_limits` row remain unlimited.
 
 Migration `20261021_0002` adds `user_chat_limits` (positive hourly limit per
 user) and `chat_usage` (UTC admission events, indexed by user and time).
@@ -672,23 +672,49 @@ chunk text, and orders sources and answer context identically. Failure falls
 back to vector order with a safe fixed event. Scores remain cosine distances.
 Keep explicit `DOCUMENT_EMBEDDING_DIMENSIONS=2560` for the deployed schema.
 
-`POST /api/search` is the retrieval + generation entry point of the RAG
-pipeline: it embeds the natural-language query, runs a pgvector cosine-distance
-search across the authenticated user's visible vectorised chunks, assembles a source-annotated prompt
-from the top matches, and calls the chat LLM to produce a Markdown answer with
-citations back to document name / heading path / page numbers.
+`POST /api/search` 是统一自适应问答入口。问候和明确通用知识请求直接调用对话模型，
+不调用改写或 Embedding；其他问题优先检索当前用户资料，无命中或空库仍可生成通用回答。
+有相关资料时优先引用真实来源，补充解释须标明“通用知识”。明确依赖私有资料的事实问题
+缺少依据时引导上传、选择资料，不猜测文档内容。
+
+“总结这些资料的核心观点”等概览请求直接读取资料，无需向量索引，不受 Top-K 限制。
+每份文档仅读取最新成功分块版本，支持外置正文；最多自动总结 20 份，超过时请求缩小范围。
+正文预算 60,000 字符，按文档分配，部分覆盖会同时在提示词和界面披露。
+新增服务边界为 `services/answer_policy.py` 和 `services/summary_context.py`。
 
 ### API endpoint
 
-- `POST /api/search` — body: `query` (1–2000 chars), `top_k` (1–50, default 5),
-  optional `history` (dialogue context for query rewriting, max 20 turns), optional
-  `session_id` (for L1 cache binding). Returns the ranked chunks, the generated
-  `answer`, token usage (`answer_tokens`), the exact `prompt_messages` sent to the
-  LLM (for debugging/preview), `rewrite_info` (query rewriting metadata), and
-  `generation_error` when generation degraded instead of failing outright.
-  - `404` — no vectorised documents exist yet
-  - `502` — query embedding call failed
-  - `503` — chat model or API key not configured
+- `POST /api/search` 请求保留 `query`（1–2000 字符）、`top_k`（1–50，默认 5）、
+  `history`（最多 20 条消息）与 `session_id`。
+- 可选 `document_ids` 为 1–20 个解析文档 UUID，重复项去重，限定检索、计数、总结与缓存。
+  省略时使用当前用户可见范围；全部 ID 都必须归属当前用户且源文件未删除。
+- 响应保留结果、正文、真实模型/token 和诊断字段，并新增：
+
+| 字段 | 值 |
+|---|---|
+| `answer_mode` | `general` / `rag` / `summary` / `clarification` |
+| `retrieval_status` | `skipped` / `matched` / `no_match` / `empty` / `unavailable` |
+| `summary_coverage` | 总结时含 `document_count`、`included_document_count`、`total_chunks`、`included_chunks`、`truncated`；其他模式为 null |
+
+总结读到内容时返回 `summary/matched`，向量预览为空、`total_searched=0`；
+其来源 `score` 为兼容占位、`rank` 为上下文顺序，不代表语义分数。
+澄清不调用模型，模型与 token 为 null。成功通用回答、资料回答、总结均计入原有账号额度，
+澄清、生成失败和服务错误释放本次预留。准入仍先于昂贵依赖。
+
+- `401`：未认证；`422`：范围格式或数量错误，包含字段原因。
+- `404`：指定资料不存在或不可访问，请重新选择资料（他人、删除、不存在使用同一说明）。
+- `503`：对话模型或 Key 未配置，或总结正文暂不可读取（可重试，不暴露存储路径）。
+- Embedding 故障：普通问题返回 `general/unavailable`，私有事实返回重试澄清；
+  数据库与权限错误继续保留错误语义。模型失败保留 `generation_error`，不当作成功答案。
+- 缓存保留用户、资料指纹、模型版本、会话、历史隔离，增加策略版本与排序去重的文档范围；
+  总结缓存同时校验可见文档和最新成功分块版本，未向量化资料的新增、删除、重分块也会失效；
+  检索不可用与生成失败不缓存。本次无迁移、新依赖或新增环境变量。
+
+```json
+{"query":"总结这些资料的核心观点","top_k":5,"session_id":"my-conversation"}
+```
+
+限定资料时在上述请求增加 `"document_ids": ["<解析文档 UUID>"]`。
 
 ### Search response — `rewrite_info`
 
@@ -711,9 +737,7 @@ includes a `rewrite_info` object with the following fields:
 | `backtrack_triggered` | `boolean` | Whether automatic backtrack retry was triggered when quality was insufficient |
 | `backtrack_strategy` | `string \| null` | The upgraded strategy used for backtrack retry (e.g. `expand`), or `null` |
 
-When rewriting is disabled or the rewrite module is not configured, `rewrite_info`
-still appears in the response with `original_query`, empty `rewritten_queries`
-and `strategies_used`, `rewrite_time_ms=0`, and `cache_hit=false`.
+未执行查询重写时（包括直接通用回答和文档总结），`rewrite_info=null`。
 
 ### Query rewriting configuration
 

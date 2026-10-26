@@ -167,7 +167,7 @@ uv run python -m app.cli reset-password --email admin@example.com
 uv run python -m app.cli create-user --email demo@deerfd.com --display-name 演示账号 --hourly-chat-limit 3
 ```
 
-密码通过隐藏交互输入或受保护 stdin 提供。额度由数据库按账号统一控制，换设备、重新登录或新建对话不会重置；无资料、失败或生成降级不扣次数，超限返回 429 和等待秒数，未配置限额的账号不受影响。演示分享入口采用 `/login#demo=<base64url JSON>`，仅接受该演示邮箱，自动填表并清除地址片段，由访客点击登录。实际密码和分享链接不写入源码；格式与边界见 [前端 README](front/README.md#demo-interview-link)。
+密码通过隐藏交互输入或受保护 stdin 提供。额度由数据库按账号统一控制，换设备、重新登录或新建对话不会重置；资料不足澄清、失败或生成降级不扣次数，成功通用回答同样计额，超限返回 429 和等待秒数，未配置限额的账号不受影响。演示分享入口采用 `/login#demo=<base64url JSON>`，仅接受该演示邮箱，自动填表并清除地址片段，由访客点击登录。实际密码和分享链接不写入源码；格式与边界见 [前端 README](front/README.md#demo-interview-link)。
 
 生产环境需要 HTTPS、`APP_ENV=production`、`AUTH_COOKIE_SECURE=true`，并将 `BACKEND_CORS_ORIGINS` 设为精确的前端来源（禁止 `*`）。详细接口、限流边界和迁移回滚步骤见 [后端 README](backend/README.md)。
 
@@ -175,7 +175,14 @@ uv run python -m app.cli create-user --email demo@deerfd.com --display-name 演�
 
 1. **登录并上传资料**：登录后点击欢迎页的"上传资料"或输入框左下角的"资料"按钮，资料会上传到 `POST /api/uploads`。只读账号会显示不可上传的说明。侧边栏"资料库"显示已解析资料的数量（解析完成不代表已建好索引）。
 2. **提问**：输入问题后按 Enter 发送，Shift+Enter 换行；输入法组字时按 Enter 不会发送。欢迎页的推荐问题只会填入输入框，确认后再发送。"检索 N 段"按钮用于调整每次检索的片段数（Top-K）。
-3. **核对来源**：每个回答下方直接列出"来源"，按文档聚合，显示页码和分块编号；点开即可查看原文片段。查询改写、检索分数、提示词等诊断信息收在默认折叠的"检索详情"中。
+3. **核对来源**：使用资料的回答下方直接列出"来源"，按文档聚合，显示页码和分块编号；点开即可查看原文片段。查询改写、检索分数、提示词等诊断信息收在默认折叠的"检索详情"中。
+
+主对话采用自适应 RAG：可以直接询问普通知识，问候无需检索；空库或没有相关片段也能生成通用回答，
+并标注“基于通用知识”。资料问题优先使用真实依据，缺少私有事实时引导补充资料。
+“总结这些资料的核心观点”直接读取当前用户可见文档的最新成功分块，无需先向量化，
+最多自动总结 20 份，超过时引导缩小范围。总结正文预算为 60,000 字符，部分覆盖会明确说明。
+API 可选 `document_ids` 限定资料范围；响应返回回答模式、检索状态和总结覆盖。
+详情见 [后端问答契约](backend/README.md#semantic-search--rag-generation)。
 
 `/verify` 是流程验证页，用于检查单个文档的解析、分块、向量化链路是否一致。
 

@@ -1,0 +1,260 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF...                          [100%]
+=================================== FAILURES ===================================
+E   app.services.embedding_adapter.EmbeddingAPIError: 测试嵌入服务不可用
+
+During handling of the above exception, another exception occurred:
+E   Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:47: Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+E   app.services.embedding_adapter.EmbeddingAPIError: 测试嵌入服务不可用
+
+During handling of the above exception, another exception occurred:
+E   Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:47: Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+E   app.services.embedding_adapter.EmbeddingAPIError: 测试嵌入服务不可用
+
+During handling of the above exception, another exception occurred:
+E   Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:47: Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+E   app.services.embedding_adapter.EmbeddingAPIError: 测试嵌入服务不可用
+
+During handling of the above exception, another exception occurred:
+E   Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:47: Failed: 普通问答被检索故障阻断：测试嵌入服务不可用；预期继续生成通用回答
+E   app.services.embedding_adapter.EmbeddingAPIError: 不应调用嵌入服务
+
+During handling of the above exception, another exception occurred:
+E   Failed: 普通问答被检索故障阻断：不应调用嵌入服务；预期继续生成通用回答
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:47: Failed: 普通问答被检索故障阻断：不应调用嵌入服务；预期继续生成通用回答
+E   AssertionError: assert '知识库中暂无任何已向量化...文档并完成向量化后再提问。' == '装饰器包装函数，可以扩展原函数的行为。'
+
+      - 装饰器包装函数，可以扩展原函数的行为。
+      + 知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:97: AssertionError: assert '知识库中暂无任何已向量化...文档并完成向量化后再提问。' == '装饰器包装函数，可以扩展原函数的行为。'
+E   AssertionError: assert '根据现有文档内容，无法回答此问题。' == '装饰器包装函数，可以扩展原函数的行为。'
+
+      - 装饰器包装函数，可以扩展原函数的行为。
+      + 根据现有文档内容，无法回答此问题。
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:113: AssertionError: assert '根据现有文档内容，无法回答此问题。' == '装饰器包装函数，可以扩展原函数的行为。'
+E   AssertionError: assert '根据现有文档内容，无法回答此问题。' == '装饰器包装函数，可以扩展原函数的行为。'
+
+      - 装饰器包装函数，可以扩展原函数的行为。
+      + 根据现有文档内容，无法回答此问题。
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:134: AssertionError: assert '根据现有文档内容，无法回答此问题。' == '装饰器包装函数，可以扩展原函数的行为。'
+E   AssertionError: 资料增强规则应允许标明归属的通用知识解释
+    assert '通用知识' in '你是一个基于知识库文档的 AI 助手。请根据提供的上下文信息回答用户的问题，并遵循以下规则：\n\n1. **基于上下文回答**：使用提供的文档片段来构建你的回答，优先引用文档中的信息而非外部知识。\n2. **无法回答时的处理**：...源引用、建议、道歉或其他补充信息。\n3. **注明信息来源**：在回答中引用具体的来源信息（文档名称、标题路径、页码等），让用户可以追溯答案依据。\n4. **结构化格式**：使用 Markdown 格式组织你的回答，使信息层次清晰。'
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:156: AssertionError: 资料增强规则应允许标明归属的通用知识解释
+E   AssertionError: assert None == 'clarification'
+     +  where None = <built-in method get of dict object at 0xe92f1adcd040>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1adcd040> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='根据我的资料，项目的预算是多少？', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embe...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:170: AssertionError: assert None == 'clarification'
+E   AssertionError: assert '知识库中暂无任何已向量化...文档并完成向量化后再提问。' == '装饰器包装函数，可以扩展原函数的行为。'
+
+      - 装饰器包装函数，可以扩展原函数的行为。
+      + 知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:192: AssertionError: assert '知识库中暂无任何已向量化...文档并完成向量化后再提问。' == '装饰器包装函数，可以扩展原函数的行为。'
+E   app.services.embedding_adapter.EmbeddingAPIError: 嵌入 API 超时
+
+During handling of the above exception, another exception occurred:
+E   Failed: 普通问答被检索故障阻断：嵌入 API 超时；预期继续生成通用回答
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:47: Failed: 普通问答被检索故障阻断：嵌入 API 超时；预期继续生成通用回答
+E   app.services.embedding_adapter.EmbeddingAPIError: 嵌入 API 超时
+
+During handling of the above exception, another exception occurred:
+E   Failed: 资料问题未提供故障引导：嵌入 API 超时；预期返回检索暂不可用及重试说明
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:219: Failed: 资料问题未提供故障引导：嵌入 API 超时；预期返回检索暂不可用及重试说明
+E   AssertionError: 普通回答也必须实际调用模型并保留生成故障
+    assert None
+     +  where None = SearchResponse(query='Python 装饰器怎么使用？', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).generation_error
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:234: AssertionError: 普通回答也必须实际调用模型并保留生成故障
+E   AssertionError: 模型空内容不能被记为成功通用回答
+    assert None
+     +  where None = SearchResponse(query='Python 装饰器怎么使用？', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).generation_error
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:246: AssertionError: 模型空内容不能被记为成功通用回答
+E   AssertionError: assert '知识库中暂无任何已向量化...文档并完成向量化后再提问。' == '装饰器包装函数，可以扩展原函数的行为。'
+
+      - 装饰器包装函数，可以扩展原函数的行为。
+      + 知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:256: AssertionError: assert '知识库中暂无任何已向量化...文档并完成向量化后再提问。' == '装饰器包装函数，可以扩展原函数的行为。'
+E   app.services.embedding_adapter.EmbeddingAPIError: 临时嵌入故障
+
+During handling of the above exception, another exception occurred:
+E   Failed: 普通问答被检索故障阻断：临时嵌入故障；预期继续生成通用回答
+/root/project/knowra/backend/tests/services/test_adaptive_rag_answering.py:47: Failed: 普通问答被检索故障阻断：临时嵌入故障；预期继续生成通用回答
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1b2aac40>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1b2aac40> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:92: AssertionError: assert None == 'summary'
+E   TypeError: SearchService.search() got an unexpected keyword argument 'document_ids'
+
+During handling of the above exception, another exception occurred:
+E   Failed: 总结入口尚未支持 document_ids；预期使用已校验的文档范围
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:70: Failed: 总结入口尚未支持 document_ids；预期使用已校验的文档范围
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1a82c3c0>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1a82c3c0> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='你好，帮我总结这些资料', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:133: AssertionError: assert None == 'summary'
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1abed480>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1abed480> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='Summarize these documents', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:133: AssertionError: assert None == 'summary'
+E   TypeError: SearchService.search() got an unexpected keyword argument 'document_ids'
+
+During handling of the above exception, another exception occurred:
+E   Failed: 总结入口尚未支持 document_ids；预期使用已校验的文档范围
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:70: Failed: 总结入口尚未支持 document_ids；预期使用已校验的文档范围
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1a8de740>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1a8de740> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:165: AssertionError: assert None == 'summary'
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1ab855c0>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1ab855c0> = {'answer': '知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:185: AssertionError: assert None == 'summary'
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1ace5d00>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1ace5d00> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:218: AssertionError: assert None == 'summary'
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1ad8ed00>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1ad8ed00> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:248: AssertionError: assert None == 'summary'
+E   Failed: DID NOT RAISE <class 'app.core.errors.AppError'>
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:266: Failed: DID NOT RAISE <class 'app.core.errors.AppError'>
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1ab87c80>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1ab87c80> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:282: AssertionError: assert None == 'summary'
+E   AssertionError: assert None == 'clarification'
+     +  where None = <built-in method get of dict object at 0xe92f1a5e1b40>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1a5e1b40> = {'answer': '知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:300: AssertionError: assert None == 'clarification'
+E   AssertionError: assert None == 'clarification'
+     +  where None = <built-in method get of dict object at 0xe92f1a836c40>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1a836c40> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+     +      where {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...} = model_dump()
+     +        where model_dump = SearchResponse(query='总结这些资料的核心观点', query_embedding_preview=[0.1, 0.1, 0.1, 0.1, 0.1], embedding_model='test-embed-mod...okens=None, chat_model=None, prompt_messages=[], chat_config_snapshot=None, audit_trail_id=None, generation_error=None).model_dump
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:316: AssertionError: assert None == 'clarification'
+E   TypeError: SearchService.search() got an unexpected keyword argument 'document_ids'
+
+During handling of the above exception, another exception occurred:
+E   Failed: 总结入口尚未支持 document_ids；预期使用已校验的文档范围
+/root/project/knowra/backend/tests/services/test_adaptive_rag_summary.py:70: Failed: 总结入口尚未支持 document_ids；预期使用已校验的文档范围
+E   AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:61: AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+E   AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:61: AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+E   AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+    assert 404 == 422
+     +  where 404 = <Response [404 Not Found]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:82: AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+E   AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+    assert 404 == 422
+     +  where 404 = <Response [404 Not Found]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:82: AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+E   AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+    assert 404 == 422
+     +  where 404 = <Response [404 Not Found]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:82: AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+E   AssertionError: {"query":"总结这些资料的核心观点","query_embedding_preview":[0.1,0.1,0.1,0.1,0.1],"embedding_model":"test-embed-model","embedding_dimensions":2560,"top_k":5,"total_searched":1,"searched_document_count":0,"search_time_ms":1.354173058643937,"rewrite_info":null,"results":[],"answer":"根据现有文档内容，无法回答此问题。","answer_tokens":null,"chat_model":null,"prompt_messages":[],"chat_config_snapshot":null,"audit_trail_id":null,"generation_error":null}
+    assert 200 == 404
+     +  where 200 = <Response [200 OK]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:111: AssertionError: {"query":"总结这些资料的核心观点","query_embedding_preview":[0.1,0.1,0.1,0.1,0.1],"embedding_model":"test-embed-model","embedding_dimensions":2560,"top_k":5,"total_searched":1,"searched_document_count":0,"search_time_ms":1.354173058643937,"rewrite_info":null,"results":[],"answer":"根据现有文档内容，无法回答此问题。","answer_tokens":null,"chat_model":null,"prompt_messages":[],"chat_config_snapshot":null,"audit_trail_id":null,"generation_error":null}
+E   AssertionError: {"query":"总结这些资料的核心观点","query_embedding_preview":[0.1,0.1,0.1,0.1,0.1],"embedding_model":"test-embed-model","embedding_dimensions":2560,"top_k":5,"total_searched":1,"searched_document_count":0,"search_time_ms":1.0784100741147995,"rewrite_info":null,"results":[],"answer":"根据现有文档内容，无法回答此问题。","answer_tokens":null,"chat_model":null,"prompt_messages":[],"chat_config_snapshot":null,"audit_trail_id":null,"generation_error":null}
+    assert 200 == 404
+     +  where 200 = <Response [200 OK]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:111: AssertionError: {"query":"总结这些资料的核心观点","query_embedding_preview":[0.1,0.1,0.1,0.1,0.1],"embedding_model":"test-embed-model","embedding_dimensions":2560,"top_k":5,"total_searched":1,"searched_document_count":0,"search_time_ms":1.0784100741147995,"rewrite_info":null,"results":[],"answer":"根据现有文档内容，无法回答此问题。","answer_tokens":null,"chat_model":null,"prompt_messages":[],"chat_config_snapshot":null,"audit_trail_id":null,"generation_error":null}
+E   AssertionError: {"query":"总结这些资料的核心观点","query_embedding_preview":[0.1,0.1,0.1,0.1,0.1],"embedding_model":"test-embed-model","embedding_dimensions":2560,"top_k":5,"total_searched":1,"searched_document_count":0,"search_time_ms":1.0602910770103335,"rewrite_info":null,"results":[],"answer":"根据现有文档内容，无法回答此问题。","answer_tokens":null,"chat_model":null,"prompt_messages":[],"chat_config_snapshot":null,"audit_trail_id":null,"generation_error":null}
+    assert 200 == 404
+     +  where 200 = <Response [200 OK]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:111: AssertionError: {"query":"总结这些资料的核心观点","query_embedding_preview":[0.1,0.1,0.1,0.1,0.1],"embedding_model":"test-embed-model","embedding_dimensions":2560,"top_k":5,"total_searched":1,"searched_document_count":0,"search_time_ms":1.0602910770103335,"rewrite_info":null,"results":[],"answer":"根据现有文档内容，无法回答此问题。","answer_tokens":null,"chat_model":null,"prompt_messages":[],"chat_config_snapshot":null,"audit_trail_id":null,"generation_error":null}
+E   AssertionError: assert None == 'summary'
+     +  where None = <built-in method get of dict object at 0xe92f1a4e7a40>('answer_mode')
+     +    where <built-in method get of dict object at 0xe92f1a4e7a40> = {'answer': '根据现有文档内容，无法回答此问题。', 'answer_tokens': None, 'audit_trail_id': None, 'chat_config_snapshot': None, ...}.get
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:133: AssertionError: assert None == 'summary'
+E   AssertionError: {"detail":"Failed to embed query"}
+    assert 502 == 200
+     +  where 502 = <Response [502 Bad Gateway]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:146: AssertionError: {"detail":"Failed to embed query"}
+E   AssertionError: 文档范围必须同时限定检索空间和统计
+    assert 3 == 1
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:163: AssertionError: 文档范围必须同时限定检索空间和统计
+E   AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:174: AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+E   AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+/root/project/knowra/backend/tests/api/test_adaptive_rag_api.py:192: AssertionError: {"detail":"知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"}
+=========================== short test summary info ============================
+FAILED tests/services/test_adaptive_rag_answering.py::test_greeting_skips_retrieval_and_returns_model_answer[\u4f60\u597d]
+FAILED tests/services/test_adaptive_rag_answering.py::test_greeting_skips_retrieval_and_returns_model_answer[\u4f60\u597d\uff01]
+FAILED tests/services/test_adaptive_rag_answering.py::test_greeting_skips_retrieval_and_returns_model_answer[Hello]
+FAILED tests/services/test_adaptive_rag_answering.py::test_greeting_skips_retrieval_and_returns_model_answer[\u8c22\u8c22]
+FAILED tests/services/test_adaptive_rag_answering.py::test_explicit_general_request_ignores_even_available_private_chunks
+FAILED tests/services/test_adaptive_rag_answering.py::test_empty_knowledge_base_still_generates_general_answer
+FAILED tests/services/test_adaptive_rag_answering.py::test_no_match_generates_general_answer_without_rejected_chunks
+FAILED tests/services/test_adaptive_rag_answering.py::test_weak_best_match_does_not_turn_into_forced_refusal
+FAILED tests/services/test_adaptive_rag_answering.py::test_grounded_prompt_allows_attributed_general_explanation
+FAILED tests/services/test_adaptive_rag_answering.py::test_private_fact_without_evidence_offers_actionable_clarification
+FAILED tests/services/test_adaptive_rag_answering.py::test_general_follow_up_keeps_conversation_without_trusting_system_history
+FAILED tests/services/test_adaptive_rag_answering.py::test_embedding_failure_degrades_to_general_with_distinct_status
+FAILED tests/services/test_adaptive_rag_answering.py::test_private_fact_during_retrieval_outage_offers_retry_without_inventing_facts
+FAILED tests/services/test_adaptive_rag_answering.py::test_general_generation_failure_remains_a_failure
+FAILED tests/services/test_adaptive_rag_answering.py::test_empty_general_model_content_is_not_success
+FAILED tests/services/test_adaptive_rag_answering.py::test_summarizing_a_general_topic_does_not_require_private_documents
+FAILED tests/services/test_adaptive_rag_answering.py::test_retrieval_outage_response_is_not_cached_as_normal_success
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_uses_all_visible_documents_even_when_top_k_is_one
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_honors_explicit_document_scope
+FAILED tests/services/test_adaptive_rag_summary.py::test_document_summary_intent_takes_priority_over_greeting[\u4f60\u597d\uff0c\u5e2e\u6211\u603b\u7ed3\u8fd9\u4e9b\u8d44\u6599]
+FAILED tests/services/test_adaptive_rag_summary.py::test_document_summary_intent_takes_priority_over_greeting[Summarize these documents]
+FAILED tests/services/test_adaptive_rag_summary.py::test_duplicate_document_ids_do_not_duplicate_summary_context
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_excludes_other_users_and_deleted_uploads
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_can_read_chunked_documents_without_vectors
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_uses_latest_successful_chunk_job
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_reads_external_chunk_artifacts
+FAILED tests/services/test_adaptive_rag_summary.py::test_unreadable_summary_artifact_returns_actionable_error
+FAILED tests/services/test_adaptive_rag_summary.py::test_large_summary_has_bounded_context_and_truthful_coverage
+FAILED tests/services/test_adaptive_rag_summary.py::test_empty_library_summary_guides_upload_instead_of_inventing_content
+FAILED tests/services/test_adaptive_rag_summary.py::test_oversized_library_asks_for_smaller_scope_before_model_call
+FAILED tests/services/test_adaptive_rag_summary.py::test_summary_cache_keeps_document_scopes_separate
+FAILED tests/api/test_adaptive_rag_api.py::test_empty_library_question_returns_200_with_general_mode[\u4f60\u597d]
+FAILED tests/api/test_adaptive_rag_api.py::test_empty_library_question_returns_200_with_general_mode[Python \u88c5\u9970\u5668\u600e\u4e48\u4f7f\u7528\uff1f]
+FAILED tests/api/test_adaptive_rag_api.py::test_invalid_document_scope_has_field_reason_before_model_call[document_ids0]
+FAILED tests/api/test_adaptive_rag_api.py::test_invalid_document_scope_has_field_reason_before_model_call[document_ids1]
+FAILED tests/api/test_adaptive_rag_api.py::test_invalid_document_scope_has_field_reason_before_model_call[document_ids2]
+FAILED tests/api/test_adaptive_rag_api.py::test_invisible_document_scope_returns_same_safe_404[foreign]
+FAILED tests/api/test_adaptive_rag_api.py::test_invisible_document_scope_returns_same_safe_404[deleted]
+FAILED tests/api/test_adaptive_rag_api.py::test_invisible_document_scope_returns_same_safe_404[missing]
+FAILED tests/api/test_adaptive_rag_api.py::test_selected_document_scope_reaches_real_summary_orchestration
+FAILED tests/api/test_adaptive_rag_api.py::test_embedding_outage_is_not_reported_as_empty_library
+FAILED tests/api/test_adaptive_rag_api.py::test_document_scope_also_limits_regular_search_counts
+FAILED tests/api/test_adaptive_rag_api.py::test_successful_general_answer_counts_towards_chat_quota
+FAILED tests/api/test_adaptive_rag_api.py::test_summary_clarification_releases_chat_quota
+44 failed, 3 passed in 2.76s
+Uninstalled 1 package in 0.56ms
+Installed 1 package in 1ms

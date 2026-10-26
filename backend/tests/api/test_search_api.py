@@ -1,7 +1,7 @@
 # =========================================================================
 # 本文件验证 POST /api/search API 端点的集成行为。
-# 覆盖正常搜索+生成、无向量数据（404）、参数校验失败（422）、
-# 嵌入失败（502）、chat 禁用（503）。
+# 覆盖正常搜索+生成、无向量数据（通用回答）、参数校验失败（422）、
+# 嵌入失败（通用降级）、chat 禁用（503）。
 #
 # TDD 红阶段：API 路由和路由注册均未实现，测试预期失败。
 # =========================================================================
@@ -305,14 +305,11 @@ def test_search_returns_200_with_answer_and_results(search_client: TestClient):
     assert payload["generation_error"] is None
 
 
-# ── 2. 无向量数据 → 404 ─────────────────────────────────────────────────
+# ── 2. 无向量数据 → 通用回答 ─────────────────────────────────────────────────
 
 
-# 当 document_embeddings 表为空时，返回 404，告知用户系统中没有可搜索的向量数据。
-# 关键约束：
-# 1. 不调用 LLM（因为没有上下文可供推理）
-# 2. 使用硬编码友好提示，而非 LLM 生成内容
-def test_search_returns_404_when_no_vector_data(search_client: TestClient):
+# 验证空知识库仍返回真实通用模型回答，不要求先向量化。
+def test_search_returns_general_answer_when_no_vector_data(search_client: TestClient):
     # Arrange — simulate empty DB
     search_client.app._search_test_refs.session.exec.return_value.first.return_value = 0
     search_client.app._search_test_refs.session.exec.return_value.all.return_value = []
@@ -322,13 +319,14 @@ def test_search_returns_404_when_no_vector_data(search_client: TestClient):
         json={"query": "任意查询", "top_k": 5},
     )
 
-    assert response.status_code == 404
-    detail = response.json()
-    assert "detail" in detail
-    # 验证硬编码友好提示（非 LLM 生成）
-    assert "知识库中暂无任何已向量化的文档" in detail["detail"]
-    # 验证 LLM 未被调用 —— 无向量数据时不应产生任何 API 费用
-    search_client.app._search_test_refs.chat_adapter.generate_async.assert_not_called()
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["answer_mode"] == "general"
+    assert body["retrieval_status"] == "empty"
+    assert body["total_searched"] == 0
+    assert body["results"] == []
+    assert body["answer_tokens"]["total_tokens"] > 0
+    search_client.app._search_test_refs.chat_adapter.generate_async.assert_awaited_once()
 
 
 # ── 3. 参数校验失败 → 422 ───────────────────────────────────────────────
@@ -402,12 +400,12 @@ def test_search_returns_422_when_top_k_too_large(search_client: TestClient):
     ), f"Expected top_k le validation error, got: {detail}"
 
 
-# ── 4. 嵌入失败 → 502 ──────────────────────────────────────────────────
+# ── 4. 嵌入失败 → 通用降级 ──────────────────────────────────────────────────
 
 
 # 当 EmbeddingAdapter.embed_single() 抛出 EmbeddingAPIError 时，
-# 路由应捕获并返回 502 Bad Gateway，携带具体错误信息。
-def test_search_returns_502_when_embedding_fails(search_client: TestClient):
+# 路由应返回通用回答，并用 unavailable 明确区分检索故障。
+def test_search_returns_general_answer_when_embedding_fails(search_client: TestClient):
     embedding_module = import_module("app.services.embedding_adapter")
     search_client.app._search_test_refs.embedding_adapter.embed_single.side_effect = (
         embedding_module.EmbeddingAPIError("Embedding API timeout")
@@ -418,10 +416,11 @@ def test_search_returns_502_when_embedding_fails(search_client: TestClient):
         json={"query": "测试查询", "top_k": 5},
     )
 
-    assert response.status_code == 502
-    detail = response.json()
-    assert "detail" in detail
-    assert "Failed to embed query" in detail["detail"]
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["answer_mode"] == "general"
+    assert body["retrieval_status"] == "unavailable"
+    assert body["answer"]
 
 
 # ── 5. chat 禁用 → 503 ──────────────────────────────────────────────────

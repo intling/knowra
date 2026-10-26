@@ -40,7 +40,7 @@ const SUGGESTIONS = [
       data-testid="welcome-subtitle"
       class="mt-3 max-w-xl text-[15px] leading-relaxed text-ink-muted"
     >
-      上传资料后开始提问。知寻会依据你自己的资料作答，并在每个回答下方列出引用的原文片段。
+      可以直接提问，也可以上传资料增强回答。知寻会优先使用相关资料，并在使用资料时列出可核对的原文片段。
     </p>
 
     <ol

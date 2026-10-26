@@ -3,7 +3,7 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # ── 查询重写信息 ────────────────────────────────────────────────────────
 
@@ -98,6 +98,13 @@ class SearchRequest(BaseModel):
     - history：可选的多轮对话历史，用于指代词消解，最多保留最近 20 轮
     """
 
+    document_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=20)
+
+    @field_validator("document_ids")
+    @classmethod
+    def deduplicate_documents(cls, value):
+        return list(dict.fromkeys(value)) if value is not None else None
+
     query: str = Field(
         min_length=1,
         max_length=2000,
@@ -164,8 +171,22 @@ class AnswerTokens(BaseModel):
 # ── 完整响应 ──────────────────────────────────────────────────────────
 
 
+class SummaryCoverage(BaseModel):
+    """实际送入模型的资料覆盖范围。"""
+
+    document_count: int
+    included_document_count: int
+    total_chunks: int
+    included_chunks: int
+    truncated: bool
+
+
 class SearchResponse(BaseModel):
     """语义搜索 + LLM 生成 的完整响应体。"""
+
+    answer_mode: Literal["general", "rag", "summary", "clarification"] = "rag"
+    retrieval_status: Literal["skipped", "matched", "no_match", "empty", "unavailable"] = "matched"
+    summary_coverage: SummaryCoverage | None = None
 
     # ── 请求回显与元信息 ──
     query: str = Field(description="原始查询文本（回显）")

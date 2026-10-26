@@ -8,8 +8,6 @@ from types import SimpleNamespace
 from unittest.mock import ANY, AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
-import pytest
-
 # 检索服务必须绑定已认证用户；既有单测使用固定测试用户 ID。
 TEST_OWNER_ID = UUID("11111111-1111-1111-1111-111111111111")
 
@@ -284,9 +282,9 @@ def test_search_across_all_documents_returns_top_k_results():
 
 
 # 当 document_embeddings 表为空（0 条向量数据）时，search() 应返回 0 条结果，
-# 并且不应调用 LLM（因为没有任何上下文可供推理，LLM 无法提供额外信息）。
-# answer 使用硬编码友好提示，answer_tokens 和 chat_model 均为 None。
+# 同时调用模型生成通用回答，并记录实际模型与用量。
 def test_search_returns_empty_results_when_no_embeddings_exist():
+    """验证无可用资料时继续生成通用回答，且不混入无关片段。"""
     module = get_search_module()
     schema_module = get_schema_module()
 
@@ -313,23 +311,19 @@ def test_search_returns_empty_results_when_no_embeddings_exist():
     assert response.searched_document_count == 0
     assert len(response.results) == 0
 
-    # 无向量数据时不调用 LLM，使用硬编码友好提示
-    # 理由：LLM 的价值在于"对上下文进行推理"——没有上下文时不应浪费 Token 和延迟
-    chat_adapter.generate_async.assert_not_called()
+    chat_adapter.generate_async.assert_awaited_once()
     assert isinstance(response.answer, str)
     assert len(response.answer) > 0
-    # 硬编码提示应包含"暂无已向量化文档"的引导信息
-    assert response.answer_tokens is None
-    assert response.chat_model is None
-    assert response.prompt_messages == []
+    assert response.answer_tokens is not None
+    assert response.chat_model == "test-chat-model"
+    assert response.prompt_messages
 
 
-# 当无向量数据时，SearchService 应直接返回硬编码提示，完全不调用 LLM。
-# 与"有向量但无相关结果"是两种不同性质的"空"：
-#   - 系统无向量 → 系统状态问题（用户还没上传文档）→ 硬编码告知，不调 LLM
-#   - 有向量但无相关结果 → 查询相关问题 → 可调 LLM 诚实告知无法回答
-# 行业最佳实践（LangChain / LlamaIndex / Dify 等）均采用此分层策略。
-def test_search_skips_llm_when_no_embeddings_exist():
+# 验证空库通用生成不依赖文档上下文，响应仍保留真实模型配置。
+
+
+def test_search_generates_without_document_context_when_no_embeddings_exist():
+    """验证无可用资料时继续生成通用回答，且不混入无关片段。"""
     module = get_search_module()
 
     session = make_fake_session(rows=[], total_count=0)
@@ -347,18 +341,16 @@ def test_search_skips_llm_when_no_embeddings_exist():
 
     response = service.search(query="测试查询", top_k=5)
 
-    # LLM 应完全不被调用——没有上下文可供推理
-    chat_adapter.generate_async.assert_not_called()
+    chat_adapter.generate_async.assert_awaited_once()
 
-    # answer 应为硬编码的友好提示
     assert isinstance(response.answer, str)
     assert len(response.answer) > 0
 
-    # chat 相关字段应为 None（未调用 LLM）
-    assert response.answer_tokens is None
-    assert response.chat_model is None
-    assert response.prompt_messages == []
-    assert response.chat_config_snapshot is None
+    # 模型相关字段应来自实际调用
+    assert response.answer_tokens is not None
+    assert response.chat_model == "test-chat-model"
+    assert response.prompt_messages
+    assert response.chat_config_snapshot is not None
 
 
 # ── 3. 正常返回 answer ───────────────────────────────────────────────
@@ -367,6 +359,8 @@ def test_search_skips_llm_when_no_embeddings_exist():
 # search() 应调用 ChatAdapter.generate_async()，并将 LLM 回答填入 SearchResponse.answer，
 # 同时填充 answer_tokens 和 chat_model。
 # 正常路径下 generation_error 应为 None（表示未降级）。
+
+
 def test_search_returns_llm_answer_with_token_stats():
     module = get_search_module()
 
@@ -658,8 +652,8 @@ def test_search_degrades_on_empty_llm_content():
 # ── 6. 查询向量化失败 ────────────────────────────────────────────────
 
 
-# 当 EmbeddingAdapter.embed_single() 失败时，应向上传播错误。
-def test_search_propagates_embedding_error():
+# 验证向量化失败时仍调用对话模型，同时明确检索不可用。
+def test_search_degrades_embedding_error_to_general():
     module = get_search_module()
 
     session = make_fake_session(rows=[], total_count=0)
@@ -679,11 +673,10 @@ def test_search_propagates_embedding_error():
         chat_config=chat_config,
     )
 
-    with pytest.raises(
-        import_module("app.services.embedding_adapter").EmbeddingAPIError,
-        match="Embedding API timeout",
-    ):
-        service.search(query="测试查询", top_k=5)
+    response = service.search(query="测试查询", top_k=5)
+    assert response.answer_mode == "general"
+    assert response.retrieval_status == "unavailable"
+    chat_adapter.generate_async.assert_awaited_once()
 
 
 # ── 7. 分数单调性 ────────────────────────────────────────────────────
@@ -784,13 +777,14 @@ def test_search_response_includes_query_embedding_preview():
 
 
 # 当所有检索结果的 cosine_distance 均超过阈值时，应过滤掉所有结果，
-# 返回 no-match 响应，且不调用 LLM（因为没有任何可用的上下文）。
+# 返回 no_match 并生成通用回答，不把被过滤的资料作为依据。
 #
 # 理由（行业最佳实践）：
 #   - pgvector 总是返回最近邻，即使语义上完全不相关
 #   - 没有阈值会导致噪声分块（如 [TOC] 标记、目录结构）被纳入 LLM 上下文
 #   - 阈值过滤是 RAG 质量保障的关键防线（参考 LangChain / LlamaIndex）
 def test_similarity_threshold_filters_irrelevant_results():
+    """验证无可用资料时继续生成通用回答，且不混入无关片段。"""
     module = get_search_module()
 
     # 5 条结果，全部超过阈值 0.65
@@ -822,17 +816,20 @@ def test_similarity_threshold_filters_irrelevant_results():
     assert response.total_searched == 100
     assert response.searched_document_count == 0
 
-    # 不应调用 LLM —— 没有有效上下文可供推理
-    chat_adapter.generate_async.assert_not_called()
+    chat_adapter.generate_async.assert_awaited_once()
 
     # 应答应为固定的"无法回答"短语
-    assert response.answer == "根据现有文档内容，无法回答此问题。"
-    assert response.answer_tokens is None
-    assert response.chat_model is None
+    assert response.answer == chat_adapter.generate_async.return_value.content
+    assert response.answer_mode == "general"
+    assert response.retrieval_status == "no_match"
+    assert response.answer_tokens is not None
+    assert response.chat_model == "test-chat-model"
     assert response.generation_error is None
 
 
 # 相似度阈值过滤应保留符合要求的结果，仅过滤掉不相关的。
+
+
 def test_similarity_threshold_keeps_relevant_results():
     module = get_search_module()
 
@@ -906,8 +903,9 @@ def test_similarity_threshold_zero_disables_filtering():
 
 # 当所有分块都通过了 similarity_threshold 但最优分块的分数仍高于
 # min_score_threshold（即没有任何分块"足够相关"）时，应返回 no-match
-# 响应，不调用 LLM。这是防止 LLM 基于弱相关内容产生幻觉的第二道防线。
+# 响应，过滤掉弱相关依据，随后允许通用回答。
 def test_min_score_threshold_blocks_weakly_relevant_results():
+    """验证无可用资料时继续生成通用回答，且不混入无关片段。"""
     module = get_search_module()
 
     # 5 条结果都通过了 similarity_threshold (0.55) 但最优分块 0.49 > min_score_threshold (0.45)
@@ -940,18 +938,21 @@ def test_min_score_threshold_blocks_weakly_relevant_results():
     assert response.total_searched == 100
     assert response.searched_document_count == 0
 
-    # 不应调用 LLM —— 没有真正相关的上下文
-    chat_adapter.generate_async.assert_not_called()
+    chat_adapter.generate_async.assert_awaited_once()
 
     # 应答应为固定的"无法回答"短语
-    assert response.answer == "根据现有文档内容，无法回答此问题。"
-    assert response.answer_tokens is None
-    assert response.chat_model is None
+    assert response.answer == chat_adapter.generate_async.return_value.content
+    assert response.answer_mode == "general"
+    assert response.retrieval_status == "no_match"
+    assert response.answer_tokens is not None
+    assert response.chat_model == "test-chat-model"
     assert response.generation_error is None
 
 
 # 当最优分块的分数 <=  min_score_threshold 且有其他分块也通过了
 # similarity_threshold 时，正常保留结果并调用 LLM。
+
+
 def test_min_score_threshold_allows_strongly_relevant_results():
     module = get_search_module()
 
@@ -997,6 +998,7 @@ def test_min_score_threshold_allows_strongly_relevant_results():
 # min_score_threshold 检查应被跳过（rows 为空，直接走 no-match 路径）。
 # 不应该因为空列表而尝试取 min()。
 def test_min_score_threshold_skipped_when_no_rows_pass_similarity():
+    """验证无可用资料时继续生成通用回答，且不混入无关片段。"""
     module = get_search_module()
 
     # 所有分块都超过 similarity_threshold (0.55)，全被过滤
@@ -1023,11 +1025,12 @@ def test_min_score_threshold_skipped_when_no_rows_pass_similarity():
 
     # 所有分块均被 similarity_threshold 过滤
     assert len(response.results) == 0
-    # 不应调用 LLM
-    chat_adapter.generate_async.assert_not_called()
+    chat_adapter.generate_async.assert_awaited_once()
 
 
 # 当 min_score_threshold=0 时应禁用检查，保留所有通过 similarity_threshold 的结果。
+
+
 def test_min_score_threshold_zero_disables_check():
     module = get_search_module()
 
@@ -1109,9 +1112,9 @@ def test_assemble_prompt_skips_noise_chunks():
     messages = call_args[0][0]
     user_msg = next(m for m in messages if m["role"] == "user")
 
-    # 有效分块应出现在 user prompt 中（i=2，因为第 1 条被跳过）
+    # 有效分块应从 1 开始编号，噪声不进入来源或 prompt
     assert "河南省2026年一本批次录取分数线" in user_msg["content"]
-    assert "[分块 2]" in user_msg["content"]
+    assert "[分块 1]" in user_msg["content"]
 
     # 噪声分块 ([TOC]) 不应作为独立内容行出现
     # 验证方式：user_msg 中不应有仅含 [TOC] 的内容行

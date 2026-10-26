@@ -1,0 +1,43 @@
+Uninstalled 1 package in 0.54ms
+Installed 1 package in 3ms
+alembic/versions/20260812_0002_partial_unique_dedup_index.py:8:1: I001 [*] Import block is un-sorted or un-formatted
+alembic/versions/20260812_0002_partial_unique_dedup_index.py:48:82: E501 Line too long (101 > 100)
+app/services/postprocessor.py:299:101: E501 Line too long (102 > 100)
+app/services/postprocessor.py:379:101: E501 Line too long (101 > 100)
+app/services/uploads.py:105:101: E501 Line too long (119 > 100)
+app/services/uploads.py:152:78: E501 Line too long (104 > 100)
+app/services/uploads.py:195:101: E501 Line too long (103 > 100)
+app/services/uploads.py:229:101: E501 Line too long (103 > 100)
+app/services/uploads.py:249:28: UP017 [*] Use `datetime.UTC` alias
+tests/services/query_rewriter/test_query_rewriter.py:436:95: E501 Line too long (101 > 100)
+tests/services/query_rewriter/test_query_rewriter_integration.py:1319:86: E501 Line too long (101 > 100)
+tests/services/query_rewriter/test_query_rewriter_integration.py:1322:83: E501 Line too long (101 > 100)
+tests/services/query_rewriter/test_query_rewriter_integration.py:1343:78: E501 Line too long (105 > 100)
+tests/services/query_rewriter/test_query_rewriter_integration.py:1365:83: E501 Line too long (115 > 100)
+tests/services/query_rewriter/test_query_rewriter_phase2.py:944:23: UP041 [*] Replace aliased errors with `TimeoutError`
+tests/services/query_rewriter/test_query_rewriter_phase2.py:949:13: F841 Local variable `result` is assigned to but never used
+tests/services/query_rewriter/test_semantic_cache_l2.py:55:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:102:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:157:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:225:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:314:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:416:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:460:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:503:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:809:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:856:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:928:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:981:101: E501 Line too long (122 > 100)
+tests/services/query_rewriter/test_semantic_cache_l2.py:1052:101: E501 Line too long (122 > 100)
+tests/services/test_upload_service.py:459:5: F841 Local variable `UploadedFile` is assigned to but never used
+tests/verify_review_issues.py:10:8: F401 [*] `hashlib` imported but unused
+tests/verify_review_issues.py:13:27: F401 [*] `unittest.mock.MagicMock` imported but unused
+tests/verify_review_issues.py:13:38: F401 [*] `unittest.mock.patch` imported but unused
+tests/verify_review_issues.py:244:16: F811 [*] Redefinition of unused `hashlib` from line 10: `hashlib` redefined here
+tests/verify_review_issues.py:306:24: UP041 [*] Replace aliased errors with `TimeoutError`
+tests/verify_review_issues.py:415:9: I001 [*] Import block is un-sorted or un-formatted
+tests/verify_review_issues.py:608:9: I001 [*] Import block is un-sorted or un-formatted
+tests/verify_review_issues.py:681:9: I001 [*] Import block is un-sorted or un-formatted
+tests/verify_review_issues.py:785:16: F401 [*] `ast` imported but unused
+Found 39 errors.
+[*] 12 fixable with the `--fix` option (2 hidden fixes can be enabled with the `--unsafe-fixes` option).

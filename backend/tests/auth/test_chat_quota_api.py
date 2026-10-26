@@ -162,7 +162,7 @@ def test_adapter_dependency_failure_releases_reservation(auth_client, auth_db, s
     assert usage_rows(auth_db) == []
 
 
-# 验证没有资料和生成降级不扣次数，保留原来 404 或 200 降级响应及可读说明。
+# 验证无资料澄清和生成降级不扣次数，并保留 200 与可读说明。
 @pytest.mark.parametrize("kind", ["no_documents", "generation_failure"])
 def test_empty_knowledge_or_generation_fallback_does_not_charge(
     auth_client,
@@ -176,13 +176,15 @@ def test_empty_knowledge_or_generation_fallback_does_not_charge(
     response_fixture = search_pipeline[2]
     if kind == "no_documents":
         response_fixture.total_searched = 0
+        response_fixture.answer_mode = "clarification"
+        response_fixture.answer = "请上传或选择资料后再试。"
     else:
         response_fixture.generation_error = "fixture generation failed"
     for _ in range(4):
         response = auth_client.post("/api/search", json={"query": "问题"})
-        assert response.status_code == (404 if kind == "no_documents" else 200), response.text
+        assert response.status_code == 200, response.text
         payload = response.json()
-        assert payload.get("detail") or payload.get("generation_error")
+        assert payload.get("answer_mode") == "clarification" or payload.get("generation_error")
         assert usage_rows(auth_db) == []
 
 

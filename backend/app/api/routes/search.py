@@ -430,7 +430,7 @@ def search_documents(
     chat_circuit_breaker: ChatCircuitBreakerDep = None,
     rerank_adapter: RerankAdapterDep = None,
 ) -> SearchResponse:
-    """跨所有已向量化文档进行语义搜索，并生成 AI 回答。
+    """按自适应策略提供通用、资料增强、文档总结或澄清。
 
     请求体：
     - **query**: 自然语言查询文本（1–2000 字符）
@@ -440,8 +440,9 @@ def search_documents(
     响应体包含检索结果列表、LLM 生成的 Markdown 回答、
     Token 用量统计以及完整的 prompt messages（供调试使用）。
 
-    - **404**: 系统中无任何已向量化文档
-    - **502**: 查询向量化失败（嵌入 API 不可用）
+    - **document_ids**: 可选的 1–20 个当前用户可见解析文档 UUID
+    - **404**: 指定资料不存在或不可访问
+    - **422**: 请求字段格式或数量错误
     - **503**: Chat 功能未配置（chat_model 为空）
     """
     # 503: Chat 功能未配置 → 整个端点不可用
@@ -484,6 +485,7 @@ def search_documents(
             top_k=request.top_k,
             history=request.history,
             session_id=request.session_id,
+            document_ids=request.document_ids,
         )
     except EmbeddingAPIError as exc:
         logger.warning("search_embedding_failed", error=str(exc))
@@ -492,12 +494,7 @@ def search_documents(
             detail="Failed to embed query",
         ) from exc
 
-    # 404: 系统中无向量化数据
-    if response.total_searched == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。",
-        )
-
-    admission.succeeded = response.generation_error is None
+    admission.succeeded = (
+        response.generation_error is None and response.answer_mode != "clarification"
+    )
     return response

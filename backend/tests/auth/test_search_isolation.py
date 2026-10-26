@@ -96,7 +96,7 @@ def test_count_total_embeddings_counts_only_visible_owner_vectors(
     assert make_service(bob.id, session=auth_db)._count_total_embeddings() == 4
 
 
-# 验证当前用户没有向量而他人有向量时，返回空结果且不调用 LLM，不暴露他人向量数。
+# 验证当前用户没有向量时仍能生成通用回答，不暴露他人向量数或资料。
 def test_user_without_vectors_gets_empty_response_even_if_others_have_data(
     auth_db: Session, tmp_path
 ) -> None:
@@ -111,7 +111,8 @@ def test_user_without_vectors_gets_empty_response_even_if_others_have_data(
 
     assert response.total_searched == 0
     assert response.results == []
-    chat_adapter.generate_async.assert_not_called()
+    chat_adapter.generate_async.assert_awaited_once()
+    assert response.answer_mode == "general"
 
 
 # 验证两个用户使用相同 session_id、query、history 时不会命中对方的搜索响应缓存；同用户仍可命中。
@@ -170,9 +171,9 @@ def test_query_rewriter_receives_user_scoped_namespace() -> None:
         query="问题", top_k=5
     )
 
-    assert calls[0]["cache_namespace"] == f"u:{owner_id}:fp-9"
+    assert calls[0]["cache_namespace"] == f"u:{owner_id}:fp-9:adaptive-v1:docs:all"
     assert calls[0]["session_id"] == "s1"
-    assert calls[1]["cache_namespace"] == f"u:{owner_id}:fp-9", (
+    assert calls[1]["cache_namespace"] == f"u:{owner_id}:fp-9:adaptive-v1:docs:all", (
         "即使没有 session_id 与 history，也必须传入用户命名空间，保证去重与 L2 按用户隔离"
     )
 
@@ -225,7 +226,7 @@ def search_overrides() -> Generator[dict]:
     yield {"rewriter": fake_rewriter, "cache": response_cache, "chat": chat_adapter}
 
 
-# 验证 HTTP 检索：他人有数据而当前用户没有时返回 404 空知识库提示，不调用 LLM，
+# 验证 HTTP 检索：他人有数据而当前用户没有时返回通用回答且不暴露他人资料，
 # 且路由不再写入进程级共享指纹，重写命名空间绑定当前用户。
 def test_search_route_scopes_to_current_user(
     auth_client: TestClient, auth_db: Session, search_overrides: dict, tmp_path
@@ -237,11 +238,14 @@ def test_search_route_scopes_to_current_user(
 
     response = auth_client.post("/api/search", json={"query": "Alice 的私有片段", "top_k": 5})
 
-    assert response.status_code == 404, response.text
+    assert response.status_code == 200, response.text
     body = response.json()
-    assert "知识库中暂无" in body["detail"]
-    assert "2" not in body["detail"], "空知识库提示不得暴露其他用户的向量数量"
-    search_overrides["chat"].generate_async.assert_not_called()
+    assert body["total_searched"] == 0
+    assert body["results"] == []
+    assert body["answer_mode"] == "general"
+    search_overrides["chat"].generate_async.assert_awaited_once()
+    messages = search_overrides["chat"].generate_async.call_args.args[0]
+    assert all("secret" not in message["content"] for message in messages)
     rewriter = search_overrides["rewriter"]
     assert rewriter.calls and rewriter.calls[0]["cache_namespace"].startswith(f"u:{bob.id}:")
     assert rewriter.update_fingerprint_calls == [], "路由不得再写入进程级共享指纹"

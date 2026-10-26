@@ -1,0 +1,37 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/components/layout/__tests__/ChatArea-adaptive.spec.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ❯ src/components/layout/__tests__/ChatArea-adaptive.spec.ts (11 tests | 1 failed) 1276ms
+     × 部分总结显示覆盖说明并允许展开资料来源 52ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea-adaptive.spec.ts > 自适应 RAG 主对话 > 部分总结显示覆盖说明并允许展开资料来源
+AssertionError: expected 'Python 装饰器怎么使用deepseek-chatPython 装饰器…' not to contain '检索排名'
+
+- Expected
++ Received
+
+- 检索排名
++ Python 装饰器怎么使用deepseek-chatPython 装饰器怎么使用？知AI 回答（deepseek-chat）资料的核心观点包括特征值与矩阵关系。
++  复制 引用 1 个分块 · 来自 1 个文档 700 tokens，提示词 500 + 生成 200 = 700 tokens（prompt 500 / completion 200）基于部分资料总结 · 已覆盖 1 / 3 份资料， 8 / 100 个片段 来源· 1 份文档1线性代数讲义.pdf第 3 页分块 #12检索排名 #1分块 #12第 3 页第三章 › 特征值特征值是满足 Av = λv 的标量 λ。向知寻提问资料检索 5 段Shift+Enter 换行发送 可直接提问，上传资料可增强回答；资料结论请核对来源原文。
+
+ ❯ src/components/layout/__tests__/ChatArea-adaptive.spec.ts:159:29
+    157|     await area.find('[data-testid="source-toggle"]').trigger("click")
+    158|     expect(area.find('[data-testid="source-chunk-text"]').text()).toCo…
+    159|     expect(area.text()).not.toContain("检索排名")
+       |                             ^
+    160|   })
+    161|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  15:39:01
+   Duration  2.28s (transform 897ms, setup 0ms, import 269ms, tests 1.28s, environment 580ms)

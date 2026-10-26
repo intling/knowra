@@ -315,7 +315,7 @@ def test_search_request_has_no_rewrite_fields():
     data = req.model_dump()
 
     # 确认包含 query、top_k、history、session_id，不包含 rewrite_model
-    assert set(data.keys()) == {"query", "top_k", "history", "session_id"}
+    assert set(data.keys()) == {"query", "top_k", "history", "session_id", "document_ids"}
     assert data["history"] is None
     assert data["session_id"] is None
 

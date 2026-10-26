@@ -36,11 +36,19 @@ from app.schemas.search import (
     SearchResponse,
     SearchResult,
 )
+from app.services.answer_policy import (
+    POLICY_VERSION,
+    RAG_PROMPT,
+    clarification,
+    route_answer,
+    system_prompt,
+)
 from app.services.chat_adapter import ChatAdapter, ChatAPIError
 from app.services.chat_config import ChatConfig
 from app.services.circuit_breaker import CircuitBreaker
-from app.services.embedding_adapter import EmbeddingAdapter
+from app.services.embedding_adapter import EmbeddingAdapter, EmbeddingAPIError
 from app.services.rerank_adapter import RerankAdapter, RerankError
+from app.services.summary_context import build_summary_context, summary_revision, validate_scope
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -80,20 +88,7 @@ def _run_async(coro):
 
 # ── prompt 模板 ──────────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """\
-你是一个基于知识库文档的 AI 助手。请根据提供的上下文信息回答用户的问题，并遵循以下规则：
-
-1. **基于上下文回答**：使用提供的文档片段来构建你的回答，\
-优先引用文档中的信息而非外部知识。
-2. **无法回答时的处理**：如果提供的上下文不足以回答问题，\
-请直接回复以下这句话（含句号）：
-根据现有文档内容，无法回答此问题。
-注意：当上下文不足时，回复此句即可，无需添加原因说明、来源引用、\
-建议、道歉或其他补充信息。
-3. **注明信息来源**：在回答中引用具体的来源信息\
-（文档名称、标题路径、页码等），让用户可以追溯答案依据。
-4. **结构化格式**：使用 Markdown 格式组织你的回答，使信息层次清晰。\
-"""
+SYSTEM_PROMPT = RAG_PROMPT
 
 USER_PROMPT_TEMPLATE = """以下是从知识库中检索到的相关文档内容：
 
@@ -105,10 +100,8 @@ USER_PROMPT_TEMPLATE = """以下是从知识库中检索到的相关文档内容
 
 # ── 降级提示 ────────────────────────────────────────────────────────────
 
-_NO_MATCH_ANSWER = "根据现有文档内容，无法回答此问题。"
-_NO_VECTOR_DATA_ANSWER = "知识库中暂无任何已向量化的文档。请先上传文档并完成向量化后再提问。"
-_CHAT_DISABLED_ANSWER = "AI 回答生成功能未启用，请联系管理员配置对话模型。以下为检索到的相关内容。"
-_CHAT_FAILED_ANSWER = "AI 回答生成失败，请稍后重试。以下为检索到的相关内容。"
+_CHAT_DISABLED_ANSWER = "AI 回答生成功能未启用，请联系管理员配置对话模型。"
+_CHAT_FAILED_ANSWER = "AI 回答生成失败，请稍后重试。"
 _CHAT_DISABLED_ERROR = "Chat generation is disabled"
 
 # LLM 答案生成总超时（秒）—— 含首 token 等待 + 流式收集 + 重试
@@ -145,7 +138,8 @@ class SearchService:
     ) -> None:
         self._session = session
         self._owner_user_id = owner_user_id
-        self._cache_scope = f"u:{owner_user_id}:{kb_fingerprint}"
+        self._cache_scope = f"u:{owner_user_id}:{kb_fingerprint}:{POLICY_VERSION}"
+        self._document_ids: list[UUID] | None = None
         self._embedding_adapter = embedding_adapter
         self._chat_adapter = chat_adapter
         self._chat_config = chat_config
@@ -215,30 +209,20 @@ class SearchService:
         top_k: int = 5,
         history: list[dict] | None = None,
         session_id: str | None = None,
+        document_ids: list[UUID] | None = None,
     ) -> SearchResponse:
-        """Execute a semantic search across all vectorised documents and (when
-        configured) generate an LLM answer from the retrieved context.
-
-        The method is the single entry point that orchestrates:
-
-        -1. L1 response cache lookup (if configured) → instant return on hit.
-        0. Query rewriting via ``QueryRewriter.rewrite`` (if configured).
-        1. Query vectorisation via ``EmbeddingAdapter.embed_single``.
-        2. Full-table vector search via pgvector cosine distance.
-        3. Context-to-prompt assembly.
-        4. LLM generation (with graceful degradation).
-        5. ``SearchResponse`` assembly.
-        6. No-match early return (fixed phrase, no LLM call).
-        7. L1 response cache store (if configured).
-
-        Args:
-            query: 用户原始查询文本。
-            top_k: 返回的最相似分块数量。
-            history: 可选的多轮对话历史。
-            session_id: 可选的会话标识符（用于缓存绑定）。
-                        为 None 时从 history 自动派生。
-        """
+        """按回答策略检索、读取资料或直接生成，统一保留缓存和错误语义。"""
         t0 = time.perf_counter()
+        self._document_ids = (
+            sorted(set(document_ids), key=str) if document_ids is not None else None
+        )
+        validate_scope(self._session, self._owner_user_id, self._document_ids)
+        scope = ",".join(map(str, self._document_ids)) if self._document_ids is not None else "all"
+        namespace = f"{self._cache_scope}:docs:{scope}"
+        intent = route_answer(query, has_scope=self._document_ids is not None)
+        if intent == "summary":
+            revision = summary_revision(self._session, self._owner_user_id, self._document_ids)
+            namespace += f":summary:{revision}"
 
         self._logger.info("search_start", query=query, top_k=top_k)
 
@@ -246,7 +230,7 @@ class SearchService:
         resolved_session_id = self._resolve_session_id(session_id, history)
         rewrite_session_id = resolved_session_id
         if resolved_session_id is not None:
-            resolved_session_id = f"{self._cache_scope}:{resolved_session_id}"
+            resolved_session_id = f"{namespace}:{resolved_session_id}"
 
         # 计算 history digest（用于缓存键，确保不同对话历史产生不同缓存键）
         history_digest = self._compute_history_digest(history)
@@ -292,6 +276,92 @@ class SearchService:
                 )
                 return cached_response
 
+        def finish(
+            *,
+            mode,
+            status,
+            rows=None,
+            vector=None,
+            total=0,
+            rewrite=None,
+            coverage=None,
+            guidance=None,
+        ):
+            rows = rows or []
+            results = self._build_results(rows, len(rows) if mode == "summary" else top_k)
+            if mode == "clarification":
+                answer, tokens, model, messages, error = (
+                    guidance or clarification(status),
+                    None,
+                    None,
+                    [],
+                    None,
+                )
+            else:
+                answer, tokens, model, messages, error = _run_async(
+                    self._generate_answer(
+                        query,
+                        rows,
+                        history=history,
+                        mode=mode,
+                        partial=bool(coverage and coverage.truncated),
+                    )
+                )
+            response = SearchResponse(
+                query=query,
+                query_embedding_preview=(vector or [])[:5],
+                embedding_model=self._embedding_adapter.config.model,
+                embedding_dimensions=self._embedding_adapter.config.dimensions,
+                top_k=top_k,
+                total_searched=total,
+                searched_document_count=len({r.parsed_document_id for r in results}),
+                search_time_ms=(time.perf_counter() - t0) * 1000,
+                rewrite_info=rewrite,
+                results=results,
+                answer=answer,
+                answer_tokens=tokens,
+                chat_model=model,
+                prompt_messages=messages,
+                chat_config_snapshot=self._chat_config.snapshot() if model else None,
+                generation_error=error,
+                audit_trail_id=audit_trail_id,
+                answer_mode=mode,
+                retrieval_status=status,
+                summary_coverage=coverage,
+            )
+            if (
+                self._response_cache is not None
+                and resolved_session_id is not None
+                and error is None
+                and status != "unavailable"
+                and mode != "clarification"
+            ):
+                cache_key = self._make_search_cache_key(
+                    resolved_session_id, query, top_k, history_digest
+                )
+                self._response_cache.store(resolved_session_id, cache_key, response)
+            self._logger.info(
+                "search_complete",
+                answer_mode=mode,
+                retrieval_status=status,
+                result_count=len(results),
+                total_searched=total,
+                search_time_ms=round(response.search_time_ms, 2),
+                searched_document_count=response.searched_document_count,
+                audit_trail_id=audit_trail_id,
+            )
+            return response
+
+        if intent == "general":
+            return finish(mode="general", status="skipped")
+        if intent == "summary":
+            context = build_summary_context(self._session, self._owner_user_id, self._document_ids)
+            if not context.rows:
+                return finish(mode="clarification", status="skipped", guidance=context.guidance)
+            return finish(
+                mode="summary", status="matched", rows=context.rows, coverage=context.coverage
+            )
+
         # 0. 查询重写（如果配置了 QueryRewriter）
         rewrite_info: RewriteInfo | None
         query_for_embedding = query
@@ -303,7 +373,7 @@ class SearchService:
                     query,
                     session_id=rewrite_session_id,
                     history=history,
-                    cache_namespace=self._cache_scope,
+                    cache_namespace=namespace,
                 )
                 # QueryRewriter.rewrite() is async in production, but tests use sync mocks.
                 # Use _run_async() for real coroutines, pass through sync results directly.
@@ -355,18 +425,23 @@ class SearchService:
             rewrite_info = None
 
         # 1. 查询向量化（使用改写后的查询或原始查询）
-        embedding_result = self._embedding_adapter.embed_single(query_for_embedding)
-        query_vector = embedding_result.embedding
-
-        # 2. 统计总向量数（搜索空间大小）
-        total_searched = self._count_total_embeddings()
-
-        # 3. 无向量数据 → 直接返回（不调用 LLM，因为没有上下文可供推理）
-        if total_searched == 0:
-            response = self._build_empty_response(
-                query, query_vector, top_k, t0, rewrite_info, audit_trail_id
+        try:
+            embedding_result = self._embedding_adapter.embed_single(query_for_embedding)
+        except EmbeddingAPIError:
+            return finish(
+                mode="clarification" if intent == "private" else "general",
+                status="unavailable",
+                rewrite=rewrite_info,
             )
-            return response
+        query_vector = embedding_result.embedding
+        total_searched = self._count_total_embeddings()
+        if total_searched == 0:
+            return finish(
+                mode="clarification" if intent == "private" else "general",
+                status="empty",
+                vector=query_vector,
+                rewrite=rewrite_info,
+            )
 
         # 4. pgvector 跨文档检索
         candidate_count = min(50, max(top_k, 20)) if self._rerank_adapter else top_k
@@ -411,77 +486,29 @@ class SearchService:
                 self._logger.warning("search_rerank_unavailable")
                 rows = rows[:top_k]
 
-        # 5. 构建 SearchResult 列表（含文本截断，强制不超过 top_k）
-        results = self._build_results(rows, top_k)
-
-        # 6. 统计涉及的文档数
-        searched_document_count = len({r.parsed_document_id for r in results})
-
-        # 7. 无匹配结果 → 跳过 LLM，直接返回固定短语
-        #    （包括：向量搜索返回零行、所有行均被阈值过滤掉）
-        if len(rows) == 0:
-            response = self._build_no_match_response(
-                query, query_vector, top_k, t0, total_searched, rewrite_info, audit_trail_id
+        rows = [
+            row
+            for row in rows
+            if not self._is_noise_chunk(
+                row.DocumentChunk.contextualized_text or row.DocumentChunk.text or ""
             )
-            return response
-
-        # 8. LLM 生成（含优雅降级）
-        #    _generate_answer 为 async，在此通过 _run_async 桥接同步调用
-        answer, answer_tokens, chat_model, prompt_messages, generation_error = _run_async(
-            self._generate_answer(query, rows, history=history)
+        ][:top_k]
+        if not rows:
+            return finish(
+                mode="clarification" if intent == "private" else "general",
+                status="no_match",
+                vector=query_vector,
+                total=total_searched,
+                rewrite=rewrite_info,
+            )
+        return finish(
+            mode="rag",
+            status="matched",
+            rows=rows,
+            vector=query_vector,
+            total=total_searched,
+            rewrite=rewrite_info,
         )
-
-        # 9. 组装响应
-        search_time_ms = (time.perf_counter() - t0) * 1000
-
-        self._logger.info(
-            "search_complete",
-            result_count=len(results),
-            search_time_ms=round(search_time_ms, 2),
-            total_searched=total_searched,
-            searched_document_count=searched_document_count,
-            audit_trail_id=audit_trail_id,
-        )
-
-        response = SearchResponse(
-            query=query,
-            query_embedding_preview=query_vector[:5],
-            embedding_model=self._embedding_adapter.config.model,
-            embedding_dimensions=self._embedding_adapter.config.dimensions,
-            top_k=top_k,
-            total_searched=total_searched,
-            searched_document_count=searched_document_count,
-            search_time_ms=search_time_ms,
-            rewrite_info=rewrite_info,
-            results=results,
-            answer=answer,
-            answer_tokens=answer_tokens,
-            chat_model=chat_model,
-            prompt_messages=prompt_messages,
-            chat_config_snapshot=(self._chat_config.snapshot() if chat_model else None),
-            generation_error=generation_error,
-            audit_trail_id=audit_trail_id,
-        )
-
-        # 写入 L1 搜索响应缓存（会话绑定精确匹配）
-        # 仅当 resolved_session_id 非 None（可信身份）时写入；
-        # 不可信身份（匿名无 history）跳过存储，防止私有响应跨用户泄漏。
-        if self._response_cache is not None and resolved_session_id is not None:
-            cache_key = self._make_search_cache_key(
-                resolved_session_id, query, top_k, history_digest
-            )
-            self._response_cache.store(  # type: ignore[union-attr]
-                resolved_session_id, cache_key, response
-            )
-            self._logger.debug(
-                "search_response_cache_stored",
-                session_id=resolved_session_id,
-                query=query,
-                top_k=top_k,
-                audit_trail_id=audit_trail_id,
-            )
-
-        return response
 
     # ── private: count / search / build ─────────────────────────────
 
@@ -499,6 +526,8 @@ class SearchService:
                 UploadedFile.deleted_at.is_(None),
             )
         )
+        if self._document_ids is not None:
+            stmt = stmt.where(ParsedDocument.id.in_(self._document_ids))
         result = self._session.exec(stmt)
         count = result.first()
         return count or 0
@@ -555,6 +584,8 @@ class SearchService:
             .limit(top_k)
         )
 
+        if self._document_ids is not None:
+            stmt = stmt.where(ParsedDocument.id.in_(self._document_ids))
         return self._session.exec(stmt).all()
 
     def _build_results(self, rows, top_k: int) -> list[SearchResult]:
@@ -599,7 +630,13 @@ class SearchService:
     # ── private: LLM generation ─────────────────────────────────────
 
     async def _generate_answer(
-        self, query: str, rows, history: list[dict] | None = None
+        self,
+        query: str,
+        rows,
+        history: list[dict] | None = None,
+        *,
+        mode: str = "rag",
+        partial: bool = False,
     ) -> tuple[
         str,  # answer
         AnswerTokens | None,  # answer_tokens
@@ -661,7 +698,7 @@ class SearchService:
             )
 
         # 组装 prompt（使用分块完整文本，非截断版本）
-        messages = self._assemble_prompt(query, rows, history=history)
+        messages = self._assemble_prompt(query, rows, history=history, mode=mode, partial=partial)
 
         async def _try_generate(msgs: list[dict]) -> tuple:
             """流式调用 LLM，返回回答、token 数、模型、消息及错误。"""
@@ -701,7 +738,9 @@ class SearchService:
             # 部分 API 代理对 system 角色消息执行内容审查拦截。
             # 将系统指令内联到 user 消息中可以绕过此限制，
             # 同时保持相同的指令语义（大多数模型对两种形式一视同仁）。
-            merged_messages = self._assemble_prompt_merged(query, rows, history=history)
+            merged_messages = self._assemble_prompt_merged(
+                query, rows, history=history, mode=mode, partial=partial
+            )
             self._logger.info(
                 "chat_403_retry_merged",
                 original_message_count=len(messages),
@@ -767,7 +806,15 @@ class SearchService:
             None,
         )
 
-    def _assemble_prompt(self, query: str, rows, history: list[dict] | None = None) -> list[dict]:
+    def _assemble_prompt(
+        self,
+        query: str,
+        rows,
+        history: list[dict] | None = None,
+        *,
+        mode: str = "rag",
+        partial: bool = False,
+    ) -> list[dict]:
         """Build the ``messages`` array sent to the LLM.
 
         **Context assembly rules** (per spec):
@@ -808,6 +855,11 @@ class SearchService:
 
             # 结构化来源元数据
             source_info = f"来源: {row.document_name}"
+            if mode == "summary":
+                source_info += (
+                    f", 文档 ID: {row.DocumentEmbedding.parsed_document_id}"
+                    f", 分块 ID: {row.DocumentEmbedding.chunk_id}"
+                )
             heading_path = getattr(chunk, "heading_path", None)
             if heading_path:
                 source_info += f", 标题路径: {' > '.join(heading_path)}"
@@ -819,64 +871,38 @@ class SearchService:
             context_parts.append(f"[分块 {i}]\n{source_info}\n内容: {chunk_text}\n")
 
         context = "\n".join(context_parts)
-        user_content = USER_PROMPT_TEMPLATE.format(context=context, query=query)
+        user_content = (
+            query
+            if mode == "general"
+            else USER_PROMPT_TEMPLATE.format(context=context, query=query)
+        )
 
         # 构建 messages 数组：
         #   1. system 指令
         #   2. 历史消息（仅 user / assistant 角色）
         #   3. 当前 user 消息（含上下文 + 查询）
-        messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages: list[dict] = [{"role": "system", "content": system_prompt(mode, partial=partial)}]
         messages.extend(self._format_history_messages(history))
         messages.append({"role": "user", "content": user_content})
         return messages
 
     def _assemble_prompt_merged(
-        self, query: str, rows, history: list[dict] | None = None
+        self,
+        query: str,
+        rows,
+        history: list[dict] | None = None,
+        *,
+        mode: str = "rag",
+        partial: bool = False,
     ) -> list[dict]:
-        """Build a **system-less** messages array for proxies that block ``system`` role.
-
-        Identical to ``_assemble_prompt`` in content, but merges the system
-        instructions into the user message as a prefix.  Most LLMs treat
-        inline instructions at the top of the first user message equivalently
-        to a system message.
-
-        History messages (``user`` / ``assistant`` only) are kept as
-        independent messages before the merged user message, preserving
-        multi-turn conversation structure while still avoiding the ``system``
-        role that some proxies flag.
-        """
-        # 复用 _assemble_prompt 的 context 构建逻辑，直接获取 user_content
-        context_parts: list[str] = []
-
-        for i, row in enumerate(rows, start=1):
-            chunk = row.DocumentChunk
-            chunk_text = chunk.contextualized_text or chunk.text or ""
-            if self._is_noise_chunk(chunk_text):
-                continue
-
-            source_info = f"来源: {row.document_name}"
-            heading_path = getattr(chunk, "heading_path", None)
-            if heading_path:
-                source_info += f", 标题路径: {' > '.join(heading_path)}"
-            page_numbers = getattr(chunk, "page_numbers", None)
-            if page_numbers:
-                page_str = ", ".join(str(p) for p in page_numbers)
-                source_info += f", 页码: {page_str}"
-
-            context_parts.append(f"[分块 {i}]\n{source_info}\n内容: {chunk_text}\n")
-
-        context = "\n".join(context_parts)
-        user_body = USER_PROMPT_TEMPLATE.format(context=context, query=query)
-
-        # 将系统指令内联到用户消息顶部
-        merged_content = f"{SYSTEM_PROMPT}\n\n---\n\n{user_body}"
-
-        # 构建 messages 数组：
-        #   1. 历史消息（仅 user / assistant 角色，保持独立对话结构）
-        #   2. 合并后的 user 消息（含系统指令 + 上下文 + 当前查询）
-        messages: list[dict] = self._format_history_messages(history)
-        messages.append({"role": "user", "content": merged_content})
-        return messages
+        """403 重试沿用相同模式与覆盖边界，仅合并系统指令。"""
+        messages = self._assemble_prompt(query, rows, history=history, mode=mode, partial=partial)
+        return messages[1:-1] + [
+            {
+                "role": "user",
+                "content": f"{messages[0]['content']}\n\n---\n\n{messages[-1]['content']}",
+            }
+        ]
 
     # ── private: content quality ─────────────────────────────────
 
@@ -926,75 +952,3 @@ class SearchService:
         # 仅由空白和 [TOC] 标记组成的文本（如 "[TOC]\n[TOC]\n"）
         cleaned = stripped.replace("[TOC]", "").replace("[toc]", "").replace("[目录]", "").strip()
         return not cleaned
-
-    def _build_empty_response(
-        self,
-        query: str,
-        query_vector: list[float],
-        top_k: int,
-        t0: float,
-        rewrite_info: RewriteInfo | None,
-        audit_trail_id: str | None = None,
-    ) -> SearchResponse:
-        """Build a response for the case when **zero** embeddings exist in the DB.
-
-        No LLM call is made — there is nothing to ground the answer on.
-        """
-        search_time_ms = (time.perf_counter() - t0) * 1000
-        return SearchResponse(
-            query=query,
-            query_embedding_preview=query_vector[:5],
-            embedding_model=self._embedding_adapter.config.model,
-            embedding_dimensions=self._embedding_adapter.config.dimensions,
-            top_k=top_k,
-            total_searched=0,
-            searched_document_count=0,
-            search_time_ms=search_time_ms,
-            rewrite_info=rewrite_info,
-            results=[],
-            answer=_NO_VECTOR_DATA_ANSWER,
-            answer_tokens=None,
-            chat_model=None,
-            prompt_messages=[],
-            chat_config_snapshot=None,
-            generation_error=None,
-            audit_trail_id=audit_trail_id,
-        )
-
-    # ── private: no-match response ────────────────────────────────────
-
-    def _build_no_match_response(
-        self,
-        query: str,
-        query_vector: list[float],
-        top_k: int,
-        t0: float,
-        total_searched: int,
-        rewrite_info: RewriteInfo | None,
-        audit_trail_id: str | None = None,
-    ) -> SearchResponse:
-        """Build a response when embeddings exist but no chunks match the query.
-
-        No LLM call is made — the fixed phrase is returned directly to
-        guarantee no extra text, explanations, or source citations leak in.
-        """
-        search_time_ms = (time.perf_counter() - t0) * 1000
-        return SearchResponse(
-            query=query,
-            query_embedding_preview=query_vector[:5],
-            embedding_model=self._embedding_adapter.config.model,
-            embedding_dimensions=self._embedding_adapter.config.dimensions,
-            top_k=top_k,
-            total_searched=total_searched,
-            searched_document_count=0,
-            search_time_ms=search_time_ms,
-            rewrite_info=rewrite_info,
-            results=[],
-            answer=_NO_MATCH_ANSWER,
-            answer_tokens=None,
-            chat_model=None,
-            prompt_messages=[],
-            chat_config_snapshot=None,
-            generation_error=None,
-            audit_trail_id=audit_trail_id,
-        )

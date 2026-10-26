@@ -401,6 +401,7 @@ async function handleSend() {
 
             <template v-if="bubble.response">
               <AnswerPanel
+                :answer-mode="bubble.response.answer_mode"
                 :answer="bubble.response.answer"
                 :answer-tokens="bubble.response.answer_tokens"
                 :chat-model="bubble.response.chat_model"
@@ -409,8 +410,23 @@ async function handleSend() {
                 :generation-error="bubble.response.generation_error"
               />
               <div class="space-y-3 pl-10 sm:pl-11">
-                <SourceList :results="bubble.response.results" />
-                <RetrievalDetails :response="bubble.response" />
+                <p v-if="bubble.response.retrieval_status === 'unavailable'" role="status" class="text-xs text-ink-muted">
+                  检索暂不可用，请稍后重试以核对资料。
+                </p>
+                <p v-if="bubble.response.answer_mode === 'summary' && bubble.response.summary_coverage" class="text-xs text-ink-muted">
+                  {{ bubble.response.summary_coverage.truncated ? "基于部分资料总结" : "资料总结" }}
+                  · 已覆盖 {{ bubble.response.summary_coverage.included_document_count }} / {{ bubble.response.summary_coverage.document_count }} 份资料，
+                  {{ bubble.response.summary_coverage.included_chunks }} / {{ bubble.response.summary_coverage.total_chunks }} 个片段
+                </p>
+                <SourceList
+                  v-if="!bubble.response.answer_mode || bubble.response.answer_mode === 'rag' || bubble.response.answer_mode === 'summary'"
+                  :results="bubble.response.results"
+                  :summary="bubble.response.answer_mode === 'summary'"
+                />
+                <RetrievalDetails
+                  v-if="!bubble.response.answer_mode || bubble.response.answer_mode === 'rag'"
+                  :response="bubble.response"
+                />
               </div>
             </template>
           </div>
@@ -444,7 +460,7 @@ async function handleSend() {
           @remove-file="handleRemoveFile"
         />
         <p class="mt-1.5 text-center text-[11px] text-ink-faint">
-          回答依据你的资料生成，请以来源原文为准。
+          可直接提问，上传资料可增强回答；资料结论请核对来源原文。
         </p>
       </div>
     </div>
