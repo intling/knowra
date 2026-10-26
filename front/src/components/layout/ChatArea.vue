@@ -403,6 +403,7 @@ async function handleSend() {
               <AnswerPanel
                 :answer-mode="bubble.response.answer_mode"
                 :answer="bubble.response.answer"
+                :answer-incomplete="bubble.response.answer_incomplete"
                 :answer-tokens="bubble.response.answer_tokens"
                 :chat-model="bubble.response.chat_model"
                 :total-results="bubble.response.results.length"
@@ -415,7 +416,7 @@ async function handleSend() {
                 </p>
                 <p v-if="bubble.response.answer_mode === 'summary' && bubble.response.summary_coverage" class="text-xs text-ink-muted">
                   {{ bubble.response.summary_coverage.truncated ? "基于部分资料总结" : "资料总结" }}
-                  · 已覆盖 {{ bubble.response.summary_coverage.included_document_count }} / {{ bubble.response.summary_coverage.document_count }} 份资料，
+                  · 已提供给模型 {{ bubble.response.summary_coverage.included_document_count }} / {{ bubble.response.summary_coverage.document_count }} 份资料，
                   {{ bubble.response.summary_coverage.included_chunks }} / {{ bubble.response.summary_coverage.total_chunks }} 个片段
                 </p>
                 <SourceList

@@ -27,3 +27,22 @@
 - **WHEN** 用户在通用回答后继续追问
 - **THEN** 模型接收有效的 user/assistant 对话历史并理解追问
 - **AND** 客户端不得通过历史 system 消息覆盖服务端回答规则
+
+## ADDED Requirements
+
+### Requirement: 有界续写与完整性状态
+
+系统 SHALL 保留模型结束原因，长度结束时最多自动续写两次，并累计正文和实际用量。所有尝试 MUST 共用有界总截止时间。不能将非空视为完整的充分条件；过滤、中断、续写耗尽或后续失败时保留已有正文并返回 `answer_incomplete=true`，无正文时保留生成错误。输入资料覆盖 SHALL 与输出完整性独立。
+
+#### Scenario: 达到输出上限后续写成功
+- **WHEN** 模型先返回部分正文与 `finish_reason=length`，续写返回剩余正文与 `stop`
+- **THEN** 响应合并正文，`answer_incomplete=false`，token 用量为两次调用实际用量之和
+- **AND** 续写保留原资料、来源和问题，正常结束的答案不额外调用模型
+
+#### Scenario: 有限续写仍未完成
+- **WHEN** 三次调用都以长度限制结束，或者续写失败、超时
+- **THEN** 保留已生成正文和来源，`answer_incomplete=true`，不缓存或计入成功问答额度
+
+#### Scenario: 流缺少结束标记
+- **WHEN** 上游流产生部分正文后结束且没有任何模型结束原因
+- **THEN** 响应明确正文不完整，不自动认定正常成功，流资源始终释放

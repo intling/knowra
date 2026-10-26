@@ -171,9 +171,9 @@ def test_query_rewriter_receives_user_scoped_namespace() -> None:
         query="问题", top_k=5
     )
 
-    assert calls[0]["cache_namespace"] == f"u:{owner_id}:fp-9:adaptive-v1:docs:all"
+    assert calls[0]["cache_namespace"] == f"u:{owner_id}:fp-9:adaptive-v2:docs:all"
     assert calls[0]["session_id"] == "s1"
-    assert calls[1]["cache_namespace"] == f"u:{owner_id}:fp-9:adaptive-v1:docs:all", (
+    assert calls[1]["cache_namespace"] == f"u:{owner_id}:fp-9:adaptive-v2:docs:all", (
         "即使没有 session_id 与 history，也必须传入用户命名空间，保证去重与 L2 按用户隔离"
     )
 

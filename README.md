@@ -182,6 +182,11 @@ uv run python -m app.cli create-user --email demo@deerfd.com --display-name 演�
 “总结这些资料的核心观点”直接读取当前用户可见文档的最新成功分块，无需先向量化，
 最多自动总结 20 份，超过时引导缩小范围。总结正文预算为 60,000 字符，部分覆盖会明确说明。
 API 可选 `document_ids` 限定资料范围；响应返回回答模式、检索状态和总结覆盖。
+
+模型因输出上限停止时最多自动续写两次；仍未完成则保留正文并提示“回答尚未完成”，不缓存或计入成功额度。
+资料覆盖仅说明已送入模型的内容，不代表回答已经完整。默认每次输出预算为 4096 tokens，
+`CHAT_GENERATION_TIMEOUT=120` 控制含续写的总时限。已有环境显式设置的 `CHAT_MAX_TOKENS` 仍优先；
+长总结或推理模型应按供应商支持范围适当调高，不能以输入加输出的 token 总数判断正文是否完整。
 详情见 [后端问答契约](backend/README.md#semantic-search--rag-generation)。
 
 `/verify` 是流程验证页，用于检查单个文档的解析、分块、向量化链路是否一致。

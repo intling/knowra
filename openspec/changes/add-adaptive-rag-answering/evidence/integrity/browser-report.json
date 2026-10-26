@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "欢迎说明允许直接提问",
+    "general",
+    "clarification",
+    "summary",
+    "partial",
+    "unavailable",
+    "generation-error",
+    "incomplete",
+    "390px 无横向溢出"
+  ],
+  "screenshots": [
+    "general-desktop.png",
+    "clarification-desktop.png",
+    "summary-desktop.png",
+    "partial-desktop.png",
+    "unavailable-desktop.png",
+    "generation-error-desktop.png",
+    "incomplete-desktop.png",
+    "mobile.png"
+  ],
+  "errors": [],
+  "mocked": true
+}

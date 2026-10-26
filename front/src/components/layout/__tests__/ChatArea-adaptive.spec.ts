@@ -63,6 +63,25 @@ async function showAnswer(response: SearchResponse) {
 }
 
 describe("自适应 RAG 主对话", () => {
+  // 验证非空半成品也显示警告，同时保留已有 Markdown、真实来源与复制。
+  it("不完整回答保留正文来源并明确提示", async () => {
+    const area = await showAnswer({
+      ...makeResponse({ answer: "## 一、数据结构\n已有的解释。" }),
+      answer_incomplete: true,
+    } as SearchResponse)
+
+    expect(area.find('[data-testid="answer-incomplete"]').text()).toContain("回答尚未完成")
+    expect(area.find('[data-testid="answer-content"]').text()).toContain("已有的解释")
+    expect(area.find('[data-testid="source-list"]').exists()).toBe(true)
+    expect(area.find('[data-testid="copy-answer-button"]').exists()).toBe(true)
+  })
+
+  // 验证旧记录缺少完整性字段时不出现新告警，避免把历史成功回答误判为截断。
+  it("完整回答和旧记录不显示不完整警告", async () => {
+    const area = await showAnswer(makeResponse())
+    expect(area.find('[data-testid="answer-incomplete"]').exists()).toBe(false)
+  })
+
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())

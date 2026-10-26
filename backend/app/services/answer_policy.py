@@ -2,7 +2,7 @@
 
 import re
 
-POLICY_VERSION = "adaptive-v1"
+POLICY_VERSION = "adaptive-v2"
 
 GENERAL_PROMPT = """你是知寻 AI 知识助手。请使用通用知识自然、准确地回答用户，可解释和举例。
 本轮没有提供资料依据，禁止虚构文档名称、页码、引用或声称资料中有某项事实。

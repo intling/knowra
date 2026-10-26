@@ -42,6 +42,8 @@ The app starts at `http://localhost:5173`. API requests under `/api` are proxied
   `clarification` 展示资料引导，不伪造用量；`summary` 显示真实来源与覆盖统计，部分覆盖说明“基于部分资料总结”，
   不显示语义分数；`rag` 保留来源与折叠诊断。`unavailable` 单独提示检索暂不可用，生成错误保持失败状态。
   响应新增模式/覆盖字段可选，兼容旧 localStorage 对话；`searchChunks` 支持可选 `document_ids`（1–20 个 UUID）。
+- **回答完整性**：`answer_incomplete=true` 时显示“回答尚未完成”，保留 Markdown 正文、来源和复制；
+  缺少该字段的旧记录沿用原展示。总结覆盖表示已提供给模型的资料范围，与正文是否生成完成独立。
 - **Turns**（资料回答）: question bubble → answer (seal + reading column, copy, citation stats, token total with details in tooltip)
   → `SourceList` (grouped by `parsed_document_id`, pages, chunk ids, preview; expand for exact API text and rank)
   → `RetrievalDetails` (collapsed; query rewrite, retrieval results, prompt preview).

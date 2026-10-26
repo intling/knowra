@@ -4,6 +4,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const base = process.env.ADAPTIVE_BROWSER_BASE_URL || 'http://127.0.0.1:5176';
+const outputDir = process.env.ADAPTIVE_BROWSER_OUTPUT_DIR || __dirname;
+fs.mkdirSync(outputDir, { recursive: true });
 const report = { checks: [], screenshots: [], errors: [], mocked: true };
 
 (async () => {
@@ -28,6 +30,10 @@ const report = { checks: [], screenshots: [], errors: [], mocked: true };
     ['unavailable', '解释一下闭包', { ...general, retrieval_status: 'unavailable' }],
     ['generation-error', '请再解释一下', { ...general, answer: 'AI 回答生成失败，请稍后重试。',
       generation_error: '受控模型超时', answer_tokens: null, chat_model: null }],
+    ['incomplete', '列出资料中的关键概念并逐一解释', { ...general,
+      answer_mode: 'summary', retrieval_status: 'matched', answer_incomplete: true,
+      answer: '已生成的概念解释：列表可变。', results,
+      summary_coverage: { document_count: 3, included_document_count: 3, total_chunks: 46, included_chunks: 46, truncated: false } }],
   ];
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
   try {
@@ -84,19 +90,25 @@ const report = { checks: [], screenshots: [], errors: [], mocked: true };
         assert((await turn.innerText()).includes('1 / 3'));
       }
       if (name === 'unavailable') assert((await turn.innerText()).includes('检索暂不可用'));
+      if (name === 'incomplete') {
+        assert((await turn.getByTestId('answer-incomplete').innerText()).includes('回答尚未完成'));
+        assert((await turn.innerText()).includes('已提供给模型 3 / 3'));
+        assert.equal(await turn.getByTestId('source-item').count(), 3);
+        assert.equal(await turn.getByTestId('copy-answer-button').count(), 1);
+      } else assert.equal(await turn.getByTestId('answer-incomplete').count(), 0);
       await turn.scrollIntoViewIfNeeded();
       const screenshot = `${name}-desktop.png`;
-      await page.screenshot({ path: path.join(__dirname, screenshot) });
+      await page.screenshot({ path: path.join(outputDir, screenshot) });
       report.screenshots.push(screenshot); report.checks.push(name);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     const dimensions = await page.evaluate(() => ({ width: innerWidth, actual: document.documentElement.scrollWidth }));
     assert(dimensions.actual <= dimensions.width);
-    await page.screenshot({ path: path.join(__dirname, 'mobile.png') });
+    await page.screenshot({ path: path.join(outputDir, 'mobile.png') });
     report.screenshots.push('mobile.png'); report.checks.push('390px 无横向溢出');
     assert.deepEqual(report.errors, []);
   } finally {
     await browser.close();
-    fs.writeFileSync(path.join(__dirname, 'browser-report.json'), JSON.stringify(report, null, 2) + '\n');
+    fs.writeFileSync(path.join(outputDir, 'browser-report.json'), JSON.stringify(report, null, 2) + '\n');
   }
 })().catch((error) => { process.stderr.write(error.stack + '\n'); process.exitCode = 1; });

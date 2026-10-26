@@ -94,10 +94,9 @@ class Settings(BaseSettings):
     chat_api_key: str = ""
     chat_model: str = "qwen3.5-plus"
     chat_temperature: float = 0.1
-    chat_max_tokens: int = 1024
-    # 搜推分离超时：检索（向量搜索）通常在百毫秒内完成，其结果是用户可见的核心价值；
-    # 答案生成为"锦上添花"，应快速超时降级为"仅返回检索结果 + 降级提示"。
-    # 15s 单次 HTTP 超时 + 1 次重试 = 最坏 30s，由 search.py 的 asyncio.wait_for(20s) 兜底。
+    chat_max_tokens: int = 4096
+    # 整轮生成（含续写和重试）共用的总截止时间，独立于 HTTP 空闲超时。
+    chat_generation_timeout: float = Field(default=120.0, gt=0)
     chat_request_timeout: float = 15.0
     chat_max_retries: int = 1
     # 流式生成首 token 超时（秒）：首个 token 未在此时间内到达则判定服务不可用，

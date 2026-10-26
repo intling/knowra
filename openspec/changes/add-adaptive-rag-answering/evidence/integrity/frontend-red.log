@@ -1,0 +1,30 @@
+
+> knowra-front@0.1.0 test
+> vitest run src/components/layout/__tests__/ChatArea-adaptive.spec.ts
+
+
+ RUN  v4.1.6 /root/project/knowra/front
+
+ ❯ src/components/layout/__tests__/ChatArea-adaptive.spec.ts (13 tests | 1 failed) 1298ms
+     × 不完整回答保留正文来源并明确提示 885ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/layout/__tests__/ChatArea-adaptive.spec.ts > 自适应 RAG 主对话 > 不完整回答保留正文来源并明确提示
+Error: Cannot call text on an empty DOMWrapper.
+ ❯ Object.get node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js:1495:27
+ ❯ src/components/layout/__tests__/ChatArea-adaptive.spec.ts:73:58
+     71|     } as SearchResponse)
+     72|
+     73|     expect(area.find('[data-testid="answer-incomplete"]').text()).toCo…
+       |                                                          ^
+     74|     expect(area.find('[data-testid="answer-content"]').text()).toConta…
+     75|     expect(area.find('[data-testid="source-list"]').exists()).toBe(tru…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  16:29:51
+   Duration  2.39s (transform 900ms, setup 0ms, import 329ms, tests 1.30s, environment 598ms)

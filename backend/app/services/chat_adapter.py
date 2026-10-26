@@ -67,6 +67,7 @@ class ChatResult:
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+    finish_reason: str = "stop"
 
 
 class ChatAdapter:
@@ -355,30 +356,33 @@ class ChatAdapter:
         completion_tokens = 0
         total_tokens = 0
         first_chunk_received = False
+        finish_reason = "stream_interrupted"
 
-        async for chunk in self._iter_stream_with_first_timeout(stream, first_token_timeout):
-            if not first_chunk_received:
-                first_chunk_received = True
-                self._logger.debug("chat_first_token_received", model=model)
+        try:
+            async for chunk in self._iter_stream_with_first_timeout(stream, first_token_timeout):
+                if not first_chunk_received:
+                    first_chunk_received = True
+                    self._logger.debug("chat_first_token_received", model=model)
 
-            try:
                 choices = chunk.choices
-                if choices and len(choices) > 0:
-                    delta = choices[0].delta
-                    if delta and delta.content:
-                        content_parts.append(delta.content)
-            except AttributeError, IndexError:
-                pass
+                if choices:
+                    choice = choices[0]
+                    if choice.delta and choice.delta.content:
+                        content_parts.append(choice.delta.content)
+                    if choice.finish_reason:
+                        finish_reason = choice.finish_reason
 
-            # Usage 信息通常包含在流的最后一个 chunk 中
-            try:
+                # 结束原因可能早于 usage 到达，不能在结束帧提前退出。
                 usage = getattr(chunk, "usage", None)
                 if usage is not None:
                     prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
                     completion_tokens = getattr(usage, "completion_tokens", 0) or 0
                     total_tokens = getattr(usage, "total_tokens", 0) or 0
+        finally:
+            try:
+                await stream.close()
             except Exception:
-                pass
+                self._logger.warning("chat_stream_close_failed", model=model)
 
         content = "".join(content_parts)
 
@@ -391,6 +395,7 @@ class ChatAdapter:
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
+            finish_reason=finish_reason,
         )
 
     async def _iter_stream_with_first_timeout(self, stream, first_token_timeout: float):
@@ -515,6 +520,7 @@ class ChatAdapter:
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
+            finish_reason=getattr(choice, "finish_reason", None) or "stream_interrupted",
         )
 
     @staticmethod

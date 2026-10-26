@@ -211,6 +211,9 @@ class SearchResponse(BaseModel):
 
     # ── LLM 生成 ──
     answer: str = Field(default="", description="LLM 生成的 Markdown 格式回答")
+    answer_incomplete: bool = Field(
+        default=False, description="生成未完成，answer 为已有的部分正文"
+    )
     answer_tokens: AnswerTokens | None = Field(
         default=None, description="LLM 生成的 token 统计（chat 未启用时为 None）"
     )

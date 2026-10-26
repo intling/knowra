@@ -695,6 +695,7 @@ Keep explicit `DOCUMENT_EMBEDDING_DIMENSIONS=2560` for the deployed schema.
 | `answer_mode` | `general` / `rag` / `summary` / `clarification` |
 | `retrieval_status` | `skipped` / `matched` / `no_match` / `empty` / `unavailable` |
 | `summary_coverage` | 总结时含 `document_count`、`included_document_count`、`total_chunks`、`included_chunks`、`truncated`；其他模式为 null |
+| `answer_incomplete` | 默认 false；为 true 时 `answer` 是已有的部分正文，与输入侧资料覆盖独立 |
 
 总结读到内容时返回 `summary/matched`，向量预览为空、`total_searched=0`；
 其来源 `score` 为兼容占位、`rank` 为上下文顺序，不代表语义分数。
@@ -765,16 +766,25 @@ Key env variables:
 
 - `CHAT_API_BASE_URL`, `CHAT_API_KEY`, `CHAT_MODEL`, `CHAT_TEMPERATURE`,
   `CHAT_MAX_TOKENS`, `CHAT_REQUEST_TIMEOUT`, `CHAT_MAX_RETRIES`: OpenAI-compatible
-  chat completion endpoint used to generate the answer
+  chat completion endpoint used to generate the answer. `CHAT_MAX_TOKENS` defaults to 4096.
+- `CHAT_GENERATION_TIMEOUT`: 整轮生成、403 重试与长度续写共享的总截止时间，默认 120 秒，须大于 0。
+  `CHAT_REQUEST_TIMEOUT` 仍控制 HTTP 空闲超时，`CHAT_FIRST_TOKEN_TIMEOUT` 控制首帧等待。
 - `SEARCH_SIMILARITY_THRESHOLD`: max cosine distance (0–2) for a chunk to be
   considered relevant; `0` disables the filter, default `0.5`
 - `SEARCH_MIN_SCORE_THRESHOLD`: the best-ranked chunk must be at or below this
-  cosine distance or the whole result set is treated as "no match" and the LLM
-  is not called; `0` disables the check, default `0.4`
+  cosine distance or the whole result set is treated as "no match"; ordinary questions
+  still call the LLM with general knowledge. `0` disables the check, default `0.45`.
 
-When no chunk passes the thresholds, or no embeddings exist at all, the backend
-returns a fixed refusal phrase without calling the LLM — this is a deliberate
-anti-hallucination guard, not an error.
+当没有相关片段或向量时，普通问题仍可生成通用回答，私有事实缺依据时澄清。
+
+回答完整性：适配器保留 `finish_reason`，长度结束最多续写两次，合并正文并累计实际用量。
+正常结束不额外调用。过滤或缺少结束标记的流不自动续写；续写耗尽、失败或超时且已有正文时，
+返回 `answer_incomplete=true`，保留正文和来源，不写入成功缓存或计入成功额度。完全没有正文时沿用
+`generation_error`。成功续写仍只算一次问答，但产生多次模型调用费用。
+“已提供给模型”的文档/片段数只描述输入；`answer_tokens.total_tokens` 包含输入及输出，
+部分供应商的 completion 还包含推理 token，均不能据此推断可见正文是否完整。
+部署时核对环境对 `CHAT_MAX_TOKENS` 的显式覆盖；旧值 1024 不会被代码默认值替换。
+长总结可按模型能力调至 4096–8192，并确保网关/进程超时允许完整请求结束。
 
 ### Limitations
 

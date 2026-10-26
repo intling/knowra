@@ -9,6 +9,7 @@ const props = withDefaults(
   defineProps<{
     answerMode?: SearchResponse["answer_mode"]
     answer?: string
+    answerIncomplete?: boolean
     answerTokens?: AnswerTokens | null
     chatModel?: string | null
     totalResults?: number
@@ -18,6 +19,7 @@ const props = withDefaults(
   {
     answerMode: undefined,
     answer: "",
+    answerIncomplete: false,
     answerTokens: null,
     chatModel: null,
     totalResults: 0,
@@ -181,6 +183,15 @@ onUnmounted(() => {
       </div>
 
       <template v-else-if="answer">
+        <div
+          v-if="answerIncomplete"
+          data-testid="answer-incomplete"
+          role="status"
+          class="mb-3 rounded-[var(--radius-button)] border-l-2 border-amber-500 bg-amber-50/70 px-3.5 py-2.5"
+        >
+          <p class="text-sm font-medium text-amber-900">回答尚未完成</p>
+          <p class="mt-1 text-xs text-amber-800">本次生成提前结束，以下保留已生成的内容。你可以缩小问题范围，或继续提问以补充剩余内容。</p>
+        </div>
         <!-- eslint-disable vue/no-v-html -->
         <div
           ref="answerContentRef"

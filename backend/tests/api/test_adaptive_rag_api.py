@@ -1,5 +1,6 @@
 """自适应问答 HTTP RED：真实 Cookie、资料归属和额度，只替换模型与向量运算。"""
 
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
@@ -47,6 +48,28 @@ def sign_in(client, session):
     user = make_account(session)
     login_as(client, session, user)
     return user
+
+
+def test_incomplete_generated_answer_releases_quota(auth_client, auth_db, pipeline):
+    """验证非空截断正文返回不完整状态，真实额度预留释放，重试不被误扣限额。"""
+    user = sign_in(auth_client, auth_db)
+    auth_db.add(UserChatLimit(user_id=user.id, hourly_limit=1))
+    auth_db.commit()
+    pipeline[1].generate_async.return_value = SimpleNamespace(
+        content="尚未解释完的正文",
+        finish_reason="length",
+        model="fixture",
+        prompt_tokens=100,
+        completion_tokens=50,
+        total_tokens=150,
+    )
+
+    for _ in range(2):
+        response = auth_client.post("/api/search", json={"query": "你好"})
+        assert response.status_code == 200, response.text
+        assert response.json().get("answer_incomplete") is True
+        assert "尚未解释完的正文" in response.json()["answer"]
+        assert auth_db.exec(select(ChatUsage)).all() == []
 
 
 @pytest.mark.parametrize("query", ["你好", "Python 装饰器怎么使用？"])

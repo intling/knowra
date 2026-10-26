@@ -104,9 +104,13 @@ _CHAT_DISABLED_ANSWER = "AI 回答生成功能未启用，请联系管理员配�
 _CHAT_FAILED_ANSWER = "AI 回答生成失败，请稍后重试。"
 _CHAT_DISABLED_ERROR = "Chat generation is disabled"
 
-# LLM 答案生成总超时（秒）—— 含首 token 等待 + 流式收集 + 重试
-# 单次 HTTP 超时 15s + 1 次重试 最坏 30s，此 20s 兜底确保不会无限等待
-_CHAT_GENERATION_TOTAL_TIMEOUT = 20.0
+# 每轮最多两次续写；整轮总时限由 ChatConfig.generation_timeout 控制。
+_MAX_ANSWER_CONTINUATIONS = 2
+_CONTINUE_PROMPT = (
+    "上次回答达到输出长度上限。请继续完成用户原始问题，直接从已有正文末尾接续，"
+    "不要重复标题、开场或已解释内容，保持原有 Markdown 和真实来源引用。"
+    "优先解释尚未完成的概念并完整收尾。"
+)
 
 # 防御性截断：单条历史消息的最大字符数，防止超长历史撑爆 prompt
 _HISTORY_MESSAGE_MAX_CHARS = 2000
@@ -290,15 +294,16 @@ class SearchService:
             rows = rows or []
             results = self._build_results(rows, len(rows) if mode == "summary" else top_k)
             if mode == "clarification":
-                answer, tokens, model, messages, error = (
+                answer, tokens, model, messages, error, incomplete = (
                     guidance or clarification(status),
                     None,
                     None,
                     [],
                     None,
+                    False,
                 )
             else:
-                answer, tokens, model, messages, error = _run_async(
+                answer, tokens, model, messages, error, incomplete = _run_async(
                     self._generate_answer(
                         query,
                         rows,
@@ -319,6 +324,7 @@ class SearchService:
                 rewrite_info=rewrite,
                 results=results,
                 answer=answer,
+                answer_incomplete=incomplete,
                 answer_tokens=tokens,
                 chat_model=model,
                 prompt_messages=messages,
@@ -333,6 +339,7 @@ class SearchService:
                 self._response_cache is not None
                 and resolved_session_id is not None
                 and error is None
+                and not incomplete
                 and status != "unavailable"
                 and mode != "clarification"
             ):
@@ -643,11 +650,12 @@ class SearchService:
         str | None,  # chat_model
         list[dict],  # prompt_messages
         str | None,  # generation_error
+        bool,  # answer_incomplete
     ]:
         """Attempt LLM generation; degrade gracefully when not configured or on failure.
 
-        Returns a 5-tuple of ``(answer, answer_tokens, chat_model, prompt_messages,
-        generation_error)``.  On the happy path ``generation_error`` is ``None``;
+        Returns ``(answer, answer_tokens, chat_model, prompt_messages,
+        generation_error, answer_incomplete)``. On the happy path ``generation_error`` is ``None``;
         when non-``None`` it signals that ``answer`` is a degradation fallback
         rather than an LLM-authored response.
 
@@ -657,8 +665,8 @@ class SearchService:
            首个 token 未在此时间内到达 → 判定服务不可用，快速降级。
         2. **流式收集**：一旦首 token 到达即表明模型在工作，后续收集无单独时限，
            避免因生成慢而被误杀。
-        3. **整体超时兜底**（``_CHAT_GENERATION_TOTAL_TIMEOUT``，20s）：
-           ``asyncio.wait_for`` 硬限时，防止流式收集无限挂起。
+        3. **整体超时兜底**（``generation_timeout``，默认 120s）：
+           初次生成、长度续写和 403 重试共享截止时间。
 
         When a **403** is received from the upstream API (common with API proxies
         that have content-safety filters), the method retries once with the
@@ -680,6 +688,7 @@ class SearchService:
                 None,
                 [],
                 _CHAT_DISABLED_ERROR,
+                False,
             )
 
         # ── 熔断器检查：已断开 → 跳过 LLM 调用，直接返回降级文本 ──
@@ -695,43 +704,62 @@ class SearchService:
                 None,
                 [],
                 "Circuit breaker open — chat generation skipped",
+                False,
             )
 
         # 组装 prompt（使用分块完整文本，非截断版本）
         messages = self._assemble_prompt(query, rows, history=history, mode=mode, partial=partial)
+        deadline = asyncio.get_running_loop().time() + self._chat_config.generation_timeout
 
         async def _try_generate(msgs: list[dict]) -> tuple:
-            """流式调用 LLM，返回回答、token 数、模型、消息及错误。"""
-            try:
-                # asyncio.wait_for 硬兜底：即使流式收集挂起也不会超过 20s
-                chat_result = await asyncio.wait_for(
-                    self._chat_adapter.generate_async(msgs),
-                    timeout=_CHAT_GENERATION_TOTAL_TIMEOUT,
-                )
-                answer_tokens = AnswerTokens(
-                    prompt_tokens=chat_result.prompt_tokens,
+            """长度结束时有界续写；后续失败仍保留已经收到的正文。"""
+            answer = ""
+            tokens = AnswerTokens(prompt_tokens=0, completion_tokens=0, total_tokens=0)
+            model = None
+            current_messages = msgs
+            for attempt in range(_MAX_ANSWER_CONTINUATIONS + 1):
+                try:
+                    remaining = deadline - asyncio.get_running_loop().time()
+                    chat_result = await asyncio.wait_for(
+                        self._chat_adapter.generate_async(current_messages),
+                        timeout=max(0, remaining),
+                    )
+                except (TimeoutError, ChatAPIError) as exc:
+                    error = (
+                        ChatAPIError("LLM generation timed out")
+                        if isinstance(exc, TimeoutError)
+                        else exc
+                    )
+                    if answer.strip():
+                        self._logger.warning("chat_continuation_failed", attempt=attempt)
+                        return answer, tokens, model, current_messages, None, True
+                    return None, None, None, current_messages, error, False
+
+                answer += chat_result.content
+                model = chat_result.model
+                tokens.prompt_tokens += chat_result.prompt_tokens
+                tokens.completion_tokens += chat_result.completion_tokens
+                tokens.total_tokens += chat_result.total_tokens
+                reason = chat_result.finish_reason
+                self._logger.info(
+                    "chat_generation_finished",
+                    finish_reason=reason,
+                    attempt=attempt,
                     completion_tokens=chat_result.completion_tokens,
-                    total_tokens=chat_result.total_tokens,
                 )
-                return (
-                    chat_result.content,
-                    answer_tokens,
-                    chat_result.model,
-                    msgs,
-                    None,
-                )
-            except TimeoutError:
-                self._logger.warning(
-                    "chat_generation_total_timeout",
-                    timeout=_CHAT_GENERATION_TOTAL_TIMEOUT,
-                    user_query=query,
-                )
-                return (None, None, None, msgs, ChatAPIError("LLM generation timed out"))
-            except ChatAPIError as exc:
-                return (None, None, None, msgs, exc)
+                if reason != "length" or attempt == _MAX_ANSWER_CONTINUATIONS:
+                    incomplete = reason != "stop" or (
+                        attempt > 0 and not chat_result.content.strip()
+                    )
+                    return answer, tokens, model, current_messages, None, incomplete
+                current_messages = [
+                    *msgs,
+                    *([{"role": "assistant", "content": answer}] if answer.strip() else []),
+                    {"role": "user", "content": _CONTINUE_PROMPT},
+                ]
 
         result = await _try_generate(messages)
-        answer, answer_tokens, chat_model, final_messages, gen_error = result
+        answer, answer_tokens, chat_model, final_messages, gen_error, incomplete = result
 
         if gen_error is not None and gen_error.status_code == 403:
             # ── 403 fallback：合并 system prompt 到 user message 中重试 ──
@@ -748,7 +776,7 @@ class SearchService:
                 total_chars=sum(len(m["content"]) for m in merged_messages),
             )
             result = await _try_generate(merged_messages)
-            answer, answer_tokens, chat_model, final_messages, gen_error = result
+            answer, answer_tokens, chat_model, final_messages, gen_error, incomplete = result
 
         if gen_error is not None:
             # 记录完整错误上下文以辅助排查（如 API 中转站内容审查拦截）
@@ -771,6 +799,7 @@ class SearchService:
                 None,
                 [],
                 str(gen_error),
+                False,
             )
 
         # ── 空内容检查：LLM 成功返回但未产生任何可用文本 ──
@@ -793,6 +822,7 @@ class SearchService:
                 None,
                 [],
                 "LLM returned empty content",
+                False,
             )
 
         # ── 通知熔断器：LLM 调用成功 ──
@@ -804,6 +834,7 @@ class SearchService:
             chat_model,
             final_messages,
             None,
+            incomplete,
         )
 
     def _assemble_prompt(

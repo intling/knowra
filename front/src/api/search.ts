@@ -98,6 +98,8 @@ export interface SearchResponse {
   rewrite_info: RewriteInfo | null
   results: SearchResultItem[]
   answer: string
+  /** 已有正文未完整生成；旧记录缺少此字段。 */
+  answer_incomplete?: boolean
   answer_tokens: AnswerTokens | null
   chat_model: string | null
   prompt_messages: Record<string, unknown>[]

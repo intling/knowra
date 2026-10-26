@@ -1,6 +1,9 @@
 """资料总结 RED 契约：真实 SQLite 文档、分块与缓存，不调用线上模型。"""
 
+import asyncio
+import dataclasses
 from datetime import timedelta
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,6 +13,7 @@ from app.core.errors import AppError
 from app.models.document_chunking import DocumentChunk, DocumentChunkJob
 from app.models.user import utc_now
 from app.services.cache_manager import CacheManager
+from app.services.chat_adapter import ChatAPIError
 from app.services.document_chunk_storage import ChunkArtifactStorage
 from app.services.search import SearchService
 from tests.auth_helpers import make_account, seed_knowledge_chain
@@ -75,6 +79,120 @@ def prompt_text(chat):
     """读取模型网络边界的实际输入，检查总结是否使用了真实文档。"""
     assert chat.generate_async.call_args is not None, "存在可读资料时必须生成总结"
     return "\n".join(message["content"] for message in chat.generate_async.call_args.args[0])
+
+
+def completion(content, reason="stop"):
+    """在模型网络边界提供完整供应商结果，兼容尚未新增结束字段的 RED 阶段。"""
+    return SimpleNamespace(
+        content=content,
+        finish_reason=reason,
+        model="fixture",
+        prompt_tokens=100,
+        completion_tokens=50,
+        total_tokens=150,
+    )
+
+
+def test_length_completion_continues_with_sources_and_accumulates_usage(library):
+    """验证截图中的标题截断被续写，原资料与问题保留，实际用量累计。"""
+    _owner, seed, factory, _ = library
+    seed("数据结构.md", "列表可以追加元素", chunk_count=1)
+    seed("异常.md", "异常可捕获和清理", chunk_count=1)
+    service, _, chat = factory()
+    chat.generate_async.side_effect = [
+        completion("一、数据结构\n", "length"),
+        completion("列表可以追加元素。\n二、异常\n异常可捕获和清理。"),
+    ]
+
+    response = service.search(query="列出资料中的关键概念并逐一解释")
+
+    assert "二、异常" in response.answer, "长度结束后应续写剩余正文"
+    assert response.model_dump().get("answer_incomplete") is False
+    assert response.answer_tokens.total_tokens == 300
+    assert chat.generate_async.await_count == 2
+    messages = chat.generate_async.call_args.args[0]
+    assert "列表可以追加元素" in messages[1]["content"]
+    assert "列出资料中的关键概念并逐一解释" in messages[1]["content"]
+    assert messages[-2] == {"role": "assistant", "content": "一、数据结构\n"}
+    assert "继续" in messages[-1]["content"]
+
+
+@pytest.mark.parametrize("reason", ["stop", "content_filter", "stream_interrupted"])
+def test_only_length_triggers_continuation(library, reason):
+    """验证正常结束只调用一次，过滤或断流标记不完整且不反复自动请求。"""
+    _, seed, factory, _ = library
+    seed("资料.md", "真实内容", chunk_count=1)
+    service, _, chat = factory()
+    chat.generate_async.return_value = completion("已有正文", reason)
+
+    response = summarize(service)
+
+    assert response.answer == "已有正文"
+    assert response.model_dump().get("answer_incomplete") is (reason != "stop")
+    assert chat.generate_async.await_count == 1
+
+
+def test_continuation_limit_keeps_text_but_never_caches_incomplete_answer(library):
+    """验证长度限制最多三次生成，保留片段正文，不将半成品写入成功缓存。"""
+    _, seed, factory, _ = library
+    seed("资料.md", "真实内容", chunk_count=1)
+    cache = CacheManager()
+    service, _, chat = factory(cache=cache)
+    chat.generate_async.return_value = completion("一段未结束的解释", "length")
+
+    response = summarize(service, session_id="same")
+
+    assert chat.generate_async.await_count == 3
+    assert response.answer == "一段未结束的解释" * 3
+    assert response.model_dump().get("answer_incomplete") is True
+    assert response.generation_error is None
+    assert response.answer_tokens.total_tokens == 450
+    chat.generate_async.return_value = completion("新的完整解释")
+    response = summarize(service, session_id="same")
+    assert response.answer == "新的完整解释", "不完整回答不得阻止重试获得完整答案"
+
+
+@pytest.mark.parametrize("failure", ["api", "timeout", "empty"])
+def test_failed_continuation_preserves_existing_answer(library, failure):
+    """验证续写网络失败、超时或空输出时保留首段正文和真实来源。"""
+    _, seed, factory, _ = library
+    seed("资料.md", "真实内容", chunk_count=1)
+    service, _, chat = factory()
+    service._chat_config = dataclasses.replace(service._chat_config, generation_timeout=0.03)
+    calls = 0
+
+    async def generate(_messages):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return completion("已生成的真实正文", "length")
+        if failure == "api":
+            raise ChatAPIError("fixture upstream unavailable")
+        if failure == "timeout":
+            await asyncio.sleep(1)
+        return completion("")
+
+    chat.generate_async.side_effect = generate
+    response = summarize(service)
+
+    assert response.answer == "已生成的真实正文"
+    assert response.model_dump().get("answer_incomplete") is True
+    assert response.results
+    assert response.generation_error is None
+
+
+def test_empty_length_result_can_continue_to_visible_answer(library):
+    """验证推理预算耗尽但首轮无可见文本时仍尝试有界续写，不暴露思考内容。"""
+    _, seed, factory, _ = library
+    seed("资料.md", "真实内容", chunk_count=1)
+    service, _, chat = factory()
+    chat.generate_async.side_effect = [completion("", "length"), completion("完整正文")]
+
+    response = summarize(service)
+
+    assert response.answer == "完整正文"
+    assert response.answer_tokens.total_tokens == 300
+    assert response.model_dump().get("answer_incomplete") is False
 
 
 def test_summary_uses_all_visible_documents_even_when_top_k_is_one(library):

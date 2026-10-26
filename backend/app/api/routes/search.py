@@ -495,6 +495,8 @@ def search_documents(
         ) from exc
 
     admission.succeeded = (
-        response.generation_error is None and response.answer_mode != "clarification"
+        response.generation_error is None
+        and not response.answer_incomplete
+        and response.answer_mode != "clarification"
     )
     return response

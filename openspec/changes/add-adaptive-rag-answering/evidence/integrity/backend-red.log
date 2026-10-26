@@ -1,0 +1,160 @@
+Uninstalled 1 package in 0.52ms
+Installed 1 package in 1ms
+FFFFFFFFFFFFFFFFF................F................                       [100%]
+=================================== FAILURES ===================================
+______________ test_sync_completion_preserves_finish_reason[stop] ______________
+tests/services/test_chat_completion_integrity.py:26: in test_sync_completion_preserves_finish_reason
+    assert getattr(result, "finish_reason", None) == reason
+E   AssertionError: assert None == 'stop'
+E    +  where None = getattr(ChatResult(content='已有正文', model='fixture', prompt_tokens=0, completion_tokens=0, total_tokens=0), 'finish_reason', None)
+_____________ test_sync_completion_preserves_finish_reason[length] _____________
+tests/services/test_chat_completion_integrity.py:26: in test_sync_completion_preserves_finish_reason
+    assert getattr(result, "finish_reason", None) == reason
+E   AssertionError: assert None == 'length'
+E    +  where None = getattr(ChatResult(content='已有正文', model='fixture', prompt_tokens=0, completion_tokens=0, total_tokens=0), 'finish_reason', None)
+_________ test_sync_completion_preserves_finish_reason[content_filter] _________
+tests/services/test_chat_completion_integrity.py:26: in test_sync_completion_preserves_finish_reason
+    assert getattr(result, "finish_reason", None) == reason
+E   AssertionError: assert None == 'content_filter'
+E    +  where None = getattr(ChatResult(content='已有正文', model='fixture', prompt_tokens=0, completion_tokens=0, total_tokens=0), 'finish_reason', None)
+________ test_real_sse_parser_preserves_terminal_reason_and_usage[stop] ________
+tests/services/test_chat_completion_integrity.py:57: in test_real_sse_parser_preserves_terminal_reason_and_usage
+    assert getattr(result, "finish_reason", None) == (reason or "stream_interrupted")
+E   AssertionError: assert None == (('stop'))
+E    +  where None = getattr(ChatResult(content='一、数据结构', model='test-chat-model', prompt_tokens=18434, completion_tokens=1024, total_tokens=19458), 'finish_reason', None)
+_______ test_real_sse_parser_preserves_terminal_reason_and_usage[length] _______
+tests/services/test_chat_completion_integrity.py:57: in test_real_sse_parser_preserves_terminal_reason_and_usage
+    assert getattr(result, "finish_reason", None) == (reason or "stream_interrupted")
+E   AssertionError: assert None == (('length'))
+E    +  where None = getattr(ChatResult(content='一、数据结构', model='test-chat-model', prompt_tokens=18434, completion_tokens=1024, total_tokens=19458), 'finish_reason', None)
+________ test_real_sse_parser_preserves_terminal_reason_and_usage[None] ________
+tests/services/test_chat_completion_integrity.py:57: in test_real_sse_parser_preserves_terminal_reason_and_usage
+    assert getattr(result, "finish_reason", None) == (reason or "stream_interrupted")
+E   AssertionError: assert None == ((None or 'stream_interrupted'))
+E    +  where None = getattr(ChatResult(content='一、数据结构', model='test-chat-model', prompt_tokens=18434, completion_tokens=1024, total_tokens=19458), 'finish_reason', None)
+______________ test_stream_is_closed_when_collection_is_cancelled ______________
+tests/services/test_chat_completion_integrity.py:87: in test_stream_is_closed_when_collection_is_cancelled
+    asyncio.run(run())
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/asyncio/runners.py:204: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/asyncio/runners.py:127: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/asyncio/base_events.py:719: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/services/test_chat_completion_integrity.py:83: in run
+    assert stream.closed, "取消生成后必须关闭上游流"
+E   AssertionError: 取消生成后必须关闭上游流
+E   assert False
+E    +  where False = <test_chat_completion_integrity.test_stream_is_closed_when_collection_is_cancelled.<locals>.Stream object at 0xe9b2718a8ad0>.closed
+_________ test_chat_defaults_and_generation_deadline_are_configurable __________
+tests/services/test_chat_completion_integrity.py:94: in test_chat_defaults_and_generation_deadline_are_configurable
+    assert settings.chat_max_tokens == 4096
+E   AssertionError: assert 1024 == 4096
+E    +  where 1024 = Settings(model_configuration_revision='', configured_model_kinds=(), app_name='knowra', app_env='local', debug=True, l...ncurrent=2, log_format='console', log_file_path='logs/knowra.log', log_file_max_size=10485760, log_file_backup_count=5).chat_max_tokens
+_____ test_length_completion_continues_with_sources_and_accumulates_usage ______
+tests/services/test_adaptive_rag_summary.py:105: in test_length_completion_continues_with_sources_and_accumulates_usage
+    assert "二、异常" in response.answer, "长度结束后应续写剩余正文"
+E   AssertionError: 长度结束后应续写剩余正文
+E   assert '二、异常' in '一、数据结构\n'
+E    +  where '一、数据结构\n' = SearchResponse(answer_mode='summary', retrieval_status='matched', summary_coverage=SummaryCoverage(document_count=2, i...4, 'request_timeout': 30.0, 'max_retries': 3, 'first_token_timeout': 10.0}, audit_trail_id=None, generation_error=None).answer
+_________________ test_only_length_triggers_continuation[stop] _________________
+tests/services/test_adaptive_rag_summary.py:127: in test_only_length_triggers_continuation
+    assert response.model_dump().get("answer_incomplete") is (reason != "stop")
+E   AssertionError: assert None is ('stop' != 'stop')
+E    +  where None = <built-in method get of dict object at 0xe9b270a16440>('answer_incomplete')
+E    +    where <built-in method get of dict object at 0xe9b270a16440> = {'answer': '已有正文', 'answer_mode': 'summary', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...}.get
+E    +      where {'answer': '已有正文', 'answer_mode': 'summary', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...} = model_dump()
+E    +        where model_dump = SearchResponse(answer_mode='summary', retrieval_status='matched', summary_coverage=SummaryCoverage(document_count=1, i...4, 'request_timeout': 30.0, 'max_retries': 3, 'first_token_timeout': 10.0}, audit_trail_id=None, generation_error=None).model_dump
+____________ test_only_length_triggers_continuation[content_filter] ____________
+tests/services/test_adaptive_rag_summary.py:127: in test_only_length_triggers_continuation
+    assert response.model_dump().get("answer_incomplete") is (reason != "stop")
+E   AssertionError: assert None is ('content_filter' != 'stop')
+E    +  where None = <built-in method get of dict object at 0xe9b270af71c0>('answer_incomplete')
+E    +    where <built-in method get of dict object at 0xe9b270af71c0> = {'answer': '已有正文', 'answer_mode': 'summary', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...}.get
+E    +      where {'answer': '已有正文', 'answer_mode': 'summary', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...} = model_dump()
+E    +        where model_dump = SearchResponse(answer_mode='summary', retrieval_status='matched', summary_coverage=SummaryCoverage(document_count=1, i...4, 'request_timeout': 30.0, 'max_retries': 3, 'first_token_timeout': 10.0}, audit_trail_id=None, generation_error=None).model_dump
+__________ test_only_length_triggers_continuation[stream_interrupted] __________
+tests/services/test_adaptive_rag_summary.py:127: in test_only_length_triggers_continuation
+    assert response.model_dump().get("answer_incomplete") is (reason != "stop")
+E   AssertionError: assert None is ('stream_interrupted' != 'stop')
+E    +  where None = <built-in method get of dict object at 0xe9b270738040>('answer_incomplete')
+E    +    where <built-in method get of dict object at 0xe9b270738040> = {'answer': '已有正文', 'answer_mode': 'summary', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...}.get
+E    +      where {'answer': '已有正文', 'answer_mode': 'summary', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...} = model_dump()
+E    +        where model_dump = SearchResponse(answer_mode='summary', retrieval_status='matched', summary_coverage=SummaryCoverage(document_count=1, i...4, 'request_timeout': 30.0, 'max_retries': 3, 'first_token_timeout': 10.0}, audit_trail_id=None, generation_error=None).model_dump
+____ test_continuation_limit_keeps_text_but_never_caches_incomplete_answer _____
+tests/services/test_adaptive_rag_summary.py:141: in test_continuation_limit_keeps_text_but_never_caches_incomplete_answer
+    assert chat.generate_async.await_count == 3
+E   AssertionError: assert 1 == 3
+E    +  where 1 = <AsyncMock name='mock.generate_async' id='256952598512704'>.await_count
+E    +    where <AsyncMock name='mock.generate_async' id='256952598512704'> = <MagicMock id='256952598512032'>.generate_async
+___________ test_failed_continuation_preserves_existing_answer[api] ____________
+tests/services/test_adaptive_rag_summary.py:157: in test_failed_continuation_preserves_existing_answer
+    service._chat_config = dataclasses.replace(service._chat_config, generation_timeout=0.03)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/dataclasses.py:1778: in replace
+    return _replace(obj, **changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/dataclasses.py:1812: in _replace
+    return self.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ChatConfig.__init__() got an unexpected keyword argument 'generation_timeout'
+_________ test_failed_continuation_preserves_existing_answer[timeout] __________
+tests/services/test_adaptive_rag_summary.py:157: in test_failed_continuation_preserves_existing_answer
+    service._chat_config = dataclasses.replace(service._chat_config, generation_timeout=0.03)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/dataclasses.py:1778: in replace
+    return _replace(obj, **changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/dataclasses.py:1812: in _replace
+    return self.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ChatConfig.__init__() got an unexpected keyword argument 'generation_timeout'
+__________ test_failed_continuation_preserves_existing_answer[empty] ___________
+tests/services/test_adaptive_rag_summary.py:157: in test_failed_continuation_preserves_existing_answer
+    service._chat_config = dataclasses.replace(service._chat_config, generation_timeout=0.03)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/dataclasses.py:1778: in replace
+    return _replace(obj, **changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/share/uv/python/cpython-3.14.5-linux-aarch64-gnu/lib/python3.14/dataclasses.py:1812: in _replace
+    return self.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ChatConfig.__init__() got an unexpected keyword argument 'generation_timeout'
+___________ test_empty_length_result_can_continue_to_visible_answer ____________
+tests/services/test_adaptive_rag_summary.py:189: in test_empty_length_result_can_continue_to_visible_answer
+    assert response.answer == "完整正文"
+E   AssertionError: assert 'AI 回答生成失败，请稍后重试。' == '完整正文'
+E
+E     - 完整正文
+E     + AI 回答生成失败，请稍后重试。
+_______________ test_incomplete_generated_answer_releases_quota ________________
+tests/api/test_adaptive_rag_api.py:66: in test_incomplete_generated_answer_releases_quota
+    assert response.json().get("answer_incomplete") is True
+E   AssertionError: assert None is True
+E    +  where None = <built-in method get of dict object at 0xe9b26fca6480>('answer_incomplete')
+E    +    where <built-in method get of dict object at 0xe9b26fca6480> = {'answer': '尚未解释完的正文', 'answer_mode': 'general', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...}.get
+E    +      where {'answer': '尚未解释完的正文', 'answer_mode': 'general', 'answer_tokens': {'completion_tokens': 50, 'prompt_tokens': 100, 'total_tokens': 150}, 'audit_trail_id': None, ...} = json()
+E    +        where json = <Response [200 OK]>.json
+=========================== short test summary info ============================
+FAILED tests/services/test_chat_completion_integrity.py::test_sync_completion_preserves_finish_reason[stop]
+FAILED tests/services/test_chat_completion_integrity.py::test_sync_completion_preserves_finish_reason[length]
+FAILED tests/services/test_chat_completion_integrity.py::test_sync_completion_preserves_finish_reason[content_filter]
+FAILED tests/services/test_chat_completion_integrity.py::test_real_sse_parser_preserves_terminal_reason_and_usage[stop]
+FAILED tests/services/test_chat_completion_integrity.py::test_real_sse_parser_preserves_terminal_reason_and_usage[length]
+FAILED tests/services/test_chat_completion_integrity.py::test_real_sse_parser_preserves_terminal_reason_and_usage[None]
+FAILED tests/services/test_chat_completion_integrity.py::test_stream_is_closed_when_collection_is_cancelled
+FAILED tests/services/test_chat_completion_integrity.py::test_chat_defaults_and_generation_deadline_are_configurable
+FAILED tests/services/test_adaptive_rag_summary.py::test_length_completion_continues_with_sources_and_accumulates_usage
+FAILED tests/services/test_adaptive_rag_summary.py::test_only_length_triggers_continuation[stop]
+FAILED tests/services/test_adaptive_rag_summary.py::test_only_length_triggers_continuation[content_filter]
+FAILED tests/services/test_adaptive_rag_summary.py::test_only_length_triggers_continuation[stream_interrupted]
+FAILED tests/services/test_adaptive_rag_summary.py::test_continuation_limit_keeps_text_but_never_caches_incomplete_answer
+FAILED tests/services/test_adaptive_rag_summary.py::test_failed_continuation_preserves_existing_answer[api]
+FAILED tests/services/test_adaptive_rag_summary.py::test_failed_continuation_preserves_existing_answer[timeout]
+FAILED tests/services/test_adaptive_rag_summary.py::test_failed_continuation_preserves_existing_answer[empty]
+FAILED tests/services/test_adaptive_rag_summary.py::test_empty_length_result_can_continue_to_visible_answer
+FAILED tests/api/test_adaptive_rag_api.py::test_incomplete_generated_answer_releases_quota
+18 failed, 32 passed in 4.72s

@@ -26,7 +26,7 @@ def test_optional_rerank_orders_both_sources_and_prompt():
         rerank_adapter=reranker,
     )
     service._vector_search = MagicMock(return_value=rows)
-    service._generate_answer = AsyncMock(return_value=("answer", None, None, [], None))
+    service._generate_answer = AsyncMock(return_value=("answer", None, None, [], None, False))
     response = service.search("question", top_k=1)
     assert service._vector_search.call_args.args[1] == 20
     reranker.rank.assert_called_once_with(
@@ -56,7 +56,7 @@ def test_optional_rerank_failure_keeps_vector_top_k():
         chat_config=make_fake_chat_config(),
         rerank_adapter=reranker,
     )
-    service._generate_answer = AsyncMock(return_value=("answer", None, None, [], None))
+    service._generate_answer = AsyncMock(return_value=("answer", None, None, [], None, False))
     response = service.search("question", top_k=1)
     assert len(response.results) == 1
     assert response.results[0].chunk_id == rows[0].DocumentEmbedding.chunk_id
