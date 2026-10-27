@@ -11,15 +11,20 @@
 - 503: Chat 功能未配置（chat_model 为空）
 """
 
+import asyncio
+import json
 from collections.abc import AsyncGenerator, Generator
+from contextlib import suppress
 from functools import wraps
 from threading import RLock
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from anyio import CancelScope
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
-from app.api.deps import ChatAdmissionDep, ReadUserDep, get_model_settings
+from app.api.deps import ChatAdmission, ChatAdmissionDep, ReadUserDep, get_model_settings
 from app.core.config import Settings
 from app.core.logging import get_logger
 from app.db.session import get_session
@@ -47,6 +52,7 @@ from app.services.query_rewriter import (
 from app.services.rerank_adapter import RerankAdapter
 from app.services.search import SearchService
 from app.services.strategy_router import StrategyRouter
+from app.services.summary_context import validate_scope
 from app.services.term_align_rewriter import TermAlignRewriter
 from app.services.term_protector import TermProtector
 
@@ -414,9 +420,11 @@ RerankAdapterDep = Annotated[RerankAdapter | None, Depends(get_rerank_adapter)]
     "/search",
     response_model=SearchResponse,
     status_code=status.HTTP_200_OK,
+    responses={200: {"content": {"text/event-stream": {}}}},
 )
 def search_documents(
     request: SearchRequest,
+    http_request: Request,
     current_user: ReadUserDep,
     admission: ChatAdmissionDep,
     session: SessionDep,
@@ -429,7 +437,7 @@ def search_documents(
     search_audit_trail: SearchAuditTrailDep = None,
     chat_circuit_breaker: ChatCircuitBreakerDep = None,
     rerank_adapter: RerankAdapterDep = None,
-) -> SearchResponse:
+) -> SearchResponse | StreamingResponse:
     """按自适应策略提供通用、资料增强、文档总结或澄清。
 
     请求体：
@@ -479,6 +487,14 @@ def search_documents(
         rerank_adapter=rerank_adapter,
     )
 
+    if "text/event-stream" in http_request.headers.get("accept", ""):
+        validate_scope(session, current_user.id, request.document_ids)
+        return SearchStreamingResponse(
+            _search_events(service, request, admission),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     try:
         response = service.search(
             query=request.query,
@@ -500,3 +516,66 @@ def search_documents(
         and response.answer_mode != "clarification"
     )
     return response
+
+
+class SearchStreamingResponse(StreamingResponse):
+    async def stream_response(self, send) -> None:
+        try:
+            await super().stream_response(send)
+        finally:
+            # send 断开时 Starlette 不会主动关闭生成器，须先清理模型再退出请求依赖。
+            with CancelScope(shield=True):
+                await self.body_iterator.aclose()
+
+
+async def _search_events(
+    service: SearchService, request: SearchRequest, admission: ChatAdmission
+) -> AsyncGenerator[str]:
+    queue: asyncio.Queue[tuple[str, dict]] = asyncio.Queue(maxsize=16)
+
+    async def metadata(response: SearchResponse) -> None:
+        await queue.put(("status", {"stage": "generating"}))
+        await queue.put(("metadata", response.model_dump(mode="json")))
+
+    async def delta(text: str) -> None:
+        await queue.put(("delta", {"delta": text}))
+
+    async def generate() -> None:
+        try:
+            response = await service.search_async(
+                query=request.query,
+                top_k=request.top_k,
+                history=request.history,
+                session_id=request.session_id,
+                document_ids=request.document_ids,
+                on_metadata=metadata,
+                on_delta=delta,
+            )
+            await queue.put(("done", response.model_dump(mode="json")))
+        except Exception as exc:
+            logger.warning("search_stream_failed", error_type=type(exc).__name__)
+            await queue.put(("error", {"detail": "问答暂时不可用，请稍后重试。"}))
+
+    task = asyncio.create_task(generate())
+    try:
+        yield 'event: status\ndata: {"stage":"searching"}\n\n'
+        while True:
+            try:
+                event, data = await asyncio.wait_for(queue.get(), timeout=15)
+            except TimeoutError:
+                yield ": keep-alive\n\n"
+                continue
+            yield f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+            if event == "done":
+                admission.succeeded = (
+                    data["generation_error"] is None
+                    and not data["answer_incomplete"]
+                    and data["answer_mode"] != "clarification"
+                )
+                break
+            if event == "error":
+                break
+    finally:
+        task.cancel()
+        with CancelScope(shield=True), suppress(asyncio.CancelledError):
+            await task

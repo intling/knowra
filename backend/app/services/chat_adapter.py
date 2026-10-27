@@ -12,6 +12,7 @@
 import asyncio
 import random
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AsyncOpenAI, OpenAI
@@ -221,6 +222,7 @@ class ChatAdapter:
         request_timeout: float | None = None,
         max_retries: int | None = None,
         first_token_timeout: float | None = None,
+        on_delta: Callable[[str], Awaitable[None]] | None = None,
     ) -> ChatResult:
         """异步流式生成对话补全，支持首 token 超时检测。
 
@@ -241,6 +243,7 @@ class ChatAdapter:
                          ``config.max_retries``。
             first_token_timeout: 首 token 超时（秒）。为 ``None`` 时使用
                                  ``config.first_token_timeout``。
+            on_delta: 可选的异步正文回调；增量按顺序交付，最终仍返回完整 ChatResult。
 
         Returns:
             包含生成内容与 token 用量统计的 ChatResult。
@@ -281,6 +284,14 @@ class ChatAdapter:
         else:
             client = self._async_client
 
+        delivered = False
+
+        async def emit_delta(text: str) -> None:
+            nonlocal delivered
+            delivered = True
+            if on_delta is not None:
+                await on_delta(text)
+
         try:
             last_exception: Exception | None = None
 
@@ -298,12 +309,15 @@ class ChatAdapter:
                         stream,
                         effective_model,
                         first_token_timeout=effective_first_token_timeout,
+                        on_delta=emit_delta if on_delta is not None else None,
                     )
                 except TimeoutError:
                     last_exception = TimeoutError(
                         f"First token not received within {effective_first_token_timeout}s"
                     )
-                    if not self._should_retry(last_exception, attempt, effective_max_retries):
+                    if delivered or not self._should_retry(
+                        last_exception, attempt, effective_max_retries
+                    ):
                         break
                     if attempt < effective_max_retries:
                         delay = self._compute_delay(last_exception, attempt)
@@ -317,7 +331,7 @@ class ChatAdapter:
                         await asyncio.sleep(delay)
                 except Exception as exc:
                     last_exception = exc
-                    if not self._should_retry(exc, attempt, effective_max_retries):
+                    if delivered or not self._should_retry(exc, attempt, effective_max_retries):
                         break
                     if attempt < effective_max_retries:
                         delay = self._compute_delay(exc, attempt)
@@ -341,6 +355,7 @@ class ChatAdapter:
         model: str,
         *,
         first_token_timeout: float,
+        on_delta: Callable[[str], Awaitable[None]] | None = None,
     ) -> ChatResult:
         """从异步流中收集全部 token，首 token 含超时检测。
 
@@ -369,6 +384,8 @@ class ChatAdapter:
                     choice = choices[0]
                     if choice.delta and choice.delta.content:
                         content_parts.append(choice.delta.content)
+                        if on_delta is not None:
+                            await on_delta(choice.delta.content)
                     if choice.finish_reason:
                         finish_reason = choice.finish_reason
 

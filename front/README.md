@@ -44,11 +44,15 @@ The app starts at `http://localhost:5173`. API requests under `/api` are proxied
   响应新增模式/覆盖字段可选，兼容旧 localStorage 对话；`searchChunks` 支持可选 `document_ids`（1–20 个 UUID）。
 - **回答完整性**：`answer_incomplete=true` 时显示“回答尚未完成”，保留 Markdown 正文、来源和复制；
   缺少该字段的旧记录沿用原展示。总结覆盖表示已提供给模型的资料范围，与正文是否生成完成独立。
+- **流式回答**：主对话通过统一 `apiFetch` 与 `Accept: text/event-stream` 逐段接收正文，按浏览器帧合并渲染；
+  生成期间显示光标、呼吸状态和一次性渐入，减少动态效果模式下使用静态提示。来源在正文生成前可用，用量以最终响应为准。
+  断流保留正文与来源并提示未完成；卸载、删除原对话或切换身份会取消请求。刷新后遗留的在途记录恢复为已中断，允许继续发送。
+  增量仅更新内存，完成或可处理的中断时持久化，不逐 token 序列化整份历史。
 - **Turns**（资料回答）: question bubble → answer (seal + reading column, copy, citation stats, token total with details in tooltip)
   → `SourceList` (grouped by `parsed_document_id`, pages, chunk ids, preview; expand for exact API text and rank)
   → `RetrievalDetails` (collapsed; query rewrite, retrieval results, prompt preview).
-  Pending turns show 正在检索资料… / 正在生成回答… with `aria-live`. On an explicit send only the message
-  container scrolls the new turn into view; async answers never force scrolling.
+  等待时按服务端事件显示“正在检索资料…” / “正在生成回答…”，通过独立状态区域向读屏提示。
+  主动发送时仅滚动消息容器；元信息和正文更新仅在贴近底部时跟随，用户向上阅读时保持位置。
 
 ## Accounts and permissions
 

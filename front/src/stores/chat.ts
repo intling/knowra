@@ -150,6 +150,18 @@ function loadFromStorage(ownerId: string): PersistedChatData {
         : [],
     })) as Conversation[]
 
+    for (const conversation of migrated) {
+      for (const bubble of conversation.bubbles) {
+        if (!bubble.stage) continue
+        bubble.stage = null
+        if (bubble.response?.answer) {
+          bubble.response.answer_incomplete = true
+        } else {
+          bubble.response = null
+          bubble.error = "上次回答已中断，请重新发送问题。"
+        }
+      }
+    }
     return {
       conversations: migrated,
       activeConversationId: parsed.activeConversationId ?? null,
@@ -342,6 +354,7 @@ export const useChatStore = defineStore("chat", {
       conversationId: string,
       bubbleId: string,
       updates: Partial<ChatBubble>,
+      persist = true,
     ): void {
       const conversation = this.conversations.find(
         (c) => c.id === conversationId,
@@ -359,7 +372,7 @@ export const useChatStore = defineStore("chat", {
 
       Object.assign(bubble, updates)
       conversation.updatedAt = nowISO()
-      saveToStorage(this.$state)
+      if (persist) saveToStorage(this.$state)
     },
 
     /** 清空指定对话的所有气泡（切换对话时不会自动清空） */

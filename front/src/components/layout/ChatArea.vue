@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue"
+import { computed, nextTick, onUnmounted, ref, watch } from "vue"
 
 import { uploadFile } from "../../api/uploads"
 import { searchChunks, type SearchResponse } from "../../api/search"
@@ -36,7 +36,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const chatInputRef = ref<InstanceType<typeof ChatInput> | null>(null)
 const scrollRef = ref<HTMLElement | null>(null)
 
-/** 主动发送后把最新一轮问答滚入视野；回答异步返回时不滚动。 */
+/** 主动发送时显示最新一轮；后续增量仅在消息容器贴近底部时跟随。 */
 async function revealTurn(bubbleId: string) {
   await nextTick()
   const container = scrollRef.value
@@ -74,22 +74,28 @@ const bubbles = computed<ChatBubble[]>(() => {
   return conv.bubbles
 })
 
-/** 当前活跃对话是否处于“等待响应”状态（存在 response/error 均为 null 的在途气泡）。
- *  从气泡持久化数据派生，而非组件局部状态，因此切换对话后仍能正确反映加载态，
- *  并让输入框保持加载样式、发送按钮保持禁用。 */
-const loading = computed(() =>
-  bubbles.value.some((bubble) => !bubble.response && !bubble.error),
+const pendingBubble = computed(() =>
+  bubbles.value.find((bubble) => !bubble.error && (bubble.stage || !bubble.response)),
 )
+const loading = computed(() => Boolean(pendingBubble.value))
+const loadingStage = computed(() => pendingBubble.value?.stage ?? null)
 
-/** 当前在途气泡的加载阶段（searching/generating）。
- *  同样从气泡持久化数据派生，切换对话后能恢复正确阶段文案。 */
-const loadingStage = computed<"searching" | "generating" | null>(() => {
-  const pending = bubbles.value.find(
-    (bubble) => !bubble.response && !bubble.error,
-  )
-  return pending?.stage ?? null
+const requests = new Map<AbortController, () => ChatBubble | undefined>()
+watch(
+  [
+    () => chatStore.ownerId,
+    () => chatStore.conversations.flatMap((conversation) =>
+      conversation.bubbles.map((bubble) => `${conversation.id}:${bubble.id}`)),
+  ],
+  () => {
+    for (const [controller, findBubble] of requests) {
+      if (!findBubble()) controller.abort()
+    }
+  },
+)
+onUnmounted(() => {
+  for (const controller of requests.keys()) controller.abort()
 })
-
 // ── 切换对话时重置本地 UI 状态 ────────────────────────────────────────────
 
 watch(
@@ -134,7 +140,7 @@ function buildHistory(
 ): Record<string, unknown>[] {
   const history: Record<string, unknown>[] = []
   for (const bubble of previousBubbles) {
-    if (!bubble.response) continue
+    if (!bubble.response || bubble.stage) continue
     history.push({ role: "user", content: bubble.query })
     history.push({ role: "assistant", content: bubble.response.answer })
   }
@@ -258,17 +264,56 @@ async function handleSend() {
   files.value = []
   void revealTurn(bubbleId)
 
-  // Transition to "generating" after 2s for UX feedback。
-  //  写入气泡的 stage 字段（而非组件局部状态），这样即使切换对话，
-  //  该在途气泡的阶段也能被正确持久化并恢复。
-  setTimeout(() => {
-    const conv = chatStore.conversations.find((c) => c.id === conversationId)
-    const pending = conv?.bubbles.find((b) => b.id === bubbleId)
-    if (pending && !pending.response && !pending.error) {
-      chatStore.updateBubble(conversationId, bubbleId, { stage: "generating" })
-    }
-  }, 2000)
+  const controller = new AbortController()
+  const ownerId = chatStore.ownerId
+  const findBubble = () => chatStore.ownerId === ownerId
+    ? chatStore.conversations.find((conversation) => conversation.id === conversationId)
+      ?.bubbles.find((item) => item.id === bubbleId)
+    : undefined
+  requests.set(controller, findBubble)
+  let streamedResponse: SearchResponse | null = null
+  let pendingText = ""
+  let frame: number | null = null
 
+  function updateStream(response: SearchResponse) {
+    const container = scrollRef.value
+    const previousTop = container?.scrollTop ?? 0
+    const follow = chatStore.activeConversationId === conversationId && container &&
+      container.scrollHeight - previousTop - container.clientHeight < 96
+    chatStore.updateBubble(conversationId, bubbleId, {
+      response, stage: "generating",
+    }, false)
+    if (follow) void nextTick(() => {
+      if (!controller.signal.aborted && chatStore.activeConversationId === conversationId &&
+          container.scrollTop >= previousTop) {
+        container.scrollTop = container.scrollHeight
+      }
+    })
+  }
+
+  function flushDelta() {
+    if (frame !== null) cancelAnimationFrame(frame)
+    frame = null
+    if (!pendingText || !streamedResponse || !findBubble()) return
+    streamedResponse = { ...streamedResponse, answer: streamedResponse.answer + pendingText }
+    pendingText = ""
+    updateStream(streamedResponse)
+  }
+
+  function finishWithError(message: string) {
+    flushDelta()
+    const current = findBubble()
+    if (!current) return
+    const partial = current.response?.answer.trim() ? current.response : null
+    chatStore.updateBubble(conversationId, bubbleId, {
+      response: partial ? { ...partial, answer_incomplete: true } : null,
+      error: partial ? null : message,
+      stage: null,
+    })
+  }
+  controller.signal.addEventListener("abort", () => {
+    finishWithError("本次回答已中断，请重新发送问题。")
+  }, { once: true })
   const queryForApi = trimmed || "总结归纳文档的关键信息"
   log().info("发送搜索请求", { query: queryForApi, topK: topK.value })
 
@@ -281,7 +326,23 @@ async function handleSend() {
       top_k: topK.value,
       session_id: conversationId,
       ...(history.length > 0 ? { history } : {}),
+    }, {
+      signal: controller.signal,
+      onEvent(event) {
+        if (controller.signal.aborted || !findBubble()) return
+        if (event.type === "status") {
+          chatStore.updateBubble(conversationId, bubbleId, { stage: event.stage }, false)
+        } else if (event.type === "metadata") {
+          streamedResponse = event.response
+          updateStream(streamedResponse)
+        } else {
+          pendingText += event.delta
+          if (frame === null) frame = requestAnimationFrame(flushDelta)
+        }
+      },
     })
+    if (controller.signal.aborted || !findBubble()) return
+    flushDelta()
 
     // 更新气泡：写入 API 响应数据
     chatStore.updateBubble(conversationId, bubbleId, {
@@ -305,11 +366,11 @@ async function handleSend() {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "未知错误"
-    chatStore.updateBubble(conversationId, bubbleId, {
-      error: message,
-      stage: null,
-    })
+    finishWithError(message)
     log().warn("搜索请求失败", { query: queryForApi, error: message })
+  } finally {
+    if (frame !== null) cancelAnimationFrame(frame)
+    requests.delete(controller)
   }
 }
 </script>
@@ -402,6 +463,7 @@ async function handleSend() {
             <template v-if="bubble.response">
               <AnswerPanel
                 :answer-mode="bubble.response.answer_mode"
+                :streaming="bubble.stage === 'generating'"
                 :answer="bubble.response.answer"
                 :answer-incomplete="bubble.response.answer_incomplete"
                 :answer-tokens="bubble.response.answer_tokens"

@@ -107,6 +107,16 @@ export interface SearchResponse {
   generation_error: string | null
 }
 
+export type SearchStreamEvent =
+  | { type: "status"; stage: "searching" | "generating" }
+  | { type: "metadata"; response: SearchResponse }
+  | { type: "delta"; delta: string }
+
+export interface SearchStreamOptions {
+  onEvent: (event: SearchStreamEvent) => void
+  signal?: AbortSignal
+}
+
 // ── 错误类型 ────────────────────────────────────────────────────────
 
 export class SearchApiError extends Error {
@@ -134,6 +144,63 @@ async function parseErrorResponse(response: Response): Promise<SearchApiError> {
   return new SearchApiError(response.status, `请求失败：${response.status}`)
 }
 
+async function readSearchStream(
+  response: Response,
+  onEvent: SearchStreamOptions["onEvent"],
+): Promise<SearchResponse> {
+  if (!response.body) throw new SearchApiError(0, "无法读取流式回答，请重新发送。")
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ""
+  const invalidFrame = () => new SearchApiError(0, "流式回答格式异常，请重新发送。")
+  try {
+    while (true) {
+      const { value, done } = await reader.read()
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })
+      const frames = buffer.split(/\r?\n\r?\n/)
+      buffer = frames.pop() ?? ""
+      for (const frame of frames) {
+        const lines = frame.split(/\r?\n/)
+        const event = lines.find((line) => line.startsWith("event:"))?.slice(6).trim()
+        if (!event || !["status", "metadata", "delta", "done", "error"].includes(event)) continue
+        let data: Record<string, unknown>
+        try {
+          data = JSON.parse(lines.filter((line) => line.startsWith("data:"))
+            .map((line) => line.slice(5).trimStart()).join("\n"))
+        } catch {
+          throw invalidFrame()
+        }
+        if (!data || typeof data !== "object") throw invalidFrame()
+        if (event === "error") {
+          if (typeof data.detail !== "string") throw invalidFrame()
+          throw new SearchApiError(0, data.detail)
+        }
+        if (event === "delta") {
+          if (typeof data.delta !== "string") throw invalidFrame()
+          onEvent({ type: "delta", delta: data.delta })
+        } else if (event === "status") {
+          if (data.stage !== "searching" && data.stage !== "generating") throw invalidFrame()
+          onEvent({ type: "status", stage: data.stage })
+        } else {
+          if (typeof data.answer !== "string" || !Array.isArray(data.results)) throw invalidFrame()
+          const result = data as unknown as SearchResponse
+          if (event === "done") return result
+          onEvent({ type: "metadata", response: result })
+        }
+      }
+      if (done) throw new SearchApiError(0, "回答连接已中断，已保留生成内容，请重试。")
+    }
+  } catch (error) {
+    if (error instanceof SearchApiError || (error instanceof Error && error.name === "AbortError")) {
+      throw error
+    }
+    throw new SearchApiError(0, "回答连接已中断，已保留生成内容，请重试。")
+  } finally {
+    await reader.cancel().catch(() => {})
+    reader.releaseLock()
+  }
+}
+
 // ── API 函数 ────────────────────────────────────────────────────────
 
 /** 发送语义搜索 + LLM 生成请求。
@@ -149,6 +216,7 @@ async function parseErrorResponse(response: Response): Promise<SearchApiError> {
  */
 export async function searchChunks(
   request: SearchRequest,
+  options?: SearchStreamOptions,
 ): Promise<SearchResponse> {
   const start = performance.now()
   const body = JSON.stringify({
@@ -165,11 +233,13 @@ export async function searchChunks(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        Accept: options ? "text/event-stream" : "application/json",
       },
       body,
+      signal: options?.signal,
     })
   } catch (error) {
+    if (options?.signal?.aborted) throw error
     const message =
       error instanceof Error ? error.message : "Unknown network error"
     log().error("Search API 网络请求失败", error, { query: request.query })
@@ -184,9 +254,12 @@ export async function searchChunks(
     throw await parseErrorResponse(response)
   }
 
+  const result = options && response.headers?.get("Content-Type")?.includes("text/event-stream")
+    ? await readSearchStream(response, options.onEvent)
+    : await response.json() as SearchResponse
   log().info("Search API 请求完成", {
     status: response.status,
     duration: Math.round(performance.now() - start),
   })
-  return response.json() as Promise<SearchResponse>
+  return result
 }

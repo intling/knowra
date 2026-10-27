@@ -183,6 +183,10 @@ uv run python -m app.cli create-user --email demo@deerfd.com --display-name 演�
 最多自动总结 20 份，超过时引导缩小范围。总结正文预算为 60,000 字符，部分覆盖会明确说明。
 API 可选 `document_ids` 限定资料范围；响应返回回答模式、检索状态和总结覆盖。
 
+主对话默认以 SSE 流式展示模型正文，生成时显示轻量光标、呼吸状态点和渐入效果；系统启用“减少动态效果”时保留静态状态。新增内容只在消息区贴近底部时跟随，回看前文不抢走阅读位置。连接中断会保留已经显示的正文并提示未完成。
+
+`POST /api/search` 使用 `Accept: text/event-stream` 协商流式响应；旧 JSON 调用保持兼容。无需新增环境变量或迁移。反向代理须允许 SSE 并关闭响应缓冲，后端已发送 `X-Accel-Buffering: no`。详见[流式协议设计](openspec/changes/stream-chat-answers/design.md)。
+
 模型因输出上限停止时最多自动续写两次；仍未完成则保留正文并提示“回答尚未完成”，不缓存或计入成功额度。
 资料覆盖仅说明已送入模型的内容，不代表回答已经完整。默认每次输出预算为 4096 tokens，
 `CHAT_GENERATION_TIMEOUT=120` 控制含续写的总时限。已有环境显式设置的 `CHAT_MAX_TOKENS` 仍优先；

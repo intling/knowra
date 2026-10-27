@@ -9,6 +9,7 @@ const props = withDefaults(
   defineProps<{
     answerMode?: SearchResponse["answer_mode"]
     answer?: string
+    streaming?: boolean
     answerIncomplete?: boolean
     answerTokens?: AnswerTokens | null
     chatModel?: string | null
@@ -19,6 +20,7 @@ const props = withDefaults(
   {
     answerMode: undefined,
     answer: "",
+    streaming: false,
     answerIncomplete: false,
     answerTokens: null,
     chatModel: null,
@@ -134,15 +136,15 @@ function removeCodeCopyButtons() {
 }
 
 // Watch for content changes and attach buttons after DOM update
-watch(renderedMarkdown, async () => {
+watch([renderedMarkdown, () => props.streaming], async () => {
   await nextTick()
   removeCodeCopyButtons()
-  attachCodeCopyButtons()
+  if (!props.streaming) attachCodeCopyButtons()
 })
 
 onMounted(async () => {
   await nextTick()
-  attachCodeCopyButtons()
+  if (!props.streaming) attachCodeCopyButtons()
 })
 
 onUnmounted(() => {
@@ -151,7 +153,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <article data-testid="answer-panel" class="flex min-w-0 gap-3 sm:gap-4">
+  <article data-testid="answer-panel" :aria-busy="streaming" class="flex min-w-0 gap-3 sm:gap-4">
     <!-- 「知」字印章：标识这是知寻基于资料给出的回答 -->
     <span
       class="mt-0.5 flex size-7 shrink-0 select-none items-center justify-center rounded-md bg-brand-700 font-display text-sm font-semibold text-white"
@@ -161,6 +163,16 @@ onUnmounted(() => {
 
     <div class="min-w-0 flex-1">
       <h3 class="sr-only">AI 回答{{ chatModel ? `（${chatModel}）` : "" }}</h3>
+      <p
+        v-if="!generationError && (streaming || answer)"
+        data-testid="streaming-status"
+        role="status"
+        aria-live="polite"
+        :class="streaming ? 'mb-3 flex items-center gap-2 text-xs text-ink-muted' : 'sr-only'"
+      >
+        <span v-if="streaming" aria-hidden="true" class="streaming-dot size-1.5 rounded-full bg-brand-600" />
+        {{ streaming ? "正在生成回答…" : answerIncomplete ? "回答尚未完成" : "回答生成完成" }}
+      </p>
 
       <div
         v-if="isDegraded"
@@ -182,7 +194,7 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <template v-else-if="answer">
+      <template v-else-if="answer || streaming">
         <div
           v-if="answerIncomplete"
           data-testid="answer-incomplete"
@@ -194,12 +206,19 @@ onUnmounted(() => {
         </div>
         <!-- eslint-disable vue/no-v-html -->
         <div
+          v-if="answer"
           ref="answerContentRef"
           data-testid="answer-content"
-          class="prose-knowra"
+          class="prose-knowra answer-reveal"
           v-html="renderedMarkdown"
         ></div>
         <!-- eslint-enable vue/no-v-html -->
+        <span
+          v-if="streaming"
+          data-testid="streaming-cursor"
+          aria-hidden="true"
+          class="streaming-cursor mt-1 inline-block h-4 w-0.5 rounded-full bg-brand-600 align-middle"
+        />
 
         <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-faint">
           <button
@@ -230,3 +249,27 @@ onUnmounted(() => {
     </div>
   </article>
 </template>
+
+
+<style scoped>
+@media (prefers-reduced-motion: no-preference) {
+  .answer-reveal {
+    animation: answer-reveal 180ms ease-out;
+  }
+  .streaming-dot {
+    animation: generation-breathe 1.6s ease-in-out infinite;
+  }
+  .streaming-cursor {
+    animation: generation-breathe 1s ease-in-out infinite;
+  }
+}
+
+@keyframes answer-reveal {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes generation-breathe {
+  50% { opacity: 0.35; }
+}
+</style>

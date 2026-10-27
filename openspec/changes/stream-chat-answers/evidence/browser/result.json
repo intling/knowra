@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "scenarios": [
+    {
+      "scenario": "real-http-sse-before-done",
+      "animation": "generation-breathe-a7d47a76",
+      "passed": true
+    },
+    {
+      "scenario": "preserve-reading-position-and-final-usage",
+      "passed": true
+    },
+    {
+      "scenario": "mobile-reduced-motion-and-markdown",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "scenario": "tcp-interruption-keeps-partial-answer",
+      "passed": true
+    },
+    {
+      "scenario": "route-unmount-aborts-http-stream",
+      "passed": true
+    }
+  ],
+  "pageErrors": []
+}

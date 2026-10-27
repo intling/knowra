@@ -19,8 +19,10 @@ import hashlib
 import inspect
 import threading
 import time
+from collections.abc import Awaitable, Callable
 from uuid import UUID
 
+from anyio import CancelScope
 from sqlmodel import Session, func, select
 
 from app.core.logging import get_logger
@@ -215,6 +217,62 @@ class SearchService:
         session_id: str | None = None,
         document_ids: list[UUID] | None = None,
     ) -> SearchResponse:
+        """保留 JSON 调用的同步入口，共用相同的回答与缓存逻辑。"""
+        response = self._prepare_search(query, top_k, history, session_id, document_ids)
+        return _run_async(response) if inspect.isawaitable(response) else response
+
+    async def search_async(
+        self,
+        query: str,
+        top_k: int = 5,
+        history: list[dict] | None = None,
+        session_id: str | None = None,
+        document_ids: list[UUID] | None = None,
+        *,
+        on_metadata: Callable[[SearchResponse], Awaitable[None]] | None = None,
+        on_delta: Callable[[str], Awaitable[None]] | None = None,
+    ) -> SearchResponse:
+        """在线程中完成阻塞检索，再在请求事件循环中流式生成。"""
+        preparation = asyncio.create_task(
+            asyncio.to_thread(
+                self._prepare_search,
+                query,
+                top_k,
+                history,
+                session_id,
+                document_ids,
+                on_metadata=on_metadata,
+                on_delta=on_delta,
+            )
+        )
+        try:
+            response = await asyncio.shield(preparation)
+        except asyncio.CancelledError:
+            # 线程不能强制停止；等待读取退出后才能让请求释放数据库和客户端。
+            with CancelScope(shield=True):
+                try:
+                    response = await preparation
+                except Exception as exc:
+                    self._logger.warning(
+                        "search_cancelled_preparation_failed", error_type=type(exc).__name__
+                    )
+                else:
+                    if inspect.iscoroutine(response):
+                        response.close()
+            raise
+        return await response if inspect.isawaitable(response) else response
+
+    def _prepare_search(
+        self,
+        query: str,
+        top_k: int = 5,
+        history: list[dict] | None = None,
+        session_id: str | None = None,
+        document_ids: list[UUID] | None = None,
+        *,
+        on_metadata: Callable[[SearchResponse], Awaitable[None]] | None = None,
+        on_delta: Callable[[str], Awaitable[None]] | None = None,
+    ) -> SearchResponse | Awaitable[SearchResponse]:
         """按回答策略检索、读取资料或直接生成，统一保留缓存和错误语义。"""
         t0 = time.perf_counter()
         self._document_ids = (
@@ -280,7 +338,7 @@ class SearchService:
                 )
                 return cached_response
 
-        def finish(
+        async def finish(
             *,
             mode,
             status,
@@ -293,25 +351,6 @@ class SearchService:
         ):
             rows = rows or []
             results = self._build_results(rows, len(rows) if mode == "summary" else top_k)
-            if mode == "clarification":
-                answer, tokens, model, messages, error, incomplete = (
-                    guidance or clarification(status),
-                    None,
-                    None,
-                    [],
-                    None,
-                    False,
-                )
-            else:
-                answer, tokens, model, messages, error, incomplete = _run_async(
-                    self._generate_answer(
-                        query,
-                        rows,
-                        history=history,
-                        mode=mode,
-                        partial=bool(coverage and coverage.truncated),
-                    )
-                )
             response = SearchResponse(
                 query=query,
                 query_embedding_preview=(vector or [])[:5],
@@ -323,17 +362,44 @@ class SearchService:
                 search_time_ms=(time.perf_counter() - t0) * 1000,
                 rewrite_info=rewrite,
                 results=results,
-                answer=answer,
-                answer_incomplete=incomplete,
-                answer_tokens=tokens,
-                chat_model=model,
-                prompt_messages=messages,
-                chat_config_snapshot=self._chat_config.snapshot() if model else None,
-                generation_error=error,
+                answer="",
+                chat_model=self._chat_config.model if mode != "clarification" else None,
                 audit_trail_id=audit_trail_id,
                 answer_mode=mode,
                 retrieval_status=status,
                 summary_coverage=coverage,
+            )
+            if on_metadata is not None and mode != "clarification":
+                await on_metadata(response)
+            if mode == "clarification":
+                answer, tokens, model, messages, error, incomplete = (
+                    guidance or clarification(status),
+                    None,
+                    None,
+                    [],
+                    None,
+                    False,
+                )
+            else:
+                answer, tokens, model, messages, error, incomplete = await self._generate_answer(
+                    query,
+                    rows,
+                    history=history,
+                    mode=mode,
+                    partial=bool(coverage and coverage.truncated),
+                    on_delta=on_delta,
+                )
+            response = response.model_copy(
+                update={
+                    "answer": answer,
+                    "answer_incomplete": incomplete,
+                    "answer_tokens": tokens,
+                    "chat_model": model,
+                    "prompt_messages": messages,
+                    "chat_config_snapshot": self._chat_config.snapshot() if model else None,
+                    "generation_error": error,
+                    "search_time_ms": (time.perf_counter() - t0) * 1000,
+                }
             )
             if (
                 self._response_cache is not None
@@ -644,6 +710,7 @@ class SearchService:
         *,
         mode: str = "rag",
         partial: bool = False,
+        on_delta: Callable[[str], Awaitable[None]] | None = None,
     ) -> tuple[
         str,  # answer
         AnswerTokens | None,  # answer_tokens
@@ -710,18 +777,31 @@ class SearchService:
         # 组装 prompt（使用分块完整文本，非截断版本）
         messages = self._assemble_prompt(query, rows, history=history, mode=mode, partial=partial)
         deadline = asyncio.get_running_loop().time() + self._chat_config.generation_timeout
+        stream_failed = False
 
         async def _try_generate(msgs: list[dict]) -> tuple:
             """长度结束时有界续写；后续失败仍保留已经收到的正文。"""
+            nonlocal stream_failed
             answer = ""
             tokens = AnswerTokens(prompt_tokens=0, completion_tokens=0, total_tokens=0)
             model = None
             current_messages = msgs
+            received: list[str] = []
+
+            async def receive_delta(text: str) -> None:
+                received.append(text)
+                if on_delta is not None:
+                    await on_delta(text)
+
             for attempt in range(_MAX_ANSWER_CONTINUATIONS + 1):
+                received.clear()
                 try:
                     remaining = deadline - asyncio.get_running_loop().time()
                     chat_result = await asyncio.wait_for(
-                        self._chat_adapter.generate_async(current_messages),
+                        self._chat_adapter.generate_async(
+                            current_messages,
+                            **({"on_delta": receive_delta} if on_delta is not None else {}),
+                        ),
                         timeout=max(0, remaining),
                     )
                 except (TimeoutError, ChatAPIError) as exc:
@@ -730,9 +810,18 @@ class SearchService:
                         if isinstance(exc, TimeoutError)
                         else exc
                     )
+                    answer += "".join(received)
                     if answer.strip():
+                        stream_failed = True
                         self._logger.warning("chat_continuation_failed", attempt=attempt)
-                        return answer, tokens, model, current_messages, None, True
+                        return (
+                            answer,
+                            tokens if tokens.total_tokens else None,
+                            model or self._chat_config.model,
+                            current_messages,
+                            None,
+                            True,
+                        )
                     return None, None, None, current_messages, error, False
 
                 answer += chat_result.content
@@ -825,9 +914,11 @@ class SearchService:
                 False,
             )
 
-        # ── 通知熔断器：LLM 调用成功 ──
         if self._circuit_breaker is not None:
-            self._circuit_breaker.on_success()
+            if stream_failed:
+                self._circuit_breaker.on_failure()
+            else:
+                self._circuit_breaker.on_success()
         return (
             answer or "",
             answer_tokens,

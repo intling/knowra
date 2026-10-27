@@ -86,7 +86,7 @@ def admit_chat(
                 logger.warning("问答额度释放失败", reservation_id=str(admission.reservation_id))
 
 
-ChatAdmissionDep = Annotated[ChatAdmission, Depends(admit_chat, scope="function")]
+ChatAdmissionDep = Annotated[ChatAdmission, Depends(admit_chat, scope="request")]
 
 
 def verify_trusted_origin(request: Request) -> None:

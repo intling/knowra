@@ -717,6 +717,29 @@ Keep explicit `DOCUMENT_EMBEDDING_DIMENSIONS=2560` for the deployed schema.
 
 限定资料时在上述请求增加 `"document_ids": ["<解析文档 UUID>"]`。
 
+### 流式问答
+
+主界面通过同一路径及请求体，发送 `Accept: text/event-stream` 协商 SSE；省略该请求头仍返回完整 JSON。
+响应设置 `Cache-Control: no-cache` 与 `X-Accel-Buffering: no`。反向代理应关闭 SSE 响应缓冲，并允许生成总时限及续写；等待期间发送注释心跳。
+
+| 事件 | JSON data | 含义 |
+| --- | --- | --- |
+| `status` | `{ "stage": "searching" }` 或 `generating` | 当前处理阶段 |
+| `metadata` | `SearchResponse`，正文为空、用量为 null | 生成前的回答模式、真实来源、总结覆盖 |
+| `delta` | `{ "delta": "新增正文" }` | 直接追加的可见正文 |
+| `done` | 最终完整 `SearchResponse` | 权威正文、完整性、实际累计用量与生成错误 |
+| `error` | `{ "detail": "可读错误" }` | 流开始后的不可恢复错误 |
+
+缓存命中及澄清可以直接发送 `done`，不伪造正文增量；没有 `done` 的 EOF 视为中断。
+认证、额度、字段、模型配置及显式资料范围在发送流前校验，保留原 HTTP 错误原因。
+生成失败沿用最终响应的 `generation_error`；首次生成中途失败但已有正文时也保留正文，标为 `answer_incomplete=true`。
+
+同步 `SearchService.search` 与异步 `search_async` 共用准备、策略、来源、缓存和续写逻辑；后者在线程完成阻塞检索后，
+通过 `ChatAdapter.generate_async(..., on_delta=...)` 传递增量到有界队列。已交付的同次正文不因网络重试而重复播放。
+额度预留持续到响应流结束，仅完整成功回答保留占用；客户端断开会取消生成并先关闭模型，再释放请求依赖。
+检索阶段的同步调用无法强制中断，会等待其有界超时退出后释放依赖，避免线程继续访问已关闭的数据库会话。
+无新增依赖、环境变量、数据库表或迁移。完整契约与浏览器证据见[流式问答变更](../openspec/changes/stream-chat-answers/verification.md)。
+
 ### Search response — `rewrite_info`
 
 When query rewriting is enabled (`QUERY_REWRITE_ENABLED=true`), the response
@@ -792,8 +815,8 @@ Key env variables:
   owner's visible document chain. Response caches, rewrite L1/L2 caches and
   in-flight deduplication include a user namespace, even if clients reuse a
   `session_id`. Team sharing is not implemented.
-- Streaming responses are not implemented (`ChatAdapter.generate(stream=True)`
-  raises `NotImplementedError`); the endpoint always returns a complete answer.
+- 流式回答使用 `/api/search` 的 SSE 协商与异步适配器回调。同步
+  `ChatAdapter.generate(stream=True)` 仍不提供迭代器，普通同步调用继续返回 `ChatResult`。
 - Query rewriting is supported (see "Query rewriting configuration" above),
   but HyDE and reranking are not yet implemented.
 
